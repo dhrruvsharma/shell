@@ -1,0 +1,11 @@
+configuration {
+    modi: "drun,run,window,emoji:~/.config/rofi/modes/emoji.sh,kaomoji:~/.config/rofi/modes/kaomoji.sh,clipboard:~/.config/rofi/modes/clipboard.sh";
+    show-icons: true;
+    icon-theme: "Papirus";
+    drun-display-format: "{icon}  {name}";
+    location: 0;
+    font: "Roboto 14";
+    mode-switcher: true;
+}
+
+@theme "~/.config/rofi/themes/hypr-matugen-dark.rasi"

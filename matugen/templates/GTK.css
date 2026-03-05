@@ -1,0 +1,37 @@
+/*
+* GTK Colors
+* Generated with Matugen
+* Accent: auto
+* Text: locked (clear & readable)
+*/
+
+/* 🔥 ACCENT — AUTO (Matugen) */
+@define-color accent_color {{colors.primary_fixed_dim.default.hex}};
+@define-color accent_bg_color {{colors.primary_fixed_dim.default.hex}};
+@define-color accent_fg_color {{colors.on_primary_fixed.default.hex}};
+
+/* 🧠 BACKGROUNDS — AUTO */
+@define-color window_bg_color {{colors.surface_dim.default.hex}};
+@define-color headerbar_bg_color {{colors.surface_dim.default.hex}};
+@define-color popover_bg_color {{colors.surface_dim.default.hex}};
+
+@define-color view_bg_color {{colors.surface.default.hex}};
+@define-color card_bg_color {{colors.surface.default.hex}};
+
+/* 🔒 TEXT — LOCKED (clear, consistent) */
+@define-color window_fg_color #eaeaf0;
+@define-color headerbar_fg_color #eaeaf0;
+@define-color popover_fg_color #eaeaf0;
+@define-color view_fg_color #eaeaf0;
+@define-color card_fg_color #eaeaf0;
+
+/* 🧩 SIDEBAR */
+@define-color sidebar_bg_color @window_bg_color;
+@define-color sidebar_fg_color #eaeaf0;
+@define-color sidebar_border_color @window_bg_color;
+@define-color sidebar_backdrop_color @window_bg_color;
+
+/* 📝 EXTRA GTK TEXT FALLBACKS (important for some apps) */
+@define-color text_color #eaeaf0;
+@define-color theme_text_color #eaeaf0;
+@define-color theme_fg_color #eaeaf0;

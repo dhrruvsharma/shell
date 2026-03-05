@@ -1,0 +1,107 @@
+* {
+    bg-main:        rgba(10, 6, 20, 0.95);
+    bg-alt:         rgba(18, 10, 34, 0.95);
+    bg-item:        rgba(22, 14, 42, 0.90);
+    bg-selected:    rgba(162, 119, 255, 0.28);
+    fg-main:        #f2ecff;
+    fg-dim:         #cbbcff;
+    purple-main:    #a277ff;
+    purple-glow:    #c4a3ff;
+    border-main:    rgba(162, 119, 255, 0.6);
+    font: "JetBrainsMono Nerd Font 12";
+    border: 0px;
+    outline: 0px;
+    box-shadow: none;
+}
+
+window {
+    width: 40%;
+    padding: 14px;
+    border-radius: 20px;
+    background-color: @bg-main;
+    border: 2px;
+    border-color: @border-main;
+    children: [mode-switcher,inputbar,listview];
+}
+
+inputbar {
+    children: [entry];
+    background-color: transparent;
+}
+
+entry {
+    background-color: @bg-main;
+    text-color: @fg-main;
+    caret-color: @purple-main;
+    border-radius: 12px;
+    padding: 6px 10px;
+    border-color: @bg-main;
+}
+
+listview {
+    background-color: #000000;
+    spacing: 10px;
+    padding: 4px;
+    lines: 8;
+}
+
+element {
+    padding: 14px;
+    border-radius: 14px;
+    background-color: @bg-item;
+    text-color: @fg-dim;
+}
+
+element normal,
+element alternate {
+    background-color: #000000;
+}
+
+element selected {
+    background-color: @bg-selected;
+    border: 1px;
+    border-color: @purple-main;
+}
+
+element-icon {
+    size: 26px;
+    margin: 0px 10px 0px 0px;
+    background-color: transparent;
+}
+
+element-text {
+    text-color: inherit;
+    background-color: #000000;
+}
+
+element-text selected {
+    text-color: @fg-main;
+    background-color: transparent;
+}
+
+prompt {
+    enabled: false;
+}
+
+textbox {
+    background-color: transparent;
+    text-color: @fg-main;
+}
+
+mode-switcher {
+    background-color: @bg-alt;
+    border-radius: 12px;
+    padding: 6px;
+}
+
+button {
+    padding: 6px 12px;
+    border-radius: 10px;
+    background-color: transparent;
+    text-color: @fg-dim;
+}
+
+button selected {
+    background-color: @bg-selected;
+    text-color: @fg-main;
+}

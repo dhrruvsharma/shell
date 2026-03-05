@@ -1,0 +1,105 @@
+@import "~/.config/rofi/colors.rasi"
+
+* {
+    /* Semantic mappings */
+    bg-main:        @surface;
+    bg-alt:         @surface-container;
+    bg-item:        @surface-container;
+    bg-selected:    @primary-container;
+
+    fg-main:        @on-surface;
+    fg-dim:         @on-surface-variant;
+    accent:         @primary;
+    border-main:    @outline;
+
+    font: "JetBrainsMono Nerd Font 12";
+    border: 0px;
+    outline: 0px;
+    box-shadow: none;
+}
+
+window {
+    width: 40%;
+    padding: 14px;
+    border-radius: 20px;
+    background-color: @bg-main;
+    border: 2px;
+    border-color: @border-main;
+    children: [mode-switcher,inputbar,listview];
+}
+
+inputbar {
+    children: [entry];
+    background-color: transparent;
+}
+
+entry {
+    background-color: @bg-alt;
+    text-color: @fg-main;
+    caret-color: @accent;
+    border-radius: 12px;
+    padding: 6px 10px;
+    border-color: @bg-alt;
+}
+
+listview {
+    background-color: transparent;
+    spacing: 10px;
+    padding: 4px;
+    lines: 8;
+}
+
+element {
+    padding: 14px;
+    border-radius: 14px;
+    background-color: @bg-item;
+    text-color: @fg-dim;
+}
+
+element selected {
+    background-color: @bg-selected;
+    border: 1px;
+    border-color: @accent;
+}
+
+element-icon {
+    size: 26px;
+    margin: 0px 10px 0px 0px;
+    background-color: transparent;
+}
+
+element-text {
+    text-color: inherit;
+    background-color: transparent;
+}
+
+element-text selected {
+    text-color: @on-primary-container;
+}
+
+prompt {
+    enabled: false;
+}
+
+textbox {
+    background-color: transparent;
+    text-color: @fg-main;
+}
+
+mode-switcher {
+    background-color: @bg-alt;
+    border-radius: 12px;
+    padding: 6px;
+}
+
+button {
+    padding: 6px 12px;
+    border-radius: 10px;
+    background-color: transparent;
+    text-color: @fg-dim;
+}
+
+button selected {
+    background-color: @bg-selected;
+    text-color: @on-primary-container;
+}

@@ -1,0 +1,38 @@
+[config]
+# ...
+
+[settings]
+mode = "dark"
+scheme = "material"
+palette = "material"
+
+[templates.quickshell]
+input_path  = "/home/igris/.config/matugen/templates/quickshell.qml"
+output_path = "/home/igris/.config/quickshell/colors/Colors.qml"
+
+[templates.cava]
+input_path = "/home/igris/.config/matugen/templates/cava"
+output_path = "/home/igris/.config/cava/config"
+
+[templates.gtk3]
+input_path = "/home/igris/.config/matugen/templates/GTK.css"
+output_path = "/home/igris/.config/gtk-3.0/colors.css"
+post_hook = "gsettings set org.gnome.desktop.interface gtk-theme 'adw-gtk3-dark'"
+
+[templates.gtk4]
+input_path = "/home/igris/.config/matugen/templates/GTK.css"
+output_path = "/home/igris/.config/gtk-4.0/colors.css"
+
+[templates.rofi]
+input_path = "/home/igris/.config/matugen/templates/rofi-color.rasi"
+output_path = "/home/igris/.config/rofi/colors.rasi"
+
+[templates.kitty]
+input_path = "/home/igris/.config/matugen/templates/kitty.conf"
+output_path = "/home/igris/.config/kitty/colors.conf"
+
+[templates.hyprland]
+input_path = "/home/igris/.config/matugen/templates/hyprland.conf"
+output_path = "/home/igris/.config/hypr/colors.conf"
+post_hook = "hyprctl reload"
+

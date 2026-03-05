@@ -1,0 +1,9 @@
+/*
+* Css Colors
+* Generated with Matugen
+*/
+<* for name, value in colors *>
+@define-color {{name}} {{value.default.hex}};
+@define-color {{name}}_transparent alpha({{value.default.hex}}, 0.7);
+
+<* endfor *>
