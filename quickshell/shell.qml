@@ -79,7 +79,9 @@ ShellRoot {
         SystemPanel {
             id: systemPanel
         }
-
+        WallhavenWrapper{
+            id: wallhavenWrapper
+        }
         Loader {
             id: networkPanelLoader
             active: false
