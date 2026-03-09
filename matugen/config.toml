@@ -7,8 +7,8 @@ scheme = "material"
 palette = "material"
 
 [templates.quickshell]
-input_path  = "/home/igris/.config/matugen/templates/quickshell.qml"
-output_path = "/home/igris/.config/quickshell/colors/Colors.qml"
+input_path  = "/home/igris/.config/matugen/templates/quickshell.json.hbs"
+output_path = "/home/igris/.config/quickshell/colors/Colors.json"
 
 [templates.cava]
 input_path = "/home/igris/.config/matugen/templates/cava"
