@@ -16,6 +16,8 @@ import Quickshell.Hyprland
 import qs.quotes
 import qs.modules.launcher
 import qs.modules.wallpaper
+import qs.modules.manga
+import qs.modules.novel
 
 ShellRoot {
     id: root
@@ -201,6 +203,30 @@ ShellRoot {
             }
             focus: true
         }
+        Loader {
+            active: false
+            id: mangaLoader
+            anchors {
+                left: parent.left
+                top: parent.top
+                bottom: parent.bottom
+            }
+            sourceComponent: MangaReader{
+                id: mangaReader
+            }
+        }
+        Loader {
+            active: false
+            id: novelLoader
+            anchors {
+                right: parent.right
+                top: parent.top
+                bottom: parent.bottom
+            }
+            sourceComponent: NovelReader{
+                id: novelReaderReader
+            }
+        }
 
         property bool altHeld: false
 
@@ -244,6 +270,12 @@ ShellRoot {
             Region{
                 item: chatLoader.active ? chatLoader : null
             }
+            Region{
+                item: mangaLoader.item.visible ? mangaLoader.item : null
+            }
+            Region{
+                item: novelLoader.item.visible ? novelLoader.item : null
+            }
         }
     }
 
@@ -262,6 +294,51 @@ ShellRoot {
         onTriggered: mediaPanelLoader.active = false
     }
 
+    Timer {
+        id: closeChatTimer
+        interval: 600
+        onTriggered: chatLoader.active = false
+    }
+
+    Connections {
+        target: chatLoader.item
+        function onVisibleChanged() {
+            if (chatLoader.item && !chatLoader.item.visible) {
+                closeChatTimer.start()
+            }
+        }
+    }
+
+    Timer {
+        id: closeMangaTimer
+        interval: 600
+        onTriggered: mangaLoader.active = false
+    }
+
+    Connections {
+        target: chatLoader.item
+        function onVisibleChanged() {
+            if (mangaLoader.item && !mangaLoader.item.visible) {
+                closeMangaTimer.start()
+            }
+        }
+    }
+
+    Timer {
+        id: closeNovelTimer
+        interval: 600
+        onTriggered: mangaLoader.active = false
+    }
+
+    Connections {
+        target: chatLoader.item
+        function onVisibleChanged() {
+            if (novelLoader.item && !novelLoader.item.visible) {
+                closeNovelTimer.start()
+            }
+        }
+    }
+
     IpcHandler {
         target: "mediaPanel"
 
@@ -271,6 +348,32 @@ ShellRoot {
                 mediaPanelLoader.item.opened = true
             } else {
                 mediaPanelLoader.item.opened = !mediaPanelLoader.item.opened
+            }
+        }
+    }
+
+    IpcHandler {
+        target: "mangaReader"
+
+        function toggle(): void {
+            if (!mangaLoader.active) {
+                mangaLoader.active = true
+                mangaLoader.item.visible = true
+            } else {
+                mangaLoader.item.visible = !mangaLoader.item.visible
+            }
+        }
+    }
+
+    IpcHandler {
+        target: "novelReader"
+
+        function toggle(): void {
+            if (!novelLoader.active) {
+                novelLoader.active = true
+                novelLoader.item.visible = true
+            } else {
+                novelLoader.item.visible = !novelLoader.item.visible
             }
         }
     }
