@@ -30,15 +30,35 @@ Singleton {
     property string chapterError: ""
     property string currentChapterId: ""
 
+    // ── Provider ─────────────────────────────────────────────────────────────
+    property string activeProvider: "novelbin"
+    property bool isSwitchingProvider: false
+    readonly property var availableProviders: [
+        { name: "novelbin",     label: "NovelBin"     },
+        { name: "freewebnovel", label: "FreeWebNovel" }
+    ]
+
+    function switchProvider(name) {
+        if (name === activeProvider || isSwitchingProvider) return
+        isSwitchingProvider = true
+        _post(root.apiUrl + "/provider/switch", { provider: name }, function(err, body) {
+            isSwitchingProvider = false
+            if (err) { console.warn("[ServiceNovel] Provider switch failed:", err); return }
+            activeProvider = name
+            clearNovelList()
+            clearDetail()
+            clearChapter()
+            fetchHot()
+        })
+    }
+
     // ── Library ──────────────────────────────────────────────────────────────
-    // Each entry: { id, title, coverUrl, lastReadChapterId, lastReadChapterNum, addedAt }
     property list<var> libraryList: []
     property bool libraryLoaded: false
 
     readonly property string _libraryPath:
-        Quickshell.env("HOME") + "/.local/share/quickshell/novel_library.json"
+        Quickshell.env("HOME") + "/.local/share/quickshell/new_novel_library.json"
 
-    // FileView for reading
     FileView {
         id: libraryFile
         path: root._libraryPath
@@ -60,7 +80,6 @@ Singleton {
         }
     }
 
-    // FileView for writing
     FileView {
         id: libraryWriter
         path: root._libraryPath
@@ -72,7 +91,6 @@ Singleton {
     }
 
     function addToLibrary(novel) {
-        // novel must have: id, title, coverUrl
         if (isInLibrary(novel.id)) return
         var entry = {
             id:                 novel.id,
@@ -116,7 +134,6 @@ Singleton {
         return null
     }
 
-    // Load library as soon as the singleton initialises
     Component.onCompleted: libraryFile.reload()
 
     // ── Backend server ───────────────────────────────────────────────────────
@@ -124,8 +141,10 @@ Singleton {
 
     Process {
         id: serverProcess
-        command: [Quickshell.env("HOME") + "/novel-env/bin/python3",
-            Quickshell.env("HOME") + "/.config/quickshell/scripts/novel_server.py"]
+        command: [
+            Quickshell.env("HOME") + "/novel-env/bin/python3",
+            Quickshell.env("HOME") + "/.config/quickshell/scripts/novel_server/main.py"
+        ]
         running: true
         onExited: (code) => {
             console.warn("[ServiceNovel] Server exited with code", code, "— restarting")
@@ -224,7 +243,6 @@ Singleton {
     function fetchNextPage() {
         if (!hasMoreNovels || isFetchingNovel) return
         if (currentSearchText.length > 0) {
-            // search pagination — re-run search with incremented page
             currentOffset++
             isFetchingNovel = true
             novelError = ""
@@ -276,10 +294,7 @@ Singleton {
         isFetchingDetail = true
         currentNovel = null
         detailError = ""
-
-        // Normalise: strip leading "b/" if present so the server gets a clean slug
-        var cleanId = novelId.replace(/^b\//, "")
-        const url = root.apiUrl + "/info?id=" + encodeURIComponent(cleanId)
+        const url = root.apiUrl + "/info?id=" + encodeURIComponent(novelId)
         _get(url, function(err, body) {
             if (err) { detailError = "Request failed: " + err; isFetchingDetail = false; return }
             _parseNovelDetail(body)
@@ -298,7 +313,6 @@ Singleton {
                 author:      data.author      || "",
                 coverUrl:    data.image       || "",
                 genres:      data.genres      || [],
-                // chapters are oldest-first from the server
                 chapters:    (data.chapters || []).map(function(ch) {
                     return {
                         id:      ch.id      || "",

@@ -21,14 +21,15 @@ Item {
         searchBar.visible = false
         searchField.text = ""
         Novel.clearNovelList()
-        if (f === "hot")    Novel.fetchHot()
-        else                Novel.fetchLatest(true)
+        if (f === "hot") Novel.fetchHot()
+        else             Novel.fetchLatest(true)
     }
 
     ColumnLayout {
         anchors.fill: parent
         spacing: 0
 
+        // ── Top bar ───────────────────────────────────────────────────────────
         Rectangle {
             Layout.fillWidth: true
             height: 60
@@ -44,11 +45,10 @@ Item {
                 anchors { fill: parent; leftMargin: 18; rightMargin: 12 }
                 spacing: 10
 
+                // Title (hidden while search bar is open)
                 Row {
                     spacing: 0
                     visible: !searchBar.visible
-                    Layout.fillWidth: true
-
                     Text {
                         text: "N"
                         font.family: browseView.fontDisplay
@@ -63,6 +63,7 @@ Item {
                     }
                 }
 
+                // Search bar (shown when search icon is tapped)
                 Rectangle {
                     id: searchBar
                     Layout.fillWidth: true
@@ -133,8 +134,164 @@ Item {
                     }
                 }
 
+                // ── Provider dropdown button ──────────────────────────────────
+                Item {
+                    visible: !searchBar.visible
+                    width: 200
+                    height: 32
+
+                    Rectangle {
+                        anchors.fill: parent; radius: 16
+                        color: providerDropArea.containsMouse
+                            ? c.surface_container_highest
+                            : c.surface_container
+                        border.color: c.outline_variant; border.width: 1
+                        Behavior on color { ColorAnimation { duration: 150 } }
+                    }
+
+                    Row {
+                        anchors.centerIn: parent
+                        spacing: 5
+
+                        Text {
+                            id: providerLabel
+                            text: {
+                                for (var i = 0; i < Novel.availableProviders.length; i++) {
+                                    if (Novel.availableProviders[i].name === Novel.activeProvider)
+                                        return Novel.availableProviders[i].label
+                                }
+                                return Novel.activeProvider
+                            }
+                            font.family: browseView.fontBody; font.pixelSize: 11
+                            font.letterSpacing: 0.3
+                            color: Novel.isSwitchingProvider ? c.on_surface_variant : c.on_surface
+                            anchors.verticalCenter: parent.verticalCenter
+                            Behavior on color { ColorAnimation { duration: 150 } }
+                        }
+
+                        // Tiny spinner shown while switching
+                        Rectangle {
+                            visible: Novel.isSwitchingProvider
+                            width: 10; height: 10; radius: 5
+                            color: "transparent"
+                            border.color: c.primary; border.width: 1.5
+                            anchors.verticalCenter: parent.verticalCenter
+                            RotationAnimator on rotation {
+                                from: 0; to: 360; duration: 700
+                                loops: Animation.Infinite
+                                running: Novel.isSwitchingProvider
+                                easing.type: Easing.Linear
+                            }
+                        }
+
+                        // Chevron (hidden while switching)
+                        Text {
+                            visible: !Novel.isSwitchingProvider
+                            text: providerPopup.visible ? "▲" : "▾"
+                            font.pixelSize: 8
+                            color: c.on_surface_variant
+                            anchors.verticalCenter: parent.verticalCenter
+                        }
+                    }
+
+                    MouseArea {
+                        id: providerDropArea
+                        anchors.fill: parent
+                        hoverEnabled: true
+                        onClicked: {
+                            if (!Novel.isSwitchingProvider)
+                                providerPopup.visible = !providerPopup.visible
+                        }
+                    }
+
+                    // ── Dropdown popup ────────────────────────────────────────
+                    Rectangle {
+                        id: providerPopup
+                        visible: false
+                        // Anchor below the button, right-aligned
+                        anchors { top: parent.bottom; right: parent.right; topMargin: 6 }
+                        width: 150
+                        height: popupColumn.implicitHeight + 10
+                        radius: 10
+                        color: c.surface_container_high
+                        border.color: c.outline_variant; border.width: 1
+                        z: 100
+
+                        // Drop shadow hint
+                        layer.enabled: true
+
+                        Column {
+                            id: popupColumn
+                            anchors { top: parent.top; left: parent.left; right: parent.right; topMargin: 5 }
+                            spacing: 0
+
+                            Repeater {
+                                model: Novel.availableProviders
+
+                                delegate: Item {
+                                    width: parent.width
+                                    height: 36
+
+                                    Rectangle {
+                                        anchors.fill: parent
+                                        anchors.leftMargin: 4; anchors.rightMargin: 4
+                                        radius: 7
+                                        color: {
+                                            if (modelData.name === Novel.activeProvider)
+                                                return c.primary_container
+                                            return optionArea.containsMouse
+                                                ? c.surface_container_highest
+                                                : "transparent"
+                                        }
+                                        Behavior on color { ColorAnimation { duration: 120 } }
+                                    }
+
+                                    Row {
+                                        anchors { verticalCenter: parent.verticalCenter; left: parent.left; leftMargin: 14 }
+                                        spacing: 8
+
+                                        // Active indicator dot
+                                        Rectangle {
+                                            width: 6; height: 6; radius: 3
+                                            anchors.verticalCenter: parent.verticalCenter
+                                            color: c.primary
+                                            visible: modelData.name === Novel.activeProvider
+                                        }
+                                        // Spacer when not active so text stays aligned
+                                        Item {
+                                            width: 6; height: 6
+                                            visible: modelData.name !== Novel.activeProvider
+                                        }
+
+                                        Text {
+                                            text: modelData.label
+                                            font.family: browseView.fontBody; font.pixelSize: 12
+                                            color: modelData.name === Novel.activeProvider
+                                                ? c.on_primary_container
+                                                : c.on_surface
+                                            anchors.verticalCenter: parent.verticalCenter
+                                        }
+                                    }
+
+                                    MouseArea {
+                                        id: optionArea
+                                        anchors.fill: parent
+                                        hoverEnabled: true
+                                        onClicked: {
+                                            providerPopup.visible = false
+                                            Novel.switchProvider(modelData.name)
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+
+                // ── Search icon ───────────────────────────────────────────────
                 Item {
                     width: 40; height: 40
+
                     Rectangle {
                         anchors.centerIn: parent; width: 34; height: 34; radius: 17
                         color: searchBar.visible ? c.primary_container : "transparent"
@@ -161,6 +318,7 @@ Item {
             }
         }
 
+        // ── Filter chips (Hot / Latest) ───────────────────────────────────────
         Rectangle {
             Layout.fillWidth: true; height: 48
             color: c.surface_container_low; clip: true
@@ -214,9 +372,19 @@ Item {
             }
         }
 
+        // ── Novel grid ────────────────────────────────────────────────────────
         Item {
             Layout.fillWidth: true; Layout.fillHeight: true
 
+            // Close the provider popup when clicking outside it
+            MouseArea {
+                anchors.fill: parent
+                enabled: providerPopup.visible
+                onClicked: providerPopup.visible = false
+                z: 50
+            }
+
+            // Loading overlay
             Rectangle {
                 anchors.fill: parent; color: c.background; z: 10
                 visible: Novel.isFetchingNovel && Novel.novelList.length === 0
@@ -241,6 +409,7 @@ Item {
                 }
             }
 
+            // Error overlay
             Rectangle {
                 anchors.fill: parent; color: c.background; z: 9
                 visible: Novel.novelError.length > 0 && !Novel.isFetchingNovel
