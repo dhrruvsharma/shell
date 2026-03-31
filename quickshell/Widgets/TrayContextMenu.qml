@@ -63,8 +63,8 @@ PanelWindow {
             id: menuBg
 
             anchors.fill: parent
-            color: colors.on_surface
-            clip: true // Clip the content that sits inside
+            color: root.colors.surface_container  // was: colors.on_surface
+            clip: true
             topLeftRadius: 0
             topRightRadius: 0
             bottomLeftRadius: 14
@@ -87,7 +87,7 @@ PanelWindow {
                 width: parent.width - 16
                 height: 36
                 radius: 8
-                color: root.colors.secondary
+                color: root.colors.secondary  // was: colors.secondary
                 opacity: active ? 0.15 : 0
 
                 Behavior on y {
@@ -136,7 +136,7 @@ PanelWindow {
                             anchors.centerIn: parent
                             width: parent.width - 16
                             height: 1
-                            color: root.colors.border
+                            color: root.colors.outline_variant  // was: colors.border
                             opacity: 0.5
                         }
 
@@ -145,7 +145,7 @@ PanelWindow {
                             width: 3
                             height: 16
                             radius: 2
-                            color: root.colors.accent
+                            color: root.colors.primary  // was: colors.accent
                             anchors.left: parent.left
                             anchors.leftMargin: 4
                             anchors.verticalCenter: parent.verticalCenter
@@ -172,7 +172,9 @@ PanelWindow {
                                     layer.enabled: true
 
                                     layer.effect: ColorOverlay {
-                                        color: (highlight.active && highlight.targetY === menuItem.y) ? root.colors.accent : root.colors.muted
+                                        color: (highlight.active && highlight.targetY === menuItem.y)
+                                            ? root.colors.primary           // was: colors.accent
+                                            : root.colors.on_surface_variant // was: colors.muted
                                     }
 
                                 }
@@ -183,14 +185,23 @@ PanelWindow {
                                     text: ""
                                     font.family: "Symbols Nerd Font"
                                     font.pixelSize: 6
-                                    color: (highlight.active && highlight.targetY === menuItem.y) ? root.colors.accent : root.colors.muted
+                                    color: (highlight.active && highlight.targetY === menuItem.y)
+                                        ? root.colors.on_surface          // was: colors.on_surface
+                                        : root.colors.on_surface_variant  // was: colors.muted
                                 }
 
                             }
 
                             Text {
                                 text: modelData.text || ""
-                                color: (highlight.active && highlight.targetY === menuItem.y) ? root.colors.fg : Qt.rgba(root.colors.fg.r, root.colors.fg.g, root.colors.fg.b, 0.8)
+                                color: (highlight.active && highlight.targetY === menuItem.y)
+                                    ? root.colors.on_surface  // was: colors.fg
+                                    : Qt.rgba(
+                                        Qt.color(root.colors.on_surface).r,
+                                        Qt.color(root.colors.on_surface).g,
+                                        Qt.color(root.colors.on_surface).b,
+                                        0.8
+                                    )                        // was: Qt.rgba(colors.fg.r/g/b, 0.8)
                                 Layout.fillWidth: true
                                 elide: Text.ElideRight
                                 font.pixelSize: 13
@@ -203,7 +214,7 @@ PanelWindow {
                                 visible: (modelData.checkable && modelData.checked) || menuItem.hasChildren
                                 text: menuItem.hasChildren ? "" : ""
                                 font.family: "Symbols Nerd Font"
-                                color: root.colors.accent
+                                color: root.colors.primary  // was: colors.accent
                                 font.pixelSize: 12
                             }
 

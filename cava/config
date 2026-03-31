@@ -19,21 +19,21 @@ raw_target = /dev/stdout
 
 [color]
 background = 'default'
-foreground = '#97ccf9'
+foreground = '#9bcbfb'
 
 ; gradient = 0
 gradient = 1
-gradient_color_1 = '#014b71'
-gradient_color_2 = '#97ccf9'
-gradient_color_3 = '#cbe6ff'
+gradient_color_1 = '#0f4a73'
+gradient_color_2 = '#9bcbfb'
+gradient_color_3 = '#cee5ff'
 
 horizontal_gradient = 0
 ; horizontal_gradient = 1
-horizontal_gradient_color_1 = '#014b71'
-horizontal_gradient_color_2 = '#97ccf9'
-horizontal_gradient_color_3 = '#cbe6ff'
-horizontal_gradient_color_4 = '#97ccf9'
-horizontal_gradient_color_5 = '#014b71'
+horizontal_gradient_color_1 = '#0f4a73'
+horizontal_gradient_color_2 = '#9bcbfb'
+horizontal_gradient_color_3 = '#cee5ff'
+horizontal_gradient_color_4 = '#9bcbfb'
+horizontal_gradient_color_5 = '#0f4a73'
 
 [smoothing]
 monstercat = 1

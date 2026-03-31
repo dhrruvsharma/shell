@@ -14,13 +14,50 @@ Item {
     signal backRequested()
     signal chapterSelected(string chapterId)
 
+    // ── Library state ─────────────────────────────────────────────────────────
     readonly property bool _inLibrary:
         Novel.currentNovel ? Novel.isInLibrary(Novel.currentNovel.id) : false
 
-    readonly property var _reversedChapters:
-        Novel.currentNovel ? Novel.currentNovel.chapters.slice().reverse() : []
+    // ── Filter / sort state ───────────────────────────────────────────────────
+    property bool   _sortAscending: false
+    property string _chapterFilter: ""
 
-    // ---------- helper functions ----------
+    function reset() {
+        _chapterFilter = ""
+        _sortAscending = false
+    }
+
+    // ── Helper ────────────────────────────────────────────────────────────────
+    function formatChapter(ch) {
+        if (!ch) return "?"
+        const match = String(ch).match(/\d+(\.\d+)?/)
+        return match ? match[0] : String(ch)
+    }
+
+    // ── Processed (filtered + sorted) chapter list ────────────────────────────
+    readonly property var _processedChapters: {
+        if (!Novel.currentNovel) return []
+        let chapters = Novel.currentNovel.chapters.slice()
+
+        if (detailView._chapterFilter.trim() !== "") {
+            const f = detailView._chapterFilter.trim().toLowerCase()
+            chapters = chapters.filter(ch => {
+                const num   = detailView.formatChapter(ch.chapter).toLowerCase()
+                const title = (ch.title || "").toLowerCase()
+                return num.includes(f) || title.includes(f)
+            })
+        }
+
+        chapters.sort((a, b) => {
+            const numA = parseFloat(detailView.formatChapter(a.chapter)) || 0
+            const numB = parseFloat(detailView.formatChapter(b.chapter)) || 0
+            return detailView._sortAscending ? numA - numB : numB - numA
+        })
+
+        return chapters
+    }
+
+    // ── Reading helpers (preserved from original) ─────────────────────────────
     function continueReading() {
         if (!Novel.currentNovel) return
 
@@ -28,7 +65,6 @@ Item {
         var lastChapterId = entry ? entry.lastReadChapterId : null
         var targetChapter = null
 
-        // try to find chapter by last read ID
         if (lastChapterId) {
             for (var i = 0; i < Novel.currentNovel.chapters.length; i++) {
                 if (Novel.currentNovel.chapters[i].id === lastChapterId) {
@@ -38,17 +74,14 @@ Item {
             }
         }
 
-        // fallback to first chapter
-        if (!targetChapter && Novel.currentNovel.chapters.length > 0) {
+        if (!targetChapter && Novel.currentNovel.chapters.length > 0)
             targetChapter = Novel.currentNovel.chapters[0]
-        }
 
         if (targetChapter) {
             Novel.fetchChapter(targetChapter.id)
             detailView.chapterSelected(targetChapter.id)
-            if (detailView._inLibrary) {
+            if (detailView._inLibrary)
                 Novel.updateLastRead(Novel.currentNovel.id, targetChapter.id, targetChapter.chapter)
-            }
         }
     }
 
@@ -59,7 +92,6 @@ Item {
         var lastChapterId = entry ? entry.lastReadChapterId : null
         var targetChapter = null
 
-        // try to find chapter by last read ID
         if (lastChapterId) {
             for (var i = 0; i < Novel.currentNovel.chapters.length - 1; i++) {
                 if (Novel.currentNovel.chapters[i].id === lastChapterId) {
@@ -69,44 +101,23 @@ Item {
             }
         }
 
-        // fallback to first chapter
-        if (!targetChapter && Novel.currentNovel.chapters.length > 0) {
+        if (!targetChapter && Novel.currentNovel.chapters.length > 0)
             targetChapter = Novel.currentNovel.chapters[0]
-        }
 
         if (targetChapter) {
             Novel.fetchChapter(targetChapter.id)
             detailView.chapterSelected(targetChapter.id)
-            if (detailView._inLibrary) {
+            if (detailView._inLibrary)
                 Novel.updateLastRead(Novel.currentNovel.id, targetChapter.id, targetChapter.chapter)
-            }
         }
     }
 
-    function searchAndGoToChapter() {
-        if (!Novel.currentNovel) return
-
-        var searchNum = parseInt(searchField.text)
-        if (isNaN(searchNum)) return
-
-        var chapters = Novel.currentNovel.chapters
-        for (var i = 0; i < chapters.length; i++) {
-            if (chapters[i].chapter === searchNum) {
-                chapterList.positionViewAtIndex(i, ListView.Beginning)
-                // optional: clear focus after jump
-                searchField.focus = false
-                return
-            }
-        }
-        // optional: show a toast/feedback that chapter was not found
-        console.log("Chapter not found:", searchNum)
-    }
-
+    // ═════════════════════════════════════════════════════════════════════════
     ColumnLayout {
         anchors.fill: parent
         spacing: 0
 
-        // ----- top bar (back, title, library) -----
+        // ── Header ────────────────────────────────────────────────────────────
         Rectangle {
             Layout.fillWidth: true; height: 56
             color: c.surface_container_low; z: 2
@@ -142,6 +153,7 @@ Item {
                     font.pixelSize: 15; color: c.on_surface; elide: Text.ElideRight
                 }
 
+                // Library toggle
                 Item {
                     visible: Novel.currentNovel !== null
                     width: libBtnLabel.implicitWidth + 28; height: 34
@@ -189,26 +201,38 @@ Item {
             }
         }
 
-        // ----- cover & description area -----
-        Rectangle {
+        // ── Hero banner ───────────────────────────────────────────────────────
+        Item {
             Layout.fillWidth: true
-            height: Novel.currentNovel !== null ? 130 : 0
-            color: c.surface_container_low; clip: true
-            Behavior on height { NumberAnimation { duration: 220; easing.type: Easing.OutCubic } }
+            Layout.preferredHeight: Novel.currentNovel !== null ? 160 : 0
+            clip: true
+            Behavior on Layout.preferredHeight { NumberAnimation { duration: 220; easing.type: Easing.OutCubic } }
 
+            // Blurred cover background
             Image {
                 anchors.fill: parent
                 source: Novel.currentNovel ? Novel.currentNovel.coverUrl : ""
-                fillMode: Image.PreserveAspectCrop; asynchronous: true; opacity: 0.1
+                fillMode: Image.PreserveAspectCrop
+                asynchronous: true; opacity: 0.2
             }
-            Rectangle { anchors.fill: parent; color: c.surface_container_low; opacity: 0.84 }
 
+            // Gradient overlay
+            Rectangle {
+                anchors.fill: parent
+                gradient: Gradient {
+                    GradientStop { position: 0.0; color: Qt.rgba(c.surface_container_low.r, c.surface_container_low.g, c.surface_container_low.b, 0.8) }
+                    GradientStop { position: 1.0; color: c.background }
+                }
+            }
+
+            // Content row
             Row {
                 anchors { fill: parent; margins: 14 }
                 spacing: 14
 
+                // Cover thumbnail
                 Rectangle {
-                    width: 72; height: 104; radius: 8
+                    width: 90; height: 130; radius: 8
                     color: c.surface_container_high; clip: true
                     anchors.verticalCenter: parent.verticalCenter
 
@@ -224,27 +248,25 @@ Item {
                 }
 
                 Column {
-                    width: parent.width - 86; spacing: 5
-                    anchors.verticalCenter: parent.verticalCenter
+                    width: parent.width - 104
+                    spacing: 6; anchors.verticalCenter: parent.verticalCenter
 
-                    Row {
-                        spacing: 6
+                    // Status badge
+                    Rectangle {
+                        visible: Novel.currentNovel && Novel.currentNovel.status.length > 0
+                        height: 18; width: statusTxt.implicitWidth + 14; radius: 9
+                        color: Qt.rgba(c.tertiary.r, c.tertiary.g, c.tertiary.b, 0.15)
+                        border.color: c.tertiary; border.width: 1
 
-                        Rectangle {
-                            visible: Novel.currentNovel && Novel.currentNovel.status.length > 0
-                            height: 18; width: statusTxt.implicitWidth + 14; radius: 9
-                            color: Qt.rgba(c.tertiary.r, c.tertiary.g, c.tertiary.b, 0.15)
-                            border.color: c.tertiary; border.width: 1
-
-                            Text {
-                                id: statusTxt; anchors.centerIn: parent
-                                text: Novel.currentNovel ? (Novel.currentNovel.status || "").toUpperCase() : ""
-                                font.family: detailView.fontBody; font.pixelSize: 9
-                                font.letterSpacing: 1.2; font.bold: true; color: c.tertiary
-                            }
+                        Text {
+                            id: statusTxt; anchors.centerIn: parent
+                            text: Novel.currentNovel ? (Novel.currentNovel.status || "").toUpperCase() : ""
+                            font.family: detailView.fontBody; font.pixelSize: 9
+                            font.letterSpacing: 1.2; font.bold: true; color: c.tertiary
                         }
                     }
 
+                    // Author
                     Text {
                         width: parent.width
                         text: Novel.currentNovel ? Novel.currentNovel.author : ""
@@ -252,6 +274,7 @@ Item {
                         color: c.on_surface; elide: Text.ElideRight
                     }
 
+                    // Genres
                     Text {
                         visible: Novel.currentNovel && Novel.currentNovel.genres.length > 0
                         width: parent.width
@@ -260,6 +283,7 @@ Item {
                         color: c.primary; opacity: 0.85; elide: Text.ElideRight; font.letterSpacing: 0.2
                     }
 
+                    // Description
                     Text {
                         width: parent.width
                         text: Novel.currentNovel ? Novel.currentNovel.description : ""
@@ -276,7 +300,7 @@ Item {
             }
         }
 
-        // ----- chapter info bar (count + last read) -----
+        // ── Chapter count + last-read strip ───────────────────────────────────
         Rectangle {
             Layout.fillWidth: true; height: 36
             color: c.surface_container
@@ -320,9 +344,9 @@ Item {
             }
         }
 
+        // ── Continue / Next Chapter buttons ───────────────────────────────────
         Rectangle {
-            Layout.fillWidth: true;
-            height: 48
+            Layout.fillWidth: true; height: 48
             color: c.surface_container
             visible: Novel.currentNovel !== null
 
@@ -332,41 +356,27 @@ Item {
 
                 Button {
                     text: "Continue"
-                    font.family: detailView.fontBody
-                    font.pixelSize: 12
-                    font.bold: true
+                    font.family: detailView.fontBody; font.pixelSize: 12; font.bold: true
                     contentItem: Text {
-                        text: parent.text
-                        font: parent.font
+                        text: parent.text; font: parent.font
                         color: c.on_primary
                         horizontalAlignment: Text.AlignHCenter
                         verticalAlignment: Text.AlignVCenter
                     }
-                    background: Rectangle {
-                        color: c.primary
-                        radius: 14
-                        opacity: parent.enabled ? 1 : 0.6
-                    }
+                    background: Rectangle { color: c.primary; radius: 14; opacity: parent.enabled ? 1 : 0.6 }
                     onClicked: continueReading()
                 }
 
                 Button {
                     text: "Next Chapter"
-                    font.family: detailView.fontBody
-                    font.pixelSize: 12
-                    font.bold: true
+                    font.family: detailView.fontBody; font.pixelSize: 12; font.bold: true
                     contentItem: Text {
-                        text: parent.text
-                        font: parent.font
+                        text: parent.text; font: parent.font
                         color: c.on_primary
                         horizontalAlignment: Text.AlignHCenter
                         verticalAlignment: Text.AlignVCenter
                     }
-                    background: Rectangle {
-                        color: c.primary
-                        radius: 14
-                        opacity: parent.enabled ? 1 : 0.6
-                    }
+                    background: Rectangle { color: c.primary; radius: 14; opacity: parent.enabled ? 1 : 0.6 }
                     onClicked: readNext()
                 }
             }
@@ -377,12 +387,125 @@ Item {
             }
         }
 
-        // ----- Chapter list area -----
+        // ── Search & Sort bar ─────────────────────────────────────────────────
+        Rectangle {
+            Layout.fillWidth: true; height: 56
+            color: c.surface_container_low
+            visible: Novel.currentNovel !== null
+
+            RowLayout {
+                anchors { fill: parent; leftMargin: 12; rightMargin: 12 }
+                spacing: 8
+
+                // Search pill
+                Rectangle {
+                    Layout.fillWidth: true
+                    height: 36; radius: 18
+                    color: c.surface_container
+                    border.width: 1
+                    border.color: chapterSearch.activeFocus
+                        ? c.primary
+                        : Qt.rgba(c.outline.r, c.outline.g, c.outline.b, 0.2)
+                    Behavior on border.color { ColorAnimation { duration: 130 } }
+
+                    RowLayout {
+                        anchors { fill: parent; leftMargin: 12; rightMargin: 4 }
+                        spacing: 6
+
+                        Text {
+                            text: "⌕"; font.pixelSize: 16
+                            color: c.primary; opacity: 0.7
+                        }
+
+                        TextInput {
+                            id: chapterSearch
+                            Layout.fillWidth: true
+                            Layout.alignment: Qt.AlignVCenter
+                            font.family: detailView.fontBody; font.pixelSize: 12
+                            color: c.on_surface
+                            selectionColor: Qt.rgba(c.primary.r, c.primary.g, c.primary.b, 0.35)
+                            clip: true
+
+                            Text {
+                                anchors.verticalCenter: parent.verticalCenter
+                                text: "Filter chapters…"
+                                font.family: detailView.fontBody; font.pixelSize: 12
+                                color: c.on_surface_variant; opacity: 0.45
+                                visible: chapterSearch.text === "" && !chapterSearch.activeFocus
+                            }
+
+                            onTextChanged: detailView._chapterFilter = text
+                        }
+
+                        // Clear button
+                        Item {
+                            width: visible ? 28 : 0; height: 28
+                            visible: detailView._chapterFilter !== ""
+
+                            Rectangle {
+                                anchors.centerIn: parent; width: 22; height: 22; radius: 11
+                                color: clearArea.containsMouse
+                                    ? Qt.rgba(c.on_surface.r, c.on_surface.g, c.on_surface.b, 0.12)
+                                    : "transparent"
+                                Behavior on color { ColorAnimation { duration: 100 } }
+                            }
+                            Text {
+                                anchors.centerIn: parent
+                                text: "✕"; font.pixelSize: 11; color: c.on_surface_variant
+                            }
+                            MouseArea {
+                                id: clearArea; anchors.fill: parent; hoverEnabled: true
+                                onClicked: {
+                                    detailView._chapterFilter = ""
+                                    chapterSearch.text = ""
+                                }
+                            }
+                        }
+                    }
+                }
+
+                // Sort toggle
+                Item {
+                    width: 36; height: 36
+
+                    Rectangle {
+                        anchors.fill: parent; radius: 18
+                        color: sortArea.containsMouse
+                            ? c.primary_container
+                            : Qt.rgba(c.primary_container.r, c.primary_container.g, c.primary_container.b, 0.6)
+                        border.color: c.primary; border.width: 1
+                        Behavior on color { ColorAnimation { duration: 130 } }
+                    }
+                    Text {
+                        anchors.centerIn: parent
+                        text: detailView._sortAscending ? "↑" : "↓"
+                        font.pixelSize: 16; font.bold: true
+                        color: c.on_primary_container
+                    }
+                    MouseArea {
+                        id: sortArea; anchors.fill: parent; hoverEnabled: true
+                        onClicked: detailView._sortAscending = !detailView._sortAscending
+
+                        ToolTip.visible: containsMouse
+                        ToolTip.delay: 600
+                        ToolTip.text: detailView._sortAscending ? "Sort: Ascending" : "Sort: Descending"
+                    }
+                }
+            }
+
+            Rectangle {
+                anchors { bottom: parent.bottom; left: parent.left; right: parent.right }
+                height: 1; color: c.outline_variant; opacity: 0.3
+            }
+        }
+
+        // ── Chapter list ──────────────────────────────────────────────────────
         Item {
             Layout.fillWidth: true; Layout.fillHeight: true
 
             Rectangle { anchors.fill: parent; color: c.background }
 
+            // Loading overlay
             Rectangle {
                 anchors.fill: parent; color: c.background
                 visible: Novel.isFetchingDetail; z: 5
@@ -399,7 +522,8 @@ Item {
                         }
                     }
                     Text {
-                        anchors.horizontalCenter: parent.horizontalCenter; text: "fetching chapters"
+                        anchors.horizontalCenter: parent.horizontalCenter
+                        text: "fetching chapters"
                         color: c.on_surface_variant; font.family: detailView.fontBody
                         font.pixelSize: 11; font.letterSpacing: 2; opacity: 0.7
                     }
@@ -410,7 +534,8 @@ Item {
                 id: chapterList
                 anchors.fill: parent; clip: true
                 boundsBehavior: Flickable.StopAtBounds
-                model: Novel.currentNovel ? Novel.currentNovel.chapters : []
+                model: detailView._processedChapters   // ← filtered + sorted
+
                 ScrollBar.vertical: ScrollBar {
                     policy: ScrollBar.AsNeeded
                     contentItem: Rectangle { implicitWidth: 3; color: c.primary; opacity: 0.45; radius: 2 }
@@ -447,7 +572,7 @@ Item {
 
                             Text {
                                 id: chPillTxt; anchors.centerIn: parent
-                                text: "Ch." + (modelData.chapter || "?")
+                                text: "Ch." + detailView.formatChapter(modelData.chapter)
                                 font.family: detailView.fontBody; font.pixelSize: 9
                                 font.bold: true; font.letterSpacing: 0.5
                                 color: isLastRead ? c.on_primary : c.on_primary_container
@@ -459,12 +584,11 @@ Item {
 
                             Text {
                                 width: parent.width
-                                text: modelData.title || ("Chapter " + (modelData.chapter || ""))
+                                text: modelData.title || ("Chapter " + detailView.formatChapter(modelData.chapter))
                                 font.family: detailView.fontBody; font.pixelSize: 12
                                 color: c.on_surface; elide: Text.ElideRight
                             }
 
-                            // Word count hint if available (omitted for brevity)
                             Text {
                                 visible: false
                                 font.family: detailView.fontBody; font.pixelSize: 10

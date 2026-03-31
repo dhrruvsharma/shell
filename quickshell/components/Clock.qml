@@ -5,6 +5,7 @@ import "../colors" as ColorsModule
 import qs.services as Services
 import Quickshell.Io
 
+
 Rectangle {
     id: root
 
