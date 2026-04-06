@@ -252,6 +252,10 @@ ShellRoot {
             focus: true
         }
 
+        ClipboardManager {
+            id: clipboardManager
+        }
+
         property bool altHeld: false
 
         mask: Region{
@@ -306,6 +310,9 @@ ShellRoot {
             Region {
                 item: aikiraLoader.active ? aikiraLoader : null
             }
+            Region {
+                item: clipboardManager.visible ? clipboardManager : null
+            }
         }
     }
 
@@ -346,7 +353,7 @@ ShellRoot {
     }
 
     Connections {
-        target: chatLoader.item
+        target: mangaLoader.item
         function onVisibleChanged() {
             if (mangaLoader.item && !mangaLoader.item.visible) {
                 closeMangaTimer.start()
@@ -357,11 +364,11 @@ ShellRoot {
     Timer {
         id: closeNovelTimer
         interval: 600
-        onTriggered: mangaLoader.active = false
+        onTriggered: novelLoader.active = false
     }
 
     Connections {
-        target: chatLoader.item
+        target: novelLoader.item
         function onVisibleChanged() {
             if (novelLoader.item && !novelLoader.item.visible) {
                 closeNovelTimer.start()
@@ -372,14 +379,44 @@ ShellRoot {
     Timer {
         id: closeAnimeTimer
         interval: 600
-        onTriggered: mangaLoader.active = false
+        onTriggered: animeLoader.active = false
     }
 
     Connections {
-        target: chatLoader.item
+        target: animeLoader.item
         function onVisibleChanged() {
             if (animeLoader.item && !animeLoader.item.visible) {
                 closeAnimeTimer.start()
+            }
+        }
+    }
+
+    Timer {
+        id: closeNetworkTimer
+        interval: 600
+        onTriggered: networkPanelLoader.active = false
+    }
+
+    Connections {
+        target: networkPanelLoader.item
+        function onOpenedChanged() {
+            if (networkPanelLoader.item && !networkPanelLoader.item.opened) {
+                closeNetworkTimer.start()
+            }
+        }
+    }
+
+    Timer {
+        id: closeControlCenterTimer
+        interval: 600
+        onTriggered: controlCenterLoader.active = false
+    }
+
+    Connections {
+        target: controlCenterLoader.item
+        function onOpenedChanged() {
+            if (controlCenterLoader.item && !controlCenterLoader.item.opened) {
+                closeControlCenterTimer.start()
             }
         }
     }
@@ -515,6 +552,17 @@ ShellRoot {
         id: closeWindowSwitcherTimer
         interval: 300
         onTriggered: windowSwitcherLoader.active = false
+    }
+
+    IpcHandler {
+        target: "clipboardManager"
+        function changeVisible(): void {
+            if (!clipboardManager.visible) {
+                clipboardManager.open()
+            } else {
+                clipboardManager.close()
+            }
+        }
     }
 
     IpcHandler {

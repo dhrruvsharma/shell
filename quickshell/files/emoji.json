@@ -1,0 +1,116 @@
+{
+  "Smileys & Emotion": [
+    {
+      "emoji": "😀",
+      "name": "Grinning Face",
+      "unicode": "U+1F600"
+    },
+    {
+      "emoji": "😂",
+      "name": "Face with Tears of Joy",
+      "unicode": "U+1F602"
+    },
+    {
+      "emoji": "😍",
+      "name": "Smiling Face with Heart-Eyes",
+      "unicode": "U+1F60D"
+    },
+    {
+      "emoji": "😢",
+      "name": "Crying Face",
+      "unicode": "U+1F622"
+    },
+    {
+      "emoji": "😡",
+      "name": "Pouting Face",
+      "unicode": "U+1F621"
+    }
+  ],
+  "People & Body": [
+    {
+      "emoji": "👍",
+      "name": "Thumbs Up",
+      "unicode": "U+1F44D"
+    },
+    {
+      "emoji": "👎",
+      "name": "Thumbs Down",
+      "unicode": "U+1F44E"
+    },
+    {
+      "emoji": "🙏",
+      "name": "Folded Hands",
+      "unicode": "U+1F64F"
+    }
+  ],
+  "Animals & Nature": [
+    {
+      "emoji": "🐶",
+      "name": "Dog Face",
+      "unicode": "U+1F436"
+    },
+    {
+      "emoji": "🐱",
+      "name": "Cat Face",
+      "unicode": "U+1F431"
+    },
+    {
+      "emoji": "🦄",
+      "name": "Unicorn",
+      "unicode": "U+1F984"
+    },
+    {
+      "emoji": "🌿",
+      "name": "Herb",
+      "unicode": "U+1F33F"
+    }
+  ],
+  "Food & Drink": [
+    {
+      "emoji": "🍕",
+      "name": "Pizza",
+      "unicode": "U+1F355"
+    },
+    {
+      "emoji": "🍺",
+      "name": "Beer Mug",
+      "unicode": "U+1F37A"
+    }
+  ],
+  "Travel & Places": [
+    {
+      "emoji": "🚗",
+      "name": "Car",
+      "unicode": "U+1F697"
+    },
+    {
+      "emoji": "🚀",
+      "name": "Rocket",
+      "unicode": "U+1F680"
+    }
+  ],
+  "Objects": [
+    {
+      "emoji": "💡",
+      "name": "Light Bulb",
+      "unicode": "U+1F4A1"
+    },
+    {
+      "emoji": "💻",
+      "name": "Laptop",
+      "unicode": "U+1F4BB"
+    }
+  ],
+  "Symbols": [
+    {
+      "emoji": "❤️",
+      "name": "Red Heart",
+      "unicode": "U+2764"
+    },
+    {
+      "emoji": "✅",
+      "name": "Check Mark Button",
+      "unicode": "U+2705"
+    }
+  ]
+}
