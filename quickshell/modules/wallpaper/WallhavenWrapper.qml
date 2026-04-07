@@ -45,7 +45,13 @@ Scope{
         }
     }
 
-    IpcHandler {                              // <---
+    Timer {
+        id: animationTimer
+        interval: 250
+        onTriggered: loader.active = false
+    }
+
+    IpcHandler {
         target: "wallhavenPanel"
 
         function toggle(): void {
@@ -53,9 +59,8 @@ Scope{
                 loader.active = true
                 loader.animation = true
             } else {
-                loader.animation = !loader.animation
-                if (!loader.animation) animationTimer.start()
-                loader.active = !loader.active
+                loader.animation = false
+                animationTimer.start()
             }
         }
     }
