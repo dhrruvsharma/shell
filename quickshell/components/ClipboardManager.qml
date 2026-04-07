@@ -59,6 +59,7 @@ Item {
     // ── Clipboard data ────────────────────────────────────────────────────────
 
     property var clipAllEntries: []
+    property int _thumbGen: 0
 
     readonly property var clipFiltered: {
         const q = searchText.trim().toLowerCase()
@@ -140,7 +141,12 @@ Item {
     Process {
         id: thumbDecoder
         running: false
-        onExited: { const t = root.clipAllEntries; root.clipAllEntries = []; root.clipAllEntries = t }
+        onExited: {
+            root._thumbGen++
+            const t = root.clipAllEntries
+            root.clipAllEntries = []
+            root.clipAllEntries = t
+        }
     }
 
     Process { id: pasteProcess; running: false }
@@ -583,9 +589,9 @@ Item {
                                 id: thumbImg
                                 anchors.fill: parent
                                 source: entry && entry.isImage && entry.thumbPath !== ""
-                                    ? "file://" + entry.thumbPath : ""
+                                    ? "file://" + entry.thumbPath + "?gen=" + root._thumbGen : ""
                                 fillMode: Image.PreserveAspectCrop
-                                smooth: true; mipmap: true; asynchronous: true
+                                smooth: true; mipmap: true; asynchronous: true; cache: false
                                 visible: entry && entry.isImage
                             }
                             Text {
