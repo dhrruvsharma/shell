@@ -89,8 +89,7 @@ ShellRoot {
         Loader {
             id: networkPanelLoader
             active: false
-            anchors.bottom: parent.bottom
-            anchors.right: parent.right
+            anchors.fill: parent
             sourceComponent: NetworkPanel {
                 id: networkPanel
             }
@@ -188,9 +187,7 @@ ShellRoot {
         Loader {
             active: false
             id: controlCenterLoader
-            anchors.left: parent.left
-            anchors.top: parent.top
-            anchors.bottom: parent.bottom
+            anchors.fill: parent
             sourceComponent: ControlCenter {
                 id: controlCenter
             }
@@ -277,7 +274,7 @@ ShellRoot {
                 item: topBar
             }
             Region {
-                item: networkPanelLoader.item ? networkPanelLoader.item : null
+                item: networkPanelLoader.item && networkPanelLoader.item.visible ? networkPanelLoader.item : null
             }
             Region{
                 item: notesDrawer.opened ? notesDrawer : null
@@ -286,7 +283,7 @@ ShellRoot {
                 item: notesDrawerTrigger
             }
             Region{
-                item: controlCenterLoader.active ? controlCenterLoader : null
+                item: controlCenterLoader.item && controlCenterLoader.item.visible ? controlCenterLoader.item : null
             }
             Region {
                 item: githubTrigger
