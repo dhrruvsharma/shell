@@ -4,6 +4,8 @@ Exposes ani-cli scraping logic as HTTP endpoints.
 Run: pip install flask requests && python ani_api.py
 """
 
+import base64
+import hashlib
 import json
 import re
 import subprocess
@@ -21,6 +23,9 @@ AGENT = "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:109.0) Gecko/20100101 Fire
 ALLANIME_REFR = "https://allmanga.to"
 ALLANIME_BASE = "allanime.day"
 ALLANIME_API = f"https://api.{ALLANIME_BASE}"
+# SHA-256 of the hardcoded passphrase, used for AES-256-CTR decryption of "tobeparsed" blobs.
+# Mirrors: printf '%s' 'SimtVuagFbGR2K7P' | openssl dgst -sha256 -binary | od -A n -t x1 | tr -d ' \n'
+ALLANIME_KEY = hashlib.sha256(b"SimtVuagFbGR2K7P").hexdigest()
 
 HEADERS = {
     "User-Agent": AGENT,
@@ -274,6 +279,55 @@ def _get_links_from_url(path: str) -> list[dict]:
     return links
 
 
+def decode_tobeparsed(blob: str) -> dict[str, str]:
+    """
+    Decrypt the 'tobeparsed' AES-256-CTR blob returned by the allanime API.
+
+    Mirrors the shell script's decode_tobeparsed():
+      1. base64-decode the blob
+      2. first 12 bytes are the nonce/IV
+      3. counter = nonce + b'\\x00\\x00\\x00\\x02'  (matches shell: ctr="${iv}00000002")
+      4. decrypt with AES-256-CTR using ALLANIME_KEY
+      5. parse the plaintext for sourceUrl / sourceName pairs
+
+    Returns dict of {provider_name: hex-encoded-path} (paths still need
+    decode_provider_url() to become usable URLs, exactly like the non-tobeparsed path).
+    """
+    try:
+        data = base64.b64decode(blob)
+    except Exception:
+        return {}
+
+    iv_bytes = data[:12]
+    ciphertext = data[12:]
+    ctr_hex = iv_bytes.hex() + "00000002"  # 12-byte nonce + 4-byte counter = 16-byte AES block
+
+    try:
+        result = subprocess.run(
+            [
+                "openssl", "enc", "-d", "-aes-256-ctr",
+                "-K", ALLANIME_KEY,
+                "-iv", ctr_hex,
+                "-nosalt", "-nopad",
+            ],
+            input=ciphertext,
+            capture_output=True,
+            timeout=10,
+        )
+        plain = result.stdout.decode("utf-8", errors="replace")
+    except Exception:
+        return {}
+
+    # tr '{}' '\n' | sed -nE 's|.*"sourceUrl":"--([^"]*)".*"sourceName":"([^"]*)".*|\2 :\1|p'
+    sources: dict[str, str] = {}
+    for chunk in re.split(r"[{}]", plain):
+        m = re.search(r'"sourceUrl":"--([^"]*)".*"sourceName":"([^"]*)"', chunk)
+        if m:
+            enc_path, name = m.group(1), m.group(2)
+            sources[name] = enc_path  # decoded by decode_provider_url below
+    return sources
+
+
 def get_episode_links(show_id: str, ep_no: str, mode: str = "sub") -> dict:
     """
     Full equivalent of get_episode_url() in the shell script.
@@ -296,19 +350,26 @@ def get_episode_links(show_id: str, ep_no: str, mode: str = "sub") -> dict:
     resp.raise_for_status()
     raw = resp.text
 
-    raw_norm = raw.replace("\\u002F", "/").replace("\\|", "")
-
-    source_re = re.compile(
-        r'sourceUrl":"--([^"]+)"[^}]*sourceName":"([^"]+)"'
-    )
-    sources = {}
-    for m in source_re.finditer(raw_norm):
-        encoded_url, name = m.group(1), m.group(2)
-        provider_path = decode_provider_url(encoded_url)
-        sources[name] = provider_path
+    # Mirror the shell script's two-branch logic:
+    #   if response contains "tobeparsed" → decrypt AES-256-CTR blob
+    #   else → parse sourceUrl/sourceName pairs directly from the JSON text
+    if '"tobeparsed"' in raw:
+        blob_m = re.search(r'"tobeparsed":"([^"]*)"', raw)
+        if blob_m:
+            enc_sources = decode_tobeparsed(blob_m.group(1))
+            sources = {name: decode_provider_url(enc) for name, enc in enc_sources.items()}
+        else:
+            sources = {}
+    else:
+        raw_norm = raw.replace("\\u002F", "/").replace("\\|", "")
+        source_re = re.compile(r'sourceUrl":"--([^"]+)"[^}]*sourceName":"([^"]+)"')
+        sources = {}
+        for m in source_re.finditer(raw_norm):
+            encoded_url, name = m.group(1), m.group(2)
+            sources[name] = decode_provider_url(encoded_url)
 
     if not sources:
-        return {"error": "No sources found for this episode", "raw_snippet": raw_norm[:500]}
+        return {"error": "No sources found for this episode", "raw_snippet": raw[:500]}
 
     provider_results = {}
 
