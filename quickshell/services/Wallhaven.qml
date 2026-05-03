@@ -17,6 +17,7 @@ Singleton {
 
     property string currentSearchText: ""
     property string _pendingDownloadPath: ""
+    property string downloadingWallpaperId: ""
 
     // ── Online / Wallhaven ──────────────────────────────────────────────────
     property list<var> onlineWallpapers: []
@@ -138,6 +139,7 @@ Singleton {
         const ext = wallpaper.fullUrl.split('.').pop().split('?')[0] || "jpg"
         const savePath = root.wallpaperDir + "/" + wallpaper.id + "." + ext
         _pendingDownloadPath = savePath
+        downloadingWallpaperId = wallpaper.id
         console.log("[ServiceWallpaper] Downloading wallpaper", wallpaper.id, "->", savePath)
         wallhavenDownloader.command = [
             "bash", "-c",
@@ -187,6 +189,7 @@ Singleton {
                 console.error("[ServiceWallpaper] Download failed for:", root._pendingDownloadPath)
             }
             root._pendingDownloadPath = ""
+            root.downloadingWallpaperId = ""
         }
     }
     // ── End Wallhaven processes ─────────────────────────────────────────────

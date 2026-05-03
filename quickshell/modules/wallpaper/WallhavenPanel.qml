@@ -472,6 +472,43 @@ Rectangle {
                             }
                         }
 
+                        // Download in progress overlay
+                        Rectangle {
+                            anchors.fill: parent
+                            anchors.margins: 5
+                            radius: 10
+                            color: ColorsModule.Colors.surface
+                            opacity: 0.85
+                            visible: Wallhaven.downloadingWallpaperId === wallpaperItemImageContainer.modelData.id
+
+                            Column {
+                                anchors.centerIn: parent
+                                spacing: 6
+
+                                Text {
+                                    anchors.horizontalCenter: parent.horizontalCenter
+                                    text: "⬇"
+                                    font.pixelSize: 22
+                                    color: ColorsModule.Colors.primary
+
+                                    SequentialAnimation on opacity {
+                                        running: Wallhaven.downloadingWallpaperId === wallpaperItemImageContainer.modelData.id
+                                        loops: Animation.Infinite
+                                        NumberAnimation { from: 1; to: 0.3; duration: 600; easing.type: Easing.InOutQuad }
+                                        NumberAnimation { from: 0.3; to: 1; duration: 600; easing.type: Easing.InOutQuad }
+                                    }
+                                }
+
+                                Text {
+                                    anchors.horizontalCenter: parent.horizontalCenter
+                                    text: "Downloading…"
+                                    font.pixelSize: 11
+                                    font.weight: Font.Bold
+                                    color: ColorsModule.Colors.on_surface
+                                }
+                            }
+                        }
+
                         MouseArea {
                             id: area
                             anchors.fill: parent
