@@ -24,8 +24,8 @@ ALLANIME_REFR = "https://allmanga.to"
 ALLANIME_BASE = "allanime.day"
 ALLANIME_API = f"https://api.{ALLANIME_BASE}"
 # SHA-256 of the hardcoded passphrase, used for AES-256-CTR decryption of "tobeparsed" blobs.
-# Mirrors: printf '%s' 'SimtVuagFbGR2K7P' | openssl dgst -sha256 -binary | od -A n -t x1 | tr -d ' \n'
-ALLANIME_KEY = hashlib.sha256(b"SimtVuagFbGR2K7P").hexdigest()
+# Mirrors: printf '%s' 'Xot36i3lK3:v1' | openssl dgst -sha256 -binary | od -A n -t x1 | tr -d ' \n'
+ALLANIME_KEY = hashlib.sha256(b"Xot36i3lK3:v1").hexdigest()
 
 HEADERS = {
     "User-Agent": AGENT,
@@ -199,6 +199,7 @@ PROVIDER_PATTERNS = {
     "wixmp":      r"Default\s*:([^\n]+)",
     "youtube":    r"Yt-mp4\s*:([^\n]+)",
     "sharepoint": r"S-mp4\s*:([^\n]+)",
+    "filemoon":   r"Fm-mp4\s*:([^\n]+)",
     "hianime":    r"Luf-Mp4\s*:([^\n]+)",
 }
 
@@ -211,12 +212,96 @@ def _extract_provider_id(resp_normalized: str, pattern: str) -> str | None:
     return decode_provider_url(encoded)
 
 
+def b64url_to_hex(s: str) -> str:
+    """Convert a base64url-encoded string to hex, adding padding as needed."""
+    pad = {2: "==", 3: "=", 0: "", 1: ""}
+    padded = s + pad[len(s) % 4]
+    padded = padded.replace("-", "+").replace("_", "/")
+    return base64.b64decode(padded).hex()
+
+
+def get_filemoon_links(path: str) -> list[dict]:
+    """
+    Fetch and decrypt filemoon provider links.
+    Mirrors the shell script's get_filemoon_links() function.
+    """
+    url = f"https://{ALLANIME_BASE}{path}"
+    try:
+        resp = requests.get(url, headers=HEADERS, timeout=15)
+        resp.raise_for_status()
+        raw = resp.text
+    except Exception as e:
+        return [{"error": str(e), "url": url}]
+
+    try:
+        data = json.loads(raw)
+
+        iv = data.get("iv", "")
+        payload = data.get("payload", "")
+        key_parts = data.get("key_parts", [])
+
+        if len(key_parts) < 2 or not iv or not payload:
+            return [{"error": "Missing filemoon decryption fields"}]
+
+        kp1_hex = b64url_to_hex(key_parts[0])
+        kp2_hex = b64url_to_hex(key_parts[1])
+        key_hex = kp1_hex + kp2_hex
+        iv_hex = b64url_to_hex(iv) + "00000002"
+
+        # Decode payload from base64url
+        payload_pad = {2: "==", 3: "=", 0: "", 1: ""}
+        payload_padded = payload + payload_pad[len(payload) % 4]
+        payload_padded = payload_padded.replace("-", "+").replace("_", "/")
+        payload_bytes = base64.b64decode(payload_padded)
+
+        # Strip last 16 bytes (auth tag)
+        ct_bytes = payload_bytes[:-16]
+
+        result = subprocess.run(
+            [
+                "openssl", "enc", "-d", "-aes-256-ctr",
+                "-K", key_hex,
+                "-iv", iv_hex,
+                "-nosalt", "-nopad",
+            ],
+            input=ct_bytes,
+            capture_output=True,
+            timeout=10,
+        )
+        plain = result.stdout.decode("utf-8", errors="replace")
+
+        # Parse url/height pairs from decrypted JSON
+        links = []
+        for chunk in re.split(r"[{}\[\]]", plain):
+            # Match either "url":"...","height":N or "height":N,"url":"..."
+            m = re.search(r'"url":"([^"]*)".*?"height":(\d+)', chunk)
+            if not m:
+                m = re.search(r'"height":(\d+).*?"url":"([^"]*)"', chunk)
+                if m:
+                    height, stream_url = m.group(1), m.group(2)
+                else:
+                    continue
+            else:
+                stream_url, height = m.group(1), m.group(2)
+
+            # Unescape unicode sequences
+            stream_url = stream_url.replace("\\u0026", "&").replace("\\u003D", "=")
+            links.append({"quality": f"{height}p", "url": stream_url, "type": "mp4"})
+
+        links.sort(key=lambda x: int(re.match(r"(\d+)", x.get("quality", "0")).group(1)) if re.match(r"(\d+)", x.get("quality", "0")) else 0, reverse=True)
+        return links
+
+    except Exception as e:
+        return [{"error": f"Filemoon decryption failed: {e}"}]
+
+
 def _get_links_from_url(path: str) -> list[dict]:
     """
     Fetch the embed URL and parse out video links.
     Returns list of {quality, url, type} dicts.
     """
-    url = f"https://{ALLANIME_BASE}{path}"
+    # Don't prepend base domain for absolute URLs
+    url = path if path.startswith("http") else f"https://{ALLANIME_BASE}{path}"
     try:
         resp = requests.get(url, headers=HEADERS, timeout=15)
         resp.raise_for_status()
@@ -265,16 +350,10 @@ def _get_links_from_url(path: str) -> list[dict]:
     for m in re.finditer(r'"link":"([^"]*)".*?"resolutionStr":"([^"]*)"', raw):
         links.append({"quality": m.group(2), "url": m.group(1), "type": "mp4"})
 
-    # FIX: Extract the actual fast4speed URL from the raw JSON response
-    # instead of reusing `path` (which would get prepended with the base domain again)
-    if "tools.fast4speed.rsvp" in raw:
-        m = re.search(r'"url"\s*:\s*"(https://tools\.fast4speed\.rsvp[^"]+)"', raw)
-        if m:
-            links.append({"quality": "best", "url": m.group(1), "type": "yt", "referer": ALLANIME_REFR})
-        else:
-            # Fallback: if the path itself is already a full fast4speed URL, use it directly
-            if path.startswith("https://tools.fast4speed.rsvp"):
-                links.append({"quality": "best", "url": path, "type": "yt", "referer": ALLANIME_REFR})
+    # Shell: printf "%s" "$*" | grep -q "tools.fast4speed.rsvp" && printf "Yt >$*"
+    # Check the path itself (not the response) for fast4speed/YouTube links
+    if "tools.fast4speed.rsvp" in path:
+        links.append({"quality": "best", "url": url, "type": "yt", "referer": ALLANIME_REFR})
 
     return links
 
@@ -298,8 +377,9 @@ def decode_tobeparsed(blob: str) -> dict[str, str]:
     except Exception:
         return {}
 
-    iv_bytes = data[:12]
-    ciphertext = data[12:]
+    # Shell: skip=1 count=12 for IV, skip=13 for ciphertext, exclude last 16 bytes (auth tag)
+    iv_bytes = data[1:13]
+    ciphertext = data[13:-16]
     ctr_hex = iv_bytes.hex() + "00000002"  # 12-byte nonce + 4-byte counter = 16-byte AES block
 
     try:
@@ -328,27 +408,61 @@ def decode_tobeparsed(blob: str) -> dict[str, str]:
     return sources
 
 
+EPISODE_QUERY_HASH = "d405d0edd690624b66baba3068e0edc3ac90f1597d898a1ec8db4e5c43c00fec"
+
+
 def get_episode_links(show_id: str, ep_no: str, mode: str = "sub") -> dict:
     """
     Full equivalent of get_episode_url() in the shell script.
     Returns {providers: {name: [links]}, all_links: [...]}
     """
-    payload = json.dumps({
-        "variables": {
-            "showId": show_id,
-            "translationType": mode,
-            "episodeString": ep_no,
-        },
-        "query": EPISODE_EMBED_GQL,
+    # Step 1: Try GET with persisted query hash first (mirrors shell's first attempt)
+    query_vars = json.dumps({
+        "showId": show_id,
+        "translationType": mode,
+        "episodeString": ep_no,
     })
-    resp = requests.post(
-        f"{ALLANIME_API}/api",
-        data=payload,
-        headers=GQL_HEADERS,
-        timeout=15,
-    )
-    resp.raise_for_status()
-    raw = resp.text
+    query_ext = json.dumps({
+        "persistedQuery": {
+            "version": 1,
+            "sha256Hash": EPISODE_QUERY_HASH,
+        }
+    })
+    get_headers = {
+        "User-Agent": AGENT,
+        "Referer": "https://youtu-chan.com",
+        "Origin": "https://youtu-chan.com",
+    }
+    try:
+        get_resp = requests.get(
+            f"{ALLANIME_API}/api",
+            params={"variables": query_vars, "extensions": query_ext},
+            headers=get_headers,
+            timeout=15,
+        )
+        get_resp.raise_for_status()
+        raw = get_resp.text
+    except Exception:
+        raw = ""
+
+    # Step 2: Fall back to POST if GET response is empty or missing "tobeparsed"
+    if not raw or "tobeparsed" not in raw:
+        payload = json.dumps({
+            "variables": {
+                "showId": show_id,
+                "translationType": mode,
+                "episodeString": ep_no,
+            },
+            "query": EPISODE_EMBED_GQL,
+        })
+        resp = requests.post(
+            f"{ALLANIME_API}/api",
+            data=payload,
+            headers=GQL_HEADERS,
+            timeout=15,
+        )
+        resp.raise_for_status()
+        raw = resp.text
 
     # Mirror the shell script's two-branch logic:
     #   if response contains "tobeparsed" → decrypt AES-256-CTR blob
@@ -374,6 +488,9 @@ def get_episode_links(show_id: str, ep_no: str, mode: str = "sub") -> dict:
     provider_results = {}
 
     def fetch_provider(name, path):
+        # Route filemoon sources to dedicated handler
+        if name.lower() in ("fm-mp4", "filemoon") or "Fm-mp4" in name:
+            return name, get_filemoon_links(path)
         return name, _get_links_from_url(path)
 
     with ThreadPoolExecutor(max_workers=6) as pool:
