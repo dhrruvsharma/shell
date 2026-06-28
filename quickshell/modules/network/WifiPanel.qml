@@ -7,88 +7,135 @@ import qs.services as Services
 import "../../colors" as ColorsModule
 
 Item {
+    id: wifiRoot
+
+    property string expandedSsid: ""
+    readonly property color accent: ColorsModule.Colors.primary
+
+    onVisibleChanged: if (!visible) expandedSsid = ""
+
     ColumnLayout {
         anchors.fill: parent
-        spacing: 14
+        spacing: 12
 
-        RowLayout {
+        // ── Hero status card ──
+        Rectangle {
             Layout.fillWidth: true
-            spacing: 12
+            Layout.preferredHeight: 78
+            radius: 18
+            color: ColorsModule.Colors.surface_container_high
+            border.width: 1
+            border.color: ColorsModule.Colors.outline_variant
 
-            Text {
-                text: "󰖩"
-                font.family: "Material Design Icons"
-                font.pixelSize: 24
-                color: Services.Network.wifiEnabled
-                    ? ColorsModule.Colors.primary
-                    : ColorsModule.Colors.on_surface_variant
-            }
-
-            Text {
-                text: "Wi-Fi Networks"
-                font.pixelSize: 18
-                font.bold: true
-                Layout.fillWidth: true
-                color: ColorsModule.Colors.on_surface
-            }
-
-            Rectangle {
-                Layout.preferredWidth: 48
-                Layout.preferredHeight: 26
-                radius: height / 2
-                color: Services.Network.wifiEnabled
-                    ? ColorsModule.Colors.primary
-                    : ColorsModule.Colors.surface_container_high
+            RowLayout {
+                anchors.fill: parent
+                anchors.leftMargin: 16
+                anchors.rightMargin: 14
+                spacing: 14
 
                 Rectangle {
-                    width: 20
-                    height: 20
-                    radius: 10
-                    y: 3
-                    x: Services.Network.wifiEnabled
-                        ? parent.width - width - 3
-                        : 3
-                    color: ColorsModule.Colors.surface
+                    Layout.preferredWidth: 48
+                    Layout.preferredHeight: 48
+                    radius: 24
+                    color: Services.Network.wifiEnabled
+                        ? Qt.rgba(wifiRoot.accent.r, wifiRoot.accent.g, wifiRoot.accent.b, 0.16)
+                        : ColorsModule.Colors.surface_container_highest
+                    Behavior on color { ColorAnimation { duration: 200 } }
 
-                    Behavior on x { NumberAnimation { duration: 150 } }
-                }
-
-                MouseArea {
-                    anchors.fill: parent
-                    cursorShape: Qt.PointingHandCursor
-                    onClicked: Services.Network.toggleWifi()
-                }
-            }
-
-            Rectangle {
-                Layout.preferredWidth: 34
-                Layout.preferredHeight: 34
-                radius: 8
-
-                color: refreshMouseArea.containsMouse
-                    ? ColorsModule.Colors.surface_container_highest
-                    : ColorsModule.Colors.surface_container_high
-
-                Text {
-                    id: wifiScanIcon
-                    anchors.centerIn: parent
-                    text: "󰑐"
-                    font.family: "Material Design Icons"
-                    font.pixelSize: 20
-                    color: Services.Network.scanning
-                        ? ColorsModule.Colors.primary
-                        : ColorsModule.Colors.on_surface
-
-                    RotationAnimator on rotation {
-                        from: 0; to: 360
-                        duration: 900
-                        loops: Animation.Infinite
-                        running: Services.Network.scanning
+                    Text {
+                        anchors.centerIn: parent
+                        text: !Services.Network.wifiEnabled
+                            ? "󰤭"
+                            : (Services.Network.active ? Services.Network.icon : "󰖩")
+                        font.family: "Material Design Icons"
+                        font.pixelSize: 24
+                        color: Services.Network.wifiEnabled
+                            ? ColorsModule.Colors.primary
+                            : ColorsModule.Colors.on_surface_variant
                     }
                 }
 
+                ColumnLayout {
+                    Layout.fillWidth: true
+                    spacing: 2
+                    Text {
+                        Layout.fillWidth: true
+                        elide: Text.ElideRight
+                        text: Services.Network.active ? Services.Network.active.name : "Wi-Fi"
+                        font.pixelSize: 16
+                        font.weight: Font.DemiBold
+                        color: ColorsModule.Colors.on_surface
+                    }
+                    Text {
+                        text: Services.Network.wifiStatus
+                        font.pixelSize: 12
+                        color: Services.Network.active
+                            ? ColorsModule.Colors.primary
+                            : ColorsModule.Colors.on_surface_variant
+                    }
+                }
+
+                // toggle switch
+                Rectangle {
+                    Layout.preferredWidth: 50
+                    Layout.preferredHeight: 28
+                    radius: 14
+                    color: Services.Network.wifiEnabled
+                        ? ColorsModule.Colors.primary
+                        : ColorsModule.Colors.surface_container_highest
+                    Behavior on color { ColorAnimation { duration: 150 } }
+
+                    Rectangle {
+                        width: 22; height: 22; radius: 11
+                        y: 3
+                        x: Services.Network.wifiEnabled ? parent.width - width - 3 : 3
+                        color: Services.Network.wifiEnabled
+                            ? ColorsModule.Colors.on_primary
+                            : ColorsModule.Colors.on_surface_variant
+                        Behavior on x { NumberAnimation { duration: 160; easing.type: Easing.OutCubic } }
+                    }
+                    MouseArea {
+                        anchors.fill: parent
+                        cursorShape: Qt.PointingHandCursor
+                        onClicked: Services.Network.toggleWifi()
+                    }
+                }
+            }
+        }
+
+        // ── list header ──
+        RowLayout {
+            Layout.fillWidth: true
+            Layout.topMargin: 2
+            spacing: 8
+            visible: Services.Network.wifiEnabled
+
+            Text {
+                Layout.fillWidth: true
+                text: "Available networks"
+                font.pixelSize: 13
+                font.weight: Font.DemiBold
+                font.letterSpacing: 0.3
+                color: ColorsModule.Colors.on_surface_variant
+            }
+
+            Rectangle {
+                Layout.preferredWidth: 30; Layout.preferredHeight: 30
+                radius: 15
+                color: scanMa.containsMouse ? ColorsModule.Colors.surface_container_highest : "transparent"
+                Text {
+                    anchors.centerIn: parent
+                    text: "󰑐"
+                    font.family: "Material Design Icons"
+                    font.pixelSize: 16
+                    color: Services.Network.scanning ? ColorsModule.Colors.primary : ColorsModule.Colors.on_surface_variant
+                    RotationAnimator on rotation {
+                        from: 0; to: 360; duration: 900; loops: Animation.Infinite
+                        running: Services.Network.scanning
+                    }
+                }
                 MouseArea {
-                    id: refreshMouseArea
+                    id: scanMa
                     anchors.fill: parent
                     hoverEnabled: true
                     cursorShape: Qt.PointingHandCursor
@@ -97,125 +144,44 @@ Item {
             }
         }
 
-        Rectangle {
-            Layout.fillWidth: true
-            Layout.preferredHeight: messageText.visible ? 40 : 0
-            visible: messageText.visible
-            radius: 8
-
-            color: Services.Network.lastErrorMessage !== ""
-                ? ColorsModule.Colors.error_container
-                : ColorsModule.Colors.primary_container
-
-            border.color: Services.Network.lastErrorMessage !== ""
-                ? ColorsModule.Colors.error
-                : ColorsModule.Colors.primary
-
-            border.width: 1
-
-            Text {
-                id: messageText
-                anchors.centerIn: parent
-
-                text: Services.Network.lastErrorMessage !== ""
-                    ? Services.Network.lastErrorMessage
-                    : (Services.Network.message === "ok"
-                        ? "Connected successfully!"
-                        : "")
-
-                visible: text !== ""
-
-                color: Services.Network.lastErrorMessage !== ""
-                    ? ColorsModule.Colors.on_error_container
-                    : ColorsModule.Colors.on_primary_container
-
-                font.pixelSize: 13
-            }
-
-            Behavior on Layout.preferredHeight {
-                NumberAnimation { duration: 150 }
-            }
-        }
-
-        Rectangle {
-            Layout.fillWidth: true
-            Layout.preferredHeight: Services.Network.active ? 70 : 0
-            visible: Services.Network.active
-            radius: 10
-
-            color: ColorsModule.Colors.surface_container_high
-            border.color: ColorsModule.Colors.primary
-            border.width: 2
-
-            RowLayout {
-                anchors.fill: parent
-                anchors.margins: 12
-                spacing: 12
-
-                Text {
-                    text: Services.Network.icon
-                    font.family: "Material Design Icons"
-                    font.pixelSize: 26
-                    color: ColorsModule.Colors.primary
-                }
-
-                ColumnLayout {
-                    Layout.fillWidth: true
-
-                    Text {
-                        text: Services.Network.active
-                            ? Services.Network.active.name
-                            : ""
-                        font.bold: true
-                        color: ColorsModule.Colors.on_surface
-                    }
-
-                    Text {
-                        text: "Connected"
-                        font.pixelSize: 12
-                        color: ColorsModule.Colors.primary
-                    }
-                }
-
-                Rectangle {
-                    Layout.preferredWidth: 90
-                    Layout.preferredHeight: 32
-                    radius: 6
-
-                    color: disconnectMouseArea.containsMouse
-                        ? ColorsModule.Colors.primary
-                        : ColorsModule.Colors.surface_container
-
-                    border.color: ColorsModule.Colors.primary
-                    border.width: 1
-
-                    Text {
-                        anchors.centerIn: parent
-                        text: "Disconnect"
-                        color: disconnectMouseArea.containsMouse
-                            ? ColorsModule.Colors.on_primary
-                            : ColorsModule.Colors.primary
-                    }
-
-                    MouseArea {
-                        id: disconnectMouseArea
-                        anchors.fill: parent
-                        hoverEnabled: true
-                        onClicked: Services.Network.disconnect()
-                    }
-                }
-            }
-        }
-
+        // ── networks list ──
         Rectangle {
             Layout.fillWidth: true
             Layout.fillHeight: true
-            radius: 10
-            color: ColorsModule.Colors.surface_container_high
+            radius: 16
+            color: ColorsModule.Colors.surface_container_low
+
+            // empty / off / scanning state
+            ColumnLayout {
+                anchors.centerIn: parent
+                width: parent.width - 40
+                spacing: 6
+                visible: Services.Network.connections.filter(c => c.type === "wifi").length === 0
+
+                Text {
+                    Layout.alignment: Qt.AlignHCenter
+                    text: Services.Network.wifiEnabled ? "󰤭" : "󰖪"
+                    font.family: "Material Design Icons"
+                    font.pixelSize: 42
+                    opacity: 0.5
+                    color: ColorsModule.Colors.on_surface_variant
+                }
+                Text {
+                    Layout.alignment: Qt.AlignHCenter
+                    text: !Services.Network.wifiEnabled
+                        ? "Wi-Fi is off"
+                        : (Services.Network.scanning ? "Scanning…" : "No networks found")
+                    color: ColorsModule.Colors.on_surface_variant
+                    font.pixelSize: 13
+                }
+            }
 
             ScrollView {
                 anchors.fill: parent
                 anchors.margins: 6
+                clip: true
+                visible: Services.Network.wifiEnabled
+                ScrollBar.horizontal.policy: ScrollBar.AlwaysOff
 
                 ColumnLayout {
                     width: parent.width
@@ -225,254 +191,292 @@ Item {
                         model: Services.Network.connections
                             .filter(c => c.type === "wifi")
                             .sort((a, b) => {
-                            if (a.active && !b.active) return -1
-                            if (!a.active && b.active) return 1
-                            return b.strength - a.strength
-                        })
+                                if (a.active && !b.active) return -1
+                                if (!a.active && b.active) return 1
+                                return b.strength - a.strength
+                            })
 
                         delegate: Rectangle {
-                            id: netItem
+                            id: row
                             Layout.fillWidth: true
-                            Layout.preferredHeight: isConnecting ? 64 : 56
-                            radius: 8
+                            Layout.preferredHeight: rowCol.implicitHeight
+                            radius: 12
 
+                            property bool isExpanded: wifiRoot.expandedSsid === modelData.name
                             property bool isConnecting: Services.Network.connecting
                                 && modelData.name === Services.Network.lastNetworkAttempt
+                            property bool hasError: Services.Network.lastErrorMessage !== ""
+                                && Services.Network.lastNetworkAttempt === modelData.name
 
-                            color: networkMouseArea.containsMouse
-                                ? ColorsModule.Colors.surface_container_highest
-                                : "transparent"
+                            color: modelData.active
+                                ? Qt.rgba(wifiRoot.accent.r, wifiRoot.accent.g, wifiRoot.accent.b, 0.14)
+                                : (rowMa.containsMouse ? ColorsModule.Colors.surface_container_highest
+                                                       : ColorsModule.Colors.surface_container)
+                            border.width: modelData.active ? 1 : 0
+                            border.color: ColorsModule.Colors.primary
 
-                            Behavior on Layout.preferredHeight {
-                                NumberAnimation { duration: 150 }
-                            }
+                            Behavior on Layout.preferredHeight { NumberAnimation { duration: 160; easing.type: Easing.OutCubic } }
+                            Behavior on color { ColorAnimation { duration: 150 } }
 
-                            MouseArea {
-                                id: networkMouseArea
-                                anchors.fill: parent
-                                hoverEnabled: true
+                            ColumnLayout {
+                                id: rowCol
+                                width: parent.width
+                                spacing: 0
 
-                                onClicked: {
-                                    if (!modelData.active && !isConnecting) {
-                                        passwordDialog.targetNetwork = modelData
-                                        if (modelData.isSecure && !modelData.saved)
-                                            passwordDialog.visible = true
-                                        else
-                                            Services.Network.connect(modelData, "")
-                                    }
-                                }
-                            }
-
-                            RowLayout {
-                                anchors.fill: parent
-                                anchors.margins: 10
-                                spacing: 12
-
+                                // ── main row ──
                                 Item {
-                                    width: 28
-                                    height: 28
-
-                                    Text {
-                                        id: netIcon
-                                        anchors.centerIn: parent
-                                        font.family: "Material Design Icons"
-                                        font.pixelSize: 22
-                                        text: {
-                                            if (isConnecting) return "󰑐"
-                                            if (modelData.active) return "󰄬"
-                                            const s = modelData.strength
-                                            if (s >= 75) return "󰤨"
-                                            if (s >= 50) return "󰤥"
-                                            if (s >= 25) return "󰤢"
-                                            return "󰤟"
-                                        }
-                                        color: (isConnecting || modelData.active)
-                                            ? ColorsModule.Colors.primary
-                                            : ColorsModule.Colors.on_surface_variant
-
-                                        RotationAnimator on rotation {
-                                            from: 0; to: 360
-                                            duration: 900
-                                            loops: Animation.Infinite
-                                            running: isConnecting
-                                        }
-                                    }
-                                }
-
-                                ColumnLayout {
                                     Layout.fillWidth: true
-                                    spacing: 2
-
-                                    Text {
-                                        text: modelData.name
-                                        Layout.fillWidth: true
-                                        elide: Text.ElideRight
-                                        color: ColorsModule.Colors.on_surface
-                                    }
-
-                                    Text {
-                                        visible: isConnecting
-                                        text: "Connecting..."
-                                        font.pixelSize: 11
-                                        color: ColorsModule.Colors.primary
-                                    }
-                                }
-
-                                Rectangle {
-                                    visible: modelData.saved && !isConnecting
-                                    Layout.preferredWidth: 30
-                                    Layout.preferredHeight: 30
-                                    radius: 6
-                                    z: 1
-                                    color: forgetMouseArea.containsMouse
-                                        ? ColorsModule.Colors.error_container
-                                        : "transparent"
-
-                                    Text {
-                                        anchors.centerIn: parent
-                                        text: "󰺝"
-                                        font.family: "Material Design Icons"
-                                        font.pixelSize: 16
-                                        color: forgetMouseArea.containsMouse
-                                            ? ColorsModule.Colors.on_error_container
-                                            : ColorsModule.Colors.on_surface_variant
-                                    }
+                                    Layout.preferredHeight: 56
 
                                     MouseArea {
-                                        id: forgetMouseArea
+                                        id: rowMa
                                         anchors.fill: parent
                                         hoverEnabled: true
                                         cursorShape: Qt.PointingHandCursor
-                                        onClicked: mouse => {
-                                            mouse.accepted = true
-                                            Services.Network.forget(modelData.name)
+                                        onClicked: {
+                                            if (modelData.active || row.isConnecting) return
+                                            if (modelData.isSecure && !modelData.saved) {
+                                                wifiRoot.expandedSsid = row.isExpanded ? "" : modelData.name
+                                            } else {
+                                                Services.Network.connect(modelData, "")
+                                            }
+                                        }
+                                    }
+
+                                    RowLayout {
+                                        anchors.fill: parent
+                                        anchors.leftMargin: 9
+                                        anchors.rightMargin: 8
+                                        spacing: 12
+
+                                        Rectangle {
+                                            Layout.preferredWidth: 38; Layout.preferredHeight: 38
+                                            radius: 19
+                                            color: (modelData.active || row.isConnecting)
+                                                ? Qt.rgba(wifiRoot.accent.r, wifiRoot.accent.g, wifiRoot.accent.b, 0.18)
+                                                : ColorsModule.Colors.surface_container_highest
+
+                                            Text {
+                                                anchors.centerIn: parent
+                                                font.family: "Material Design Icons"
+                                                font.pixelSize: 20
+                                                text: {
+                                                    if (row.isConnecting) return "󰑐"
+                                                    if (modelData.active) return "󰄬"
+                                                    const s = modelData.strength
+                                                    if (s >= 75) return "󰤨"
+                                                    if (s >= 50) return "󰤥"
+                                                    if (s >= 25) return "󰤢"
+                                                    return "󰤟"
+                                                }
+                                                color: (modelData.active || row.isConnecting)
+                                                    ? ColorsModule.Colors.primary
+                                                    : ColorsModule.Colors.on_surface_variant
+                                                RotationAnimator on rotation {
+                                                    from: 0; to: 360; duration: 900; loops: Animation.Infinite
+                                                    running: row.isConnecting
+                                                }
+                                            }
+                                        }
+
+                                        ColumnLayout {
+                                            Layout.fillWidth: true
+                                            spacing: 1
+
+                                            RowLayout {
+                                                Layout.fillWidth: true
+                                                spacing: 6
+                                                Text {
+                                                    Layout.fillWidth: true
+                                                    text: modelData.name
+                                                    elide: Text.ElideRight
+                                                    font.pixelSize: 14
+                                                    font.weight: modelData.active ? Font.DemiBold : Font.Normal
+                                                    color: ColorsModule.Colors.on_surface
+                                                }
+                                                Text {
+                                                    visible: modelData.isSecure
+                                                    text: "󰌾"
+                                                    font.family: "Material Design Icons"
+                                                    font.pixelSize: 12
+                                                    color: ColorsModule.Colors.on_surface_variant
+                                                    opacity: 0.7
+                                                }
+                                            }
+
+                                            Text {
+                                                text: modelData.active ? "Connected"
+                                                    : row.isConnecting ? "Connecting…"
+                                                    : modelData.saved ? "Saved"
+                                                    : (modelData.strength + "% signal")
+                                                font.pixelSize: 11
+                                                color: modelData.active ? ColorsModule.Colors.primary
+                                                                        : ColorsModule.Colors.on_surface_variant
+                                            }
+                                        }
+
+                                        // forget (saved networks)
+                                        Rectangle {
+                                            visible: modelData.saved && !row.isConnecting
+                                            Layout.preferredWidth: 30; Layout.preferredHeight: 30
+                                            radius: 15
+                                            opacity: (forgetMa.containsMouse || rowMa.containsMouse) ? 1 : 0
+                                            color: forgetMa.containsMouse ? ColorsModule.Colors.error_container : "transparent"
+                                            Behavior on opacity { NumberAnimation { duration: 120 } }
+
+                                            Text {
+                                                anchors.centerIn: parent
+                                                text: "󰺝"
+                                                font.family: "Material Design Icons"
+                                                font.pixelSize: 15
+                                                color: forgetMa.containsMouse
+                                                    ? ColorsModule.Colors.on_error_container
+                                                    : ColorsModule.Colors.on_surface_variant
+                                            }
+                                            MouseArea {
+                                                id: forgetMa
+                                                anchors.fill: parent
+                                                hoverEnabled: true
+                                                cursorShape: Qt.PointingHandCursor
+                                                onClicked: mouse => {
+                                                    mouse.accepted = true
+                                                    Services.Network.forget(modelData.name)
+                                                }
+                                            }
+                                        }
+
+                                        // disconnect (active network)
+                                        Rectangle {
+                                            visible: modelData.active
+                                            Layout.preferredWidth: 96; Layout.preferredHeight: 32
+                                            radius: 16
+                                            color: dcMa.containsMouse ? ColorsModule.Colors.primary : "transparent"
+                                            border.width: 1
+                                            border.color: ColorsModule.Colors.primary
+
+                                            Text {
+                                                anchors.centerIn: parent
+                                                text: "Disconnect"
+                                                font.pixelSize: 12
+                                                font.weight: Font.Medium
+                                                color: dcMa.containsMouse ? ColorsModule.Colors.on_primary
+                                                                          : ColorsModule.Colors.primary
+                                            }
+                                            MouseArea {
+                                                id: dcMa
+                                                anchors.fill: parent
+                                                hoverEnabled: true
+                                                cursorShape: Qt.PointingHandCursor
+                                                onClicked: mouse => {
+                                                    mouse.accepted = true
+                                                    Services.Network.disconnect()
+                                                }
+                                            }
                                         }
                                     }
                                 }
-                            }
 
-                        }
-                    }
-                }
-            }
-        }
-    }
+                                // ── inline password reveal ──
+                                Loader {
+                                    Layout.fillWidth: true
+                                    active: row.isExpanded && !modelData.active
+                                    visible: active
 
-    Rectangle {
-        id: passwordDialog
-        anchors.fill: parent
-        visible: false
+                                    sourceComponent: Item {
+                                        implicitHeight: 52
+                                        Component.onCompleted: pwField.forceActiveFocus()
 
-        color: ColorsModule.Colors.scrim
-        opacity: 0.85
+                                        RowLayout {
+                                            anchors.fill: parent
+                                            anchors.leftMargin: 9
+                                            anchors.rightMargin: 8
+                                            anchors.bottomMargin: 10
+                                            spacing: 8
 
-        property var targetNetwork: null
+                                            Rectangle {
+                                                Layout.fillWidth: true
+                                                Layout.preferredHeight: 38
+                                                radius: 10
+                                                color: ColorsModule.Colors.surface_container_highest
+                                                border.width: 1.5
+                                                border.color: row.hasError
+                                                    ? ColorsModule.Colors.error
+                                                    : (pwField.activeFocus ? ColorsModule.Colors.primary
+                                                                           : ColorsModule.Colors.outline_variant)
 
-        Rectangle {
-            anchors.centerIn: parent
-            width: 320
-            height: 220
-            radius: 12
-            color: ColorsModule.Colors.surface_container_highest
-            border.color: ColorsModule.Colors.primary
-            border.width: 2
+                                                RowLayout {
+                                                    anchors.fill: parent
+                                                    anchors.leftMargin: 12
+                                                    anchors.rightMargin: 6
+                                                    spacing: 6
 
-            ColumnLayout {
-                anchors.fill: parent
-                anchors.margins: 20
-                spacing: 16
+                                                    TextField {
+                                                        id: pwField
+                                                        Layout.fillWidth: true
+                                                        Layout.alignment: Qt.AlignVCenter
+                                                        echoMode: showPw.shown ? TextInput.Normal : TextInput.Password
+                                                        placeholderText: row.hasError ? Services.Network.lastErrorMessage : "Password"
+                                                        placeholderTextColor: row.hasError
+                                                            ? ColorsModule.Colors.error
+                                                            : ColorsModule.Colors.on_surface_variant
+                                                        color: ColorsModule.Colors.on_surface
+                                                        font.pixelSize: 13
+                                                        background: Rectangle { color: "transparent" }
+                                                        onAccepted: { Services.Network.connect(modelData, text); text = "" }
+                                                        Keys.onEscapePressed: wifiRoot.expandedSsid = ""
+                                                    }
 
-                Text {
-                    text: "Enter Password"
-                    font.bold: true
-                    font.pixelSize: 16
-                    color: ColorsModule.Colors.on_surface
-                }
+                                                    Rectangle {
+                                                        id: showPw
+                                                        property bool shown: false
+                                                        Layout.preferredWidth: 28; Layout.preferredHeight: 28
+                                                        Layout.alignment: Qt.AlignVCenter
+                                                        radius: 14
+                                                        color: eyeMa.containsMouse ? ColorsModule.Colors.surface_container : "transparent"
+                                                        Text {
+                                                            anchors.centerIn: parent
+                                                            text: showPw.shown ? "󰈉" : "󰈈"
+                                                            font.family: "Material Design Icons"
+                                                            font.pixelSize: 15
+                                                            color: ColorsModule.Colors.on_surface_variant
+                                                        }
+                                                        MouseArea {
+                                                            id: eyeMa
+                                                            anchors.fill: parent
+                                                            hoverEnabled: true
+                                                            cursorShape: Qt.PointingHandCursor
+                                                            onClicked: showPw.shown = !showPw.shown
+                                                        }
+                                                    }
+                                                }
+                                            }
 
-                Rectangle {
-                    Layout.fillWidth: true
-                    Layout.preferredHeight: 40
-                    radius: 6
-                    color: ColorsModule.Colors.surface_container
-                    border.color: passwordInput.activeFocus
-                        ? ColorsModule.Colors.primary
-                        : ColorsModule.Colors.outline
-                    border.width: passwordInput.activeFocus ? 2 : 1
-
-                    FocusScope {
-                        focus: passwordDialog.visible
-                        id: inputScope
-                        anchors.fill: parent
-                        TextField {
-                            id: passwordInput
-                            anchors.fill: parent
-                            anchors.margins: 10
-                            verticalAlignment: TextInput.AlignVCenter
-                            echoMode: TextInput.Normal
-                            color: ColorsModule.Colors.background
-                            selectionColor: ColorsModule.Colors.primary
-                            selectedTextColor: ColorsModule.Colors.on_primary
-                            font.pixelSize: 14
-                            placeholderText: "Enter Password"
-                            focus: true
-                        }
-                    }
-                }
-
-                Item { Layout.fillHeight: true }
-
-                RowLayout {
-                    Layout.fillWidth: true
-                    spacing: 10
-
-                    Rectangle {
-                        Layout.fillWidth: true
-                        Layout.preferredHeight: 38
-                        radius: 8
-                        color: cancelMouseArea.containsMouse
-                            ? ColorsModule.Colors.surface_container_highest
-                            : ColorsModule.Colors.surface_container
-                        border.color: ColorsModule.Colors.outline
-                        border.width: 1
-
-                        Text {
-                            anchors.centerIn: parent
-                            text: "Cancel"
-                            color: ColorsModule.Colors.on_surface
-                        }
-
-                        MouseArea {
-                            id: cancelMouseArea
-                            anchors.fill: parent
-                            hoverEnabled: true
-                            onClicked: {
-                                passwordDialog.visible = false
-                                passwordInput.text = ""
-                            }
-                        }
-                    }
-
-                    Rectangle {
-                        Layout.fillWidth: true
-                        Layout.preferredHeight: 38
-                        radius: 8
-                        color: ColorsModule.Colors.primary
-
-                        Text {
-                            anchors.centerIn: parent
-                            text: "Connect"
-                            color: ColorsModule.Colors.on_primary
-                        }
-
-                        MouseArea {
-                            anchors.fill: parent
-                            onClicked: {
-                                Services.Network.connect(
-                                    passwordDialog.targetNetwork,
-                                    passwordInput.text
-                                )
-                                passwordDialog.visible = false
-                                passwordInput.text = ""
+                                            Rectangle {
+                                                Layout.preferredWidth: 78; Layout.preferredHeight: 38
+                                                radius: 10
+                                                color: ColorsModule.Colors.primary
+                                                opacity: connMa.containsMouse ? 0.9 : 1
+                                                Text {
+                                                    anchors.centerIn: parent
+                                                    text: "Connect"
+                                                    font.pixelSize: 12
+                                                    font.weight: Font.Medium
+                                                    color: ColorsModule.Colors.on_primary
+                                                }
+                                                MouseArea {
+                                                    id: connMa
+                                                    anchors.fill: parent
+                                                    hoverEnabled: true
+                                                    cursorShape: Qt.PointingHandCursor
+                                                    onClicked: {
+                                                        Services.Network.connect(modelData, pwField.text)
+                                                        pwField.text = ""
+                                                    }
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
                             }
                         }
                     }

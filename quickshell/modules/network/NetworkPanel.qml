@@ -49,17 +49,29 @@ Item {
 
     Rectangle {
         id: panel
-        width: 380
-        height: 600
+        width: 384
+        height: 620
         anchors.bottom: parent.bottom
         x: networkPanel.width
 
+        radius: 22
         color: ColorsModule.Colors.surface_container
         border.color: ColorsModule.Colors.outline_variant
         border.width: 1
 
         layer.enabled: true
         layer.smooth: true
+
+        // subtle top accent wash
+        Rectangle {
+            anchors.fill: parent
+            radius: parent.radius
+            gradient: Gradient {
+                GradientStop { position: 0.0; color: Qt.rgba(panel.accent.r, panel.accent.g, panel.accent.b, 0.05) }
+                GradientStop { position: 0.35; color: "transparent" }
+            }
+        }
+        readonly property color accent: ColorsModule.Colors.primary
 
         FocusScope {
             anchors.fill: parent
@@ -69,65 +81,74 @@ Item {
 
             ColumnLayout {
                 anchors.fill: parent
-                anchors.margins: 14
-                spacing: 12
+                anchors.margins: 16
+                spacing: 14
 
+                // ── Segmented tab control with sliding indicator ──
                 Rectangle {
+                    id: tabBar
                     Layout.fillWidth: true
-                    Layout.preferredHeight: 44
-                    radius: 10
+                    Layout.preferredHeight: 48
+                    radius: 16
                     color: ColorsModule.Colors.surface_container_high
+
+                    Rectangle {
+                        id: tabIndicator
+                        width: (tabBar.width - 8) / 2
+                        height: tabBar.height - 8
+                        y: 4
+                        x: 4 + (networkPanel.currentTab === 0 ? 0 : width)
+                        radius: 12
+                        color: ColorsModule.Colors.primary
+                        Behavior on x { NumberAnimation { duration: 240; easing.type: Easing.OutCubic } }
+                    }
 
                     RowLayout {
                         anchors.fill: parent
                         anchors.margins: 4
-                        spacing: 4
+                        spacing: 0
 
-                        Rectangle {
-                            Layout.fillWidth: true
-                            Layout.fillHeight: true
-                            radius: 8
-                            color: currentTab === 0
-                                ? ColorsModule.Colors.primary
-                                : "transparent"
+                        Repeater {
+                            model: [
+                                { glyph: "󰖩", label: "Wi-Fi" },
+                                { glyph: "󰂯", label: "Bluetooth" }
+                            ]
+                            delegate: Item {
+                                id: tabDelegate
+                                Layout.fillWidth: true
+                                Layout.fillHeight: true
 
-                            Text {
-                                anchors.centerIn: parent
-                                text: "󰖩  Wi-Fi"
-                                font.family: "Material Design Icons"
-                                color: currentTab === 0
-                                    ? ColorsModule.Colors.on_primary
-                                    : ColorsModule.Colors.on_surface
-                            }
+                                property bool selected: networkPanel.currentTab === index
 
-                            MouseArea {
-                                anchors.fill: parent
-                                cursorShape: Qt.PointingHandCursor
-                                onClicked: currentTab = 0
-                            }
-                        }
+                                RowLayout {
+                                    anchors.centerIn: parent
+                                    spacing: 8
 
-                        Rectangle {
-                            Layout.fillWidth: true
-                            Layout.fillHeight: true
-                            radius: 8
-                            color: currentTab === 1
-                                ? ColorsModule.Colors.primary
-                                : "transparent"
+                                    Text {
+                                        text: modelData.glyph
+                                        font.family: "Material Design Icons"
+                                        font.pixelSize: 17
+                                        color: tabDelegate.selected
+                                            ? ColorsModule.Colors.on_primary
+                                            : ColorsModule.Colors.on_surface_variant
+                                        Behavior on color { ColorAnimation { duration: 150 } }
+                                    }
+                                    Text {
+                                        text: modelData.label
+                                        font.pixelSize: 14
+                                        font.weight: Font.Medium
+                                        color: tabDelegate.selected
+                                            ? ColorsModule.Colors.on_primary
+                                            : ColorsModule.Colors.on_surface_variant
+                                        Behavior on color { ColorAnimation { duration: 150 } }
+                                    }
+                                }
 
-                            Text {
-                                anchors.centerIn: parent
-                                text: "  Bluetooth"
-                                font.family: "Material Design Icons"
-                                color: currentTab === 1
-                                    ? ColorsModule.Colors.on_primary
-                                    : ColorsModule.Colors.on_surface
-                            }
-
-                            MouseArea {
-                                anchors.fill: parent
-                                cursorShape: Qt.PointingHandCursor
-                                onClicked: currentTab = 1
+                                MouseArea {
+                                    anchors.fill: parent
+                                    cursorShape: Qt.PointingHandCursor
+                                    onClicked: networkPanel.currentTab = index
+                                }
                             }
                         }
                     }
@@ -136,7 +157,7 @@ Item {
                 Loader {
                     Layout.fillWidth: true
                     Layout.fillHeight: true
-                    sourceComponent: currentTab === 0
+                    sourceComponent: networkPanel.currentTab === 0
                         ? wifiComponent
                         : bluetoothComponent
                 }
