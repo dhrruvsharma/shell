@@ -9,6 +9,9 @@ ColumnLayout {
     property real maxValue: 100
     property string suffix: "%"
 
+    // primary as a real color so we can derive a translucent tint from it
+    readonly property color primaryColor: ColorsModule.Colors.primary
+
     Layout.fillWidth: true
     spacing: 10
 
@@ -24,7 +27,7 @@ ColumnLayout {
                 ? Qt.rgba(239/255, 83/255, 80/255, 0.2)
                 : value > 60
                     ? Qt.rgba(255/255, 167/255, 38/255, 0.2)
-                    : Qt.rgba(ColorsModule.Colors.primary.r, ColorsModule.Colors.primary.g, ColorsModule.Colors.primary.b, 0.2)
+                    : Qt.rgba(primaryColor.r, primaryColor.g, primaryColor.b, 0.2)
 
             Text {
                 anchors.centerIn: parent

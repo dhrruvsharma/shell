@@ -34,8 +34,8 @@ Rectangle {
                 height: 40
                 radius: 20
                 color: active
-                    ? ColorsModule.Colors.primary_container
-                    : ColorsModule.Colors.surface_container_high
+                    ? ColorsModule.Colors.primary
+                    : ColorsModule.Colors.surface_container_highest
 
                 Text {
                     anchors.centerIn: parent
@@ -43,7 +43,7 @@ Rectangle {
                     font.family: "Material Design Icons"
                     font.pixelSize: 24
                     color: active
-                        ? Qt.rgba(1, 1, 1, 1)  // White icon when active
+                        ? ColorsModule.Colors.on_primary
                         : ColorsModule.Colors.on_surface_variant
                 }
 
@@ -58,7 +58,7 @@ Rectangle {
                 font.pixelSize: 12
                 font.weight: Font.Medium
                 color: active
-                    ? Qt.rgba(1, 1, 1, 0.95)  // White text when active
+                    ? ColorsModule.Colors.on_primary_container
                     : ColorsModule.Colors.on_surface_variant
             }
         }

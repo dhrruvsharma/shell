@@ -14,6 +14,9 @@ Item {
     implicitWidth: drawerWidth
     property int drawerWidth: 900
 
+    // Theme accent as a real color (so we can derive translucent tints from it).
+    readonly property color accent: ColorsModule.Colors.primary
+
     anchors.bottom: parent.bottom
     anchors.horizontalCenter: parent.horizontalCenter
     focus: true
@@ -36,9 +39,9 @@ Item {
 
         Rectangle {
             anchors.fill: parent
-            radius: parent.radius
+            radius: popoutBackground.radius
             gradient: Gradient {
-                GradientStop { position: 0.0; color: Qt.rgba(151, 204, 249, 0.02) }
+                GradientStop { position: 0.0; color: Qt.rgba(root.accent.r, root.accent.g, root.accent.b, 0.05) }
                 GradientStop { position: 1.0; color: "transparent" }
             }
         }
@@ -150,7 +153,7 @@ Item {
                             anchors.fill: parent
                             radius: parent.radius
                             gradient: Gradient {
-                                GradientStop { position: 0.0; color: Qt.rgba(151, 204, 249, 0.1) }
+                                GradientStop { position: 0.0; color: Qt.rgba(root.accent.r, root.accent.g, root.accent.b, 0.18) }
                                 GradientStop { position: 1.0; color: "transparent" }
                             }
                         }
@@ -193,7 +196,7 @@ Item {
                                 radius: parent.radius
                                 color: "transparent"
                                 border.width: 1
-                                border.color: Qt.rgba(151, 204, 249, 0.2)
+                                border.color: Qt.rgba(root.accent.r, root.accent.g, root.accent.b, 0.3)
                             }
 
                             Behavior on color {
@@ -313,8 +316,8 @@ Item {
 
                                         // Command indicator
                                         Rectangle {
-                                            visible: Services.Notes.categoryCommands[modelData] &&
-                                                Services.Notes.categoryCommands[modelData] !== ""
+                                            visible: !!(Services.Notes.categoryCommands[modelData] &&
+                                                Services.Notes.categoryCommands[modelData] !== "")
                                             Layout.preferredWidth: 16
                                             Layout.preferredHeight: 16
                                             Layout.alignment: Qt.AlignVCenter
@@ -492,11 +495,61 @@ Item {
                     anchors.fill: parent
                     anchors.margins: 1
                     clip: true
-                    ScrollBar.vertical.visible: true
+                    ScrollBar.horizontal.policy: ScrollBar.AlwaysOff
+                    ScrollBar.vertical: ScrollBar {
+                        id: notesVBar
+                        policy: ScrollBar.AsNeeded
+                        width: 8
+                        contentItem: Rectangle {
+                            implicitWidth: 6
+                            radius: 3
+                            color: ColorsModule.Colors.outline_variant
+                            opacity: notesVBar.pressed ? 0.9 : (notesVBar.hovered ? 0.7 : 0.35)
+                            Behavior on opacity { NumberAnimation { duration: 150 } }
+                        }
+                        background: Rectangle { color: "transparent" }
+                    }
 
                     ColumnLayout {
                         width: parent.width - 20
                         spacing: 12
+
+                        // Empty state when the current category has no notes
+                        Item {
+                            Layout.fillWidth: true
+                            Layout.topMargin: 72
+                            visible: Services.Notes.getNotesForCategory(
+                                Services.Notes.currentCategory).length === 0
+                            implicitHeight: visible ? emptyCol.implicitHeight : 0
+
+                            ColumnLayout {
+                                id: emptyCol
+                                anchors.horizontalCenter: parent.horizontalCenter
+                                spacing: 6
+
+                                Text {
+                                    text: "📝"
+                                    font.pixelSize: 38
+                                    opacity: 0.5
+                                    Layout.alignment: Qt.AlignHCenter
+                                }
+                                Text {
+                                    text: "No notes here yet"
+                                    color: ColorsModule.Colors.on_surface
+                                    font.pixelSize: 15
+                                    font.weight: Font.DemiBold
+                                    opacity: 0.85
+                                    Layout.alignment: Qt.AlignHCenter
+                                }
+                                Text {
+                                    text: "Jot something down using the field below"
+                                    color: ColorsModule.Colors.on_surface_variant
+                                    font.pixelSize: 12
+                                    opacity: 0.7
+                                    Layout.alignment: Qt.AlignHCenter
+                                }
+                            }
+                        }
 
                         Repeater {
                             model: Services.Notes.getNotesForCategory(
@@ -525,6 +578,22 @@ Item {
                                             ? ColorsModule.Colors.secondary
                                             : Qt.rgba(255, 255, 255, 0.05)
                                     opacity: noteMouseArea.containsMouse && !isEditing ? 0.3 : 0.1
+                                }
+
+                                // left accent strip
+                                Rectangle {
+                                    width: 3
+                                    radius: 1.5
+                                    anchors.left: parent.left
+                                    anchors.leftMargin: 7
+                                    anchors.top: parent.top
+                                    anchors.bottom: parent.bottom
+                                    anchors.topMargin: 16
+                                    anchors.bottomMargin: 16
+                                    visible: !noteCard.isEditing
+                                    color: ColorsModule.Colors.primary
+                                    opacity: noteMouseArea.containsMouse ? 0.85 : 0.3
+                                    Behavior on opacity { NumberAnimation { duration: 200 } }
                                 }
 
                                 scale: noteMouseArea.containsMouse && !isEditing ? 1.02 : 1.0
@@ -702,16 +771,16 @@ Item {
 
                                         // Command hint with keep-open status
                                         Text {
-                                            visible: Services.Notes.categoryCommands[modelData.category] &&
-                                                Services.Notes.categoryCommands[modelData.category] !== ""
+                                            visible: !!(Services.Notes.categoryCommands[modelData.category] &&
+                                                Services.Notes.categoryCommands[modelData.category] !== "")
                                             text: {
+                                                var cmd = Services.Notes.categoryCommands[modelData.category]
+                                                if (!cmd || cmd === "") return ""
                                                 var base = "▶ Click to run: " +
-                                                    Services.Notes.categoryCommands[modelData.category].replace(/\$text/g, modelData.text).replace(/\$note/g, modelData.text)
-                                                if (Services.Notes.categoryKeepOpen[modelData.category]) {
-                                                    base += " (terminal stays open)"
-                                                } else {
-                                                    base += " (terminal closes)"
-                                                }
+                                                    cmd.replace(/\$text/g, modelData.text).replace(/\$note/g, modelData.text)
+                                                base += Services.Notes.categoryKeepOpen[modelData.category]
+                                                    ? " (terminal stays open)"
+                                                    : " (terminal closes)"
                                                 return base
                                             }
                                             font.pixelSize: 10

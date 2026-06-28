@@ -4,6 +4,7 @@ import QtQuick.Controls
 import Quickshell
 import Quickshell.Io
 import "../../colors" as ColorsModule
+import qs.services as Services
 
 Rectangle {
     Layout.fillWidth: true
@@ -45,7 +46,7 @@ Rectangle {
                 }
 
                 Text {
-                    text: Qt.formatDateTime(new Date(), "ddd, MMM d · hh:mm")
+                    text: Services.Time.format("ddd, MMM d · hh:mm")
                     font.pixelSize: 14
                     color: ColorsModule.Colors.on_primary_container
                     opacity: 0.7
