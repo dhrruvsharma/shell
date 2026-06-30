@@ -12,7 +12,9 @@ Item {
     readonly property string fontBody:    "Noto Sans"
 
     signal backRequested()
+    signal toggleFullscreen()
 
+    property bool isFullscreen: false
     property real fontSize:      17
     property real lineHeight:    1.75
     property bool headerVisible: true
@@ -98,6 +100,24 @@ Item {
                 MouseArea {
                     id: fsPlusHover; anchors.fill: parent; hoverEnabled: true
                     onClicked: readerView.fontSize = Math.min(26, readerView.fontSize + 1)
+                }
+            }
+
+            Item {
+                width: 34; height: 34
+                Rectangle {
+                    anchors.centerIn: parent; width: 30; height: 30; radius: 15
+                    color: fullscreenHover.containsMouse ? Qt.rgba(1,1,1,0.1) : "transparent"
+                    Behavior on color { ColorAnimation { duration: 120 } }
+                }
+                Text {
+                    anchors.centerIn: parent
+                    text: readerView.isFullscreen ? "🗗" : "⛶"
+                    font.pixelSize: 13; color: Qt.rgba(1,1,1,0.55)
+                }
+                MouseArea {
+                    id: fullscreenHover; anchors.fill: parent; hoverEnabled: true
+                    onClicked: readerView.toggleFullscreen()
                 }
             }
 

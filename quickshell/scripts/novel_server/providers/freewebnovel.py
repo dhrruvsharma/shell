@@ -10,11 +10,12 @@ Implemented:
 
 """
 
+import json
 import re
 from urllib.parse import quote, urlparse
 
 from .base import NovelProvider
-from .utils import fetch, fetch_bytes, cached, clean_text
+from .utils import fetch, fetch_bytes, cached, clean_text, AJAX_HEADERS
 
 BASE = "https://freewebnovel.com"
 
@@ -129,6 +130,70 @@ class FreeWebNovelProvider(NovelProvider):
     # Description lives in: <div class="inner"> inside <div class="m-desc">
     # Chapter list in:      <ul id="idData">
 
+    # Parse <a href="/novel/<slug>/chapter-N" title="..." class="con"> anchors
+    # out of a chunk of chapter-list HTML (inline list or ajax payload).
+    # Note: the href slug is the canonical routable id; the visible title
+    # number can drift from it (the site has duplicate/off-by-one titles),
+    # so we trust the slug for the id and the title only for the label.
+    def _parse_chapter_anchors(self, novel_id: str, html: str) -> list:
+        out = []
+        for m in re.finditer(
+            r'<a\s+href="/novel/[^/]+/([^"]+)"\s+title="([^"]*)"[^>]*class="con"',
+            html
+        ):
+            ch_slug  = m.group(1)          # e.g. "chapter-1"
+            label    = clean_text(m.group(2))
+            ch_num_m = re.search(r'[Cc]hapter[\s-]*([\d.]+)', label)
+            out.append({
+                # full routable id passed back to /chapter?id=
+                "id":      f"{novel_id}/{ch_slug}",
+                "title":   label,
+                "chapter": ch_num_m.group(1) if ch_num_m else label,
+            })
+        return out
+
+    # Walk the ajax chapter endpoint across all pages. The server fixes the
+    # page size (~200) no matter what pageSize we send, and reports the real
+    # page count via totalPage, so we just request pages 1..totalPage.
+    def _fetch_ajax_chapters(self, novel_id: str) -> list:
+        out        = []
+        page       = 1
+        total_page = 1
+        while page <= total_page:
+            url = f"{BASE}/{novel_id}?ajax=chapters&page={page}&pageSize=1000"
+            try:
+                data = json.loads(fetch(url, extra_headers=AJAX_HEADERS))
+            except (ValueError, TypeError):
+                break
+
+            out.extend(self._parse_chapter_anchors(novel_id, data.get("html", "")))
+
+            tp = data.get("totalPage")
+            if isinstance(tp, int) and tp > total_page:
+                total_page = tp
+
+            page += 1
+            if page > 100:        # hard safety cap
+                break
+        return out
+
+    # Merge chapter records, dropping duplicate slugs and ordering by the
+    # numeric part of the routable slug (falling back to discovery order).
+    @staticmethod
+    def _dedupe_sort_chapters(chapters: list) -> list:
+        seen, deduped = set(), []
+        for c in chapters:
+            if c["id"] in seen:
+                continue
+            seen.add(c["id"])
+            deduped.append(c)
+
+        def _key(item):
+            m = re.search(r'chapter[\s-]*([\d.]+)', item["id"], re.I)
+            return float(m.group(1)) if m else float("inf")
+
+        return sorted(deduped, key=_key)
+
     def _info(self, novel_id: str) -> dict:
         url  = f"{BASE}/{novel_id}"
         html = fetch(url)
@@ -168,24 +233,20 @@ class FreeWebNovelProvider(NovelProvider):
             paras = re.findall(r'<p[^>]*>([\s\S]*?)</p>', desc_m.group(1))
             description = "\n\n".join(clean_text(p) for p in paras if clean_text(p))
 
-        # Chapter list — <ul id="idData">
-        # <li>…<a href="/novel/shadow-slave/chapter-1" title="Chapter 1 Nightmare Begins" class="con">…</a></li>
+        # Chapter list.
+        # The novel page only embeds the first page of chapters in
+        # <ul id="idData">. The full list is paginated behind the ajax
+        # endpoint, which caps each page at a server-fixed size (~200)
+        # regardless of the pageSize we request. We seed from the inline
+        # list, then walk every ajax page, dedupe by href slug, and sort.
         chapters = []
+
         chlist_m = re.search(r'<ul[^>]+id="idData"[^>]*>([\s\S]*?)</ul>', html)
         if chlist_m:
-            for m in re.finditer(
-                r'<a\s+href="/novel/[^/]+/([^"]+)"\s+title="([^"]*)"[^>]*class="con"',
-                chlist_m.group(1)
-            ):
-                ch_slug  = m.group(1)          # e.g. "chapter-1"
-                label    = clean_text(m.group(2))
-                ch_num_m = re.search(r'[Cc]hapter[\s-]*([\d.]+)', label)
-                chapters.append({
-                    # full routable id passed back to /chapter?id=
-                    "id":      f"{novel_id}/{ch_slug}",
-                    "title":   label,
-                    "chapter": ch_num_m.group(1) if ch_num_m else label,
-                })
+            chapters.extend(self._parse_chapter_anchors(novel_id, chlist_m.group(1)))
+
+        chapters.extend(self._fetch_ajax_chapters(novel_id))
+        chapters = self._dedupe_sort_chapters(chapters)
 
         raw_cover = cover_m.group(1) if cover_m else ""
         return {
