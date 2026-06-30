@@ -12,7 +12,7 @@ Item {
         bottom: parent.bottom
         right: parent.right
     }
-    implicitWidth: fullscreen ? (parent ? parent.width : 1200) : 600
+    implicitWidth: fullscreen ? (parent && parent.parent ? parent.parent.width : 1200) : 600
     visible: false
 
     Behavior on implicitWidth { NumberAnimation { duration: 280; easing.type: Easing.OutCubic } }

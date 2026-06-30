@@ -30,6 +30,34 @@ Singleton {
     property string chapterError: ""
     property string currentChapterId: ""
 
+    // ── Chapter-list navigation ──────────────────────────────────────────────
+    // Prev/Next is driven by the in-memory chapter list (currentNovel.chapters)
+    // rather than the scraped prevId/nextId, which are unreliable. The list is
+    // sorted ascending by chapter number so navigation works regardless of the
+    // order the backend returns chapters in.
+    function _chapterNumOf(ch) {
+        var m = String(ch).match(/\d+(\.\d+)?/)
+        return m ? parseFloat(m[0]) : 0
+    }
+
+    readonly property var currentSortedChapters: {
+        if (!currentNovel || !currentNovel.chapters) return []
+        var arr = currentNovel.chapters.slice()
+        arr.sort(function(a, b) { return _chapterNumOf(a.chapter) - _chapterNumOf(b.chapter) })
+        return arr
+    }
+
+    readonly property int currentChapterIndex: {
+        var s = currentSortedChapters
+        for (var i = 0; i < s.length; i++)
+            if (s[i].id === currentChapterId) return i
+        return -1
+    }
+
+    readonly property bool hasPrevChapter: currentChapterIndex > 0
+    readonly property bool hasNextChapter:
+        currentChapterIndex >= 0 && currentChapterIndex < currentSortedChapters.length - 1
+
     // ── Provider ─────────────────────────────────────────────────────────────
     property string activeProvider: "novelbin"
     property bool isSwitchingProvider: false
@@ -363,14 +391,31 @@ Singleton {
         isFetchingChapter = false
     }
 
+    // Fetch a chapter picked from the in-memory list and advance the library
+    // entry's last-read marker to it, exactly like selecting it from the
+    // chapter list directly.
+    function _goToListedChapter(ch) {
+        fetchChapter(ch.id)
+        if (currentNovel && isInLibrary(currentNovel.id))
+            updateLastRead(currentNovel.id, ch.id, ch.chapter)
+    }
+
     function fetchPrevChapter() {
-        if (!currentChapter || currentChapter.prevId === "") return
-        fetchChapter(currentChapter.prevId)
+        if (hasPrevChapter) {
+            _goToListedChapter(currentSortedChapters[currentChapterIndex - 1])
+            return
+        }
+        // Fallback to scraped prevId if the chapter list is unavailable.
+        if (currentChapter && currentChapter.prevId !== "") fetchChapter(currentChapter.prevId)
     }
 
     function fetchNextChapter() {
-        if (!currentChapter || currentChapter.nextId === "") return
-        fetchChapter(currentChapter.nextId)
+        if (hasNextChapter) {
+            _goToListedChapter(currentSortedChapters[currentChapterIndex + 1])
+            return
+        }
+        // Fallback to scraped nextId if the chapter list is unavailable.
+        if (currentChapter && currentChapter.nextId !== "") fetchChapter(currentChapter.nextId)
     }
 
     // ── Utility ───────────────────────────────────────────────────────────────

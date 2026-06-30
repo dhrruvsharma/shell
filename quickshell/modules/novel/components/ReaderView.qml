@@ -24,8 +24,8 @@ Item {
         textScroll.contentY = 0
     }
 
-    readonly property bool _hasPrev: Novel.currentChapter !== null && Novel.currentChapter.prevId !== ""
-    readonly property bool _hasNext: Novel.currentChapter !== null && Novel.currentChapter.nextId !== ""
+    readonly property bool _hasPrev: Novel.hasPrevChapter
+    readonly property bool _hasNext: Novel.hasNextChapter
 
     Rectangle { anchors.fill: parent; color: "#1a1714" }
 
@@ -330,12 +330,7 @@ Item {
                 MouseArea {
                     id: nextNavArea; anchors.fill: parent; hoverEnabled: true
                     enabled: readerView._hasNext
-                    onClicked: {
-                        if (Novel.currentNovel && Novel.isInLibrary(Novel.currentNovel.id) && Novel.currentChapter)
-                            Novel.updateLastRead(Novel.currentNovel.id, Novel.currentChapter.nextId, "")
-                        Novel.fetchNextChapter()
-                        textScroll.contentY = 0
-                    }
+                    onClicked: { Novel.fetchNextChapter(); textScroll.contentY = 0 }
                 }
             }
         }
