@@ -36,3 +36,8 @@ input_path = "~/.config/matugen/templates/hyprland.conf"
 output_path = "~/.config/hypr/colors.conf"
 post_hook = "hyprctl reload"
 
+[templates.hyprland_lua]
+input_path = "~/.config/matugen/templates/hyprland.lua"
+output_path = "~/.config/hypr/colors.lua"
+post_hook = "hyprctl reload"
+
