@@ -2,11 +2,11 @@
 FreeWebNovel provider  –  https://freewebnovel.com
 
 Implemented:
-  - hot()      → /most-popular/weekvisit
+  - hot()      → /sort/most-popular
   - latest()   → /sort/latest-novel[/page]
   - info()     → /novel/<slug>
   - chapter()  → /novel/<slug>/<chapter-slug>
-  - search()   → POST /search
+  - search()   → GET /search?keyword=<query>
 
 """
 
@@ -103,7 +103,9 @@ class FreeWebNovelProvider(NovelProvider):
     # ── Hot (weekly popular) ──────────────────────────────────────────────
 
     def _hot(self) -> list:
-        html = fetch(f"{BASE}/most-popular/weekvisit")
+        # /most-popular/weekvisit is gone (404); the site now serves the
+        # popular list under /sort/most-popular (same .li-row cards).
+        html = fetch(f"{BASE}/sort/most-popular")
         return self._parse_li_rows(html)
 
     # ── Latest novels ─────────────────────────────────────────────────────
@@ -331,23 +333,13 @@ class FreeWebNovelProvider(NovelProvider):
     # ── Search ────────────────────────────────────────────────────────────
 
     def _search(self, query, genre, status, page) -> dict:
-        from .utils import BASE_HEADERS, _session, _USE_CFFI
+        # FWN search is now a GET: /search?keyword=<query>.
+        # (A POST to /search just 303-redirects here, and the old
+        # "searchkey" field name no longer matches anything.)
+        url  = f"{BASE}/search?keyword={quote(query)}"
+        html = fetch(url, extra_headers={"Referer": BASE + "/"})
 
-        headers = {
-            **BASE_HEADERS,
-            "Content-Type": "application/x-www-form-urlencoded",
-            "Referer":      BASE + "/",
-            "Origin":       BASE,
-        }
-        body = f"searchkey={quote(query)}"
-
-        if _USE_CFFI:
-            r = _session.post(f"{BASE}/search", headers=headers, data=body, timeout=30)
-        else:
-            r = _session.post(f"{BASE}/search", headers=headers, data=body, timeout=30)
-        r.raise_for_status()
-
-        results = self._parse_li_rows(r.text)
+        results = self._parse_li_rows(html)
         return {
             "results":  results,
             "hasMore":  False,   # FWN search is single-page
