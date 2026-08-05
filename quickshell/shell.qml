@@ -20,6 +20,7 @@ import qs.modules.manga
 import qs.modules.novel
 import qs.modules.anime
 import qs.modules.workspacedisc
+import qs.modules.expose
 import qs.aikira
 
 ShellRoot {
@@ -28,6 +29,7 @@ ShellRoot {
     CalendarWindow {}
     RandomQuote{}
     WorkspaceDiscWindow {}
+    Expose {}
     PanelWindow {
         focusable: true
         WlrLayershell.layer: WlrLayer.Bottom
