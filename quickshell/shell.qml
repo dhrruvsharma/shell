@@ -19,6 +19,7 @@ import qs.modules.wallpaper
 import qs.modules.manga
 import qs.modules.novel
 import qs.modules.anime
+import qs.modules.workspacedisc
 import qs.aikira
 
 ShellRoot {
@@ -26,6 +27,7 @@ ShellRoot {
     NotificationToasts {}
     CalendarWindow {}
     RandomQuote{}
+    WorkspaceDiscWindow {}
     PanelWindow {
         focusable: true
         WlrLayershell.layer: WlrLayer.Bottom

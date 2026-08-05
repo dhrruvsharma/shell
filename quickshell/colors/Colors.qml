@@ -70,6 +70,19 @@ Singleton {
     property string tertiary_fixed:                 _colorsData.tertiary_fixed                 ?? "#ffd9e2"
     property string tertiary_fixed_dim:             _colorsData.tertiary_fixed_dim             ?? "#efb8c7"
 
+    // Semantic aliases used by the workspace disc (zesis-style naming)
+    readonly property string accent:      primary
+    readonly property string onAccent:    on_primary
+    readonly property string surfaceHigh: surface_container_high
+    readonly property string text:        on_surface
+    readonly property string bg:          background
+
+    // Return a copy of `base` with its alpha multiplied by `a` (0..1)
+    function withAlpha(base, a) {
+        const c = Qt.color(base)
+        return Qt.rgba(c.r, c.g, c.b, c.a * a)
+    }
+
     // Timer to debounce reloads and avoid multiple rapid updates
     Timer {
         id: reloadTimer

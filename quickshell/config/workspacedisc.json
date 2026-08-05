@@ -1,0 +1,13 @@
+{
+  "workSpaceAmount": 6,
+  "minWorkSpaceAmount": 1,
+  "discRadius": 55,
+  "toothWidth": 40,
+  "valleyDepth": 28,
+  "chamberRadius": 30,
+  "chamberSize": 26,
+  "peekOffset": 16,
+  "expressive": true,
+  "skin": "default",
+  "corner": "bottomLeft"
+}

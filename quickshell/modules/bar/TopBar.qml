@@ -24,7 +24,6 @@ Item {
                 implicitWidth: 20
             }
             spacing: 8
-            Workspaces {}
             Cpu {}
             Battery {}
             Clock {}
