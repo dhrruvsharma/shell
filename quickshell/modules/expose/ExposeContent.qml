@@ -58,6 +58,33 @@ Rectangle {
                     return (ws && ws.monitor) ? ws.monitor : Hyprland.focusedMonitor
                 }
 
+                // Reference frame the thumbnail maps from. Fixed scale: the monitor
+                // width maps exactly to the thumbnail width, so a normal workspace
+                // fills the thumbnail with no scrolling and the monitor height is
+                // letterboxed/centred vertically. `contentW` extends horizontally to
+                // include windows placed outside the monitor (scrolling layout lays
+                // columns out in a virtual space wider than the screen); the thumbnail
+                // becomes a horizontally scrollable viewport over that extent.
+                readonly property var contentFrame: {
+                    var mon = cell.wsMonitor
+                    if (!mon || mon.width <= 0) return null
+                    var s = overlay.thumbW / mon.width
+                    var refX = mon.x, refR = mon.x + mon.width
+                    var wins = (Hyprland.toplevels.values || []).filter(t =>
+                        t.workspace && t.workspace.id === cell.wsId &&
+                        t.lastIpcObject && t.lastIpcObject.at && t.lastIpcObject.size)
+                    for (var i = 0; i < wins.length; i++) {
+                        var o = wins[i].lastIpcObject
+                        refX = Math.min(refX, o.at[0])
+                        refR = Math.max(refR, o.at[0] + o.size[0])
+                    }
+                    return {
+                        x: refX, y: mon.y, scale: s,
+                        offY: (overlay.thumbH - mon.height * s) / 2,
+                        contentW: (refR - refX) * s
+                    }
+                }
+
                 width: overlay.thumbW
                 height: overlay.thumbH
 
@@ -79,34 +106,55 @@ Rectangle {
                         font.weight: Font.Bold
                     }
 
-                    // Click empty workspace area to switch to it.
-                    MouseArea {
+                    // Horizontally scrollable viewport over the workspace. Normal
+                    // workspaces exactly fill it (not interactive); scrolling-layout
+                    // workspaces extend past the right edge and can be panned by
+                    // dragging empty space or using the scroll wheel. No scrollbar.
+                    Flickable {
+                        id: flick
                         anchors.fill: parent
-                        z: 0
-                        cursorShape: Qt.PointingHandCursor
-                        onClicked: {
-                            Svc.Hyprland.dispatch("workspace " + cell.wsId)
-                            Svc.ExposeState.open = false
+                        clip: true
+                        contentWidth: cell.contentFrame ? Math.max(width, cell.contentFrame.contentW) : width
+                        contentHeight: height
+                        interactive: contentWidth > width
+                        flickableDirection: Flickable.HorizontalFlick
+                        boundsBehavior: Flickable.StopAtBounds
+
+                        // Vertical scroll wheel pans horizontally.
+                        WheelHandler {
+                            onWheel: ev => {
+                                var d = ev.angleDelta.y !== 0 ? ev.angleDelta.y : ev.angleDelta.x
+                                flick.contentX = Math.max(0, Math.min(flick.contentWidth - flick.width, flick.contentX - d))
+                            }
                         }
-                    }
 
-                    Repeater {
-                        model: (Hyprland.toplevels.values || []).filter(t => t.workspace && t.workspace.id === cell.wsId)
+                        // Tap empty area to switch to this workspace; drag = scroll.
+                        MouseArea {
+                            width: flick.contentWidth
+                            height: flick.contentHeight
+                            z: 0
+                            cursorShape: Qt.PointingHandCursor
+                            onClicked: {
+                                Svc.Hyprland.dispatch("workspace " + cell.wsId)
+                                Svc.ExposeState.open = false
+                            }
+                        }
 
-                        delegate: Rectangle {
-                            id: windowRect
+                        Repeater {
+                            model: (Hyprland.toplevels.values || []).filter(t => t.workspace && t.workspace.id === cell.wsId)
+
+                            delegate: Rectangle {
+                                id: windowRect
                             required property var modelData
 
-                            readonly property var mon: cell.wsMonitor
-                            visible: modelData && mon && modelData.lastIpcObject
+                            readonly property var frame: cell.contentFrame
+                            readonly property var ipc: modelData ? modelData.lastIpcObject : null
+                            visible: modelData && frame && ipc && ipc.at && ipc.size
 
-                            readonly property real localX: (modelData && mon && modelData.lastIpcObject && modelData.lastIpcObject.at) ? modelData.lastIpcObject.at[0] - mon.x : 0
-                            readonly property real localY: (modelData && mon && modelData.lastIpcObject && modelData.lastIpcObject.at) ? modelData.lastIpcObject.at[1] - mon.y : 0
-
-                            readonly property real originalX: mon ? Math.floor((localX / mon.width) * workspaceThumbnail.width) : 0
-                            readonly property real originalY: mon ? Math.floor((localY / mon.height) * workspaceThumbnail.height) : 0
-                            readonly property real originalWidth: (mon && modelData.lastIpcObject && modelData.lastIpcObject.size) ? Math.floor((modelData.lastIpcObject.size[0] / mon.width) * workspaceThumbnail.width) : 0
-                            readonly property real originalHeight: (mon && modelData.lastIpcObject && modelData.lastIpcObject.size) ? Math.floor((modelData.lastIpcObject.size[1] / mon.height) * workspaceThumbnail.height) : 0
+                            readonly property real originalX: (frame && ipc && ipc.at) ? (ipc.at[0] - frame.x) * frame.scale : 0
+                            readonly property real originalY: (frame && ipc && ipc.at) ? frame.offY + (ipc.at[1] - frame.y) * frame.scale : 0
+                            readonly property real originalWidth: (frame && ipc && ipc.size) ? ipc.size[0] * frame.scale : 0
+                            readonly property real originalHeight: (frame && ipc && ipc.size) ? ipc.size[1] * frame.scale : 0
 
                             x: originalX
                             y: originalY
@@ -142,9 +190,10 @@ Rectangle {
                                 anchors.fill: parent
                                 hoverEnabled: true
                                 cursorShape: Qt.PointingHandCursor
-                                // Keep the grab once a drag begins so onReleased
-                                // always fires (fixes click + drag both failing).
-                                preventStealing: dragState.active
+                                // Always hold the grab so a press on a window drags
+                                // the window (and onReleased always fires) instead of
+                                // the surrounding Flickable stealing it to scroll.
+                                preventStealing: true
 
                                 property real pressX: 0
                                 property real pressY: 0
@@ -213,6 +262,7 @@ Rectangle {
                                 }
                             }
                         }
+                    }
                     }
                 }
             }
