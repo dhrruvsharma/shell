@@ -6,6 +6,7 @@ import Quickshell.Widgets
 import Quickshell.Wayland
 import Quickshell.Hyprland
 import Qt5Compat.GraphicalEffects
+import qs.services as Svc
 import "../../colors" as ColorsModule
 
 Item {
@@ -143,7 +144,7 @@ Item {
         var targetIsSpecial = (hWin?.workspace ?? 0) < 0 || (hWin?.workspace?.name ?? "").startsWith("special")
 
         if (root.specialActive && !targetIsSpecial) {
-            Hyprland.dispatch("togglespecialworkspace")
+            Svc.Hyprland.dispatch("togglespecialworkspace")
         }
 
         if (hWin.workspace) {
@@ -151,19 +152,19 @@ Item {
         }
 
         root.toggleExpose()
-        Hyprland.dispatch("focuswindow address:0x" + hWin.address)
-        Hyprland.dispatch("alterzorder top")
+        Svc.Hyprland.dispatch("focuswindow address:0x" + hWin.address)
+        Svc.Hyprland.dispatch("alterzorder top")
         if (thumbContainer.moveCursorToActiveWindow) {
           var cx = clientInfo.at[0] + (clientInfo.size[0]/2)
           var cy = clientInfo.at[1] + (clientInfo.size[1]/2)
-        Hyprland.dispatch("movecursor " + cx + " " + cy)
+        Svc.Hyprland.dispatch("movecursor " + cx + " " + cy)
 
         }
     }
 
     function closeWindow() {
         if (!hWin) return
-        Hyprland.dispatch("closewindow address:0x" + hWin.address)
+        Svc.Hyprland.dispatch("closewindow address:0x" + hWin.address)
     }
 
     function refreshThumb() {

@@ -33,9 +33,56 @@ Singleton {
     property var activeWorkspaceInfo: null
     property string keyboardLayout: "?"
 
-    // dispatch a command to Hyprland, no-op if not running
+    // Dispatch a command to Hyprland.
+    //
+    // Hyprland 0.56+ replaced the legacy string dispatch API with a Lua one
+    // (`hl.dsp.*` / `hl.get_active_monitor():set_workspace{...}`), so both
+    // Quickshell's `Hyprland.dispatch("cmd args")` and `hyprctl dispatch cmd
+    // args` fail with "expected a dispatcher". We translate the handful of
+    // legacy dispatch strings this config uses into the new Lua form and run
+    // them via `hyprctl eval`, so existing call sites keep working unchanged.
     function dispatch(request: string): void {
-        Hyprland.dispatch(request)
+        const lua = translateDispatch(request)
+        if (lua === "") {
+            console.warn("Hyprland.dispatch: unmapped command:", request)
+            return
+        }
+        Quickshell.execDetached(["hyprctl", "eval", lua])
+    }
+
+    // Map a legacy `dispatch` string to Hyprland's new Lua API. Returns "" if
+    // the command is not handled. Window addresses arrive as
+    // "focuswindow address:0x..." / "...,address:0x..." selectors, which the
+    // new `window` field accepts verbatim.
+    function translateDispatch(request: string): string {
+        const parts = request.trim().split(/\s+/)
+        const cmd = parts[0]
+        switch (cmd) {
+        case "workspace":
+            return 'hl.get_active_monitor():set_workspace({workspace="' + parts[1] + '"})'
+        case "focuswindow":
+            return 'hl.dispatch(hl.dsp.focus({window="' + parts[1] + '"}))'
+        case "closewindow":
+            return 'hl.dispatch(hl.dsp.window.close({window="' + parts[1] + '"}))'
+        case "movetoworkspacesilent": {
+            const seg = parts[1].split(",")
+            return 'hl.dispatch(hl.dsp.window.move({workspace=' + seg[0] + ', silent=true, window="' + seg[1] + '"}))'
+        }
+        case "movetoworkspace": {
+            const seg = parts[1].split(",")
+            return 'hl.dispatch(hl.dsp.window.move({workspace=' + seg[0] + ', window="' + seg[1] + '"}))'
+        }
+        case "togglespecialworkspace":
+            return parts.length > 1
+                ? 'hl.dispatch(hl.dsp.workspace.toggle_special({name="' + parts[1] + '"}))'
+                : 'hl.dispatch(hl.dsp.workspace.toggle_special({}))'
+        case "alterzorder":
+            return 'hl.dispatch(hl.dsp.window.alter_zorder({z="' + (parts[1] || "top") + '"}))'
+        case "movecursor":
+            return 'hl.dispatch(hl.dsp.cursor.move({x=' + parts[1] + ', y=' + parts[2] + '}))'
+        default:
+            return ""
+        }
     }
 
     // switch workspace safely

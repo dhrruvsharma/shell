@@ -19,6 +19,20 @@ Rectangle {
     readonly property int thumbW: 300
     readonly property int thumbH: 200
 
+    // Shared state for the in-flight drag. Only one window is ever dragged
+    // at a time, so a single object serves all thumbnail delegates.
+    QtObject {
+        id: dragState
+        property bool active: false
+        property var source: null
+        property string address: ""
+        property int sourceWs: -1
+        property real w: 0
+        property real h: 0
+        property real x: 0
+        property real y: 0
+    }
+
     Grid {
         id: grid
         anchors.centerIn: parent
@@ -71,7 +85,7 @@ Rectangle {
                         z: 0
                         cursorShape: Qt.PointingHandCursor
                         onClicked: {
-                            Hyprland.dispatch("workspace " + cell.wsId)
+                            Svc.Hyprland.dispatch("workspace " + cell.wsId)
                             Svc.ExposeState.open = false
                         }
                     }
@@ -104,7 +118,9 @@ Rectangle {
                             radius: 3
                             clip: true
 
-                            property bool dragging: false
+                            // Hide the live thumbnail while it is being dragged;
+                            // the floating ghost stands in for it.
+                            opacity: (dragState.active && dragState.address === String(windowRect.modelData.address)) ? 0 : 1
 
                             ScreencopyView {
                                 anchors.fill: parent
@@ -126,43 +142,61 @@ Rectangle {
                                 anchors.fill: parent
                                 hoverEnabled: true
                                 cursorShape: Qt.PointingHandCursor
-                                drag.target: parent
-                                drag.axis: Drag.XAndYAxis
+                                // Keep the grab once a drag begins so onReleased
+                                // always fires (fixes click + drag both failing).
+                                preventStealing: dragState.active
 
-                                onPressed: {
-                                    windowRect.dragging = false
-                                    var globalPos = windowRect.mapToItem(overlay, 0, 0)
-                                    windowRect.parent = overlay
-                                    windowRect.x = globalPos.x
-                                    windowRect.y = globalPos.y
-                                    windowRect.z = 10
+                                property real pressX: 0
+                                property real pressY: 0
+
+                                onPressed: mouse => {
+                                    dragArea.pressX = mouse.x
+                                    dragArea.pressY = mouse.y
                                 }
 
                                 onPositionChanged: mouse => {
-                                    if (drag.active)
-                                        windowRect.dragging = true
+                                    // hoverEnabled makes this fire on plain hover too;
+                                    // only react while a button is actually held.
+                                    if (!dragArea.pressed) return
+
+                                    // Promote to a drag once past the threshold. We move a
+                                    // floating ghost rather than reparenting the live item,
+                                    // which would break the mouse grab.
+                                    if (!dragState.active &&
+                                        (Math.abs(mouse.x - dragArea.pressX) > 8 ||
+                                         Math.abs(mouse.y - dragArea.pressY) > 8)) {
+                                        dragState.source   = windowRect.modelData.wayland
+                                        dragState.address  = String(windowRect.modelData.address)
+                                        dragState.sourceWs = windowRect.modelData.workspace ? windowRect.modelData.workspace.id : -1
+                                        dragState.w        = windowRect.width
+                                        dragState.h        = windowRect.height
+                                        dragState.active   = true
+                                    }
+                                    if (dragState.active) {
+                                        var pt = dragArea.mapToItem(overlay,
+                                            mouse.x - dragState.w / 2,
+                                            mouse.y - dragState.h / 2)
+                                        dragState.x = pt.x
+                                        dragState.y = pt.y
+                                    }
                                 }
 
-                                onReleased: {
+                                onReleased: mouse => {
                                     // Click (no meaningful drag): focus the window.
-                                    if (!windowRect.dragging) {
-                                        windowRect.parent = workspaceThumbnail
-                                        windowRect.x = Qt.binding(() => windowRect.originalX)
-                                        windowRect.y = Qt.binding(() => windowRect.originalY)
-                                        windowRect.z = 1
-                                        Hyprland.dispatch("focuswindow address:0x" + windowRect.modelData.address)
+                                    if (!dragState.active) {
+                                        Svc.Hyprland.dispatch("focuswindow address:0x" + windowRect.modelData.address)
                                         Svc.ExposeState.open = false
                                         return
                                     }
 
                                     // Drag: find the workspace under the drop point and move there.
-                                    var globalPos = windowRect.mapToItem(grid, windowRect.width / 2, windowRect.height / 2)
+                                    var center = dragArea.mapToItem(grid, mouse.x, mouse.y)
                                     var targetIndex = -1
                                     for (var i = 0; i < rep.count; i++) {
                                         var wsItem = rep.itemAt(i)
                                         if (wsItem &&
-                                            globalPos.x >= wsItem.x && globalPos.x <= wsItem.x + wsItem.width &&
-                                            globalPos.y >= wsItem.y && globalPos.y <= wsItem.y + wsItem.height) {
+                                            center.x >= wsItem.x && center.x <= wsItem.x + wsItem.width &&
+                                            center.y >= wsItem.y && center.y <= wsItem.y + wsItem.height) {
                                             targetIndex = i
                                             break
                                         }
@@ -170,16 +204,11 @@ Rectangle {
 
                                     if (targetIndex >= 0) {
                                         var targetWsId = targetIndex + 1
-                                        var currentWsId = windowRect.modelData.workspace ? windowRect.modelData.workspace.id : -1
-                                        if (targetWsId !== currentWsId)
-                                            Hyprland.dispatch("movetoworkspacesilent " + targetWsId + ",address:0x" + windowRect.modelData.address)
+                                        if (targetWsId !== dragState.sourceWs)
+                                            Svc.Hyprland.dispatch("movetoworkspacesilent " + targetWsId + ",address:0x" + dragState.address)
                                     }
 
-                                    windowRect.parent = workspaceThumbnail
-                                    windowRect.x = Qt.binding(() => windowRect.originalX)
-                                    windowRect.y = Qt.binding(() => windowRect.originalY)
-                                    windowRect.z = 1
-                                    windowRect.dragging = false
+                                    dragState.active = false
                                     Hyprland.refreshToplevels()
                                 }
                             }
@@ -187,6 +216,36 @@ Rectangle {
                     }
                 }
             }
+        }
+    }
+
+    // Floating preview that follows the cursor during a drag.
+    Rectangle {
+        id: dragGhost
+        visible: dragState.active
+        x: dragState.x
+        y: dragState.y
+        width: dragState.w
+        height: dragState.h
+        z: 100
+        color: "transparent"
+        radius: 3
+        clip: true
+        opacity: 0.85
+
+        ScreencopyView {
+            anchors.fill: parent
+            captureSource: dragState.source
+            live: true
+            paintCursor: false
+        }
+
+        Rectangle {
+            anchors.fill: parent
+            color: "transparent"
+            radius: 3
+            border.width: 2
+            border.color: Colors.primary
         }
     }
 }

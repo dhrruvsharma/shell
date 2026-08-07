@@ -6,6 +6,7 @@ import Quickshell.Widgets
 import Quickshell.Wayland
 import Quickshell.Hyprland
 import Qt5Compat.GraphicalEffects
+import qs.services as Svc
 import "."
 import "../../colors" as ColorsModule
 
@@ -108,17 +109,8 @@ PanelWindow {
         property string ghostLabel: ""
     }
 
-    Process {
-        id: hyprctlProc
-    }
-
     function moveWindowToWorkspace(winAddress, targetWorkspaceId) {
-        hyprctlProc.command = [
-            "hyprctl", "dispatch",
-            "movetoworkspacesilent",
-            String(targetWorkspaceId) + ",address:0x" + winAddress
-        ]
-        hyprctlProc.running = true
+        Svc.Hyprland.dispatch("movetoworkspacesilent " + String(targetWorkspaceId) + ",address:0x" + winAddress)
     }
 
     function toggleExpose() {

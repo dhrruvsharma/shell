@@ -256,14 +256,12 @@ hl.bind("ALT + R", hl.dsp.exec_cmd([[wf-recorder -o $(hyprctl -j activeworkspace
 -- NOTE: original was `exec, [kill -SIGINT wf-recorder` (malformed). Fixed to pkill.
 hl.bind("ALT + SHIFT + R", hl.dsp.exec_cmd("pkill -SIGINT -x wf-recorder"))
 
--- Fullscreen. NOTE: SUPER+F is ALSO bound to colresize below (this conflict
--- existed in the original conf). Resolve by removing one of the two.
+-- Fullscreen
 hl.bind(mainMod .. " + F", hl.dsp.window.fullscreen({ mode = "fullscreen" }))
 
 -- Scrolling layout messages
 hl.bind(mainMod .. " + period",  hl.dsp.layout("move +col"))
 hl.bind(mainMod .. " + comma",   hl.dsp.layout("swapcol l"))
-hl.bind(mainMod .. " + F",       hl.dsp.layout("colresize +.25"))
 hl.bind(mainMod .. " + SHIFT + F", hl.dsp.layout("colresize -.25"))
 
 -- Move focus with mainMod + arrow keys
@@ -279,8 +277,9 @@ for i = 1, 10 do
     hl.bind(mainMod .. " + SHIFT + " .. key, hl.dsp.window.move({ workspace = i }))
 end
 
--- Special workspace (scratchpad)
-hl.bind(mainMod .. " + S",         hl.dsp.workspace.toggle_special("magicw"))
+-- Special workspace (scratchpad). Both binds must reference the SAME special
+-- workspace: toggle "magic" <-> move to "special:magic".
+hl.bind(mainMod .. " + S",         hl.dsp.workspace.toggle_special("magic"))
 hl.bind(mainMod .. " + SHIFT + S", hl.dsp.window.move({ workspace = "special:magic" }))
 
 -- Scroll through existing workspaces with mainMod + scroll
