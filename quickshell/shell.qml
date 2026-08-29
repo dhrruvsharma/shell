@@ -21,6 +21,7 @@ import qs.modules.novel
 import qs.modules.anime
 import qs.modules.workspacedisc
 import qs.modules.expose
+import qs.modules.cava
 import qs.aikira
 
 ShellRoot {
@@ -30,6 +31,7 @@ ShellRoot {
     RandomQuote{}
     WorkspaceDiscWindow {}
     Expose {}
+    CavaWidget { id: cavaWidget }
     PanelWindow {
         focusable: true
         WlrLayershell.layer: WlrLayer.Bottom
@@ -257,6 +259,10 @@ ShellRoot {
             id: clipboardManager
         }
 
+        NotepadPanel {
+            id: notepad
+        }
+
         PowerMenu {
             id: powerMenu
         }
@@ -321,6 +327,9 @@ ShellRoot {
             }
             Region {
                 item: clipboardManager.visible ? clipboardManager : null
+            }
+            Region {
+                item: notepad.visible ? notepad : null
             }
             Region {
                 item: powerMenu.visible ? powerMenu : null
@@ -581,6 +590,13 @@ ShellRoot {
     }
 
     IpcHandler {
+        target: "notepad"
+        function toggle(): void {
+            notepad.toggle()
+        }
+    }
+
+    IpcHandler {
         target: "powerMenu"
         function toggle(): void {
             if (!powerMenu.visible) {
@@ -599,6 +615,26 @@ ShellRoot {
             } else {
                 avatarPicker.close()
             }
+        }
+    }
+
+    IpcHandler {
+        target: "barLayout"
+        function reset(): void {
+            Services.BarLayout.reset()
+        }
+    }
+
+    IpcHandler {
+        target: "cavaWidget"
+        function toggle(): void {
+            cavaWidget.toggle()
+        }
+        function edit(): void {
+            cavaWidget.edit()
+        }
+        function reset(): void {
+            Services.CavaWidget.reset()
         }
     }
 
