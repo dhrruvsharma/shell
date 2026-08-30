@@ -4,7 +4,8 @@ import QtQuick.Layouts
 import Quickshell
 import Quickshell.Widgets
 import qs.services as Services
-import "../../../colors" as ColorsModule
+import qs.colors
+import qs.components
 
 Rectangle {
     id: wsContainer
@@ -24,7 +25,6 @@ Rectangle {
         Math.ceil(activeWs / visibleCount)
     )
 
-    readonly property var colors: ColorsModule.Colors
 
     function changeWorkspace(id) {
         Services.Hyprland.changeWorkspace(id)
@@ -36,7 +36,7 @@ Rectangle {
 
     Layout.preferredHeight: 26
     Layout.preferredWidth: visibleCount * 26 + (visibleCount - 1) * 4 + 4
-    color: colors.surface_container
+    color: Colors.surface_container
     radius: height / 2
     clip: true
 
@@ -97,7 +97,7 @@ Rectangle {
                     height: 26
                     radius: 14
                     opacity: 0.8
-                    color: colors.background
+                    color: Colors.background
 
                     x: modelData.start * (26 + 4)
                     width: (modelData.end - modelData.start + 1) * 26 +
@@ -115,7 +115,7 @@ Rectangle {
                 height: 26
                 radius: 13
 
-                color: colors.primary
+                color: Colors.primary
 
                 Behavior on x { NumberAnimation { duration: 350; easing.type: Easing.OutSine } }
             }
@@ -142,16 +142,16 @@ Rectangle {
                             width: hasWindows ? 6 : 4
                             height: width
                             radius: width / 2
-                            color: hasWindows ? colors.primary : colors.secondary
+                            color: hasWindows ? Colors.primary : Colors.secondary
                         }
 
-                        Text {
+                        StyledText {
                             visible: isActive
                             anchors.centerIn: parent
                             text: wsId
                             font.family: fontFamily
                             font.bold: true
-                            color: colors.background
+                            color: Colors.background
                             font.pixelSize: 17
                         }
 

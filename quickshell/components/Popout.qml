@@ -1,14 +1,14 @@
 pragma ComponentBehavior: Bound
 import QtQuick
 import QtQuick.Shapes
-import "../colors" as ColorsModule
+import qs.colors
 
 Item {
     id: root
 
     property int alignment: 0
     property int radius: 50
-    property color color: ColorsModule.Colors.background
+    property color color: Colors.background
 
     default property alias content: contentWrapper.data
 
@@ -57,7 +57,7 @@ Item {
             id: shapePath
             fillColor: root.color
             // This outline thing still isn't ready yet.. [very unstable like rendering issues].
-            strokeColor: ColorsModule.Colors.background
+            strokeColor: Colors.background
             strokeWidth: 0
             joinStyle: ShapePath.RoundJoin
             capStyle: ShapePath.RoundCap

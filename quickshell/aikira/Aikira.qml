@@ -3,7 +3,7 @@ import qs.aikira
 import QtQuick.Layouts
 import Quickshell
 import Quickshell.Io
-import "../colors" as ColorsModule
+import qs.colors
 import qs.aikira.components
 
 Item {
@@ -140,7 +140,7 @@ Item {
 
     Rectangle {
         anchors.fill: parent
-        color: ColorsModule.Colors.background
+        color: Colors.background
         radius: 12
     }
 
@@ -156,7 +156,7 @@ Item {
         Rectangle {
             width: 1
             Layout.fillHeight: true
-            color: ColorsModule.Colors.outline_variant
+            color: Colors.outline_variant
             opacity: 0.5
         }
 

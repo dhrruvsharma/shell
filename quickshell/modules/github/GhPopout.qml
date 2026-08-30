@@ -2,7 +2,8 @@ import QtQuick
 import QtQuick.Layouts
 import Quickshell.Io
 import qs.components
-import "../colors" as ColorsModule
+import qs.colors
+import qs.modules.timer
 
 Popout {
     id: root
@@ -13,12 +14,12 @@ Popout {
     focus: true
 
     property int headerHeight: 48
-    property color backgroundColor: ColorsModule.Colors.surface
-    property color surfaceColor: ColorsModule.Colors.surface_container_highest
-    property color accentColor: ColorsModule.Colors.primary
-    property color textColor: ColorsModule.Colors.on_surface
-    property color closeButtonColor: ColorsModule.Colors.error
-    property color closeButtonHoverColor: ColorsModule.Colors.error_container
+    property color backgroundColor: Colors.surface
+    property color surfaceColor: Colors.surface_container_highest
+    property color accentColor: Colors.primary
+    property color textColor: Colors.on_surface
+    property color closeButtonColor: Colors.error
+    property color closeButtonHoverColor: Colors.error_container
 
     implicitHeight: 500
     implicitWidth: opened ? 850 : 0
@@ -89,11 +90,11 @@ Popout {
                                 ColorAnimation { duration: 150 }
                             }
 
-                            Text {
+                            StyledText {
                                 anchors.centerIn: parent
                                 text: "✕"
                                 color: closeMouseArea.containsMouse ?
-                                    ColorsModule.Colors.on_error_container :
+                                    Colors.on_error_container :
                                     root.closeButtonColor
                                 font.pixelSize: 16
                                 font.bold: true

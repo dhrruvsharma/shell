@@ -2,12 +2,12 @@ import QtQuick
 import QtQuick.Layouts
 import Quickshell
 import Quickshell.Services.SystemTray
-import "../colors" as ColorsModule
+import qs.colors
+import qs.components
 
 RowLayout {
     id: trayRoot
 
-    property var colors: ColorsModule.Colors
 
     property int iconSize: 16
     property var pinnedApps: []
@@ -39,7 +39,7 @@ RowLayout {
 
             radius: 6
             color: itemMouseArea.containsMouse
-                ? colors.primary_container
+                ? Colors.primary_container
                 : "transparent"
 
             Image {
@@ -56,10 +56,9 @@ RowLayout {
             }
 
             // ---------- fallback ----------
-            Text {
+            StyledText {
                 anchors.centerIn: parent
                 text: trayIcon.status === Image.Error ? "?" : ""
-                color: colors.on_surface
                 font.pixelSize: 10
                 visible: trayIcon.status === Image.Error
             }

@@ -1,6 +1,7 @@
 import QtQuick
 import QtQuick.Layouts
-import "../colors" as ColorsModule
+import qs.colors
+import qs.components
 
 RowLayout {
     required property string icon
@@ -14,28 +15,26 @@ RowLayout {
         Layout.preferredWidth: 36
         Layout.preferredHeight: 36
         radius: 8
-        color: ColorsModule.Colors.tertiary_container
+        color: Colors.tertiary_container
 
-        Text {
+        MaterialIcon {
             anchors.centerIn: parent
             text: icon
-            font.family: "Material Design Icons"
             font.pixelSize: 18
-            color: ColorsModule.Colors.on_tertiary_container
+            color: Colors.on_tertiary_container
         }
     }
 
-    Text {
+    StyledText {
         Layout.fillWidth: true
         text: label
-        color: ColorsModule.Colors.on_surface_variant
+        color: Colors.on_surface_variant
         font.pixelSize: 14
         font.weight: Font.Medium
     }
 
-    Text {
+    StyledText {
         text: value
-        color: ColorsModule.Colors.on_surface
         font.pixelSize: 14
         font.weight: Font.Bold
     }

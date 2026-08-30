@@ -2,10 +2,11 @@ import QtQuick
 import QtQuick.Layouts
 import Quickshell
 import qs.services as Services
-import "../../colors" as ColorsModule
+import qs.colors
 import "../../components"
 import Qt5Compat.GraphicalEffects
 import Quickshell.Wayland
+import qs.components
 
 PanelWindow {
     id: win
@@ -24,7 +25,7 @@ PanelWindow {
         id: mainPopout
         alignment: 1
         radius: 14
-        color: ColorsModule.Colors.surface_container
+        color: Colors.surface_container
 
         anchors.top: parent.top
         anchors.right: parent.right
@@ -43,7 +44,7 @@ PanelWindow {
             verticalOffset: 3
             radius: 16
             samples: 24
-            color: ColorsModule.Colors.shadow
+            color: Colors.shadow
         }
 
         Column {
@@ -71,7 +72,7 @@ PanelWindow {
                             visible: index > 0
                             width: parent.width
                             height: visible ? 1 : 0
-                            color: ColorsModule.Colors.outline_variant
+                            color: Colors.outline_variant
                             opacity: 0.4
                         }
 
@@ -87,7 +88,7 @@ PanelWindow {
                             width: parent.width
                             height: 3
                             radius: 1.5
-                            color: ColorsModule.Colors.outline_variant
+                            color: Colors.outline_variant
                             clip: true
 
                             Rectangle {
@@ -95,7 +96,7 @@ PanelWindow {
                                 anchors.left: parent.left
                                 height: parent.height
                                 radius: parent.radius
-                                color: ColorsModule.Colors.primary
+                                color: Colors.primary
                                 width: timerTrack.width
 
                                 Component.onCompleted: {
@@ -162,20 +163,19 @@ PanelWindow {
                                 Layout.fillWidth: true
                                 spacing: 3
 
-                                Text {
+                                StyledText {
                                     text: modelData.summary
                                     font.bold: true
                                     font.pixelSize: 13
-                                    color: ColorsModule.Colors.on_surface
                                     wrapMode: Text.Wrap
                                     Layout.fillWidth: true
                                 }
 
-                                Text {
+                                StyledText {
                                     visible: modelData.body.length > 0
                                     text: modelData.body
                                     font.pixelSize: 12
-                                    color: ColorsModule.Colors.on_surface_variant
+                                    color: Colors.on_surface_variant
                                     wrapMode: Text.Wrap
                                     Layout.fillWidth: true
                                 }

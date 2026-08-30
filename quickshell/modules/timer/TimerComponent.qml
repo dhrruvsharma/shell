@@ -2,7 +2,8 @@ import QtQuick
 import QtQuick.Controls
 import QtQuick.Layouts
 import Quickshell
-import "../colors" as ColorsModule
+import qs.colors
+import qs.components
 
 Item {
     id: root
@@ -79,12 +80,7 @@ Item {
         Rectangle {
             anchors.fill: parent
             radius: 24
-            color: root.finished ? Qt.rgba(
-                ColorsModule.Colors.tertiary.r,
-                ColorsModule.Colors.tertiary.g,
-                ColorsModule.Colors.tertiary.b,
-                0.05
-            ) : "transparent"
+            color: root.finished ? Colors.withAlpha(Colors.tertiary, 0.05) : "transparent"
 
             Behavior on color { ColorAnimation { duration: 300 } }
         }
@@ -109,12 +105,7 @@ Item {
                 radius: 96
                 color: "transparent"
                 border.width: root.finished ? 2 : 0
-                border.color: Qt.rgba(
-                    ColorsModule.Colors.tertiary.r,
-                    ColorsModule.Colors.tertiary.g,
-                    ColorsModule.Colors.tertiary.b,
-                    0.3
-                )
+                border.color: Colors.withAlpha(Colors.tertiary, 0.3)
                 opacity: root.finished ? 0.5 : 0
 
                 Behavior on opacity { NumberAnimation { duration: 300 } }
@@ -129,19 +120,14 @@ Item {
                     ctx.clearRect(0, 0, width, height)
                     ctx.beginPath()
                     ctx.arc(width / 2, height / 2, 88, 0, Math.PI * 2)
-                    ctx.strokeStyle = ColorsModule.Colors.surface_container_highest
+                    ctx.strokeStyle = Colors.surface_container_highest
                     ctx.lineWidth   = 6
                     ctx.stroke()
 
                     // Add subtle inner track
                     ctx.beginPath()
                     ctx.arc(width / 2, height / 2, 82, 0, Math.PI * 2)
-                    ctx.strokeStyle = Qt.rgba(
-                        ColorsModule.Colors.surface_container_highest.r,
-                        ColorsModule.Colors.surface_container_highest.g,
-                        ColorsModule.Colors.surface_container_highest.b,
-                        0.3
-                    )
+                    ctx.strokeStyle = Colors.withAlpha(Colors.surface_container_highest, 0.3)
                     ctx.lineWidth   = 1
                     ctx.stroke()
                 }
@@ -167,12 +153,7 @@ Item {
                     if (root.finished) {
                         ctx.beginPath()
                         ctx.arc(width / 2, height / 2, 94, 0, Math.PI * 2)
-                        ctx.strokeStyle = Qt.rgba(
-                            ColorsModule.Colors.tertiary.r,
-                            ColorsModule.Colors.tertiary.g,
-                            ColorsModule.Colors.tertiary.b,
-                            0.2
-                        )
+                        ctx.strokeStyle = Colors.withAlpha(Colors.tertiary, 0.2)
                         ctx.lineWidth   = 12
                         ctx.stroke()
                     }
@@ -182,8 +163,8 @@ Item {
                         -Math.PI / 2,
                         -Math.PI / 2 + (root.finished ? Math.PI * 2 : root.progress * Math.PI * 2))
                     ctx.strokeStyle = root.finished
-                        ? ColorsModule.Colors.tertiary
-                        : ColorsModule.Colors.primary
+                        ? Colors.tertiary
+                        : Colors.primary
                     ctx.lineWidth   = root.finished ? 8 : 6
                     ctx.lineCap     = "round"
                     ctx.stroke()
@@ -191,7 +172,7 @@ Item {
             }
 
             // Time display with better typography
-            Text {
+            StyledText {
                 anchors.centerIn: parent
                 text: (root.running || root.finished || root.remainingSeconds > 0)
                     ? root.displayTime(root.remainingSeconds)
@@ -200,8 +181,8 @@ Item {
                 font.weight:     Font.Light
                 font.family:     "monospace"
                 color: root.finished
-                    ? ColorsModule.Colors.tertiary
-                    : ColorsModule.Colors.on_surface
+                    ? Colors.tertiary
+                    : Colors.on_surface
 
                 // Removed layer effect as it might not be available
             }
@@ -216,20 +197,15 @@ Item {
                 width: 60
                 height: 24
                 radius: 12
-                color: Qt.rgba(
-                    ColorsModule.Colors.tertiary.r,
-                    ColorsModule.Colors.tertiary.g,
-                    ColorsModule.Colors.tertiary.b,
-                    0.15
-                )
+                color: Colors.withAlpha(Colors.tertiary, 0.15)
 
-                Text {
+                StyledText {
                     anchors.centerIn: parent
                     text:                     "DONE"
                     font.pixelSize:           10
                     font.letterSpacing:       2
                     font.weight:              Font.Medium
-                    color:                    ColorsModule.Colors.tertiary
+                    color:                    Colors.tertiary
                 }
             }
         }
@@ -243,19 +219,17 @@ Item {
             RowLayout {
                 Layout.fillWidth: true
 
-                Text {
+                StyledText {
                     text:               "TIMER"
                     font.pixelSize:     11
                     font.letterSpacing: 6
                     font.weight:        Font.Medium
-                    color:              ColorsModule.Colors.primary
+                    color:              Colors.primary
                 }
 
-                Rectangle {
+                Divider {
                     Layout.fillWidth: true
                     Layout.leftMargin: 12
-                    height: 1
-                    color: ColorsModule.Colors.outline_variant
                 }
             }
 
@@ -279,21 +253,21 @@ Item {
                         font.pixelSize: 22
                         font.weight: Font.Light
                         font.family: "monospace"
-                        color: ColorsModule.Colors.on_surface
-                        placeholderTextColor: ColorsModule.Colors.outline
+                        color: Colors.on_surface
+                        placeholderTextColor: Colors.outline
                         selectByMouse: true
                         validator: IntValidator { bottom: 0; top: 99 }
 
                         background: Rectangle {
                             radius: 10
                             color: hoursField.activeFocus
-                                ? ColorsModule.Colors.surface_container_highest
-                                : ColorsModule.Colors.surface_container_low
+                                ? Colors.surface_container_highest
+                                : Colors.surface_container_low
                             border.color: hoursField.activeFocus
-                                ? ColorsModule.Colors.primary
+                                ? Colors.primary
                                 : hoursField.text.length > 0
-                                    ? ColorsModule.Colors.outline
-                                    : ColorsModule.Colors.outline_variant
+                                    ? Colors.outline
+                                    : Colors.outline_variant
                             border.width: hoursField.activeFocus ? 2 : (hoursField.text.length > 0 ? 1.5 : 1)
 
                             Behavior on border.color { ColorAnimation { duration: 100 } }
@@ -311,25 +285,25 @@ Item {
                         }
                     }
 
-                    Text {
+                    StyledText {
                         Layout.alignment: Qt.AlignHCenter
                         text: "HH"
                         font.pixelSize: 8
                         font.letterSpacing: 2
                         font.weight: Font.Medium
                         color: hoursField.activeFocus || hoursField.text.length > 0
-                            ? ColorsModule.Colors.primary
-                            : ColorsModule.Colors.outline
+                            ? Colors.primary
+                            : Colors.outline
 
                         Behavior on color { ColorAnimation { duration: 100 } }
                     }
                 }
 
-                Text {
+                StyledText {
                     text:             ":"
                     font.pixelSize:   28
                     font.weight:      Font.Thin
-                    color:            ColorsModule.Colors.outline
+                    color:            Colors.outline
                     Layout.alignment: Qt.AlignVCenter
                     bottomPadding:    14
                 }
@@ -349,21 +323,21 @@ Item {
                         font.pixelSize: 22
                         font.weight: Font.Light
                         font.family: "monospace"
-                        color: ColorsModule.Colors.on_surface
-                        placeholderTextColor: ColorsModule.Colors.outline
+                        color: Colors.on_surface
+                        placeholderTextColor: Colors.outline
                         selectByMouse: true
                         validator: IntValidator { bottom: 0; top: 59 }
 
                         background: Rectangle {
                             radius: 10
                             color: minutesField.activeFocus
-                                ? ColorsModule.Colors.surface_container_highest
-                                : ColorsModule.Colors.surface_container_low
+                                ? Colors.surface_container_highest
+                                : Colors.surface_container_low
                             border.color: minutesField.activeFocus
-                                ? ColorsModule.Colors.primary
+                                ? Colors.primary
                                 : minutesField.text.length > 0
-                                    ? ColorsModule.Colors.outline
-                                    : ColorsModule.Colors.outline_variant
+                                    ? Colors.outline
+                                    : Colors.outline_variant
                             border.width: minutesField.activeFocus ? 2 : (minutesField.text.length > 0 ? 1.5 : 1)
 
                             Behavior on border.color { ColorAnimation { duration: 100 } }
@@ -381,25 +355,25 @@ Item {
                         }
                     }
 
-                    Text {
+                    StyledText {
                         Layout.alignment: Qt.AlignHCenter
                         text: "MM"
                         font.pixelSize: 8
                         font.letterSpacing: 2
                         font.weight: Font.Medium
                         color: minutesField.activeFocus || minutesField.text.length > 0
-                            ? ColorsModule.Colors.primary
-                            : ColorsModule.Colors.outline
+                            ? Colors.primary
+                            : Colors.outline
 
                         Behavior on color { ColorAnimation { duration: 100 } }
                     }
                 }
 
-                Text {
+                StyledText {
                     text:             ":"
                     font.pixelSize:   28
                     font.weight:      Font.Thin
-                    color:            ColorsModule.Colors.outline
+                    color:            Colors.outline
                     Layout.alignment: Qt.AlignVCenter
                     bottomPadding:    14
                 }
@@ -419,21 +393,21 @@ Item {
                         font.pixelSize: 22
                         font.weight: Font.Light
                         font.family: "monospace"
-                        color: ColorsModule.Colors.on_surface
-                        placeholderTextColor: ColorsModule.Colors.outline
+                        color: Colors.on_surface
+                        placeholderTextColor: Colors.outline
                         selectByMouse: true
                         validator: IntValidator { bottom: 0; top: 59 }
 
                         background: Rectangle {
                             radius: 10
                             color: secondsField.activeFocus
-                                ? ColorsModule.Colors.surface_container_highest
-                                : ColorsModule.Colors.surface_container_low
+                                ? Colors.surface_container_highest
+                                : Colors.surface_container_low
                             border.color: secondsField.activeFocus
-                                ? ColorsModule.Colors.primary
+                                ? Colors.primary
                                 : secondsField.text.length > 0
-                                    ? ColorsModule.Colors.outline
-                                    : ColorsModule.Colors.outline_variant
+                                    ? Colors.outline
+                                    : Colors.outline_variant
                             border.width: secondsField.activeFocus ? 2 : (secondsField.text.length > 0 ? 1.5 : 1)
 
                             Behavior on border.color { ColorAnimation { duration: 100 } }
@@ -447,15 +421,15 @@ Item {
                         }
                     }
 
-                    Text {
+                    StyledText {
                         Layout.alignment: Qt.AlignHCenter
                         text: "SS"
                         font.pixelSize: 8
                         font.letterSpacing: 2
                         font.weight: Font.Medium
                         color: secondsField.activeFocus || secondsField.text.length > 0
-                            ? ColorsModule.Colors.primary
-                            : ColorsModule.Colors.outline
+                            ? Colors.primary
+                            : Colors.outline
 
                         Behavior on color { ColorAnimation { duration: 100 } }
                     }
@@ -470,18 +444,16 @@ Item {
                 RowLayout {
                     Layout.fillWidth: true
 
-                    Text {
+                    StyledText {
                         text:               "NOTIFICATION"
                         font.pixelSize:     9
                         font.letterSpacing: 2
-                        color:              ColorsModule.Colors.outline
+                        color:              Colors.outline
                     }
 
-                    Rectangle {
+                    Divider {
                         Layout.fillWidth: true
                         Layout.leftMargin: 8
-                        height: 1
-                        color: ColorsModule.Colors.outline_variant
                         opacity: 0.5
                     }
                 }
@@ -492,19 +464,19 @@ Item {
                     height:           42
                     placeholderText:  "Timer finished!"
                     font.pixelSize:   13
-                    color:            ColorsModule.Colors.on_surface
-                    placeholderTextColor: ColorsModule.Colors.outline
+                    color:            Colors.on_surface
+                    placeholderTextColor: Colors.outline
                     leftPadding:      14
                     selectByMouse:    true
 
                     background: Rectangle {
                         radius:       10
                         color:        notifField.activeFocus
-                            ? ColorsModule.Colors.surface_container_high
-                            : ColorsModule.Colors.surface_container_low
+                            ? Colors.surface_container_high
+                            : Colors.surface_container_low
                         border.color: notifField.activeFocus
-                            ? ColorsModule.Colors.secondary
-                            : ColorsModule.Colors.outline_variant
+                            ? Colors.secondary
+                            : Colors.outline_variant
                         border.width: notifField.activeFocus ? 2 : 1
 
                         Behavior on border.color { ColorAnimation { duration: 100 } }
@@ -524,18 +496,19 @@ Item {
                 Layout.fillWidth: true
                 spacing:          12
 
-                Rectangle {
+                ClickableRect {
+                    id: primaryBtnRect
                     Layout.fillWidth: true
                     height:  44
                     radius:  12
 
-                    color: primaryBtn.containsMouse || root.running || root.remainingSeconds > 0
-                        ? ColorsModule.Colors.primary
-                        : ColorsModule.Colors.primary_container
+                    color: primaryBtnRect.hovered || root.running || root.remainingSeconds > 0
+                        ? Colors.primary
+                        : Colors.primary_container
 
                     Behavior on color { ColorAnimation { duration: 150 } }
 
-                    Text {
+                    StyledText {
                         anchors.centerIn:   parent
                         text: {
                             if (root.finished)             return "FINISHED"
@@ -547,16 +520,12 @@ Item {
                         font.weight:        Font.Medium
                         font.letterSpacing: 1.5
                         color: root.running || root.remainingSeconds > 0
-                            ? ColorsModule.Colors.on_primary
-                            : ColorsModule.Colors.on_primary_container
+                            ? Colors.on_primary
+                            : Colors.on_primary_container
                     }
 
-                    MouseArea {
-                        id:           primaryBtn
-                        anchors.fill: parent
-                        hoverEnabled: true
-                        cursorShape:  Qt.PointingHandCursor
-                        onClicked: {
+                    cursorShape:  Qt.PointingHandCursor
+                    onClicked: {
                             if (root.finished) return
                             if (!root.running && root.remainingSeconds === 0) {
                                 root.startTimer()
@@ -566,40 +535,35 @@ Item {
                                 root.running = true
                             }
                         }
-                    }
                 }
 
-                Rectangle {
+                ClickableRect {
+                    id: resetBtnRect
                     width:        90
                     height:       44
                     radius:       12
-                    color:        resetBtn.containsMouse
-                        ? ColorsModule.Colors.surface_container_highest
-                        : ColorsModule.Colors.surface_container_high
-                    border.color: resetBtn.containsMouse
-                        ? ColorsModule.Colors.outline
-                        : ColorsModule.Colors.outline_variant
+                    color:        resetBtnRect.hovered
+                        ? Colors.surface_container_highest
+                        : Colors.surface_container_high
+                    border.color: resetBtnRect.hovered
+                        ? Colors.outline
+                        : Colors.outline_variant
                     border.width: 1
 
                     Behavior on color { ColorAnimation { duration: 150 } }
                     Behavior on border.color { ColorAnimation { duration: 150 } }
 
-                    Text {
+                    StyledText {
                         anchors.centerIn:   parent
                         text:               "RESET"
                         font.pixelSize:     12
                         font.weight:        Font.Medium
                         font.letterSpacing: 1
-                        color:              ColorsModule.Colors.on_surface_variant
+                        color:              Colors.on_surface_variant
                     }
 
-                    MouseArea {
-                        id:           resetBtn
-                        anchors.fill: parent
-                        hoverEnabled: true
-                        cursorShape:  Qt.PointingHandCursor
-                        onClicked:    root.resetTimer()
-                    }
+                    cursorShape:  Qt.PointingHandCursor
+                    onClicked:    root.resetTimer()
                 }
             }
         }

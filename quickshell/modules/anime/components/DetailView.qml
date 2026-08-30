@@ -1,14 +1,14 @@
 import QtQuick
 import QtQuick.Controls
 import QtQuick.Layouts
-import "../../../colors" as ColorsModule
+import qs.colors
 import qs.services
 import Quickshell.Io
+import qs.components
 
 Item {
     id: detailView
 
-    readonly property var c: ColorsModule.Colors
     readonly property string fontDisplay: "Noto Serif"
     readonly property string fontBody:    "Noto Sans"
 
@@ -46,7 +46,7 @@ Item {
         mpvProcess.running = true
     }
 
-    Rectangle { anchors.fill: parent; color: c.background }
+    Rectangle { anchors.fill: parent; color: Colors.background }
 
     ColumnLayout {
         anchors.fill: parent
@@ -55,12 +55,12 @@ Item {
         Rectangle {
             Layout.fillWidth: true
             height: 52
-            color: c.surface_container_low
+            color: Colors.surface_container_low
             z: 2
 
             Rectangle {
                 anchors { bottom: parent.bottom; left: parent.left; right: parent.right }
-                height: 1; color: c.outline_variant; opacity: 0.5
+                height: 1; color: Colors.outline_variant; opacity: 0.5
             }
 
             RowLayout {
@@ -73,12 +73,12 @@ Item {
 
                     Rectangle {
                         anchors.centerIn: parent; width: 34; height: 34; radius: 17
-                        color: backArea.containsMouse ? c.surface_container : "transparent"
+                        color: backArea.containsMouse ? Colors.surface_container : "transparent"
                         Behavior on color { ColorAnimation { duration: 130 } }
                     }
                     Text {
                         anchors.centerIn: parent
-                        text: "←"; font.pixelSize: 18; color: c.on_surface_variant
+                        text: "←"; font.pixelSize: 18; color: Colors.on_surface_variant
                     }
                     MouseArea {
                         id: backArea; anchors.fill: parent; hoverEnabled: true
@@ -92,7 +92,7 @@ Item {
                         ? (Anime.currentAnime.englishName || Anime.currentAnime.name || "")
                         : ""
                     font.family: detailView.fontDisplay
-                    font.pixelSize: 14; color: c.on_surface; elide: Text.ElideRight
+                    font.pixelSize: 14; color: Colors.on_surface; elide: Text.ElideRight
                 }
 
                 Item {
@@ -101,30 +101,30 @@ Item {
 
                     Rectangle {
                         anchors.fill: parent; radius: height / 2
-                        color: detailView._inLibrary ? c.primary_container : c.surface_container
-                        border.color: detailView._inLibrary ? c.primary : c.outline_variant
+                        color: detailView._inLibrary ? Colors.primary_container : Colors.surface_container
+                        border.color: detailView._inLibrary ? Colors.primary : Colors.outline_variant
                         border.width: 1
                         Behavior on color { ColorAnimation { duration: 180 } }
                     }
                     Row {
                         anchors.centerIn: parent; spacing: 5
 
-                        Text {
+                        StyledText {
                             anchors.verticalCenter: parent.verticalCenter
                             text: detailView._inLibrary ? "✓" : "+"
                             font.pixelSize: 11; font.bold: true
                             color: detailView._inLibrary
-                                ? c.on_primary_container : c.on_surface_variant
+                                ? Colors.on_primary_container : Colors.on_surface_variant
                             Behavior on color { ColorAnimation { duration: 180 } }
                         }
-                        Text {
+                        StyledText {
                             id: libBtnLabel
                             anchors.verticalCenter: parent.verticalCenter
                             text: "Library"
                             font.family: detailView.fontBody
                             font.pixelSize: 11; font.letterSpacing: 0.3
                             color: detailView._inLibrary
-                                ? c.on_primary_container : c.on_surface_variant
+                                ? Colors.on_primary_container : Colors.on_surface_variant
                             Behavior on color { ColorAnimation { duration: 180 } }
                         }
                     }
@@ -143,20 +143,20 @@ Item {
 
         Rectangle {
             Layout.fillWidth: true; height: 34
-            color: c.surface_container
+            color: Colors.surface_container
             visible: Anime.currentAnime !== null
 
             RowLayout {
                 anchors { fill: parent; leftMargin: 16; rightMargin: 16 }
 
-                Text {
+                StyledText {
                     text: Anime.currentAnime
                         ? (Anime.currentAnime.episodes
                         ? Anime.currentAnime.episodes.length : 0) + " episodes"
                         : ""
                     font.family: detailView.fontBody
                     font.pixelSize: 11; font.letterSpacing: 1
-                    color: c.on_surface_variant; opacity: 0.75
+                    color: Colors.on_surface_variant; opacity: 0.75
                 }
 
                 Item { Layout.fillWidth: true }
@@ -169,8 +169,8 @@ Item {
                         && _entry.lastWatchedEpNum !== ""
                         && _entry.lastWatchedEpNum !== undefined
                     height: 20; width: lastWatchedText.implicitWidth + 18; radius: 10
-                    color: Qt.rgba(c.primary.r, c.primary.g, c.primary.b, 0.12)
-                    border.color: c.primary; border.width: 1
+                    color: Colors.withAlpha(Colors.primary, 0.12)
+                    border.color: Colors.primary; border.width: 1
 
                     Text {
                         id: lastWatchedText; anchors.centerIn: parent
@@ -180,14 +180,14 @@ Item {
                             return e ? "Last: Ep. " + e.lastWatchedEpNum : ""
                         }
                         font.family: detailView.fontBody
-                        font.pixelSize: 9; font.letterSpacing: 0.8; color: c.primary
+                        font.pixelSize: 9; font.letterSpacing: 0.8; color: Colors.primary
                     }
                 }
             }
 
             Rectangle {
                 anchors { bottom: parent.bottom; left: parent.left; right: parent.right }
-                height: 1; color: c.outline_variant; opacity: 0.3
+                height: 1; color: Colors.outline_variant; opacity: 0.3
             }
         }
 
@@ -195,26 +195,20 @@ Item {
             Layout.fillWidth: true; Layout.fillHeight: true
 
             Rectangle {
-                anchors.fill: parent; color: c.background
+                anchors.fill: parent; color: Colors.background
                 visible: Anime.isFetchingDetail; z: 5
 
                 Column {
                     anchors.centerIn: parent; spacing: 14
 
-                    Rectangle {
-                        width: 28; height: 28; radius: 14
+                    Spinner {
+                        width: 28
                         anchors.horizontalCenter: parent.horizontalCenter
-                        color: "transparent"; border.color: c.primary; border.width: 2
-                        RotationAnimator on rotation {
-                            from: 0; to: 360; duration: 800
-                            loops: Animation.Infinite; running: parent.visible
-                            easing.type: Easing.Linear
-                        }
                     }
-                    Text {
+                    StyledText {
                         anchors.horizontalCenter: parent.horizontalCenter
                         text: "fetching episodes"
-                        color: c.on_surface_variant
+                        color: Colors.on_surface_variant
                         font.family: detailView.fontBody
                         font.pixelSize: 11; font.letterSpacing: 2; opacity: 0.7
                     }
@@ -222,26 +216,20 @@ Item {
             }
 
             Rectangle {
-                anchors.fill: parent; color: Qt.rgba(c.background.r, c.background.g, c.background.b, 0.88)
+                anchors.fill: parent; color: Colors.withAlpha(Colors.background, 0.88)
                 visible: Anime.isFetchingLinks; z: 6
 
                 Column {
                     anchors.centerIn: parent; spacing: 14
 
-                    Rectangle {
-                        width: 28; height: 28; radius: 14
+                    Spinner {
+                        width: 28
                         anchors.horizontalCenter: parent.horizontalCenter
-                        color: "transparent"; border.color: c.primary; border.width: 2
-                        RotationAnimator on rotation {
-                            from: 0; to: 360; duration: 800
-                            loops: Animation.Infinite; running: parent.visible
-                            easing.type: Easing.Linear
-                        }
                     }
-                    Text {
+                    StyledText {
                         anchors.horizontalCenter: parent.horizontalCenter
                         text: "fetching stream"
-                        color: c.on_surface_variant
+                        color: Colors.on_surface_variant
                         font.family: detailView.fontBody
                         font.pixelSize: 11; font.letterSpacing: 2; opacity: 0.7
                     }
@@ -257,7 +245,7 @@ Item {
                 }
                 height: 36; radius: 18
                 width: linksErrText.implicitWidth + 28
-                color: c.error_container
+                color: Colors.error_container
                 visible: Anime.linksError.length > 0 && !Anime.isFetchingLinks
                 z: 7
 
@@ -265,7 +253,7 @@ Item {
                     id: linksErrText; anchors.centerIn: parent
                     text: Anime.linksError
                     font.family: detailView.fontBody
-                    font.pixelSize: 11; color: c.on_error_container; elide: Text.ElideRight
+                    font.pixelSize: 11; color: Colors.on_error_container; elide: Text.ElideRight
                 }
             }
 
@@ -275,14 +263,11 @@ Item {
                 boundsBehavior: Flickable.StopAtBounds
                 model: Anime.currentAnime ? Anime.currentAnime.episodes : []
 
-                ScrollBar.vertical: ScrollBar {
-                    policy: ScrollBar.AsNeeded
-                    contentItem: Rectangle {
-                        implicitWidth: 3; color: c.primary; opacity: 0.45; radius: 2
-                    }
+                ScrollBar.vertical: StyledScrollBar {
                 }
 
-                delegate: Rectangle {
+                delegate: ClickableRect {
+                    id: epRowAreaRect
                     width: epList.width; height: 52
 
                     readonly property var _libEntry: Anime.currentAnime
@@ -292,10 +277,10 @@ Item {
                         && _libEntry.lastWatchedEpNum === String(modelData.number)
 
                     color: isLastWatched
-                        ? Qt.rgba(c.primary.r, c.primary.g, c.primary.b, 0.07)
-                        : (epRowArea.pressed
-                            ? c.surface_container_high
-                            : (epRowArea.containsMouse ? c.surface_container : "transparent"))
+                        ? Colors.withAlpha(Colors.primary, 0.07)
+                        : (epRowAreaRect.pressed
+                            ? Colors.surface_container_high
+                            : (epRowAreaRect.hovered ? Colors.surface_container : "transparent"))
                     Behavior on color { ColorAnimation { duration: 110 } }
 
                     Rectangle {
@@ -304,7 +289,7 @@ Item {
                             left: parent.left; right: parent.right
                             leftMargin: 64; rightMargin: 16
                         }
-                        height: 1; color: c.outline_variant; opacity: 0.22
+                        height: 1; color: Colors.outline_variant; opacity: 0.22
                     }
 
                     RowLayout {
@@ -313,14 +298,14 @@ Item {
 
                         Rectangle {
                             width: epPillText.implicitWidth + 16; height: 26; radius: 13
-                            color: isLastWatched ? c.primary : c.primary_container
+                            color: isLastWatched ? Colors.primary : Colors.primary_container
 
-                            Text {
+                            StyledText {
                                 id: epPillText; anchors.centerIn: parent
                                 text: "Ep." + (modelData.number || "?")
                                 font.family: detailView.fontBody
                                 font.pixelSize: 9; font.bold: true; font.letterSpacing: 0.5
-                                color: isLastWatched ? c.on_primary : c.on_primary_container
+                                color: isLastWatched ? Colors.on_primary : Colors.on_primary_container
                             }
                         }
 
@@ -328,22 +313,20 @@ Item {
                             Layout.fillWidth: true
                             text: "Episode " + (modelData.number || "")
                             font.family: detailView.fontBody
-                            font.pixelSize: 12; color: c.on_surface; elide: Text.ElideRight
+                            font.pixelSize: 12; color: Colors.on_surface; elide: Text.ElideRight
                         }
 
                         // Play icon
-                        Text {
+                        StyledText {
                             text: "▶"; font.pixelSize: 13
-                            color: epRowArea.containsMouse ? c.primary : c.outline
-                            opacity: epRowArea.containsMouse ? 0.9 : 0.35
+                            color: epRowAreaRect.hovered ? Colors.primary : Colors.outline
+                            opacity: epRowAreaRect.hovered ? 0.9 : 0.35
                             Behavior on opacity { NumberAnimation { duration: 120 } }
                             Behavior on color   { ColorAnimation  { duration: 120 } }
                         }
                     }
 
-                    MouseArea {
-                        id: epRowArea; anchors.fill: parent; hoverEnabled: true
-                        onClicked: {
+                    onClicked: {
                             if (!Anime.currentAnime) return
 
                             Anime.fetchStreamLinks(
@@ -360,7 +343,6 @@ Item {
                                 )
                             }
                         }
-                    }
                 }
             }
         }

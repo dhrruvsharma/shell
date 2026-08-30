@@ -1,12 +1,11 @@
 import QtQuick
 import qs.services as Services
 import qs.components
-import "../colors" as ColorsModule
+import qs.colors
 
 Item {
     width: 380
     height: 120
-    property var colors: ColorsModule.Colors
 
     Row {
         anchors.centerIn: parent
@@ -17,12 +16,12 @@ Item {
             width: 115
             height: 95
             radius: 12
-            color: colors.surface_container_high
+            color: Colors.surface_container_high
 
             SemiCircularGraph {
                 anchors.centerIn: parent
                 value: Services.System.cpu
-                fillColor: colors.error
+                fillColor: Colors.error
                 label: "CPU"
                 width: 95
                 height: 55
@@ -34,12 +33,12 @@ Item {
             width: 115
             height: 95
             radius: 12
-            color: colors.surface_container_high
+            color: Colors.surface_container_high
 
             SemiCircularGraph {
                 anchors.centerIn: parent
                 value: Services.System.ram
-                fillColor: colors.primary
+                fillColor: Colors.primary
                 label: "RAM"
                 width: 95
                 height: 55
@@ -51,12 +50,12 @@ Item {
             width: 115
             height: 95
             radius: 12
-            color: colors.surface_container_high
+            color: Colors.surface_container_high
 
             SemiCircularGraph {
                 anchors.centerIn: parent
                 value: Services.System.disk
-                fillColor: colors.tertiary
+                fillColor: Colors.tertiary
                 label: "DISK"
                 width: 95
                 height: 55

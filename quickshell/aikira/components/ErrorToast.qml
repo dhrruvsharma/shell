@@ -1,5 +1,6 @@
 import QtQuick
-import "../../colors" as ColorsModule
+import qs.colors
+import qs.components
 
 Item {
     id: root
@@ -23,14 +24,14 @@ Item {
     Rectangle {
         anchors.fill: parent
         radius: 20
-        color: ColorsModule.Colors.error_container
-        border { width: 1; color: ColorsModule.Colors.error }
+        color: Colors.error_container
+        border { width: 1; color: Colors.error }
 
-        Text {
+        StyledText {
             id: toastText
             anchors.centerIn: parent
             font { pixelSize: 12; family: "monospace" }
-            color: ColorsModule.Colors.on_error_container
+            color: Colors.on_error_container
         }
     }
 }

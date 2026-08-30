@@ -1,6 +1,7 @@
 import QtQuick
 import QtQuick.Layouts
-import "../colors" as ColorsModule
+import qs.colors
+import qs.components
 
 ColumnLayout {
     required property string label
@@ -10,7 +11,7 @@ ColumnLayout {
     property string suffix: "%"
 
     // primary as a real color so we can derive a translucent tint from it
-    readonly property color primaryColor: ColorsModule.Colors.primary
+    readonly property color primaryColor: Colors.primary
 
     Layout.fillWidth: true
     spacing: 10
@@ -29,16 +30,15 @@ ColumnLayout {
                     ? Qt.rgba(255/255, 167/255, 38/255, 0.2)
                     : Qt.rgba(primaryColor.r, primaryColor.g, primaryColor.b, 0.2)
 
-            Text {
+            MaterialIcon {
                 anchors.centerIn: parent
                 text: icon
-                font.family: "Material Design Icons"
                 font.pixelSize: 18
                 color: value > 80
                     ? "#ef5350"
                     : value > 60
                         ? "#ffa726"
-                        : ColorsModule.Colors.primary
+                        : Colors.primary
             }
 
             Behavior on color {
@@ -46,21 +46,20 @@ ColumnLayout {
             }
         }
 
-        Text {
+        StyledText {
             Layout.fillWidth: true
             text: label
-            color: ColorsModule.Colors.on_surface
             font.pixelSize: 14
             font.weight: Font.Medium
         }
 
-        Text {
+        StyledText {
             text: Math.round(value) + suffix
             color: value > 80
                 ? "#ef5350"
                 : value > 60
                     ? "#ffa726"
-                    : ColorsModule.Colors.primary
+                    : Colors.primary
             font.pixelSize: 15
             font.weight: Font.Bold
         }
@@ -70,7 +69,7 @@ ColumnLayout {
         Layout.fillWidth: true
         Layout.preferredHeight: 8
         radius: 4
-        color: ColorsModule.Colors.surface_container_high
+        color: Colors.surface_container_high
 
         Rectangle {
             width: Math.min(parent.width * (value/maxValue), parent.width)
@@ -85,7 +84,7 @@ ColumnLayout {
                         ? "#ef5350"
                         : value > 60
                             ? "#ffa726"
-                            : ColorsModule.Colors.primary
+                            : Colors.primary
                 }
                 GradientStop {
                     position: 1.0
@@ -93,7 +92,7 @@ ColumnLayout {
                         ? "#e53935"
                         : value > 60
                             ? "#ff9800"
-                            : ColorsModule.Colors.secondary
+                            : Colors.secondary
                 }
             }
 

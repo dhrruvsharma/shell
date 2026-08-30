@@ -1,7 +1,7 @@
 import QtQuick
 import qs.modules.bar.components
 import qs.services as Services
-import "../../colors" as ColorsModule
+import qs.colors
 
 // Top bar with drag-rearrangeable "islands". Every draggable widget is an atom
 // living in an island (a group of 1+ atoms sharing a pill/tray). Islands live in
@@ -239,9 +239,9 @@ Item {
         implicitWidth: atomRow.implicitWidth + 2 * island.pad
         implicitHeight: topBar.islandHeight
         radius: 16
-        color: island.grouped ? ColorsModule.Colors.surface_container_high : "transparent"
+        color: island.grouped ? Colors.surface_container_high : "transparent"
         border.width: island.isMergeTarget ? 2 : 0
-        border.color: ColorsModule.Colors.primary
+        border.color: Colors.primary
         opacity: island.beingDragged ? 0.4 : 1
 
         // Insertion caret shown just left of this island.
@@ -250,7 +250,7 @@ Item {
             width: 3
             radius: 1.5
             height: 22
-            color: ColorsModule.Colors.primary
+            color: Colors.primary
             anchors.right: parent.left
             anchors.rightMargin: 3
             anchors.verticalCenter: parent.verticalCenter
@@ -335,7 +335,7 @@ Item {
                 width: 3
                 radius: 1.5
                 height: 22
-                color: ColorsModule.Colors.primary
+                color: Colors.primary
                 anchors.verticalCenter: parent.verticalCenter
             }
         }
@@ -369,7 +369,7 @@ Item {
                 width: 3
                 radius: 1.5
                 height: 22
-                color: ColorsModule.Colors.primary
+                color: Colors.primary
                 anchors.verticalCenter: parent.verticalCenter
             }
 
@@ -393,7 +393,7 @@ Item {
             width: topBar.dragW
             height: topBar.dragH
             radius: 14
-            color: ColorsModule.Colors.surface_container
+            color: Colors.surface_container
             opacity: 0.85
         }
 

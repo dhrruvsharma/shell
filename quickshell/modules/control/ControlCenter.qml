@@ -4,7 +4,7 @@ import QtQuick.Controls
 import Quickshell
 import Quickshell.Io
 import qs.services as Services
-import "../../colors" as ColorsModule
+import qs.colors
 import qs.components
 import qs.modules.control
 
@@ -40,7 +40,7 @@ Item {
     Rectangle {
         id: scrim
         anchors.fill: parent
-        color: ColorsModule.Colors.scrim
+        color: Colors.scrim
         opacity: 0
         enabled: opacity > 0.01
         Behavior on opacity { NumberAnimation { duration: 280; easing.type: Easing.OutCubic } }
@@ -59,7 +59,7 @@ Item {
         height: parent.height
         x: -width
 
-        color: ColorsModule.Colors.surface_container_low
+        color: Colors.surface_container_low
         layer.enabled: true
 
         Rectangle {
@@ -75,9 +75,9 @@ Item {
             height: parent.height
             anchors.left: parent.left
             gradient: Gradient {
-                GradientStop { position: 0.0; color: ColorsModule.Colors.primary }
-                GradientStop { position: 0.5; color: ColorsModule.Colors.secondary }
-                GradientStop { position: 1.0; color: ColorsModule.Colors.tertiary }
+                GradientStop { position: 0.0; color: Colors.primary }
+                GradientStop { position: 0.5; color: Colors.secondary }
+                GradientStop { position: 1.0; color: Colors.tertiary }
             }
         }
 
@@ -126,7 +126,7 @@ Item {
                 anchors.margins: 6
                 width: 5
                 radius: 2.5
-                color: ColorsModule.Colors.surface_container_high
+                color: Colors.surface_container_high
                 opacity: flickable.moving ? 0.4 : 0
                 Behavior on opacity { NumberAnimation { duration: 250 } }
 
@@ -135,7 +135,7 @@ Item {
                     height: Math.max(30, (flickable.height / flickable.contentHeight) * parent.height)
                     y: (flickable.contentY / flickable.contentHeight) * parent.height
                     radius: 2.5
-                    color: ColorsModule.Colors.primary
+                    color: Colors.primary
                     opacity: 0.8
                     Behavior on y { NumberAnimation { duration: 100 } }
                 }

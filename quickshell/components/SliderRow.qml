@@ -2,7 +2,8 @@ pragma ComponentBehavior: Bound
 import QtQuick
 import QtQuick.Controls
 import QtQuick.Layouts
-import "../colors" as ColorsModule
+import qs.colors
+import qs.components
 
 Item {
     id: root
@@ -34,10 +35,10 @@ Item {
     property int iconSize: fontLarge
     property string icon: ""
 
-    property color accentColor: ColorsModule.Colors.primary
-    property color trackColor: ColorsModule.Colors.surface_container_high
-    property color labelColor: ColorsModule.Colors.on_surface
-    property color valueColor: ColorsModule.Colors.on_surface_variant
+    property color accentColor: Colors.primary
+    property color trackColor: Colors.surface_container_high
+    property color labelColor: Colors.on_surface
+    property color valueColor: Colors.on_surface_variant
 
     Layout.fillWidth: true
     implicitWidth: 200
@@ -56,7 +57,7 @@ Item {
                 anchors.fill: parent
                 spacing: 12
 
-                Text {
+                StyledText {
                     visible: root.icon !== ""
                     text: root.icon
                     font.family: "Material Icons"
@@ -64,7 +65,7 @@ Item {
                     color: root.accentColor
                 }
 
-                Text {
+                StyledText {
                     text: root.label
                     font.pixelSize: root.fontMedium
                     font.weight: Font.Medium
@@ -73,7 +74,7 @@ Item {
                     elide: Text.ElideRight
                 }
 
-                Text {
+                StyledText {
                     visible: root.showValue
                     text: {
                         let val = root.valuePrecision > 0

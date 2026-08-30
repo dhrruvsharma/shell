@@ -7,7 +7,8 @@ import Quickshell.Wayland
 import Quickshell.Hyprland
 import Qt5Compat.GraphicalEffects
 import qs.services as Svc
-import "../../colors" as ColorsModule
+import qs.colors
+import qs.components
 
 Item {
     id: thumbContainer
@@ -244,13 +245,13 @@ Item {
                     anchors.fill: parent
                     color: thumbContainer.hovered
                         ? Qt.rgba(
-                            Qt.color(ColorsModule.Colors.primary).r,
-                            Qt.color(ColorsModule.Colors.primary).g,
-                            Qt.color(ColorsModule.Colors.primary).b, 0.08)
+                            Qt.color(Colors.primary).r,
+                            Qt.color(Colors.primary).g,
+                            Qt.color(Colors.primary).b, 0.08)
                         : "transparent"
                     border.width: thumbContainer.hovered ? 2 : 1
                     border.color: thumbContainer.hovered
-                        ? ColorsModule.Colors.primary
+                        ? Colors.primary
                         : Qt.rgba(1, 1, 1, 0.12)
                     radius: 16
                     Behavior on border.width { NumberAnimation { duration: 120 } }
@@ -274,15 +275,15 @@ Item {
             border.width: 1
             border.color: thumbContainer.hovered
                 ? Qt.rgba(
-                    Qt.color(ColorsModule.Colors.primary).r,
-                    Qt.color(ColorsModule.Colors.primary).g,
-                    Qt.color(ColorsModule.Colors.primary).b, 0.6)
+                    Qt.color(Colors.primary).r,
+                    Qt.color(Colors.primary).g,
+                    Qt.color(Colors.primary).b, 0.6)
                 : Qt.rgba(1, 1, 1, 0.10)
 
             Behavior on color        { ColorAnimation  { duration: 150 } }
             Behavior on border.color { ColorAnimation  { duration: 150 } }
 
-            Text {
+            StyledText {
                 id: titleText
                 anchors.centerIn: parent
                 width: parent.width - 16

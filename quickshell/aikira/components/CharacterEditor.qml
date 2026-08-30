@@ -1,8 +1,9 @@
 import QtQuick
 import qs.aikira
 import QtQuick.Layouts
-import "../../colors" as ColorsModule
+import qs.colors
 import QtQuick.Controls
+import qs.components
 
 Item {
     id: root
@@ -58,58 +59,60 @@ Item {
         }
     }
 
-    Rectangle { anchors.fill: parent; color: ColorsModule.Colors.background }
+    Rectangle { anchors.fill: parent; color: Colors.background }
 
     Rectangle {
         id: ceHeader
         anchors { top: parent.top; left: parent.left; right: parent.right }
         height: 56
-        color: ColorsModule.Colors.surface_container
+        color: Colors.surface_container
 
         RowLayout {
             anchors { fill: parent; leftMargin: 16; rightMargin: 16 }
             spacing: 10
 
-            Rectangle {
+            ClickableRect {
+                id: backRect
                 width: 30; height: 30; radius: 8
-                color: backHov.containsMouse ? ColorsModule.Colors.surface_container_high : "transparent"
+                color: backRect.hovered ? Colors.surface_container_high : "transparent"
                 Behavior on color { ColorAnimation { duration: 110 } }
                 Text { anchors.centerIn: parent; text: "←"; font.pixelSize: 16
-                    color: ColorsModule.Colors.on_surface_variant }
-                MouseArea { id: backHov; anchors.fill: parent; hoverEnabled: true
-                    cursorShape: Qt.PointingHandCursor; onClicked: AppState.view = "chat" }
+                    color: Colors.on_surface_variant }
+                cursorShape: Qt.PointingHandCursor
+                onClicked: AppState.view = "chat"
             }
 
-            Text {
+            StyledText {
                 text: isNew ? "new character" : "edit character"
                 font { pixelSize: 15; weight: Font.Medium; letterSpacing: 0.3 }
-                color: ColorsModule.Colors.on_surface
             }
             Item { Layout.fillWidth: true }
 
             Text { id: errMsg; visible: false; text: "name is required"
-                font.pixelSize: 11; color: ColorsModule.Colors.error }
+                font.pixelSize: 11; color: Colors.error }
 
-            Rectangle {
+            ClickableRect {
+                id: delRect
                 visible: !isNew; width: 30; height: 30; radius: 8
-                color: delHov.containsMouse ? ColorsModule.Colors.error_container : "transparent"
+                color: delRect.hovered ? Colors.error_container : "transparent"
                 Behavior on color { ColorAnimation { duration: 110 } }
                 Text { anchors.centerIn: parent; text: "⌫"; font.pixelSize: 14
-                    color: ColorsModule.Colors.error }
-                MouseArea { id: delHov; anchors.fill: parent; hoverEnabled: true
-                    cursorShape: Qt.PointingHandCursor; onClicked: deleteDialog.visible = true }
+                    color: Colors.error }
+                cursorShape: Qt.PointingHandCursor
+                onClicked: deleteDialog.visible = true
             }
 
-            Rectangle {
+            ClickableRect {
+                id: saveRect
                 width: 72; height: 32; radius: 16
-                color: saveHov.containsMouse
-                    ? ColorsModule.Colors.primary_fixed_dim : ColorsModule.Colors.primary
+                color: saveRect.hovered
+                    ? Colors.primary_fixed_dim : Colors.primary
                 Behavior on color { ColorAnimation { duration: 120 } }
                 Text { anchors.centerIn: parent; text: "save"
                     font { pixelSize: 13; weight: Font.Medium }
-                    color: ColorsModule.Colors.on_primary }
-                MouseArea { id: saveHov; anchors.fill: parent; hoverEnabled: true
-                    cursorShape: Qt.PointingHandCursor; onClicked: root.doSave() }
+                    color: Colors.on_primary }
+                cursorShape: Qt.PointingHandCursor
+                onClicked: root.doSave()
             }
         }
     }
@@ -128,25 +131,25 @@ Item {
             Column {
                 width: parent.width; spacing: 5
                 Text { text: "NAME"; font { pixelSize: 10; letterSpacing: 1.5; weight: Font.Bold }
-                    color: ColorsModule.Colors.on_surface_variant; opacity: 0.65 }
+                    color: Colors.on_surface_variant; opacity: 0.65 }
                 Rectangle {
                     width: parent.width; height: 36; radius: 8
-                    color: ColorsModule.Colors.surface_container_highest
-                    border { width: fName.activeFocus ? 1 : 0; color: ColorsModule.Colors.primary }
+                    color: Colors.surface_container_highest
+                    border { width: fName.activeFocus ? 1 : 0; color: Colors.primary }
                     Behavior on border.width { NumberAnimation { duration: 100 } }
                     TextInput {
                         id: fName
                         anchors { fill: parent; leftMargin: 12; rightMargin: 12 }
                         verticalAlignment: TextInput.AlignVCenter
-                        color: ColorsModule.Colors.on_surface
+                        color: Colors.on_surface
                         font { pixelSize: 13; family: "monospace" }
                         selectByMouse: true
-                        Text {
+                        StyledText {
                             anchors { fill: parent; leftMargin: 0; rightMargin: 0 }
                             verticalAlignment: Text.AlignVCenter
                             text: "character name"
                             font { pixelSize: 13; family: "monospace" }
-                            color: ColorsModule.Colors.on_surface_variant
+                            color: Colors.on_surface_variant
                             opacity: 0.35
                             visible: fName.text.length === 0
                         }
@@ -160,22 +163,22 @@ Item {
                 Column {
                     width: (parent.width - 32) * 0.5; spacing: 5
                     Text { text: "PROXY"; font { pixelSize: 10; letterSpacing: 1.5; weight: Font.Bold }
-                        color: ColorsModule.Colors.on_surface_variant; opacity: 0.65 }
+                        color: Colors.on_surface_variant; opacity: 0.65 }
                     ProxyDropdown { id: proxyDrop; width: parent.width }
                 }
                 Column {
                     width: (parent.width - 32) * 0.25; spacing: 5
                     Text { text: "TEMPERATURE"; font { pixelSize: 10; letterSpacing: 1.5; weight: Font.Bold }
-                        color: ColorsModule.Colors.on_surface_variant; opacity: 0.65 }
+                        color: Colors.on_surface_variant; opacity: 0.65 }
                     Rectangle {
                         width: parent.width; height: 36; radius: 8
-                        color: ColorsModule.Colors.surface_container_highest
-                        border { width: fTemp.activeFocus ? 1 : 0; color: ColorsModule.Colors.primary }
+                        color: Colors.surface_container_highest
+                        border { width: fTemp.activeFocus ? 1 : 0; color: Colors.primary }
                         Behavior on border.width { NumberAnimation { duration: 100 } }
                         TextInput {
                             id: fTemp; anchors { fill: parent; leftMargin: 12; rightMargin: 12 }
                             verticalAlignment: TextInput.AlignVCenter
-                            color: ColorsModule.Colors.on_surface
+                            color: Colors.on_surface
                             font { pixelSize: 12; family: "monospace" }
                             selectByMouse: true
                         }
@@ -184,16 +187,16 @@ Item {
                 Column {
                     width: (parent.width - 32) * 0.25; spacing: 5
                     Text { text: "MAX TOKENS"; font { pixelSize: 10; letterSpacing: 1.5; weight: Font.Bold }
-                        color: ColorsModule.Colors.on_surface_variant; opacity: 0.65 }
+                        color: Colors.on_surface_variant; opacity: 0.65 }
                     Rectangle {
                         width: parent.width; height: 36; radius: 8
-                        color: ColorsModule.Colors.surface_container_highest
-                        border { width: fTok.activeFocus ? 1 : 0; color: ColorsModule.Colors.primary }
+                        color: Colors.surface_container_highest
+                        border { width: fTok.activeFocus ? 1 : 0; color: Colors.primary }
                         Behavior on border.width { NumberAnimation { duration: 100 } }
                         TextInput {
                             id: fTok; anchors { fill: parent; leftMargin: 12; rightMargin: 12 }
                             verticalAlignment: TextInput.AlignVCenter
-                            color: ColorsModule.Colors.on_surface
+                            color: Colors.on_surface
                             font { pixelSize: 12; family: "monospace" }
                             selectByMouse: true
                         }
@@ -204,13 +207,13 @@ Item {
             Column {
                 width: parent.width; spacing: 5
                 Text { text: "DESCRIPTION"; font { pixelSize: 10; letterSpacing: 1.5; weight: Font.Bold }
-                    color: ColorsModule.Colors.on_surface_variant; opacity: 0.65 }
+                    color: Colors.on_surface_variant; opacity: 0.65 }
                 Text { text: "supports {{char}} and {{user}} placeholders"
-                    font.pixelSize: 10; color: ColorsModule.Colors.on_surface_variant; opacity: 0.4 }
+                    font.pixelSize: 10; color: Colors.on_surface_variant; opacity: 0.4 }
                 Rectangle {
                     width: parent.width; height: 110
-                    radius: 8; clip: true; color: ColorsModule.Colors.surface_container_highest
-                    border { width: fDesc.activeFocus ? 1 : 0; color: ColorsModule.Colors.primary }
+                    radius: 8; clip: true; color: Colors.surface_container_highest
+                    border { width: fDesc.activeFocus ? 1 : 0; color: Colors.primary }
                     Behavior on border.width { NumberAnimation { duration: 100 } }
                     Flickable {
                         anchors { fill: parent; margins: 10 }
@@ -219,7 +222,7 @@ Item {
                         ScrollBar.vertical: ScrollBar { policy: ScrollBar.AsNeeded }
                         TextEdit {
                             id: fDesc; width: parent.width
-                            color: ColorsModule.Colors.on_surface
+                            color: Colors.on_surface
                             font { pixelSize: 12; family: "monospace" }
                             wrapMode: TextEdit.Wrap; selectByMouse: true
                         }
@@ -231,11 +234,11 @@ Item {
             Column {
                 width: parent.width; spacing: 5
                 Text { text: "PERSONALITY"; font { pixelSize: 10; letterSpacing: 1.5; weight: Font.Bold }
-                    color: ColorsModule.Colors.on_surface_variant; opacity: 0.65 }
+                    color: Colors.on_surface_variant; opacity: 0.65 }
                 Rectangle {
                     width: parent.width; height: 110
-                    radius: 8; clip: true; color: ColorsModule.Colors.surface_container_highest
-                    border { width: fPers.activeFocus ? 1 : 0; color: ColorsModule.Colors.primary }
+                    radius: 8; clip: true; color: Colors.surface_container_highest
+                    border { width: fPers.activeFocus ? 1 : 0; color: Colors.primary }
                     Behavior on border.width { NumberAnimation { duration: 100 } }
                     Flickable {
                         anchors { fill: parent; margins: 10 }
@@ -244,7 +247,7 @@ Item {
                         ScrollBar.vertical: ScrollBar { policy: ScrollBar.AsNeeded }
                         TextEdit {
                             id: fPers; width: parent.width
-                            color: ColorsModule.Colors.on_surface
+                            color: Colors.on_surface
                             font { pixelSize: 12; family: "monospace" }
                             wrapMode: TextEdit.Wrap; selectByMouse: true
                         }
@@ -255,13 +258,13 @@ Item {
             Column {
                 width: parent.width; spacing: 5
                 Text { text: "SCENARIO"; font { pixelSize: 10; letterSpacing: 1.5; weight: Font.Bold }
-                    color: ColorsModule.Colors.on_surface_variant; opacity: 0.65 }
+                    color: Colors.on_surface_variant; opacity: 0.65 }
                 Text { text: "sets the context / setting of the conversation"
-                    font.pixelSize: 10; color: ColorsModule.Colors.on_surface_variant; opacity: 0.4 }
+                    font.pixelSize: 10; color: Colors.on_surface_variant; opacity: 0.4 }
                 Rectangle {
                     width: parent.width; height: 110
-                    radius: 8; clip: true; color: ColorsModule.Colors.surface_container_highest
-                    border { width: fScen.activeFocus ? 1 : 0; color: ColorsModule.Colors.primary }
+                    radius: 8; clip: true; color: Colors.surface_container_highest
+                    border { width: fScen.activeFocus ? 1 : 0; color: Colors.primary }
                     Behavior on border.width { NumberAnimation { duration: 100 } }
                     Flickable {
                         anchors { fill: parent; margins: 10 }
@@ -270,7 +273,7 @@ Item {
                         ScrollBar.vertical: ScrollBar { policy: ScrollBar.AsNeeded }
                         TextEdit {
                             id: fScen; width: parent.width
-                            color: ColorsModule.Colors.on_surface
+                            color: Colors.on_surface
                             font { pixelSize: 12; family: "monospace" }
                             wrapMode: TextEdit.Wrap; selectByMouse: true
                         }
@@ -281,13 +284,13 @@ Item {
             Column {
                 width: parent.width; spacing: 5
                 Text { text: "FIRST MESSAGE"; font { pixelSize: 10; letterSpacing: 1.5; weight: Font.Bold }
-                    color: ColorsModule.Colors.on_surface_variant; opacity: 0.65 }
+                    color: Colors.on_surface_variant; opacity: 0.65 }
                 Text { text: "shown at the start of every new chat (optional)"
-                    font.pixelSize: 10; color: ColorsModule.Colors.on_surface_variant; opacity: 0.4 }
+                    font.pixelSize: 10; color: Colors.on_surface_variant; opacity: 0.4 }
                 Rectangle {
                     width: parent.width; height: 110
-                    radius: 8; clip: true; color: ColorsModule.Colors.surface_container_highest
-                    border { width: fFirst.activeFocus ? 1 : 0; color: ColorsModule.Colors.primary }
+                    radius: 8; clip: true; color: Colors.surface_container_highest
+                    border { width: fFirst.activeFocus ? 1 : 0; color: Colors.primary }
                     Behavior on border.width { NumberAnimation { duration: 100 } }
                     Flickable {
                         anchors { fill: parent; margins: 10 }
@@ -296,7 +299,7 @@ Item {
                         ScrollBar.vertical: ScrollBar { policy: ScrollBar.AsNeeded }
                         TextEdit {
                             id: fFirst; width: parent.width
-                            color: ColorsModule.Colors.on_surface
+                            color: Colors.on_surface
                             font { pixelSize: 12; family: "monospace" }
                             wrapMode: TextEdit.Wrap; selectByMouse: true
                         }
@@ -314,33 +317,34 @@ Item {
 
         Rectangle {
             anchors.centerIn: parent; width: 340; height: 160; radius: 16
-            color: ColorsModule.Colors.surface_container_highest
+            color: Colors.surface_container_highest
 
             Column {
                 anchors { fill: parent; margins: 24 }
                 spacing: 12
                 Text { text: "delete this character?"; font { pixelSize: 15; weight: Font.Medium }
-                    color: ColorsModule.Colors.on_surface }
+                    color: Colors.on_surface }
                 Text { text: "all conversations will be permanently deleted."
-                    font.pixelSize: 12; color: ColorsModule.Colors.on_surface_variant; opacity: 0.7
+                    font.pixelSize: 12; color: Colors.on_surface_variant; opacity: 0.7
                     wrapMode: Text.WordWrap; width: parent.width }
                 Item { height: 4 }
                 Row {
                     spacing: 10; anchors.right: parent.right
-                    Rectangle {
+                    ClickableRect {
+                        id: cxRect
                         width: 72; height: 32; radius: 16
-                        color: cxHov.containsMouse ? ColorsModule.Colors.surface_container_high : "transparent"
+                        color: cxRect.hovered ? Colors.surface_container_high : "transparent"
                         Text { anchors.centerIn: parent; text: "cancel"; font.pixelSize: 13
-                            color: ColorsModule.Colors.on_surface_variant }
-                        MouseArea { id: cxHov; anchors.fill: parent; hoverEnabled: true
-                            cursorShape: Qt.PointingHandCursor; onClicked: deleteDialog.visible = false }
+                            color: Colors.on_surface_variant }
+                        cursorShape: Qt.PointingHandCursor
+                        onClicked: deleteDialog.visible = false
                     }
                     Rectangle {
                         width: 80; height: 32; radius: 16
-                        color: ColorsModule.Colors.error_container
+                        color: Colors.error_container
                         Text { anchors.centerIn: parent; text: "delete"
                             font { pixelSize: 13; weight: Font.Medium }
-                            color: ColorsModule.Colors.on_error_container }
+                            color: Colors.on_error_container }
                         MouseArea {
                             anchors.fill: parent; cursorShape: Qt.PointingHandCursor
                             onClicked: {

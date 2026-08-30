@@ -1,6 +1,7 @@
 import QtQuick
 import QtQuick.Layouts
-import "../colors" as ColorsModule
+import qs.colors
+import qs.components
 
 Rectangle {
         required property string label
@@ -13,14 +14,14 @@ Rectangle {
         radius: 16
 
         color: active
-            ? ColorsModule.Colors.primary_container
-            : ColorsModule.Colors.surface_container_high
+            ? Colors.primary_container
+            : Colors.surface_container_high
 
 
         border.width: active ? 0 : 1
         border.color: active
             ? "transparent"
-            : ColorsModule.Colors.outline_variant
+            : Colors.outline_variant
 
         layer.enabled: active
 
@@ -34,17 +35,16 @@ Rectangle {
                 height: 40
                 radius: 20
                 color: active
-                    ? ColorsModule.Colors.primary
-                    : ColorsModule.Colors.surface_container_highest
+                    ? Colors.primary
+                    : Colors.surface_container_highest
 
-                Text {
+                MaterialIcon {
                     anchors.centerIn: parent
                     text: icon
-                    font.family: "Material Design Icons"
                     font.pixelSize: 24
                     color: active
-                        ? ColorsModule.Colors.on_primary
-                        : ColorsModule.Colors.on_surface_variant
+                        ? Colors.on_primary
+                        : Colors.on_surface_variant
                 }
 
                 Behavior on color {
@@ -52,14 +52,14 @@ Rectangle {
                 }
             }
 
-            Text {
+            StyledText {
                 Layout.alignment: Qt.AlignHCenter
                 text: label
                 font.pixelSize: 12
                 font.weight: Font.Medium
                 color: active
-                    ? ColorsModule.Colors.on_primary_container
-                    : ColorsModule.Colors.on_surface_variant
+                    ? Colors.on_primary_container
+                    : Colors.on_surface_variant
             }
         }
 

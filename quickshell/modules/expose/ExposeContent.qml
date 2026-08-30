@@ -4,6 +4,7 @@ import Quickshell.Hyprland
 import Quickshell.Wayland
 import qs.services as Svc
 import qs.colors
+import qs.components
 
 // Grid of live workspace previews. Drag a window preview onto another
 // workspace to move it there; click a window to focus it; click empty
@@ -97,10 +98,9 @@ Rectangle {
                     border.color: cell.isFocused ? Colors.primary : Colors.outline
                     clip: true
 
-                    Text {
+                    StyledText {
                         anchors.centerIn: parent
                         text: "WS " + cell.wsId
-                        color: Colors.on_surface
                         opacity: 0.5
                         font.pixelSize: 16
                         font.weight: Font.Bold

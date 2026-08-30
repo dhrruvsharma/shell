@@ -1,7 +1,7 @@
 import QtQuick
 import QtQuick.Layouts
 import qs.services as Services
-import "../colors" as ColorsModule
+import qs.colors
 
 Item {
     id: root
@@ -31,8 +31,8 @@ Item {
 
                 // Simplified gradient (slightly faster)
                 gradient: Gradient {
-                    GradientStop { position: 0;   color: ColorsModule.Colors.primary_container }
-                    GradientStop { position: 1;   color: ColorsModule.Colors.primary }
+                    GradientStop { position: 0;   color: Colors.primary_container }
+                    GradientStop { position: 1;   color: Colors.primary }
                 }
 
                 anchors.verticalCenter: parent.verticalCenter

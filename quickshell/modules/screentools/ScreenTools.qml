@@ -1,12 +1,11 @@
 import QtQuick
 import Quickshell.Io
 import qs.components
-import "../colors" as ColorsModule
+import qs.colors
 
 Item {
     width: 340
     height: 110
-    property var colors: ColorsModule.Colors
     property bool recording: false
     property bool hoveredRecord: false
     property bool hoveredScreenshot: false
@@ -24,13 +23,10 @@ Item {
         }
     }
 
-    Rectangle {
+    Card {
         anchors.fill: parent
         anchors.margins: 6
         radius: 12
-        color: colors.surface_container
-        border.color: colors.outline_variant
-        border.width: 1
 
         Rectangle {
             id: recordingIndicator
@@ -38,7 +34,7 @@ Item {
             width: 8
             height: 8
             radius: 4
-            color: colors.error
+            color: Colors.error
             anchors.top: parent.top
             anchors.right: parent.right
             anchors.margins: 12
@@ -55,10 +51,10 @@ Item {
             anchors.centerIn: parent
             spacing: 12
 
-            Text {
+            StyledText {
                 anchors.horizontalCenter: parent.horizontalCenter
                 text: recording ? "● Recording" : "Capture"
-                color: recording ? colors.error : colors.on_surface_variant
+                color: recording ? Colors.error : Colors.on_surface_variant
                 font.pixelSize: 11
                 font.weight: Font.Medium
                 opacity: 0.7
@@ -68,14 +64,14 @@ Item {
                 anchors.horizontalCenter: parent.horizontalCenter
                 spacing: 12
 
-                Rectangle {
+                ClickableRect {
                     width: 140
                     height: 52
                     radius: 10
                     color: recording
-                        ? (hoveredRecord ? Qt.lighter(colors.error_container, 1.15) : colors.error_container)
-                        : (hoveredRecord ? Qt.lighter(colors.primary_container, 1.2) : colors.primary_container)
-                    border.color: recording ? colors.error : colors.primary
+                        ? (hoveredRecord ? Qt.lighter(Colors.error_container, 1.15) : Colors.error_container)
+                        : (hoveredRecord ? Qt.lighter(Colors.primary_container, 1.2) : Colors.primary_container)
+                    border.color: recording ? Colors.error : Colors.primary
                     border.width: hoveredRecord ? 1.5 : 1
 
                     Behavior on color { ColorAnimation { duration: 180 } }
@@ -91,30 +87,25 @@ Item {
                             width: 18
                             height: 18
                             radius: recording ? 3 : 9
-                            color: recording ? colors.error : colors.primary
+                            color: recording ? Colors.error : Colors.primary
                             anchors.verticalCenter: parent.verticalCenter
 
                             Behavior on radius { NumberAnimation { duration: 180 } }
                         }
 
-                        Text {
+                        StyledText {
                             anchors.verticalCenter: parent.verticalCenter
                             text: recording ? "Stop" : "Record"
-                            color: recording ? colors.on_error_container : colors.on_primary_container
+                            color: recording ? Colors.on_error_container : Colors.on_primary_container
                             font.pixelSize: 13
                             font.weight: Font.DemiBold
                         }
                     }
 
-                    MouseArea {
-                        anchors.fill: parent
-                        hoverEnabled: true
-                        cursorShape: Qt.PointingHandCursor
-
-                        onEntered: hoveredRecord = true
-                        onExited: hoveredRecord = false
-
-                        onClicked: {
+                    cursorShape: Qt.PointingHandCursor
+                    onEntered: hoveredRecord = true
+                    onExited: hoveredRecord = false
+                    onClicked: {
                             if (!recording) {
                                 recordProc.running = true
                                 recording = true
@@ -123,17 +114,16 @@ Item {
                                 recording = false
                             }
                         }
-                    }
                 }
 
-                Rectangle {
+                ClickableRect {
                     width: 140
                     height: 52
                     radius: 10
                     color: hoveredScreenshot
-                        ? Qt.lighter(colors.tertiary_container, 1.2)
-                        : colors.tertiary_container
-                    border.color: colors.tertiary
+                        ? Qt.lighter(Colors.tertiary_container, 1.2)
+                        : Colors.tertiary_container
+                    border.color: Colors.tertiary
                     border.width: hoveredScreenshot ? 1.5 : 1
 
                     Behavior on color { ColorAnimation { duration: 180 } }
@@ -156,7 +146,7 @@ Item {
                                 height: 14
                                 radius: 3
                                 color: "transparent"
-                                border.color: colors.tertiary
+                                border.color: Colors.tertiary
                                 border.width: 1.5
                                 anchors.centerIn: parent
 
@@ -164,7 +154,7 @@ Item {
                                     width: 4
                                     height: 4
                                     radius: 2
-                                    color: colors.tertiary
+                                    color: Colors.tertiary
                                     anchors.centerIn: parent
                                 }
 
@@ -172,7 +162,7 @@ Item {
                                     width: 6
                                     height: 3
                                     radius: 1
-                                    color: colors.tertiary
+                                    color: Colors.tertiary
                                     anchors.bottom: parent.top
                                     anchors.horizontalCenter: parent.horizontalCenter
                                     anchors.bottomMargin: -1
@@ -180,28 +170,22 @@ Item {
                             }
                         }
 
-                        Text {
+                        StyledText {
                             anchors.verticalCenter: parent.verticalCenter
                             text: "Screenshot"
-                            color: colors.on_tertiary_container
+                            color: Colors.on_tertiary_container
                             font.pixelSize: 13
                             font.weight: Font.DemiBold
                         }
                     }
 
-                    MouseArea {
-                        anchors.fill: parent
-                        hoverEnabled: true
-                        cursorShape: Qt.PointingHandCursor
-
-                        onEntered: hoveredScreenshot = true
-                        onExited: hoveredScreenshot = false
-
-                        onClicked: {
+                    cursorShape: Qt.PointingHandCursor
+                    onEntered: hoveredScreenshot = true
+                    onExited: hoveredScreenshot = false
+                    onClicked: {
                             screenshotProc.running = true
                             screenshotFlash.opacity = 1.0
                         }
-                    }
                 }
             }
         }

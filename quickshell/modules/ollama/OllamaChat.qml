@@ -5,7 +5,8 @@ import QtQuick.Effects
 import Quickshell
 import Quickshell.Widgets
 import qs.services
-import "../colors" as ColorsModule
+import qs.colors
+import qs.components
 
 Item {
     id: root
@@ -13,7 +14,6 @@ Item {
     height: 680
     focus: true
     anchors.centerIn: parent
-    property var colors: ColorsModule.Colors
     visible: false
 
     property var    history:       []
@@ -22,17 +22,17 @@ Item {
 
     QtObject {
         id: theme
-        readonly property color bg:           colors.background
-        readonly property color surface:      colors.surface
-        readonly property color surfaceHigh:  colors.surface_container_high
-        readonly property color border:       colors.outline_variant
-        readonly property color accent:       colors.primary
-        readonly property color accentDim:    colors.primary_container
-        readonly property color textPrimary:  colors.on_surface
-        readonly property color textMuted:    colors.on_surface_variant
-        readonly property color userBubble:   colors.surface_container
-        readonly property color aiBubble:     colors.surface_container_low
-        readonly property color error:        colors.error
+        readonly property color bg:           Colors.background
+        readonly property color surface:      Colors.surface
+        readonly property color surfaceHigh:  Colors.surface_container_high
+        readonly property color border:       Colors.outline_variant
+        readonly property color accent:       Colors.primary
+        readonly property color accentDim:    Colors.primary_container
+        readonly property color textPrimary:  Colors.on_surface
+        readonly property color textMuted:    Colors.on_surface_variant
+        readonly property color userBubble:   Colors.surface_container
+        readonly property color aiBubble:     Colors.surface_container_low
+        readonly property color error:        Colors.error
         readonly property int   radius:       14
         readonly property int   bubbleRadius: 16
         readonly property string fontMono:    "JetBrains Mono, monospace"
@@ -134,13 +134,13 @@ Item {
                         }
                     }
 
-                    Text {
+                    StyledText {
                         text:  "ollama"
                         color: theme.textPrimary
                         font { family: theme.fontMono; pixelSize: 15; weight: Font.DemiBold }
                     }
 
-                    Text {
+                    StyledText {
                         text:  "/"
                         color: theme.textMuted
                         font { family: theme.fontMono; pixelSize: 15 }
@@ -155,7 +155,7 @@ Item {
 
                         onCurrentTextChanged: root.selectedModel = currentText
 
-                        contentItem: Text {
+                        contentItem: StyledText {
                             leftPadding: 8
                             text:        modelCombo.displayText
                             color:       theme.accent
@@ -190,7 +190,7 @@ Item {
 
                         delegate: ItemDelegate {
                             width: modelCombo.width
-                            contentItem: Text {
+                            contentItem: StyledText {
                                 text:  modelData
                                 color: highlighted ? theme.accent : theme.textPrimary
                                 font { family: theme.fontMono; pixelSize: 13 }
@@ -217,7 +217,7 @@ Item {
                             color:  parent.hovered ? theme.surfaceHigh : "transparent"
                             radius: 15
                         }
-                        contentItem: Text {
+                        contentItem: StyledText {
                             text:             parent.text
                             color:            theme.textMuted
                             font:             parent.font
@@ -242,7 +242,7 @@ Item {
                             color:  parent.hovered ? theme.surfaceHigh : "transparent"
                             radius: 15
                         }
-                        contentItem: Text {
+                        contentItem: StyledText {
                             text:             parent.text
                             color:            theme.textMuted
                             font:             parent.font
@@ -260,14 +260,11 @@ Item {
                 clip:             true
                 spacing:          8
 
-                ScrollBar.vertical: ScrollBar {
-                    policy: ScrollBar.AsNeeded
-                    contentItem: Rectangle {
-                        implicitWidth: 4
-                        radius:        2
-                        color:         theme.border
-                    }
+                ScrollBar.vertical: StyledScrollBar {
                     background: Rectangle { color: "transparent" }
+                    thickness: 4
+                    handleColor: theme.border
+                    handleOpacity: 1
                 }
 
                 header: Item { height: 12 }
@@ -275,7 +272,7 @@ Item {
 
                 model: msgModel
 
-                Text {
+                StyledText {
                     anchors.centerIn: parent
                     visible: msgModel.count === 0
                     text: OllamaService.models.length === 0
@@ -313,7 +310,7 @@ Item {
                             anchors.top: parent.top
                             anchors.topMargin: 4
 
-                            Text {
+                            StyledText {
                                 anchors.centerIn: parent
                                 text:  bubbleItem.isUser ? "U" : bubbleItem.isError ? "!" : "AI"
                                 color: bubbleItem.isError ? theme.error : theme.accent
@@ -449,7 +446,7 @@ Item {
                                     }
                                 }
 
-                                Text {
+                                StyledText {
                                     anchors.fill:      parent
                                     text:              "Message… (Enter to send, Shift+Enter for newline)"
                                     color:             theme.textMuted
@@ -462,14 +459,15 @@ Item {
                         }
                     }
 
-                    Rectangle {
+                    ClickableRect {
+                        id: sendBtnAreaRect
                         width:  40; height: 40; radius: 10
                         color: sendBtn.enabled
-                            ? (sendBtnArea.containsMouse ? Qt.lighter(theme.accent, 1.15) : theme.accent)
+                            ? (sendBtnAreaRect.hovered ? Qt.lighter(theme.accent, 1.15) : theme.accent)
                             : theme.surfaceHigh
                         Behavior on color { ColorAnimation { duration: 120 } }
 
-                        Text {
+                        StyledText {
                             anchors.centerIn: parent
                             text:  OllamaService.streaming ? "■" : "↑"
                             color: sendBtn.enabled ? "white" : theme.textMuted
@@ -493,12 +491,7 @@ Item {
                             }
                         }
 
-                        MouseArea {
-                            id:             sendBtnArea
-                            anchors.fill:   parent
-                            hoverEnabled:   true
-                            onClicked:      sendBtn.clicked()
-                        }
+                        onClicked:      sendBtn.clicked()
                     }
                 }
             }

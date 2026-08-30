@@ -1,13 +1,13 @@
 import QtQuick
 import QtQuick.Controls
 import QtQuick.Layouts
-import "../../../colors" as ColorsModule
+import qs.colors
 import qs.services
+import qs.components
 
 Item {
     id: browseView
 
-    readonly property var c: ColorsModule.Colors
     readonly property string fontDisplay: "Noto Serif"
     readonly property string fontBody:    "Noto Sans"
 
@@ -15,7 +15,7 @@ Item {
     signal animeSelected(var show)
 
     // ── Background ────────────────────────────────────────────────────────────
-    Rectangle { anchors.fill: parent; color: c.background }
+    Rectangle { anchors.fill: parent; color: Colors.background }
 
     ColumnLayout {
         anchors.fill: parent
@@ -25,12 +25,12 @@ Item {
         Rectangle {
             Layout.fillWidth: true
             height: 56
-            color: c.surface_container_low
+            color: Colors.surface_container_low
             z: 2
 
             Rectangle {
                 anchors { bottom: parent.bottom; left: parent.left; right: parent.right }
-                height: 1; color: c.outline_variant; opacity: 0.5
+                height: 1; color: Colors.outline_variant; opacity: 0.5
             }
 
             RowLayout {
@@ -43,17 +43,17 @@ Item {
                     visible: !searchBar.visible
                     Layout.fillWidth: true
 
-                    Text {
+                    StyledText {
                         text: "A"
                         font.family: browseView.fontDisplay
                         font.pixelSize: 24; font.letterSpacing: 1
-                        color: c.primary
+                        color: Colors.primary
                     }
-                    Text {
+                    StyledText {
                         text: "nime"
                         font.family: browseView.fontDisplay
                         font.pixelSize: 24; font.letterSpacing: 1
-                        color: c.on_surface; opacity: 0.85
+                        color: Colors.on_surface; opacity: 0.85
                     }
                 }
 
@@ -62,9 +62,9 @@ Item {
                     id: searchBar
                     Layout.fillWidth: true
                     height: 36; radius: 18
-                    color: c.surface_container
+                    color: Colors.surface_container
                     visible: false
-                    border.color: searchField.activeFocus ? c.primary : c.outline_variant
+                    border.color: searchField.activeFocus ? Colors.primary : Colors.outline_variant
                     border.width: searchField.activeFocus ? 1.5 : 1
                     Behavior on border.width { NumberAnimation { duration: 120 } }
 
@@ -75,7 +75,7 @@ Item {
                             left: parent.left; right: clearBtn.left
                             leftMargin: 14; rightMargin: 6
                         }
-                        color: c.on_surface
+                        color: Colors.on_surface
                         font.family: browseView.fontBody
                         font.pixelSize: 13
                         clip: true
@@ -87,10 +87,10 @@ Item {
                         }
                     }
 
-                    Text {
+                    StyledText {
                         anchors { verticalCenter: parent.verticalCenter; left: parent.left; leftMargin: 14 }
                         text: "Search anime…"
-                        color: c.on_surface_variant
+                        color: Colors.on_surface_variant
                         font.family: browseView.fontBody
                         font.pixelSize: 13
                         visible: searchField.text.length === 0
@@ -108,12 +108,12 @@ Item {
                         Rectangle {
                             anchors.centerIn: parent
                             width: 18; height: 18; radius: 9
-                            color: c.surface_container_highest
+                            color: Colors.surface_container_highest
                         }
-                        Text {
+                        StyledText {
                             anchors.centerIn: parent
                             text: "✕"
-                            color: c.on_surface_variant
+                            color: Colors.on_surface_variant
                             font.pixelSize: 9; font.bold: true
                         }
                         MouseArea { anchors.fill: parent; onClicked: searchField.text = "" }
@@ -138,13 +138,13 @@ Item {
                     Rectangle {
                         anchors.centerIn: parent
                         width: 32; height: 32; radius: 16
-                        color: searchBar.visible ? c.primary_container : "transparent"
+                        color: searchBar.visible ? Colors.primary_container : "transparent"
                         Behavior on color { ColorAnimation { duration: 180 } }
                     }
-                    Text {
+                    StyledText {
                         anchors.centerIn: parent
                         text: "⌕"; font.pixelSize: 18
-                        color: searchBar.visible ? c.on_primary_container : c.on_surface_variant
+                        color: searchBar.visible ? Colors.on_primary_container : Colors.on_surface_variant
                         Behavior on color { ColorAnimation { duration: 180 } }
                     }
                     MouseArea {
@@ -165,8 +165,8 @@ Item {
                     height: 28
                     width: modeRow.implicitWidth + 16
                     radius: 14
-                    color: c.surface_container
-                    border.color: c.outline_variant; border.width: 1
+                    color: Colors.surface_container
+                    border.color: Colors.outline_variant; border.width: 1
 
                     Row {
                         id: modeRow
@@ -184,16 +184,16 @@ Item {
                                 Rectangle {
                                     anchors { fill: parent; margins: 3 }
                                     radius: 11
-                                    color: active ? c.primary : "transparent"
+                                    color: active ? Colors.primary : "transparent"
                                     Behavior on color { ColorAnimation { duration: 160 } }
                                 }
-                                Text {
+                                StyledText {
                                     id: modeText
                                     anchors.centerIn: parent
                                     text: modelData.toUpperCase()
                                     font.family: browseView.fontBody
                                     font.pixelSize: 10; font.letterSpacing: 1; font.bold: true
-                                    color: active ? c.on_primary : c.on_surface_variant
+                                    color: active ? Colors.on_primary : Colors.on_surface_variant
                                     Behavior on color { ColorAnimation { duration: 160 } }
                                 }
                                 MouseArea {
@@ -211,12 +211,12 @@ Item {
         Rectangle {
             Layout.fillWidth: true
             height: 44
-            color: c.surface_container_low
+            color: Colors.surface_container_low
             clip: true
 
             Rectangle {
                 anchors { top: parent.top; left: parent.left; right: parent.right }
-                height: 1; color: c.outline_variant; opacity: 0.25
+                height: 1; color: Colors.outline_variant; opacity: 0.25
             }
 
             ListView {
@@ -246,18 +246,18 @@ Item {
                         anchors.centerIn: parent
                         implicitWidth: chipLbl.implicitWidth + 24
                         height: 28; radius: 14
-                        color: active ? c.primary : c.surface_container
-                        border.color: active ? c.primary : c.outline_variant
+                        color: active ? Colors.primary : Colors.surface_container
+                        border.color: active ? Colors.primary : Colors.outline_variant
                         border.width: 1
                         Behavior on color { ColorAnimation { duration: 180 } }
 
-                        Text {
+                        StyledText {
                             id: chipLbl
                             anchors.centerIn: parent
                             text: label
                             font.family: browseView.fontBody
                             font.pixelSize: 11; font.letterSpacing: 0.5
-                            color: active ? c.on_primary : c.on_surface_variant
+                            color: active ? Colors.on_primary : Colors.on_surface_variant
                             Behavior on color { ColorAnimation { duration: 180 } }
                         }
                     }
@@ -277,7 +277,7 @@ Item {
 
             Rectangle {
                 anchors { bottom: parent.bottom; left: parent.left; right: parent.right }
-                height: 1; color: c.outline_variant; opacity: 0.3
+                height: 1; color: Colors.outline_variant; opacity: 0.3
             }
         }
 
@@ -288,28 +288,22 @@ Item {
 
             // Loading
             Rectangle {
-                anchors.fill: parent; color: c.background
+                anchors.fill: parent; color: Colors.background
                 visible: Anime.isFetchingAnime && Anime.animeList.length === 0
                 z: 10
 
                 Column {
                     anchors.centerIn: parent; spacing: 14
 
-                    Rectangle {
-                        width: 34; height: 34; radius: 17
+                    Spinner {
+                        width: 34
                         anchors.horizontalCenter: parent.horizontalCenter
-                        color: "transparent"
-                        border.color: c.primary; border.width: 2.5
-                        RotationAnimator on rotation {
-                            from: 0; to: 360; duration: 800
-                            loops: Animation.Infinite; running: parent.visible
-                            easing.type: Easing.Linear
-                        }
+                        border.width: 2.5
                     }
-                    Text {
+                    StyledText {
                         anchors.horizontalCenter: parent.horizontalCenter
                         text: "loading"
-                        color: c.on_surface_variant
+                        color: Colors.on_surface_variant
                         font.family: browseView.fontBody
                         font.pixelSize: 11; font.letterSpacing: 2.5; opacity: 0.7
                     }
@@ -318,7 +312,7 @@ Item {
 
             // Error
             Rectangle {
-                anchors.fill: parent; color: c.background
+                anchors.fill: parent; color: Colors.background
                 visible: Anime.animeError.length > 0 && !Anime.isFetchingAnime
                 z: 9
 
@@ -326,12 +320,12 @@ Item {
                     anchors.centerIn: parent; spacing: 10
 
                     Text {
-                        text: "⚠"; font.pixelSize: 30; color: c.error
+                        text: "⚠"; font.pixelSize: 30; color: Colors.error
                         anchors.horizontalCenter: parent.horizontalCenter; opacity: 0.8
                     }
-                    Text {
+                    StyledText {
                         text: Anime.animeError
-                        color: c.on_surface_variant; font.pixelSize: 12
+                        color: Colors.on_surface_variant; font.pixelSize: 12
                         font.family: browseView.fontBody
                         wrapMode: Text.Wrap; width: 260
                         horizontalAlignment: Text.AlignHCenter; lineHeight: 1.4
@@ -349,11 +343,7 @@ Item {
                 boundsBehavior: Flickable.StopAtBounds
                 model: Anime.animeList
 
-                ScrollBar.vertical: ScrollBar {
-                    policy: ScrollBar.AsNeeded
-                    contentItem: Rectangle {
-                        implicitWidth: 3; color: c.primary; opacity: 0.45; radius: 2
-                    }
+                ScrollBar.vertical: StyledScrollBar {
                 }
 
                 onContentYChanged: {
@@ -365,10 +355,10 @@ Item {
                     width: animeGrid.cellWidth
                     height: animeGrid.cellHeight
 
-                    Rectangle {
+                    ClickableRect {
                         id: card
                         anchors { fill: parent; margins: 5 }
-                        radius: 12; color: c.surface_container; clip: true
+                        radius: 12; color: Colors.surface_container; clip: true
 
                         // Cover
                         Image {
@@ -382,11 +372,11 @@ Item {
                             Behavior on opacity { NumberAnimation { duration: 300 } }
 
                             Rectangle {
-                                anchors.fill: parent; color: c.surface_container_high
+                                anchors.fill: parent; color: Colors.surface_container_high
                                 visible: coverImg.status !== Image.Ready
                                 Text {
                                     anchors.centerIn: parent; text: "◫"
-                                    font.pixelSize: 32; color: c.outline; opacity: 0.25
+                                    font.pixelSize: 32; color: Colors.outline; opacity: 0.25
                                 }
                             }
 
@@ -398,7 +388,7 @@ Item {
                                 width: scoreText.implicitWidth + 12
                                 color: Qt.rgba(0, 0, 0, 0.72)
 
-                                Text {
+                                StyledText {
                                     id: scoreText; anchors.centerIn: parent
                                     text: modelData.score !== null
                                         ? "★ " + (modelData.score || 0).toFixed(1) : ""
@@ -416,12 +406,12 @@ Item {
                                 width: typeText.implicitWidth + 12
                                 color: Qt.rgba(0, 0, 0, 0.7)
 
-                                Text {
+                                StyledText {
                                     id: typeText; anchors.centerIn: parent
                                     text: (modelData.type || "").toUpperCase()
                                     font.family: browseView.fontBody
                                     font.pixelSize: 8; font.letterSpacing: 1; font.bold: true
-                                    color: c.primary_fixed_dim
+                                    color: Colors.primary_fixed_dim
                                 }
                             }
 
@@ -438,7 +428,7 @@ Item {
                                 width: epText.implicitWidth + 12
                                 color: Qt.rgba(0, 0, 0, 0.72)
 
-                                Text {
+                                StyledText {
                                     id: epText; anchors.centerIn: parent
                                     text: {
                                         var avail = modelData.availableEpisodes
@@ -458,7 +448,7 @@ Item {
                                 height: 48
                                 gradient: Gradient {
                                     GradientStop { position: 0.0; color: "transparent" }
-                                    GradientStop { position: 1.0; color: c.surface_container }
+                                    GradientStop { position: 1.0; color: Colors.surface_container }
                                 }
                             }
                         }
@@ -468,9 +458,9 @@ Item {
                             id: titleBar
                             anchors { bottom: parent.bottom; left: parent.left; right: parent.right }
                             height: titleText.implicitHeight + 16
-                            color: c.surface_container; radius: 12
+                            color: Colors.surface_container; radius: 12
 
-                            Text {
+                            StyledText {
                                 id: titleText
                                 anchors {
                                     left: parent.left; right: parent.right
@@ -480,7 +470,6 @@ Item {
                                 text: modelData.englishName || modelData.name || ""
                                 font.family: browseView.fontBody
                                 font.pixelSize: 11; font.letterSpacing: 0.2
-                                color: c.on_surface
                                 wrapMode: Text.Wrap; maximumLineCount: 2
                                 elide: Text.ElideRight; lineHeight: 1.3
                             }
@@ -491,29 +480,25 @@ Item {
                             visible: Anime.isInLibrary(modelData.id)
                             anchors { top: parent.top; horizontalCenter: parent.horizontalCenter; topMargin: 6 }
                             width: 7; height: 7; radius: 4
-                            color: c.primary
+                            color: Colors.primary
                             opacity: 0.9
                         }
 
                         Rectangle {
-                            anchors.fill: parent; radius: 12; color: c.primary
-                            opacity: cardArea.pressed ? 0.16 : (cardArea.containsMouse ? 0.07 : 0)
+                            anchors.fill: parent; radius: 12; color: Colors.primary
+                            opacity: card.pressed ? 0.16 : (card.hovered ? 0.07 : 0)
                             Behavior on opacity { NumberAnimation { duration: 130 } }
                         }
 
                         transform: Scale {
                             origin.x: card.width / 2; origin.y: card.height / 2
-                            xScale: cardArea.pressed ? 0.97 : 1.0
-                            yScale: cardArea.pressed ? 0.97 : 1.0
+                            xScale: card.pressed ? 0.97 : 1.0
+                            yScale: card.pressed ? 0.97 : 1.0
                             Behavior on xScale { NumberAnimation { duration: 120; easing.type: Easing.OutCubic } }
                             Behavior on yScale { NumberAnimation { duration: 120; easing.type: Easing.OutCubic } }
                         }
 
-                        MouseArea {
-                            id: cardArea
-                            anchors.fill: parent; hoverEnabled: true
-                            onClicked: browseView.animeSelected(modelData)
-                        }
+                        onClicked: browseView.animeSelected(modelData)
                     }
                 }
             }

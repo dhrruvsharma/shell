@@ -4,7 +4,6 @@ import qs.components
 import Quickshell.Io
 import Quickshell.Wayland
 import QtQuick.Layouts
-import "../../colors" as ColorsModule
 
 PanelWindow {
     id: cavaPanel
@@ -23,14 +22,11 @@ PanelWindow {
 
     color: "transparent"
 
-    Rectangle {
+    Card {
         anchors.fill: parent
         radius: 18
 
-        color: ColorsModule.Colors.surface_container
 
-        border.color: ColorsModule.Colors.outline_variant
-        border.width: 1
 
         ColumnLayout {
             anchors.fill: parent

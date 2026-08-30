@@ -1,13 +1,13 @@
 import QtQuick
 import QtQuick.Controls
 import QtQuick.Layouts
-import "../../../colors" as ColorsModule
+import qs.colors
 import qs.services
+import qs.components
 
 Item {
     id: readerView
 
-    readonly property var c: ColorsModule.Colors
     readonly property string fontDisplay: "Noto Serif"
     readonly property string fontBody:    "Noto Sans"
 
@@ -61,13 +61,13 @@ Item {
 
             Column {
                 Layout.fillWidth: true; spacing: 1
-                Text {
+                StyledText {
                     width: parent.width
                     text: Novel.currentNovel ? Novel.currentNovel.title : ""
                     font.family: readerView.fontDisplay; font.pixelSize: 11
                     color: Qt.rgba(1,1,1,0.45); elide: Text.ElideRight
                 }
-                Text {
+                StyledText {
                     width: parent.width
                     text: Novel.currentChapter ? Novel.currentChapter.title : ""
                     font.family: readerView.fontDisplay; font.pixelSize: 13
@@ -145,7 +145,7 @@ Item {
                 ? parent.width * Math.min(1,
                 (textScroll.contentY + textScroll.height) / textScroll.contentHeight)
                 : parent.width
-            height: parent.height; color: c.primary
+            height: parent.height; color: Colors.primary
             Behavior on width { NumberAnimation { duration: 120 } }
         }
     }
@@ -154,14 +154,10 @@ Item {
         anchors.fill: parent; color: "#1a1714"; visible: Novel.isFetchingChapter; z: 8
         Column {
             anchors.centerIn: parent; spacing: 16
-            Rectangle {
-                width: 40; height: 40; radius: 20
+            Spinner {
+                width: 40
                 anchors.horizontalCenter: parent.horizontalCenter
-                color: "transparent"; border.color: c.primary; border.width: 2.5
-                RotationAnimator on rotation {
-                    from: 0; to: 360; duration: 800
-                    loops: Animation.Infinite; running: parent.visible; easing.type: Easing.Linear
-                }
+                border.width: 2.5
             }
             Text {
                 anchors.horizontalCenter: parent.horizontalCenter
@@ -177,7 +173,7 @@ Item {
         Column {
             anchors.centerIn: parent; spacing: 10
             Text {
-                text: "⚠"; font.pixelSize: 32; color: c.error; opacity: 0.85
+                text: "⚠"; font.pixelSize: 32; color: Colors.error; opacity: 0.85
                 anchors.horizontalCenter: parent.horizontalCenter
             }
             Text {
@@ -211,7 +207,7 @@ Item {
             anchors.horizontalCenter: parent.horizontalCenter
             topPadding: 36; bottomPadding: 48; spacing: 0
 
-            Text {
+            StyledText {
                 width: parent.width
                 text: Novel.currentChapter ? Novel.currentChapter.title : ""
                 font.family: readerView.fontDisplay
@@ -226,9 +222,9 @@ Item {
                 Row {
                     anchors { left: parent.left; verticalCenter: parent.verticalCenter }
                     spacing: 5
-                    Rectangle { width: 8;  height: 2; radius: 1; color: c.primary; opacity: 0.3 }
-                    Rectangle { width: 32; height: 2; radius: 1; color: c.primary; opacity: 0.7 }
-                    Rectangle { width: 8;  height: 2; radius: 1; color: c.primary; opacity: 0.3 }
+                    Rectangle { width: 8;  height: 2; radius: 1; color: Colors.primary; opacity: 0.3 }
+                    Rectangle { width: 32; height: 2; radius: 1; color: Colors.primary; opacity: 0.7 }
+                    Rectangle { width: 8;  height: 2; radius: 1; color: Colors.primary; opacity: 0.3 }
                 }
             }
 
@@ -236,7 +232,7 @@ Item {
 
             Repeater {
                 model: Novel.currentChapter ? Novel.currentChapter.paragraphs : []
-                Text {
+                StyledText {
                     width: textColumn.width
                     text: modelData
                     font.family: readerView.fontDisplay
@@ -251,7 +247,7 @@ Item {
 
         ScrollBar.vertical: ScrollBar {
             policy: ScrollBar.AsNeeded
-            contentItem: Rectangle { implicitWidth: 2; color: c.primary; opacity: 0.25; radius: 1 }
+            contentItem: Rectangle { implicitWidth: 2; color: Colors.primary; opacity: 0.25; radius: 1 }
         }
     }
 
@@ -296,7 +292,7 @@ Item {
 
             Item {
                 width: parent.width / 3; height: parent.height
-                Text {
+                StyledText {
                     anchors.centerIn: parent
                     text: Novel.currentChapter ? Novel.currentChapter.title : ""
                     font.family: readerView.fontBody; font.pixelSize: 10
@@ -316,8 +312,8 @@ Item {
                     anchors { verticalCenter: parent.verticalCenter; right: parent.right }
                     width: nextBtnRow.implicitWidth + 28; height: 36; radius: 18
                     color: nextNavArea.containsMouse && readerView._hasNext
-                        ? Qt.rgba(c.primary.r, c.primary.g, c.primary.b, 0.45)
-                        : Qt.rgba(c.primary.r, c.primary.g, c.primary.b, 0.22)
+                        ? Colors.withAlpha(Colors.primary, 0.45)
+                        : Colors.withAlpha(Colors.primary, 0.22)
                     Behavior on color { ColorAnimation { duration: 120 } }
 
                     Row {

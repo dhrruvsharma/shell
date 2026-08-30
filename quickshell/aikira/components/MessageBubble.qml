@@ -1,7 +1,8 @@
 import QtQuick
 import QtQuick.Layouts
 import qs.aikira
-import "../../colors" as ColorsModule
+import qs.colors
+import qs.components
 
 Item {
     id: root
@@ -100,7 +101,7 @@ Item {
     }
 
     // Delete button — appears on hover beside the bubble
-    Rectangle {
+    ClickableRect {
         id: msgDeleteBtn
         visible: msgHover.hovered && !isStreaming && message !== null && message.id !== "streaming"
         width: 22; height: 22; radius: 5
@@ -113,25 +114,22 @@ Item {
             rightMargin: isUser ? 4 : 0
             leftMargin: isUser ? 0 : 4
         }
-        color: msgDelHov.containsMouse ? ColorsModule.Colors.error_container : "transparent"
+        color: msgDeleteBtn.hovered ? Colors.error_container : "transparent"
         Behavior on color { ColorAnimation { duration: 100 } }
-        Text {
+        StyledText {
             anchors.centerIn: parent
             text: "×"; font.pixelSize: 14
-            color: msgDelHov.containsMouse
-                ? ColorsModule.Colors.on_error_container
-                : ColorsModule.Colors.on_surface_variant
-            opacity: msgDelHov.containsMouse ? 1.0 : 0.45
+            color: msgDeleteBtn.hovered
+                ? Colors.on_error_container
+                : Colors.on_surface_variant
+            opacity: msgDeleteBtn.hovered ? 1.0 : 0.45
         }
-        MouseArea {
-            id: msgDelHov; anchors.fill: parent; hoverEnabled: true
-            cursorShape: Qt.PointingHandCursor
-            onClicked: root.deleteRequested()
-        }
+        cursorShape: Qt.PointingHandCursor
+        onClicked: root.deleteRequested()
     }
 
     // Reroll button — only on the last AI message, on hover
-    Rectangle {
+    ClickableRect {
         id: msgRerollBtn
         visible: msgHover.hovered && !isStreaming && !isUser && isLastAiMessage && message !== null
         width: 22; height: 22; radius: 5
@@ -142,21 +140,18 @@ Item {
             left: bubbleCol.right
             leftMargin: 4
         }
-        color: msgRerollHov.containsMouse ? ColorsModule.Colors.secondary_container : "transparent"
+        color: msgRerollBtn.hovered ? Colors.secondary_container : "transparent"
         Behavior on color { ColorAnimation { duration: 100 } }
-        Text {
+        StyledText {
             anchors.centerIn: parent
             text: "↺"; font.pixelSize: 13
-            color: msgRerollHov.containsMouse
-                ? ColorsModule.Colors.on_secondary_container
-                : ColorsModule.Colors.on_surface_variant
-            opacity: msgRerollHov.containsMouse ? 1.0 : 0.45
+            color: msgRerollBtn.hovered
+                ? Colors.on_secondary_container
+                : Colors.on_surface_variant
+            opacity: msgRerollBtn.hovered ? 1.0 : 0.45
         }
-        MouseArea {
-            id: msgRerollHov; anchors.fill: parent; hoverEnabled: true
-            cursorShape: Qt.PointingHandCursor
-            onClicked: root.rerollRequested()
-        }
+        cursorShape: Qt.PointingHandCursor
+        onClicked: root.rerollRequested()
     }
 
     ColumnLayout {
@@ -172,12 +167,12 @@ Item {
         spacing: 4
 
         // Role label
-        Text {
+        StyledText {
             text: isUser ? personaName : characterName
             font { pixelSize: 10; letterSpacing: 1; weight: Font.Bold }
             color: isUser
-                ? ColorsModule.Colors.secondary
-                : ColorsModule.Colors.primary
+                ? Colors.secondary
+                : Colors.primary
             opacity: 0.85
             Layout.alignment: isUser ? Qt.AlignRight : Qt.AlignLeft
             Layout.maximumWidth: root.width * 0.78
@@ -196,8 +191,8 @@ Item {
                 ? 16  // round pill for user
                 : 4   // sharp/geometric for AI
             color: isUser
-                ? ColorsModule.Colors.primary_container
-                : ColorsModule.Colors.surface_container_high
+                ? Colors.primary_container
+                : Colors.surface_container_high
 
             // Subtle left accent bar for AI messages
             Rectangle {
@@ -206,11 +201,11 @@ Item {
                 height: parent.height - 12
                 anchors { left: parent.left; leftMargin: 0; verticalCenter: parent.verticalCenter }
                 radius: 1
-                color: ColorsModule.Colors.primary
+                color: Colors.primary
                 opacity: 0.6
             }
 
-            Text {
+            StyledText {
                 id: contentText
                 x: isUser ? 12 : 14
                 y: 10
@@ -230,8 +225,8 @@ Item {
                 wrapMode: Text.WordWrap
                 font { pixelSize: 13; family: "monospace" }
                 color: isUser
-                    ? ColorsModule.Colors.on_primary_container
-                    : ColorsModule.Colors.on_surface
+                    ? Colors.on_primary_container
+                    : Colors.on_surface
                 lineHeight: 1.55
                 textFormat: Text.RichText
             }
@@ -246,46 +241,42 @@ Item {
             spacing: 4
             Layout.alignment: Qt.AlignLeft
 
-            Rectangle {
+            ClickableRect {
+                id: prevAltRect
                 width: 22; height: 22; radius: 5
                 opacity: currentAltIndex > 0 ? 1.0 : 0.3
-                color: prevAltHov.containsMouse && currentAltIndex > 0
-                    ? ColorsModule.Colors.surface_container_highest : "transparent"
+                color: prevAltRect.hovered && currentAltIndex > 0
+                    ? Colors.surface_container_highest : "transparent"
                 Behavior on color { ColorAnimation { duration: 100 } }
-                Text {
+                StyledText {
                     anchors.centerIn: parent; text: "←"; font.pixelSize: 12
-                    color: ColorsModule.Colors.on_surface_variant
+                    color: Colors.on_surface_variant
                 }
-                MouseArea {
-                    id: prevAltHov; anchors.fill: parent; hoverEnabled: true
-                    cursorShape: currentAltIndex > 0 ? Qt.PointingHandCursor : Qt.ArrowCursor
-                    onClicked: { if (currentAltIndex > 0) root.prevAlternative() }
-                }
+                cursorShape: currentAltIndex > 0 ? Qt.PointingHandCursor : Qt.ArrowCursor
+                onClicked: { if (currentAltIndex > 0) root.prevAlternative() }
             }
 
-            Text {
+            StyledText {
                 anchors.verticalCenter: parent.verticalCenter
                 text: (currentAltIndex + 1) + " / " + totalAlternatives
                 font { pixelSize: 10; family: "monospace" }
-                color: ColorsModule.Colors.on_surface_variant
+                color: Colors.on_surface_variant
                 opacity: 0.55
             }
 
-            Rectangle {
+            ClickableRect {
+                id: nextAltRect
                 width: 22; height: 22; radius: 5
                 opacity: currentAltIndex < totalAlternatives - 1 ? 1.0 : 0.3
-                color: nextAltHov.containsMouse && currentAltIndex < totalAlternatives - 1
-                    ? ColorsModule.Colors.surface_container_highest : "transparent"
+                color: nextAltRect.hovered && currentAltIndex < totalAlternatives - 1
+                    ? Colors.surface_container_highest : "transparent"
                 Behavior on color { ColorAnimation { duration: 100 } }
-                Text {
+                StyledText {
                     anchors.centerIn: parent; text: "→"; font.pixelSize: 12
-                    color: ColorsModule.Colors.on_surface_variant
+                    color: Colors.on_surface_variant
                 }
-                MouseArea {
-                    id: nextAltHov; anchors.fill: parent; hoverEnabled: true
-                    cursorShape: currentAltIndex < totalAlternatives - 1 ? Qt.PointingHandCursor : Qt.ArrowCursor
-                    onClicked: { if (currentAltIndex < totalAlternatives - 1) root.nextAlternative() }
-                }
+                cursorShape: currentAltIndex < totalAlternatives - 1 ? Qt.PointingHandCursor : Qt.ArrowCursor
+                onClicked: { if (currentAltIndex < totalAlternatives - 1) root.nextAlternative() }
             }
         }
     }

@@ -2,7 +2,7 @@ import Quickshell
 import Quickshell.Io
 import Quickshell.Wayland
 import QtQuick
-import "../colors" as ColorsModule
+import qs.colors
 import qs.components
 
 Scope {
@@ -71,12 +71,11 @@ Scope {
                 anchors.fill: parent
                 alignment: 5
                 radius: 20
-                color: ColorsModule.Colors.background
+                color: Colors.background
 
-                Text {
+                StyledText {
                     id: textElement
                     text: root.rootText
-                    color: ColorsModule.Colors.on_surface
                     anchors.fill: parent
                     wrapMode: Text.WordWrap
                     horizontalAlignment: Text.AlignHCenter

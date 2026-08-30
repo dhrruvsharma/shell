@@ -3,6 +3,7 @@ import Quickshell
 import qs.components
 import Quickshell.Io
 import Quickshell.Wayland
+import qs.modules.screentools
 
 Item {
     id: systemPanel

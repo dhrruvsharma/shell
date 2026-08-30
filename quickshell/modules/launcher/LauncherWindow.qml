@@ -3,8 +3,10 @@ import QtQuick.Controls
 import QtQuick.Layouts
 import Quickshell
 import Quickshell.Io
-import "../../colors" as ColorsModule
+import qs.colors
 import qs.services as Services
+import qs.components
+import qs.modules.power
 
 Item {
     id: root
@@ -92,9 +94,9 @@ Item {
             border.width: 1.5
             border.color: searchField.activeFocus
                 ? Qt.rgba(
-                    Qt.color(ColorsModule.Colors.primary).r,
-                    Qt.color(ColorsModule.Colors.primary).g,
-                    Qt.color(ColorsModule.Colors.primary).b,
+                    Qt.color(Colors.primary).r,
+                    Qt.color(Colors.primary).g,
+                    Qt.color(Colors.primary).b,
                     0.5
                   )
                 : Qt.rgba(1, 1, 1, 0.12)
@@ -120,12 +122,11 @@ Item {
                 anchors.rightMargin: 16
                 spacing: 14
 
-                Text {
+                MaterialIcon {
                     text: "󰍉"
-                    font.family: "Material Design Icons"
                     font.pixelSize: 20
                     color: searchField.activeFocus
-                        ? ColorsModule.Colors.primary
+                        ? Colors.primary
                         : Qt.rgba(1, 1, 1, 0.4)
                     Layout.alignment: Qt.AlignVCenter
                     Behavior on color { ColorAnimation { duration: 180 } }
@@ -157,30 +158,25 @@ Item {
                     Keys.onDownPressed: gridView.forceActiveFocus()
                 }
 
-                Rectangle {
+                ClickableRect {
+                    id: clearAreaRect
                     visible: searchField.text.length > 0
                     width: 26; height: 26; radius: 13
-                    color: clearArea.containsMouse
+                    color: clearAreaRect.hovered
                         ? Qt.rgba(1, 1, 1, 0.15)
                         : Qt.rgba(1, 1, 1, 0.08)
                     Layout.alignment: Qt.AlignVCenter
                     Behavior on color { ColorAnimation { duration: 120 } }
 
-                    Text {
+                    MaterialIcon {
                         anchors.centerIn: parent
                         text: "󰅖"
-                        font.family: "Material Design Icons"
                         font.pixelSize: 14
                         color: Qt.rgba(1, 1, 1, 0.65)
                     }
 
-                    MouseArea {
-                        id: clearArea
-                        anchors.fill: parent
-                        hoverEnabled: true
-                        cursorShape: Qt.PointingHandCursor
-                        onClicked: searchField.text = ""
-                    }
+                    cursorShape: Qt.PointingHandCursor
+                    onClicked: searchField.text = ""
                 }
             }
         }
@@ -267,9 +263,9 @@ Item {
                         color: "transparent"
                         border.width: 1.5
                         border.color: Qt.rgba(
-                            Qt.color(ColorsModule.Colors.primary).r,
-                            Qt.color(ColorsModule.Colors.primary).g,
-                            Qt.color(ColorsModule.Colors.primary).b,
+                            Qt.color(Colors.primary).r,
+                            Qt.color(Colors.primary).g,
+                            Qt.color(Colors.primary).b,
                             delegateRoot.isHovered || delegateRoot.isFocused ? 0.45 : 0
                         )
                         scale: delegateRoot.isHovered || delegateRoot.isFocused ? 1.0 : 0.75
@@ -322,16 +318,16 @@ Item {
                             Rectangle {
                                 anchors.fill: parent
                                 radius: 10
-                                color: ColorsModule.Colors.primary_container
+                                color: Colors.primary_container
                                 visible: parent.status === Image.Error || parent.status === Image.Null
 
-                                Text {
+                                StyledText {
                                     anchors.centerIn: parent
                                     text: delegateRoot.app && delegateRoot.app.name
                                         ? delegateRoot.app.name.charAt(0).toUpperCase() : "?"
                                     font.pixelSize: 20
                                     font.weight: Font.Medium
-                                    color: ColorsModule.Colors.on_primary_container
+                                    color: Colors.on_primary_container
                                 }
                             }
                         }
@@ -342,7 +338,7 @@ Item {
                     }
 
                     // Label — PowerMenu style: all-caps, spaced, dim until hovered
-                    Text {
+                    StyledText {
                         anchors.top: iconFrame.bottom
                         anchors.topMargin: 12
                         anchors.horizontalCenter: parent.horizontalCenter
@@ -378,15 +374,14 @@ Item {
                 visible: root.filteredApps.length === 0
                 spacing: 14
 
-                Text {
+                MaterialIcon {
                     anchors.horizontalCenter: parent.horizontalCenter
                     text: "󰍉"
-                    font.family: "Material Design Icons"
                     font.pixelSize: 34
                     color: Qt.rgba(1, 1, 1, 0.18)
                 }
 
-                Text {
+                StyledText {
                     anchors.horizontalCenter: parent.horizontalCenter
                     text: "NO RESULTS"
                     font.pixelSize: 10
@@ -400,7 +395,7 @@ Item {
 
     // ── Hint ─────────────────────────────────────────────────────────────────
 
-    Text {
+    StyledText {
         id: hintText
         anchors.bottom: parent.bottom
         anchors.horizontalCenter: parent.horizontalCenter

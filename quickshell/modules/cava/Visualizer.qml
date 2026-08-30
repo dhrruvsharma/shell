@@ -4,7 +4,7 @@ import Quickshell.Hyprland
 import Quickshell.Io
 import QtQuick
 import QtQuick.Effects
-import "../colors" as ColorsModule
+import qs.colors
 
 PanelWindow {
     id: musicVis
@@ -100,9 +100,9 @@ EOF
 
             var gradient = ctx.createLinearGradient(0, 0, width, height)
 
-            gradient.addColorStop(0.0, ColorsModule.Colors.primary)
-            gradient.addColorStop(0.5, ColorsModule.Colors.tertiary)
-            gradient.addColorStop(1.0, ColorsModule.Colors.secondary)
+            gradient.addColorStop(0.0, Colors.primary)
+            gradient.addColorStop(0.5, Colors.tertiary)
+            gradient.addColorStop(1.0, Colors.secondary)
 
             ctx.beginPath()
 

@@ -2,7 +2,8 @@ import QtQuick
 import QtQuick.Layouts
 import Quickshell
 import Quickshell.Io
-import "../colors" as ColorsModule
+import qs.colors
+import qs.components
 
 Item {
     id: root
@@ -103,10 +104,9 @@ Item {
                 }
             }
 
-            Text {
+            MaterialIcon {
                 anchors.centerIn: parent
                 text: orb.icon
-                font.family: "Material Design Icons"
                 font.pixelSize: 38
                 color: orb.glowColor
                 opacity: orb.hovered ? 1.0 : 0.75
@@ -119,7 +119,7 @@ Item {
         }
 
         // Label
-        Text {
+        StyledText {
             anchors.top: circle.bottom
             anchors.topMargin: 18
             anchors.horizontalCenter: parent.horizontalCenter
@@ -179,15 +179,14 @@ Item {
         spacing: 8
         opacity: 0
 
-        Text {
+        MaterialIcon {
             anchors.horizontalCenter: parent.horizontalCenter
             text: "󰐥"
-            font.family: "Material Design Icons"
             font.pixelSize: 20
             color: Qt.rgba(1, 1, 1, 0.22)
         }
 
-        Text {
+        StyledText {
             anchors.horizontalCenter: parent.horizontalCenter
             text: "POWER MENU"
             font.pixelSize: 11
@@ -211,7 +210,7 @@ Item {
             id: lockOrb
             icon: "󰌾"
             label: "Lock"
-            glowColor: ColorsModule.Colors.secondary
+            glowColor: Colors.secondary
             onActivated: {
                 root.close()
                 proc.exec(["quickshell", "-p",
@@ -223,7 +222,7 @@ Item {
             id: logoutOrb
             icon: "󰍃"
             label: "Logout"
-            glowColor: ColorsModule.Colors.tertiary
+            glowColor: Colors.tertiary
             onActivated: {
                 root.close()
                 proc.exec(["bash", "-c", "sleep 0.35 && loginctl terminate-user $USER"])
@@ -234,7 +233,7 @@ Item {
             id: rebootOrb
             icon: "󰜉"
             label: "Reboot"
-            glowColor: ColorsModule.Colors.primary
+            glowColor: Colors.primary
             onActivated: {
                 root.close()
                 proc.exec(["bash", "-c", "sleep 0.35 && systemctl reboot"])
@@ -245,7 +244,7 @@ Item {
             id: powerOrb
             icon: "󰐥"
             label: "Power Off"
-            glowColor: ColorsModule.Colors.error
+            glowColor: Colors.error
             onActivated: {
                 root.close()
                 proc.exec(["bash", "-c", "sleep 0.35 && systemctl poweroff"])
@@ -255,7 +254,7 @@ Item {
 
     // ── Hint ─────────────────────────────────────────────────────────────────
 
-    Text {
+    StyledText {
         id: hintText
         anchors.bottom: parent.bottom
         anchors.horizontalCenter: parent.horizontalCenter

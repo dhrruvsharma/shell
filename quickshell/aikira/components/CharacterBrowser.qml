@@ -1,18 +1,19 @@
 import QtQuick
 import qs.aikira
 import QtQuick.Layouts
-import "../../colors" as ColorsModule
+import qs.colors
+import qs.components
 
 Item {
     id: root
 
-    Rectangle { anchors.fill: parent; color: ColorsModule.Colors.background }
+    Rectangle { anchors.fill: parent; color: Colors.background }
 
     Rectangle {
         id: cbHead
         anchors { top: parent.top; left: parent.left; right: parent.right }
         height: 56
-        color: ColorsModule.Colors.surface_container
+        color: Colors.surface_container
 
         RowLayout {
             anchors { fill: parent; leftMargin: 20; rightMargin: 16 }
@@ -20,15 +21,14 @@ Item {
 
             ColumnLayout {
                 spacing: 2
-                Text {
+                StyledText {
                     text: "Characters"
                     font { pixelSize: 15; weight: Font.Medium; letterSpacing: 0.3 }
-                    color: ColorsModule.Colors.on_surface
                 }
-                Text {
+                StyledText {
                     text: "Click a card to start chatting"
                     font.pixelSize: 10
-                    color: ColorsModule.Colors.on_surface_variant; opacity: 0.45
+                    color: Colors.on_surface_variant; opacity: 0.45
                 }
             }
 
@@ -37,24 +37,24 @@ Item {
             Rectangle {
                 width: 140; height: 32; radius: 16
                 color: newCharHov.containsMouse
-                    ? ColorsModule.Colors.primary : ColorsModule.Colors.primary_container
+                    ? Colors.primary : Colors.primary_container
                 Behavior on color { ColorAnimation { duration: 140 } }
 
                 RowLayout {
                     anchors.centerIn: parent; spacing: 5
-                    Text {
+                    StyledText {
                         text: "＋"
                         font.pixelSize: 13
                         color: newCharHov.containsMouse
-                            ? ColorsModule.Colors.on_primary
-                            : ColorsModule.Colors.on_primary_container
+                            ? Colors.on_primary
+                            : Colors.on_primary_container
                     }
-                    Text {
+                    StyledText {
                         text: "new character"
                         font { pixelSize: 12; weight: Font.Medium }
                         color: newCharHov.containsMouse
-                            ? ColorsModule.Colors.on_primary
-                            : ColorsModule.Colors.on_primary_container
+                            ? Colors.on_primary
+                            : Colors.on_primary_container
                     }
                 }
 
@@ -73,22 +73,22 @@ Item {
 
         ColumnLayout {
             anchors.centerIn: parent; spacing: 10
-            Text {
+            StyledText {
                 Layout.alignment: Qt.AlignHCenter
                 text: "✦"; font.pixelSize: 48
-                color: ColorsModule.Colors.primary; opacity: 0.15
+                color: Colors.primary; opacity: 0.15
             }
-            Text {
+            StyledText {
                 Layout.alignment: Qt.AlignHCenter
                 text: "no characters yet"
                 font { pixelSize: 14; letterSpacing: 0.3 }
-                color: ColorsModule.Colors.on_surface_variant; opacity: 0.45
+                color: Colors.on_surface_variant; opacity: 0.45
             }
-            Text {
+            StyledText {
                 Layout.alignment: Qt.AlignHCenter
                 text: "create a character to start chatting"
                 font.pixelSize: 11
-                color: ColorsModule.Colors.on_surface_variant; opacity: 0.3
+                color: Colors.on_surface_variant; opacity: 0.3
             }
         }
     }
@@ -121,8 +121,8 @@ Item {
                 radius: 14
                 clip: true
                 color: isSelected
-                    ? ColorsModule.Colors.secondary_container
-                    : (cardHover.hovered ? ColorsModule.Colors.surface_container_high : ColorsModule.Colors.surface_container)
+                    ? Colors.secondary_container
+                    : (cardHover.hovered ? Colors.surface_container_high : Colors.surface_container)
                 Behavior on color { ColorAnimation { duration: 130 } }
 
                 ColumnLayout {
@@ -136,16 +136,16 @@ Item {
                         Rectangle {
                             width: 42; height: 42; radius: 21
                             color: isSelected
-                                ? ColorsModule.Colors.primary
-                                : ColorsModule.Colors.primary_container
+                                ? Colors.primary
+                                : Colors.primary_container
 
-                            Text {
+                            StyledText {
                                 anchors.centerIn: parent
                                 text: modelData.name.charAt(0).toUpperCase()
                                 font { pixelSize: 18; weight: Font.Medium }
                                 color: isSelected
-                                    ? ColorsModule.Colors.on_primary
-                                    : ColorsModule.Colors.on_primary_container
+                                    ? Colors.on_primary
+                                    : Colors.on_primary_container
                             }
                         }
 
@@ -153,21 +153,20 @@ Item {
                             Layout.fillWidth: true
                             spacing: 3
 
-                            Text {
+                            StyledText {
                                 Layout.fillWidth: true
                                 text: modelData.name
                                 font { pixelSize: 14; weight: Font.Medium }
-                                color: ColorsModule.Colors.on_surface
                                 elide: Text.ElideRight
                             }
 
-                            Text {
+                            StyledText {
                                 Layout.fillWidth: true
                                 text: modelData.personality
                                     ? modelData.personality.split(".")[0]
                                     : (modelData.description ? modelData.description : "")
                                 font.pixelSize: 11
-                                color: ColorsModule.Colors.on_surface_variant; opacity: 0.6
+                                color: Colors.on_surface_variant; opacity: 0.6
                                 elide: Text.ElideRight
                                 maximumLineCount: 1
                                 wrapMode: Text.NoWrap
@@ -179,47 +178,43 @@ Item {
                             spacing: 4
                             visible: cardHover.hovered
 
-                            Rectangle {
+                            ClickableRect {
+                                id: editRect
                                 width: 28; height: 28; radius: 8
-                                color: editHov.containsMouse
-                                    ? ColorsModule.Colors.surface_container_highest : "transparent"
+                                color: editRect.hovered
+                                    ? Colors.surface_container_highest : "transparent"
                                 Behavior on color { ColorAnimation { duration: 100 } }
-                                Text {
+                                StyledText {
                                     anchors.centerIn: parent; text: "✎"; font.pixelSize: 13
-                                    color: ColorsModule.Colors.on_surface_variant
+                                    color: Colors.on_surface_variant
                                 }
-                                MouseArea {
-                                    id: editHov; anchors.fill: parent; hoverEnabled: true
-                                    cursorShape: Qt.PointingHandCursor
-                                    onClicked: (mouse) => {
+                                cursorShape: Qt.PointingHandCursor
+                                onClicked: (mouse) => {
                                         mouse.accepted = true
                                         AppState.editingCharacter = modelData
                                         AppState.view = "character_editor"
                                     }
-                                }
                             }
 
-                            Rectangle {
+                            ClickableRect {
+                                id: delRect
                                 width: 28; height: 28; radius: 8
-                                color: delHov.containsMouse
-                                    ? ColorsModule.Colors.error_container : "transparent"
+                                color: delRect.hovered
+                                    ? Colors.error_container : "transparent"
                                 Behavior on color { ColorAnimation { duration: 100 } }
-                                Text {
+                                StyledText {
                                     anchors.centerIn: parent; text: "×"; font.pixelSize: 16
-                                    color: delHov.containsMouse
-                                        ? ColorsModule.Colors.on_error_container
-                                        : ColorsModule.Colors.error
+                                    color: delRect.hovered
+                                        ? Colors.on_error_container
+                                        : Colors.error
                                 }
-                                MouseArea {
-                                    id: delHov; anchors.fill: parent; hoverEnabled: true
-                                    cursorShape: Qt.PointingHandCursor
-                                    onClicked: (mouse) => {
+                                cursorShape: Qt.PointingHandCursor
+                                onClicked: (mouse) => {
                                         mouse.accepted = true
                                         deleteConfirm.targetId   = modelData.id
                                         deleteConfirm.targetName = modelData.name
                                         deleteConfirm.visible    = true
                                     }
-                                }
                             }
                         }
                     }
@@ -233,7 +228,7 @@ Item {
                         Rectangle {
                             height: 22; radius: 11
                             width: chatBadgeRow.implicitWidth + 16
-                            color: ColorsModule.Colors.surface_container_highest
+                            color: Colors.surface_container_highest
 
                             Row {
                                 id: chatBadgeRow
@@ -242,41 +237,39 @@ Item {
                                     text: "💬"; font.pixelSize: 10
                                     visible: chatCount >= 0
                                 }
-                                Text {
+                                StyledText {
                                     text: chatCount < 0 ? "…" : (chatCount + " chat" + (chatCount !== 1 ? "s" : ""))
                                     font { pixelSize: 11; weight: Font.Medium }
-                                    color: ColorsModule.Colors.on_surface_variant; opacity: 0.7
+                                    color: Colors.on_surface_variant; opacity: 0.7
                                 }
                             }
                         }
 
                         Item { Layout.fillWidth: true }
 
-                        Rectangle {
+                        ClickableRect {
+                            id: startRect
                             height: 30; radius: 15
                             width: startTxt.implicitWidth + 24
-                            color: startHov.containsMouse
-                                ? ColorsModule.Colors.primary
-                                : ColorsModule.Colors.primary_container
+                            color: startRect.hovered
+                                ? Colors.primary
+                                : Colors.primary_container
                             Behavior on color { ColorAnimation { duration: 120 } }
 
-                            Text {
+                            StyledText {
                                 id: startTxt; anchors.centerIn: parent
                                 text: "start chat"
                                 font { pixelSize: 12; weight: Font.Medium }
-                                color: startHov.containsMouse
-                                    ? ColorsModule.Colors.on_primary
-                                    : ColorsModule.Colors.on_primary_container
+                                color: startRect.hovered
+                                    ? Colors.on_primary
+                                    : Colors.on_primary_container
                             }
 
-                            MouseArea {
-                                id: startHov; anchors.fill: parent; hoverEnabled: true
-                                cursorShape: Qt.PointingHandCursor
-                                onClicked: (mouse) => {
+                            cursorShape: Qt.PointingHandCursor
+                            onClicked: (mouse) => {
                                     mouse.accepted = true
                                     AppState.selectCharacter(modelData)
                                 }
-                            }
                         }
                     }
                 }
@@ -298,39 +291,38 @@ Item {
 
         Rectangle {
             anchors.centerIn: parent; width: 340; height: 164; radius: 16
-            color: ColorsModule.Colors.surface_container_highest
+            color: Colors.surface_container_highest
             Column {
                 anchors { fill: parent; margins: 24 }
                 spacing: 12
-                Text {
+                StyledText {
                     text: "Delete "+ deleteConfirm.targetName + "?"
                     font { pixelSize: 15; weight: Font.Medium }
-                    color: ColorsModule.Colors.on_surface
                 }
                 Text {
                     text: "All conversations with this character will be permanently deleted."
-                    font.pixelSize: 12; color: ColorsModule.Colors.on_surface_variant; opacity: 0.7
+                    font.pixelSize: 12; color: Colors.on_surface_variant; opacity: 0.7
                     wrapMode: Text.WordWrap; width: parent.width
                 }
                 Item { height: 4 }
                 Row {
                     spacing: 10; anchors.right: parent.right
-                    Rectangle {
+                    ClickableRect {
+                        id: dcCxRect
                         width: 72; height: 32; radius: 16
-                        color: dcCxHov.containsMouse
-                            ? ColorsModule.Colors.surface_container_high : "transparent"
+                        color: dcCxRect.hovered
+                            ? Colors.surface_container_high : "transparent"
                         Text { anchors.centerIn: parent; text: "cancel"; font.pixelSize: 13
-                            color: ColorsModule.Colors.on_surface_variant }
-                        MouseArea { id: dcCxHov; anchors.fill: parent; hoverEnabled: true
-                            cursorShape: Qt.PointingHandCursor
-                            onClicked: deleteConfirm.visible = false }
+                            color: Colors.on_surface_variant }
+                        cursorShape: Qt.PointingHandCursor
+                        onClicked: deleteConfirm.visible = false
                     }
                     Rectangle {
                         width: 80; height: 32; radius: 16
-                        color: ColorsModule.Colors.error_container
+                        color: Colors.error_container
                         Text { anchors.centerIn: parent; text: "delete"
                             font { pixelSize: 13; weight: Font.Medium }
-                            color: ColorsModule.Colors.on_error_container }
+                            color: Colors.on_error_container }
                         MouseArea {
                             anchors.fill: parent; cursorShape: Qt.PointingHandCursor
                             onClicked: {

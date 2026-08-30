@@ -3,7 +3,7 @@ import QtQuick.Layouts
 import QtQuick.Controls
 import Quickshell
 import Quickshell.Io
-import "../../colors" as ColorsModule
+import qs.colors
 import qs.components
 
 Item {
@@ -34,7 +34,7 @@ Item {
     Rectangle {
         id: scrim
         anchors.fill: parent
-        color: ColorsModule.Colors.scrim
+        color: Colors.scrim
         opacity: 0
         enabled: opacity > 0.01
         Behavior on opacity { NumberAnimation { duration: 280; easing.type: Easing.OutCubic } }
@@ -47,7 +47,7 @@ Item {
 
     // ── Panel ─────────────────────────────────────────────────────────────────
 
-    Rectangle {
+    Card {
         id: panel
         width: 384
         height: 620
@@ -55,9 +55,6 @@ Item {
         x: networkPanel.width
 
         radius: 22
-        color: ColorsModule.Colors.surface_container
-        border.color: ColorsModule.Colors.outline_variant
-        border.width: 1
 
         layer.enabled: true
         layer.smooth: true
@@ -71,7 +68,7 @@ Item {
                 GradientStop { position: 0.35; color: "transparent" }
             }
         }
-        readonly property color accent: ColorsModule.Colors.primary
+        readonly property color accent: Colors.primary
 
         FocusScope {
             anchors.fill: parent
@@ -90,7 +87,7 @@ Item {
                     Layout.fillWidth: true
                     Layout.preferredHeight: 48
                     radius: 16
-                    color: ColorsModule.Colors.surface_container_high
+                    color: Colors.surface_container_high
 
                     Rectangle {
                         id: tabIndicator
@@ -99,7 +96,7 @@ Item {
                         y: 4
                         x: 4 + (networkPanel.currentTab === 0 ? 0 : width)
                         radius: 12
-                        color: ColorsModule.Colors.primary
+                        color: Colors.primary
                         Behavior on x { NumberAnimation { duration: 240; easing.type: Easing.OutCubic } }
                     }
 
@@ -124,22 +121,21 @@ Item {
                                     anchors.centerIn: parent
                                     spacing: 8
 
-                                    Text {
+                                    MaterialIcon {
                                         text: modelData.glyph
-                                        font.family: "Material Design Icons"
                                         font.pixelSize: 17
                                         color: tabDelegate.selected
-                                            ? ColorsModule.Colors.on_primary
-                                            : ColorsModule.Colors.on_surface_variant
+                                            ? Colors.on_primary
+                                            : Colors.on_surface_variant
                                         Behavior on color { ColorAnimation { duration: 150 } }
                                     }
-                                    Text {
+                                    StyledText {
                                         text: modelData.label
                                         font.pixelSize: 14
                                         font.weight: Font.Medium
                                         color: tabDelegate.selected
-                                            ? ColorsModule.Colors.on_primary
-                                            : ColorsModule.Colors.on_surface_variant
+                                            ? Colors.on_primary
+                                            : Colors.on_surface_variant
                                         Behavior on color { ColorAnimation { duration: 150 } }
                                     }
                                 }

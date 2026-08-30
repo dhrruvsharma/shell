@@ -3,8 +3,9 @@ import QtQuick.Layouts
 import QtQuick.Controls
 import Quickshell
 import Quickshell.Io
-import "../../colors" as ColorsModule
+import qs.colors
 import qs.services as Services
+import qs.components
 
 Rectangle {
     Layout.fillWidth: true
@@ -12,15 +13,15 @@ Rectangle {
     color: "transparent"
 
     gradient: Gradient {
-        GradientStop { position: 0.0; color: ColorsModule.Colors.primary_container }
-        GradientStop { position: 1.0; color: Qt.darker(ColorsModule.Colors.primary_container, 1.1) }
+        GradientStop { position: 0.0; color: Colors.primary_container }
+        GradientStop { position: 1.0; color: Qt.darker(Colors.primary_container, 1.1) }
     }
 
     Rectangle {
         width: parent.width * 0.4
         height: parent.height
         anchors.right: parent.right
-        color: ColorsModule.Colors.secondary_container
+        color: Colors.secondary_container
         opacity: 0.1
     }
 
@@ -37,18 +38,18 @@ Rectangle {
                 Layout.fillWidth: true
                 spacing: 6
 
-                Text {
+                StyledText {
                     text: "Control Center"
                     font.pixelSize: 28
                     font.weight: Font.Bold
                     font.letterSpacing: -0.5
-                    color: ColorsModule.Colors.on_primary_container
+                    color: Colors.on_primary_container
                 }
 
-                Text {
+                StyledText {
                     text: Services.Time.format("ddd, MMM d · hh:mm")
                     font.pixelSize: 14
-                    color: ColorsModule.Colors.on_primary_container
+                    color: Colors.on_primary_container
                     opacity: 0.7
                     font.weight: Font.Medium
                 }

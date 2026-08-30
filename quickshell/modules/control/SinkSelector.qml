@@ -3,7 +3,8 @@ import QtQuick.Layouts
 import Quickshell
 import Quickshell.Io
 import qs.services as Services
-import "../../colors" as ColorsModule
+import qs.colors
+import qs.components
 
 ColumnLayout {
     id: root
@@ -16,12 +17,12 @@ ColumnLayout {
         Layout.topMargin: 8
         implicitHeight: 36
 
-        Text {
+        StyledText {
             anchors.left: parent.left
             anchors.leftMargin: 20
             anchors.verticalCenter: parent.verticalCenter
             text: "Audio Output"
-            color: ColorsModule.Colors.on_surface_variant
+            color: Colors.on_surface_variant
             font.pixelSize: 11
             font.letterSpacing: 1.2
             font.weight: Font.Medium
@@ -67,15 +68,10 @@ ColumnLayout {
                     radius: 8
 
                     color: delegate.isDefault
-                        ? Qt.rgba(
-                            ColorsModule.Colors.primary_container.r,
-                            ColorsModule.Colors.primary_container.g,
-                            ColorsModule.Colors.primary_container.b,
-                            0.85
-                        )
+                        ? Colors.withAlpha(Colors.primary_container, 0.85)
                         : hoverHandler.hovered
-                            ? ColorsModule.Colors.surface_container_high
-                            : ColorsModule.Colors.surface_container
+                            ? Colors.surface_container_high
+                            : Colors.surface_container
 
                     Behavior on color {
                         ColorAnimation { duration: 150 }
@@ -88,7 +84,7 @@ ColumnLayout {
                         anchors.left: parent.left
                         anchors.leftMargin: 0
                         anchors.verticalCenter: parent.verticalCenter
-                        color: ColorsModule.Colors.primary
+                        color: Colors.primary
                         opacity: delegate.isDefault ? 1 : 0
                         Behavior on opacity {
                             NumberAnimation { duration: 150 }
@@ -105,12 +101,12 @@ ColumnLayout {
                             Layout.fillWidth: true
                             spacing: 1
 
-                            Text {
+                            StyledText {
                                 Layout.fillWidth: true
                                 text: delegate.label
                                 color: delegate.isDefault
-                                    ? ColorsModule.Colors.on_primary_container
-                                    : ColorsModule.Colors.on_surface
+                                    ? Colors.on_primary_container
+                                    : Colors.on_surface
                                 font.pixelSize: 13
                                 font.weight: delegate.isDefault ? Font.Medium : Font.Normal
                                 elide: Text.ElideRight
@@ -120,17 +116,12 @@ ColumnLayout {
                                 }
                             }
 
-                            Text {
+                            StyledText {
                                 Layout.fillWidth: true
                                 text: delegate.sinkName
                                 color: delegate.isDefault
-                                    ? Qt.rgba(
-                                        ColorsModule.Colors.on_primary_container.r,
-                                        ColorsModule.Colors.on_primary_container.g,
-                                        ColorsModule.Colors.on_primary_container.b,
-                                        0.55
-                                    )
-                                    : ColorsModule.Colors.on_surface_variant
+                                    ? Colors.withAlpha(Colors.on_primary_container, 0.55)
+                                    : Colors.on_surface_variant
                                 font.pixelSize: 10
                                 elide: Text.ElideRight
                                 visible: delegate.description !== ""
@@ -142,9 +133,9 @@ ColumnLayout {
                             }
                         }
 
-                        Text {
+                        StyledText {
                             text: "✓"
-                            color: ColorsModule.Colors.primary
+                            color: Colors.primary
                             font.pixelSize: 13
                             font.weight: Font.Bold
                             opacity: delegate.isDefault ? 1 : 0
@@ -172,12 +163,10 @@ ColumnLayout {
         }
     }
 
-    Rectangle {
+    Divider {
         Layout.fillWidth: true
         Layout.leftMargin: 16
         Layout.rightMargin: 16
-        height: 1
-        color: ColorsModule.Colors.outline_variant
         opacity: 0.4
     }
 }

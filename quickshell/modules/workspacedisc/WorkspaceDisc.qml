@@ -3,6 +3,7 @@ import Quickshell
 import Quickshell.Wayland
 import qs.services
 import qs.colors
+import qs.components
 
 // Rotating "revolver cylinder" workspace indicator, ported from zesis-shell.
 // The disc rotates so the active workspace's chamber lands at a fixed corner
@@ -178,7 +179,7 @@ Item {
                     }
                 }
 
-                Text {
+                StyledText {
                     anchors.centerIn: parent
                     text: wsItem.wsIndex
                     font.pixelSize: UIScale.fontTiny

@@ -4,25 +4,22 @@ import Quickshell
 import Quickshell.Services.SystemTray
 import qs.Core
 import qs.Widgets
-import "../../../colors" as ColorsModule
+import qs.colors
+import qs.components
 
 RowLayout {
     id: root
 
-    property var colors: ColorsModule.Colors
     property bool trayOpen: false
 
     visible: SystemTray.items.values.length > 0
     spacing: 4
 
-    Rectangle {
+    Card {
         clip: true
         height: 26
         radius: height / 2
 
-        color: colors.surface_container
-        border.color: colors.outline_variant
-        border.width: 1
 
         Layout.preferredWidth: trayOpen ? (trayInner.implicitWidth + 16) : 0
         Layout.rightMargin: trayOpen ? 4 : 0
@@ -35,7 +32,6 @@ RowLayout {
 
             Tray {
                 iconSize: 16
-                colors: root.colors
             }
         }
 
@@ -62,23 +58,21 @@ RowLayout {
         }
     }
 
-    Rectangle {
+    Card {
         id: toggleBtn
 
         Layout.preferredWidth: 26
         Layout.preferredHeight: 26
         radius: height / 2
 
-        color: colors.background
-        border.width: 1
-        border.color: colors.outline_variant
+        color: Colors.background
 
         Icon {
             anchors.centerIn: parent
             icon: Icons.arrowLeft
             font.pixelSize: 14
 
-            color: colors.on_surface
+            color: Colors.on_surface
             rotation: trayOpen ? 180 : 0
 
             Behavior on rotation {
@@ -102,8 +96,8 @@ RowLayout {
 
             onClicked: trayOpen = !trayOpen
 
-            onEntered: toggleBtn.border.color = colors.primary
-            onExited: toggleBtn.border.color = colors.outline_variant
+            onEntered: toggleBtn.border.color = Colors.primary
+            onExited: toggleBtn.border.color = Colors.outline_variant
         }
 
         Behavior on color {

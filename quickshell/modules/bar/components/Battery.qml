@@ -1,22 +1,9 @@
-import QtQuick
+import qs.components
 import qs.services as Services
-import "../../../colors" as ColorsModule
 import qs.Core
-Rectangle {
-    radius: 13
-    color: ColorsModule.Colors.surface_container
-    implicitHeight: 28
-    implicitWidth: battery.implicitWidth + 16
 
-    Text {
-        id: battery
-        anchors.centerIn: parent
-
-        font.pixelSize: 17
-        color: ColorsModule.Colors.on_surface
-
-        text: batteryIcon + " " + Services.Battery.percentage + "%"
-    }
+BarPill {
+    text: batteryIcon + " " + Services.Battery.percentage + "%"
 
     property string batteryIcon: {
         const p = Services.Battery.percentage

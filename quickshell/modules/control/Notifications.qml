@@ -3,7 +3,8 @@ import QtQuick.Layouts
 import QtQuick.Controls
 import Quickshell
 import qs.services as Services
-import "../../colors" as ColorsModule
+import qs.colors
+import qs.components
 
 Item {
     id: root
@@ -31,19 +32,18 @@ Item {
             Layout.leftMargin: 2
             Layout.rightMargin: 2
 
-            Text {
+            StyledText {
                 text: "Notifications"
                 font.pixelSize: 16
                 font.weight: Font.DemiBold
-                color: ColorsModule.Colors.on_surface
                 Layout.fillWidth: true
             }
 
-            Text {
+            StyledText {
                 text: notifModel.length.toString()
                 font.pixelSize: 12
                 font.weight: Font.Medium
-                color: ColorsModule.Colors.on_surface_variant
+                color: Colors.on_surface_variant
                 visible: notifModel.length > 0
             }
 
@@ -53,45 +53,35 @@ Item {
                 visible: notifModel.length > 0
                 onClicked: clearAll()
 
-                contentItem: Text {
+                contentItem: StyledText {
                     text: parent.text
                     font: parent.font
-                    color: ColorsModule.Colors.primary
+                    color: Colors.primary
                     horizontalAlignment: Text.AlignHCenter
                     verticalAlignment: Text.AlignVCenter
                 }
 
-                background: Rectangle {
+                background: Card {
                     implicitWidth: 70
                     implicitHeight: 28
                     radius: 14
 
                     color: parent.pressed ?
-                        Qt.rgba(ColorsModule.Colors.primary.r,
-                            ColorsModule.Colors.primary.g,
-                            ColorsModule.Colors.primary.b, 0.15)
+                        Colors.withAlpha(Colors.primary, 0.15)
                         : parent.hovered ?
-                            Qt.rgba(ColorsModule.Colors.primary.r,
-                                ColorsModule.Colors.primary.g,
-                                ColorsModule.Colors.primary.b, 0.08)
-                            : ColorsModule.Colors.surface_container_high
+                            Colors.withAlpha(Colors.primary, 0.08)
+                            : Colors.surface_container_high
 
-                    border.width: 1
-                    border.color: ColorsModule.Colors.outline_variant
                 }
             }
         }
 
-        Rectangle {
+        Card {
             Layout.fillWidth: true
             Layout.preferredHeight: notifModel.length > 0
                 ? Math.min(list.contentHeight + 16, 400)
                 : 120
 
-            radius: 16
-            color: ColorsModule.Colors.surface_container
-            border.width: 1
-            border.color: ColorsModule.Colors.outline_variant
 
             Behavior on Layout.preferredHeight {
                 NumberAnimation {
@@ -112,10 +102,10 @@ Item {
                     opacity: 0.5
                 }
 
-                Text {
+                StyledText {
                     text: "No notifications"
                     font.pixelSize: 13
-                    color: ColorsModule.Colors.on_surface_variant
+                    color: Colors.on_surface_variant
                     Layout.alignment: Qt.AlignHCenter
                 }
             }
@@ -132,14 +122,12 @@ Item {
 
                 boundsBehavior: Flickable.StopAtBounds
 
-                delegate: Rectangle {
+                delegate: Card {
                     width: list.width - 16
                     height: contentColumn.implicitHeight + 20
                     radius: 12
 
-                    color: ColorsModule.Colors.surface_container_high
-                    border.width: 1
-                    border.color: ColorsModule.Colors.outline_variant
+                    color: Colors.surface_container_high
 
                     required property var modelData
 
@@ -152,7 +140,7 @@ Item {
                     Rectangle {
                         anchors.fill: parent
                         radius: parent.radius
-                        color: ColorsModule.Colors.primary
+                        color: Colors.primary
                         opacity: mouseArea.containsMouse ? 0.05 : 0
                         Behavior on opacity { NumberAnimation { duration: 120 } }
                     }
@@ -202,41 +190,40 @@ Item {
                             RowLayout {
                                 Layout.fillWidth: true
 
-                                Text {
+                                StyledText {
                                     text: modelData.appName || "App"
                                     font.pixelSize: 11
                                     font.weight: Font.Medium
-                                    color: ColorsModule.Colors.primary
+                                    color: Colors.primary
                                     Layout.fillWidth: true
                                     elide: Text.ElideRight
                                 }
 
-                                Text {
+                                StyledText {
                                     text: modelData.timeStr
                                     font.pixelSize: 10
-                                    color: ColorsModule.Colors.on_surface_variant
+                                    color: Colors.on_surface_variant
                                     opacity: 0.7
                                 }
                             }
 
-                            Text {
+                            StyledText {
                                 text: modelData.summary
                                 font.pixelSize: 13
                                 font.weight: Font.DemiBold
                                 wrapMode: Text.Wrap
                                 Layout.fillWidth: true
-                                color: ColorsModule.Colors.on_surface
                                 maximumLineCount: 2
                                 elide: Text.ElideRight
                                 visible: text.length > 0
                             }
 
-                            Text {
+                            StyledText {
                                 text: modelData.body
                                 font.pixelSize: 12
                                 wrapMode: Text.Wrap
                                 Layout.fillWidth: true
-                                color: ColorsModule.Colors.on_surface_variant
+                                color: Colors.on_surface_variant
                                 maximumLineCount: 4
                                 elide: Text.ElideRight
                                 visible: text.length > 0

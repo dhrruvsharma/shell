@@ -2,7 +2,8 @@ import QtQuick
 import QtQuick.Controls
 import QtQuick.Layouts
 import qs.services as Services
-import "../colors" as ColorsModule
+import qs.colors
+import qs.components
 
 // A blank-slate notepad board. Hit + to drop a new tile and type straight into
 // it — the tiles are the editors, there are no separate input fields.
@@ -11,7 +12,7 @@ Item {
     anchors.fill: parent
     visible: false
 
-    readonly property color accent: ColorsModule.Colors.primary
+    readonly property color accent: Colors.primary
 
     // id of a just-added tile that should grab focus once its delegate exists
     property real pendingFocusId: 0
@@ -133,7 +134,7 @@ Item {
     Rectangle {
         id: scrim
         anchors.fill: parent
-        color: ColorsModule.Colors.scrim
+        color: Colors.scrim
         opacity: 0
         enabled: opacity > 0.01
         Behavior on opacity { NumberAnimation { duration: 240; easing.type: Easing.OutCubic } }
@@ -152,7 +153,7 @@ Item {
         width: Math.max(560, Math.min(1040, parent.width * 0.72))
         height: Math.min(760, parent.height * 0.82)
         radius: 30
-        color: ColorsModule.Colors.surface_container_lowest
+        color: Colors.surface_container_lowest
         clip: true
         enabled: scrim.opacity > 0.01
 
@@ -172,12 +173,10 @@ Item {
             }
         }
 
-        Rectangle {
+        Card {
             anchors.fill: parent
             radius: parent.radius
             color: "transparent"
-            border.width: 1
-            border.color: ColorsModule.Colors.outline_variant
             opacity: 0.5
         }
 
@@ -212,11 +211,10 @@ Item {
                     Layout.alignment: Qt.AlignVCenter
                 }
 
-                Text {
+                StyledText {
                     text: "Notepad"
                     font.pixelSize: 19
                     font.weight: Font.Bold
-                    color: ColorsModule.Colors.on_surface
                     Layout.alignment: Qt.AlignVCenter
                 }
 
@@ -225,30 +223,31 @@ Item {
                     Layout.preferredWidth: Math.max(24, cntText.contentWidth + 16)
                     Layout.alignment: Qt.AlignVCenter
                     radius: 12
-                    color: ColorsModule.Colors.primary_container
+                    color: Colors.primary_container
                     opacity: root.filteredNotes.length > 0 ? 1 : 0.4
                     Behavior on opacity { NumberAnimation { duration: 200 } }
-                    Text {
+                    StyledText {
                         id: cntText
                         anchors.centerIn: parent
                         text: root.filteredNotes.length
                         font.pixelSize: 12
                         font.weight: Font.DemiBold
-                        color: ColorsModule.Colors.on_primary_container
+                        color: Colors.on_primary_container
                     }
                 }
 
                 Item { Layout.fillWidth: true }
 
                 // new note
-                Rectangle {
+                ClickableRect {
+                    id: addRect
                     Layout.preferredHeight: 34
                     Layout.preferredWidth: 106
                     Layout.alignment: Qt.AlignVCenter
                     radius: 17
-                    color: addMa.containsMouse
-                        ? Qt.darker(ColorsModule.Colors.primary_container, 1.15)
-                        : ColorsModule.Colors.primary_container
+                    color: addRect.hovered
+                        ? Qt.darker(Colors.primary_container, 1.15)
+                        : Colors.primary_container
                     Behavior on color { ColorAnimation { duration: 150 } }
 
                     Rectangle {
@@ -256,59 +255,50 @@ Item {
                         radius: parent.radius
                         color: "transparent"
                         border.width: 1.5
-                        border.color: ColorsModule.Colors.primary
+                        border.color: Colors.primary
                         opacity: 0.35
                     }
 
                     Row {
                         anchors.centerIn: parent
                         spacing: 6
-                        Text {
+                        StyledText {
                             text: "+"
                             font.pixelSize: 18
                             font.weight: Font.Bold
-                            color: ColorsModule.Colors.on_primary_container
+                            color: Colors.on_primary_container
                             anchors.verticalCenter: parent.verticalCenter
                         }
-                        Text {
+                        StyledText {
                             text: "New"
                             font.pixelSize: 13
                             font.weight: Font.Medium
-                            color: ColorsModule.Colors.on_primary_container
+                            color: Colors.on_primary_container
                             anchors.verticalCenter: parent.verticalCenter
                         }
                     }
 
-                    MouseArea {
-                        id: addMa
-                        anchors.fill: parent
-                        hoverEnabled: true
-                        cursorShape: Qt.PointingHandCursor
-                        onClicked: root.addNote()
-                    }
+                    cursorShape: Qt.PointingHandCursor
+                    onClicked: root.addNote()
                 }
 
                 // close
-                Rectangle {
+                ClickableRect {
+                    id: closeRect
                     Layout.preferredWidth: 32
                     Layout.preferredHeight: 32
                     Layout.alignment: Qt.AlignVCenter
                     radius: 16
-                    color: closeMa.containsMouse ? ColorsModule.Colors.surface_container_high : "transparent"
+                    color: closeRect.hovered ? Colors.surface_container_high : "transparent"
                     Behavior on color { ColorAnimation { duration: 120 } }
-                    Text {
+                    StyledText {
                         anchors.centerIn: parent
                         text: "✕"
                         font.pixelSize: 15
-                        color: ColorsModule.Colors.on_surface_variant
+                        color: Colors.on_surface_variant
                     }
-                    MouseArea {
-                        id: closeMa
-                        anchors.fill: parent
-                        hoverEnabled: true
-                        cursorShape: Qt.PointingHandCursor
-                        onClicked: root.close()
-                    }
+                    cursorShape: Qt.PointingHandCursor
+                    onClicked: root.close()
                 }
             }
 
@@ -318,11 +308,11 @@ Item {
                 Layout.preferredHeight: 40
                 visible: root.layoutNotes.length > 0
                 radius: 14
-                color: ColorsModule.Colors.surface_container
+                color: Colors.surface_container
                 border.width: 1
                 border.color: searchField.activeFocus
-                    ? ColorsModule.Colors.primary
-                    : ColorsModule.Colors.outline_variant
+                    ? Colors.primary
+                    : Colors.outline_variant
                 Behavior on border.color { ColorAnimation { duration: 150 } }
 
                 RowLayout {
@@ -343,8 +333,8 @@ Item {
                         Layout.fillWidth: true
                         Layout.alignment: Qt.AlignVCenter
                         placeholderText: "Search notes…"
-                        placeholderTextColor: ColorsModule.Colors.on_surface_variant
-                        color: ColorsModule.Colors.on_surface
+                        placeholderTextColor: Colors.on_surface_variant
+                        color: Colors.on_surface
                         font.pixelSize: 13
                         padding: 0
                         background: Item {}
@@ -361,38 +351,31 @@ Item {
                     }
 
                     // clear query
-                    Rectangle {
+                    ClickableRect {
+                        id: clearRect
                         Layout.preferredWidth: 22
                         Layout.preferredHeight: 22
                         Layout.alignment: Qt.AlignVCenter
                         radius: 11
                         visible: searchField.text.length > 0
-                        color: clearMa.containsMouse ? ColorsModule.Colors.surface_container_highest : "transparent"
-                        Text {
+                        color: clearRect.hovered ? Colors.surface_container_highest : "transparent"
+                        StyledText {
                             anchors.centerIn: parent
                             text: "✕"
                             font.pixelSize: 11
-                            color: ColorsModule.Colors.on_surface_variant
+                            color: Colors.on_surface_variant
                         }
-                        MouseArea {
-                            id: clearMa
-                            anchors.fill: parent
-                            hoverEnabled: true
-                            cursorShape: Qt.PointingHandCursor
-                            onClicked: searchField.text = ""
-                        }
+                        cursorShape: Qt.PointingHandCursor
+                        onClicked: searchField.text = ""
                     }
                 }
             }
 
             // ── Board ──────────────────────────────────────────────────────────
-            Rectangle {
+            Card {
                 Layout.fillWidth: true
                 Layout.fillHeight: true
                 radius: 20
-                color: ColorsModule.Colors.surface_container
-                border.width: 1
-                border.color: ColorsModule.Colors.outline_variant
 
                 Flickable {
                     id: flick
@@ -404,16 +387,13 @@ Item {
                     boundsBehavior: Flickable.StopAtBounds
                     visible: root.filteredNotes.length > 0
 
-                    ScrollBar.vertical: ScrollBar {
-                        policy: ScrollBar.AsNeeded
+                    ScrollBar.vertical: StyledScrollBar {
                         width: 8
-                        contentItem: Rectangle {
-                            implicitWidth: 6
-                            radius: 3
-                            color: ColorsModule.Colors.outline_variant
-                            opacity: 0.5
-                        }
                         background: Item {}
+                        thickness: 6
+                        handleColor: Colors.outline_variant
+                        handleOpacity: 0.5
+                        handleRadius: 3
                     }
 
                     RowLayout {
@@ -442,7 +422,7 @@ Item {
                                         Layout.fillWidth: true
                                         Layout.preferredHeight: tileCol.implicitHeight + 26
                                         radius: 14
-                                        color: ColorsModule.Colors.surface_container_high
+                                        color: Colors.surface_container_high
 
                                         property var note: modelData
 
@@ -455,7 +435,7 @@ Item {
                                             color: "transparent"
                                             border.width: bodyArea.activeFocus ? 1.5 : 1
                                             border.color: bodyArea.activeFocus
-                                                ? ColorsModule.Colors.primary
+                                                ? Colors.primary
                                                 : hh.hovered
                                                     ? Qt.rgba(root.accent.r, root.accent.g, root.accent.b, 0.4)
                                                     : Qt.rgba(255, 255, 255, 0.05)
@@ -477,8 +457,8 @@ Item {
                                                 Layout.fillWidth: true
                                                 padding: 0
                                                 placeholderText: "Write something…"
-                                                placeholderTextColor: ColorsModule.Colors.on_surface_variant
-                                                color: ColorsModule.Colors.on_surface
+                                                placeholderTextColor: Colors.on_surface_variant
+                                                color: Colors.on_surface
                                                 font.pixelSize: 14
                                                 wrapMode: TextArea.Wrap
                                                 selectByMouse: true
@@ -500,10 +480,10 @@ Item {
                                                 Keys.onEscapePressed: root.close()
                                             }
 
-                                            Text {
+                                            StyledText {
                                                 text: root.relTime(tile.note.time)
                                                 Layout.topMargin: 2
-                                                color: ColorsModule.Colors.on_surface_variant
+                                                color: Colors.on_surface_variant
                                                 opacity: (hh.hovered || bodyArea.activeFocus) ? 0.5 : 0
                                                 font.pixelSize: 10
                                                 Behavior on opacity { NumberAnimation { duration: 150 } }
@@ -511,7 +491,8 @@ Item {
                                         }
 
                                         // delete (hover / focus)
-                                        Rectangle {
+                                        ClickableRect {
+                                            id: delRect
                                             anchors.top: parent.top
                                             anchors.right: parent.right
                                             anchors.topMargin: 8
@@ -520,25 +501,20 @@ Item {
                                             height: 26
                                             radius: 13
                                             opacity: (hh.hovered || bodyArea.activeFocus) ? 1 : 0
-                                            color: delMa.containsMouse
-                                                ? ColorsModule.Colors.error_container
-                                                : ColorsModule.Colors.surface_container_highest
+                                            color: delRect.hovered
+                                                ? Colors.error_container
+                                                : Colors.surface_container_highest
                                             Behavior on opacity { NumberAnimation { duration: 150 } }
-                                            Text {
+                                            StyledText {
                                                 anchors.centerIn: parent
                                                 text: "🗑"
                                                 font.pixelSize: 12
-                                                color: delMa.containsMouse
-                                                    ? ColorsModule.Colors.on_error_container
-                                                    : ColorsModule.Colors.on_surface_variant
+                                                color: delRect.hovered
+                                                    ? Colors.on_error_container
+                                                    : Colors.on_surface_variant
                                             }
-                                            MouseArea {
-                                                id: delMa
-                                                anchors.fill: parent
-                                                hoverEnabled: true
-                                                cursorShape: Qt.PointingHandCursor
-                                                onClicked: root.removeNote(tile.note.id)
-                                            }
+                                            cursorShape: Qt.PointingHandCursor
+                                            onClicked: root.removeNote(tile.note.id)
                                         }
                                     }
                                 }
@@ -568,28 +544,27 @@ Item {
                             radius: 38
                             color: Qt.rgba(root.accent.r, root.accent.g, root.accent.b, blankMa.containsMouse ? 0.22 : 0.12)
                             border.width: 2
-                            border.color: ColorsModule.Colors.primary
+                            border.color: Colors.primary
                             Behavior on color { ColorAnimation { duration: 160 } }
-                            Text {
+                            StyledText {
                                 anchors.centerIn: parent
                                 text: "+"
                                 font.pixelSize: 40
                                 font.weight: Font.Light
-                                color: ColorsModule.Colors.primary
+                                color: Colors.primary
                             }
                         }
-                        Text {
+                        StyledText {
                             text: "Blank slate"
                             Layout.alignment: Qt.AlignHCenter
-                            color: ColorsModule.Colors.on_surface
                             font.pixelSize: 16
                             font.weight: Font.DemiBold
                             opacity: 0.9
                         }
-                        Text {
+                        StyledText {
                             text: "Click anywhere to drop a note and start typing"
                             Layout.alignment: Qt.AlignHCenter
-                            color: ColorsModule.Colors.on_surface_variant
+                            color: Colors.on_surface_variant
                             font.pixelSize: 12
                             opacity: 0.6
                         }
@@ -607,17 +582,16 @@ Item {
                         opacity: 0.4
                         Layout.alignment: Qt.AlignHCenter
                     }
-                    Text {
+                    StyledText {
                         text: "No matching notes"
-                        color: ColorsModule.Colors.on_surface
                         font.pixelSize: 15
                         font.weight: Font.DemiBold
                         opacity: 0.85
                         Layout.alignment: Qt.AlignHCenter
                     }
-                    Text {
+                    StyledText {
                         text: "Nothing matches “" + root.searchText + "”"
-                        color: ColorsModule.Colors.on_surface_variant
+                        color: Colors.on_surface_variant
                         font.pixelSize: 12
                         opacity: 0.6
                         Layout.alignment: Qt.AlignHCenter

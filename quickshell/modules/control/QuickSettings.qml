@@ -2,8 +2,6 @@ import Quickshell
 import qs.components
 import QtQuick.Layouts
 import Quickshell.Io
-import QtQuick
-import "../../colors" as ColorsModule
 import qs.services as Services
 
 ColumnLayout {
@@ -18,24 +16,9 @@ ColumnLayout {
     property bool nightLightEnabled: false
     property bool airplaneModeEnabled: false
 
-    RowLayout {
-        Layout.fillWidth: true
-        Text {
-            Layout.fillWidth: true
-            text: "Quick Settings"
-            font.pixelSize: 15
-            font.weight: Font.DemiBold
-            font.letterSpacing: 0.3
-            color: ColorsModule.Colors.on_surface
-        }
-
-        Text {
-            text: "󰒓"
-            font.family: "Material Design Icons"
-            font.pixelSize: 16
-            color: ColorsModule.Colors.primary
-            opacity: 0.6
-        }
+    SectionHeader {
+        title: "Quick Settings"
+        icon: "󰒓"
     }
 
     GridLayout {

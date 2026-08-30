@@ -2,14 +2,14 @@ import QtQuick
 import Quickshell
 import Quickshell.Wayland
 import qs.services as Services
-import "../colors" as ColorsModule
+import qs.colors
 import qs.Core
 import QtQuick.Layouts
+import qs.components
 
 Item {
     id: root
     visible: Services.Osd.visible
-    property var colors: ColorsModule.Colors
 
     anchors.bottom: parent.bottom
     anchors.horizontalCenter: parent.horizontalCenter
@@ -25,12 +25,10 @@ Item {
         }
     }
 
-    Rectangle {
+    Card {
         anchors.fill: parent
         radius: 20
-        color: colors.surface_container_high
-        border.color: colors.outline_variant
-        border.width: 1
+        color: Colors.surface_container_high
         opacity: Services.Osd.visible ? 1.0 : 0.0
 
         layer.enabled: true
@@ -55,15 +53,14 @@ Item {
                 width: 52
                 height: 52
                 radius: 12
-                color: colors.primary_container
+                color: Colors.primary_container
                 anchors.verticalCenter: parent.verticalCenter
 
-                Text {
+                MaterialIcon {
                     anchors.centerIn: parent
                     text: Services.Osd.type === "volume" ? getVolumeIcon() : Icons.brightness
                     font.pixelSize: 28
-                    font.family: "Material Design Icons"
-                    color: colors.on_primary_container
+                    color: Colors.on_primary_container
                 }
             }
 
@@ -78,9 +75,8 @@ Item {
                     width: parent.width
                     spacing: 8
 
-                    Text {
+                    StyledText {
                         text: Services.Osd.type === "volume" ? "Volume" : "Brightness"
-                        color: colors.on_surface
                         font.pixelSize: 16
                         font.weight: Font.Medium
                         anchors.verticalCenter: parent.verticalCenter
@@ -91,9 +87,9 @@ Item {
                         height: 1
                     }
 
-                    Text {
+                    StyledText {
                         text: Math.min(Math.round(Services.Osd.value), 100) + "%"
-                        color: colors.on_surface_variant
+                        color: Colors.on_surface_variant
                         font.pixelSize: 15
                         font.weight: Font.DemiBold
                         anchors.verticalCenter: parent.verticalCenter
@@ -105,13 +101,13 @@ Item {
                     width: parent.width
                     height: 8
                     radius: 4
-                    color: colors.surface_container_highest
+                    color: Colors.surface_container_highest
 
                     Rectangle {
                         height: parent.height
                         radius: 4
                         width: parent.width * Math.min(Math.max(Services.Osd.value, 0), 100) / 100
-                        color: colors.primary
+                        color: Colors.primary
 
                         Behavior on width {
                             NumberAnimation {

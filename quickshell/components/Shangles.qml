@@ -2,7 +2,8 @@ import Quickshell
 import QtQuick
 import Quickshell.Wayland
 import Quickshell.Hyprland
-import "../colors" as ColorsModule
+import qs.colors
+import qs.components
 
 Rectangle {
     id: root
@@ -53,7 +54,7 @@ Rectangle {
             height: (baseHeightRatio + vOffset) * root.height
             width: 3
             x: baseX + hOffset
-            color: ColorsModule.Colors.surface_container
+            color: Colors.surface_container
             bottomLeftRadius: width / 2
             bottomRightRadius: width / 2
 
@@ -145,13 +146,13 @@ Rectangle {
                 }
             }
 
-            Text {
+            StyledText {
                 text: {
                     const options = ["󰽧", ""]
                     return options[Math.floor(Math.random() * options.length)]
                 }
                 font.family: "Symbols Nerd Font"
-                color: ColorsModule.Colors.primary
+                color: Colors.primary
                 font.pointSize: text === "󰽧" ? 28 : 25
                 rotation: text === "󰽧" ? 45 : 0
                 anchors.horizontalCenterOffset: text === "󰽧" ? -5.6 : 0

@@ -1,7 +1,8 @@
 import QtQuick
 import qs.aikira
 import QtQuick.Layouts
-import "../../colors" as ColorsModule
+import qs.colors
+import qs.components
 
 Item {
     id: root
@@ -16,18 +17,18 @@ Item {
             anchors.centerIn: parent
             spacing: 12
 
-            Text {
+            StyledText {
                 Layout.alignment: Qt.AlignHCenter
                 text: "aikira"
                 font { family: "monospace"; pixelSize: 36; letterSpacing: 6; weight: Font.Light }
-                color: ColorsModule.Colors.primary
+                color: Colors.primary
                 opacity: 0.3
             }
-            Text {
+            StyledText {
                 Layout.alignment: Qt.AlignHCenter
                 text: "select a character to begin"
                 font { pixelSize: 13; letterSpacing: 0.5 }
-                color: ColorsModule.Colors.on_surface_variant
+                color: Colors.on_surface_variant
                 opacity: 0.5
             }
         }
@@ -42,7 +43,7 @@ Item {
         Rectangle {
             Layout.fillWidth: true
             height: 56
-            color: ColorsModule.Colors.surface_container
+            color: Colors.surface_container
 
             RowLayout {
                 anchors { fill: parent; leftMargin: 20; rightMargin: 16 }
@@ -50,29 +51,28 @@ Item {
 
                 Rectangle {
                     width: 34; height: 34; radius: 17
-                    color: ColorsModule.Colors.primary_container
+                    color: Colors.primary_container
 
-                    Text {
+                    StyledText {
                         anchors.centerIn: parent
                         text: AppState.activeCharacter
                             ? AppState.activeCharacter.name.charAt(0).toUpperCase() : ""
                         font { pixelSize: 15; weight: Font.Medium }
-                        color: ColorsModule.Colors.on_primary_container
+                        color: Colors.on_primary_container
                     }
                 }
 
                 ColumnLayout {
                     spacing: 1
-                    Text {
+                    StyledText {
                         text: AppState.activeCharacter ? AppState.activeCharacter.name : ""
                         font { pixelSize: 14; weight: Font.Medium }
-                        color: ColorsModule.Colors.on_surface
                     }
-                    Text {
+                    StyledText {
                         text: AppState.activeConversation
                             ? AppState.activeConversation.title : "no chat selected"
                         font.pixelSize: 11
-                        color: ColorsModule.Colors.on_surface_variant
+                        color: Colors.on_surface_variant
                         opacity: 0.7
                     }
                 }
@@ -87,7 +87,7 @@ Item {
                         delegate: Rectangle {
                             required property int index
                             width: 5; height: 5; radius: 3
-                            color: ColorsModule.Colors.primary
+                            color: Colors.primary
 
                             SequentialAnimation on opacity {
                                 running: AppState.streaming
@@ -101,19 +101,19 @@ Item {
                 }
 
                 // Scenario peek
-                Rectangle {
+                ClickableRect {
+                    id: scenRect
                     width: 30; height: 30; radius: 8
                     visible: AppState.activeCharacter !== null &&
                         AppState.activeCharacter.scenario !== undefined &&
                         AppState.activeCharacter.scenario.length > 0
-                    color: scenHov.containsMouse
-                        ? ColorsModule.Colors.surface_container_high : "transparent"
+                    color: scenRect.hovered
+                        ? Colors.surface_container_high : "transparent"
                     Behavior on color { ColorAnimation { duration: 110 } }
                     Text { anchors.centerIn: parent; text: "◎"; font.pixelSize: 14
-                        color: ColorsModule.Colors.on_surface_variant }
-                    MouseArea { id: scenHov; anchors.fill: parent; hoverEnabled: true
-                        cursorShape: Qt.PointingHandCursor
-                        onClicked: scenarioPopup.visible = !scenarioPopup.visible }
+                        color: Colors.on_surface_variant }
+                    cursorShape: Qt.PointingHandCursor
+                    onClicked: scenarioPopup.visible = !scenarioPopup.visible
                 }
             }
         }
@@ -205,8 +205,8 @@ Item {
         width: 320
         height: Math.min(scenText.implicitHeight + 32, 240)
         radius: 12
-        color: ColorsModule.Colors.surface_container_highest
-        border { width: 1; color: ColorsModule.Colors.outline_variant }
+        color: Colors.surface_container_highest
+        border { width: 1; color: Colors.outline_variant }
         clip: true
         z: 10
 
@@ -215,13 +215,12 @@ Item {
             contentHeight: scenText.implicitHeight
             clip: true
 
-            Text {
+            StyledText {
                 id: scenText
                 width: parent.width
                 text: AppState.activeCharacter ? AppState.activeCharacter.scenario : ""
                 wrapMode: Text.WordWrap
                 font.pixelSize: 12
-                color: ColorsModule.Colors.on_surface
                 lineHeight: 1.5
             }
         }

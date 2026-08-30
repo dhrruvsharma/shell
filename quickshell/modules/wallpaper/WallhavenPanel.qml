@@ -5,14 +5,15 @@ import QtQuick.Layouts
 import Qt5Compat.GraphicalEffects
 import QtQuick.Controls
 import qs.services
-import "../../colors" as ColorsModule
+import qs.colors
 import qs.settings
+import qs.components
 
 Rectangle {
     anchors.fill: parent
     topLeftRadius: 12
     topRightRadius: 20
-    color: ColorsModule.Colors.surface
+    color: Colors.surface
     implicitHeight: 600
 
     Behavior on implicitHeight {
@@ -53,7 +54,7 @@ Rectangle {
                 Layout.preferredHeight: 50
                 clip: true
                 radius: 20
-                color: ColorsModule.Colors.surface_container
+                color: Colors.surface_container
 
                 RowLayout {
                     id: onlineConfigCol
@@ -87,7 +88,7 @@ Rectangle {
                         Layout.preferredHeight: 35
                         Layout.preferredWidth: 220
                         radius: 20
-                        color: ColorsModule.Colors.surface_container_highest
+                        color: Colors.surface_container_highest
 
                         RowLayout {
                             anchors.fill: parent
@@ -95,10 +96,10 @@ Rectangle {
                             anchors.leftMargin: 10
                             spacing: 10
 
-                            Text {
+                            StyledText {
                                 text: "⌕"
                                 font.pixelSize: 18
-                                color: ColorsModule.Colors.on_surface_variant
+                                color: Colors.on_surface_variant
                             }
 
                             TextInput {
@@ -108,7 +109,7 @@ Rectangle {
                                 clip: true
                                 font.pixelSize: 14
                                 font.weight: Font.ExtraBold
-                                color: ColorsModule.Colors.inverse_surface
+                                color: Colors.inverse_surface
                                 verticalAlignment: TextInput.AlignVCenter
                                 Keys.onReturnPressed: Wallhaven.updateSearch(text)
                                 Keys.onEscapePressed: {
@@ -116,11 +117,11 @@ Rectangle {
                                     Wallhaven.updateSearch("")
                                 }
 
-                                Text {
+                                StyledText {
                                     anchors.fill: parent
                                     text: "search wallhaven…"
                                     font: parent.font
-                                    color: ColorsModule.Colors.on_surface_variant
+                                    color: Colors.on_surface_variant
                                     opacity: 0.4
                                     verticalAlignment: Text.AlignVCenter
                                     visible: !parent.text && !parent.activeFocus
@@ -135,7 +136,7 @@ Rectangle {
                     Rectangle {
                         height: 28
                         radius: 14
-                        color: ColorsModule.Colors.surface_container_highest
+                        color: Colors.surface_container_highest
                         implicitWidth: _sortRow.implicitWidth + 6
 
                         RowLayout {
@@ -153,15 +154,15 @@ Rectangle {
                                     height: 24
                                     radius: 12
                                     implicitWidth: _sLbl.implicitWidth + 14
-                                    color: active ? ColorsModule.Colors.primary : "transparent"
+                                    color: active ? Colors.primary : "transparent"
                                     Behavior on color { ColorAnimation { duration: 150 } }
 
-                                    Text {
+                                    StyledText {
                                         id: _sLbl
                                         anchors.centerIn: parent
                                         text: parent.lbl
                                         font.pixelSize: 11
-                                        color: parent.active ? ColorsModule.Colors.on_primary : ColorsModule.Colors.on_surface
+                                        color: parent.active ? Colors.on_primary : Colors.on_surface
                                     }
 
                                     MouseArea {
@@ -178,7 +179,7 @@ Rectangle {
                     Rectangle {
                         height: 28
                         radius: 14
-                        color: ColorsModule.Colors.surface_container_highest
+                        color: Colors.surface_container_highest
                         implicitWidth: _rangeRow.implicitWidth + 6
                         visible: SettingsConfig.wallhavenSorting === "toplist"
 
@@ -196,15 +197,15 @@ Rectangle {
                                     height: 24
                                     radius: 12
                                     implicitWidth: _rLbl.implicitWidth + 14
-                                    color: active ? ColorsModule.Colors.primary : "transparent"
+                                    color: active ? Colors.primary : "transparent"
                                     Behavior on color { ColorAnimation { duration: 150 } }
 
-                                    Text {
+                                    StyledText {
                                         id: _rLbl
                                         anchors.centerIn: parent
                                         text: parent.val
                                         font.pixelSize: 11
-                                        color: parent.active ? ColorsModule.Colors.on_primary : ColorsModule.Colors.on_surface
+                                        color: parent.active ? Colors.on_primary : Colors.on_surface
                                     }
 
                                     MouseArea {
@@ -221,7 +222,7 @@ Rectangle {
                     Rectangle {
                         height: 28
                         radius: 14
-                        color: ColorsModule.Colors.surface_container_highest
+                        color: Colors.surface_container_highest
                         implicitWidth: _orderRow.implicitWidth + 6
 
                         RowLayout {
@@ -237,14 +238,14 @@ Rectangle {
                                     height: 24
                                     width: 28
                                     radius: 12
-                                    color: active ? ColorsModule.Colors.primary : "transparent"
+                                    color: active ? Colors.primary : "transparent"
                                     Behavior on color { ColorAnimation { duration: 150 } }
 
-                                    Text {
+                                    StyledText {
                                         anchors.centerIn: parent
                                         text: parent.modelData[0]
                                         font.pixelSize: 14
-                                        color: parent.active ? ColorsModule.Colors.on_primary : ColorsModule.Colors.on_surface
+                                        color: parent.active ? Colors.on_primary : Colors.on_surface
                                     }
 
                                     MouseArea {
@@ -261,7 +262,7 @@ Rectangle {
                     Rectangle {
                         height: 28
                         radius: 14
-                        color: ColorsModule.Colors.surface_container_highest
+                        color: Colors.surface_container_highest
                         implicitWidth: _catRow.implicitWidth + 6
 
                         RowLayout {
@@ -277,15 +278,15 @@ Rectangle {
                                     height: 24
                                     radius: 12
                                     implicitWidth: _catLbl.implicitWidth + 14
-                                    color: active ? ColorsModule.Colors.primary : "transparent"
+                                    color: active ? Colors.primary : "transparent"
                                     Behavior on color { ColorAnimation { duration: 150 } }
 
-                                    Text {
+                                    StyledText {
                                         id: _catLbl
                                         anchors.centerIn: parent
                                         text: parent.modelData[0]
                                         font.pixelSize: 11
-                                        color: parent.active ? ColorsModule.Colors.on_primary : ColorsModule.Colors.on_surface
+                                        color: parent.active ? Colors.on_primary : Colors.on_surface
                                     }
 
                                     MouseArea {
@@ -302,7 +303,7 @@ Rectangle {
                     Rectangle {
                         height: 28
                         radius: 14
-                        color: ColorsModule.Colors.surface_container_highest
+                        color: Colors.surface_container_highest
                         implicitWidth: _purRow.implicitWidth + 6
 
                         RowLayout {
@@ -313,18 +314,18 @@ Rectangle {
                             Rectangle {
                                 property bool active: SettingsConfig.wallhavenPurity[0] === "1"
                                 height: 24; radius: 12; implicitWidth: _ps.implicitWidth + 14
-                                color: active ? ColorsModule.Colors.primary : "transparent"
+                                color: active ? Colors.primary : "transparent"
                                 Behavior on color { ColorAnimation { duration: 150 } }
-                                Text { id: _ps; anchors.centerIn: parent; text: "SFW"; font.pixelSize: 11; color: parent.active ? ColorsModule.Colors.on_primary : ColorsModule.Colors.on_surface }
+                                Text { id: _ps; anchors.centerIn: parent; text: "SFW"; font.pixelSize: 11; color: parent.active ? Colors.on_primary : Colors.on_surface }
                                 MouseArea { anchors.fill: parent; cursorShape: Qt.PointingHandCursor; onClicked: onlineConfigCol.togglePur(0) }
                             }
 
                             Rectangle {
                                 property bool active: SettingsConfig.wallhavenPurity[1] === "1"
                                 height: 24; radius: 12; implicitWidth: _pk.implicitWidth + 14
-                                color: active ? ColorsModule.Colors.primary : "transparent"
+                                color: active ? Colors.primary : "transparent"
                                 Behavior on color { ColorAnimation { duration: 150 } }
-                                Text { id: _pk; anchors.centerIn: parent; text: "Sketchy"; font.pixelSize: 11; color: parent.active ? ColorsModule.Colors.on_primary : ColorsModule.Colors.on_surface }
+                                Text { id: _pk; anchors.centerIn: parent; text: "Sketchy"; font.pixelSize: 11; color: parent.active ? Colors.on_primary : Colors.on_surface }
                                 MouseArea { anchors.fill: parent; cursorShape: Qt.PointingHandCursor; onClicked: onlineConfigCol.togglePur(1) }
                             }
 
@@ -332,9 +333,9 @@ Rectangle {
                                 visible: SettingsConfig.wallhavenApiKey.length > 0
                                 property bool active: SettingsConfig.wallhavenPurity[2] === "1"
                                 height: 24; radius: 12; implicitWidth: _pn.implicitWidth + 14
-                                color: active ? ColorsModule.Colors.error : "transparent"
+                                color: active ? Colors.error : "transparent"
                                 Behavior on color { ColorAnimation { duration: 150 } }
-                                Text { id: _pn; anchors.centerIn: parent; text: "NSFW"; font.pixelSize: 11; color: parent.active ? ColorsModule.Colors.on_error : ColorsModule.Colors.on_surface }
+                                Text { id: _pn; anchors.centerIn: parent; text: "NSFW"; font.pixelSize: 11; color: parent.active ? Colors.on_error : Colors.on_surface }
                                 MouseArea { anchors.fill: parent; cursorShape: Qt.PointingHandCursor; onClicked: onlineConfigCol.togglePur(2) }
                             }
                         }
@@ -343,14 +344,14 @@ Rectangle {
                     // Fetch button
                     Rectangle {
                         width: 28; height: 28; radius: 14
-                        color: Wallhaven.isFetchingOnline ? ColorsModule.Colors.surface_container_highest : ColorsModule.Colors.primary
+                        color: Wallhaven.isFetchingOnline ? Colors.surface_container_highest : Colors.primary
                         Behavior on color { ColorAnimation { duration: 150 } }
 
-                        Text {
+                        StyledText {
                             anchors.centerIn: parent
                             text: Wallhaven.isFetchingOnline ? "…" : "⌕"
                             font.pixelSize: 16
-                            color: Wallhaven.isFetchingOnline ? ColorsModule.Colors.on_surface : ColorsModule.Colors.on_primary
+                            color: Wallhaven.isFetchingOnline ? Colors.on_surface : Colors.on_primary
                         }
 
                         MouseArea {
@@ -375,25 +376,25 @@ Rectangle {
                     implicitWidth: _overlayRow.implicitWidth + 32
                     implicitHeight: _overlayRow.implicitHeight + 20
                     radius: 14
-                    color: ColorsModule.Colors.surface_container
+                    color: Colors.surface_container
 
                     RowLayout {
                         id: _overlayRow
                         anchors.centerIn: parent
                         spacing: 8
 
-                        Text {
+                        StyledText {
                             text: Wallhaven.onlineError.length > 0 ? "⚠" : "⬇"
                             font.pixelSize: 18
-                            color: Wallhaven.onlineError.length > 0 ? ColorsModule.Colors.error : ColorsModule.Colors.on_surface
+                            color: Wallhaven.onlineError.length > 0 ? Colors.error : Colors.on_surface
                         }
 
-                        Text {
+                        StyledText {
                             text: Wallhaven.onlineError.length > 0
                                 ? Wallhaven.onlineError
                                 : "Fetching wallpapers…"
                             font.pixelSize: 13
-                            color: Wallhaven.onlineError.length > 0 ? ColorsModule.Colors.error : ColorsModule.Colors.on_surface
+                            color: Wallhaven.onlineError.length > 0 ? Colors.error : Colors.on_surface
                         }
                     }
                 }
@@ -410,27 +411,23 @@ Rectangle {
                     interactive: true
                     boundsBehavior: Flickable.StopAtBounds
 
-                    ScrollBar.vertical: ScrollBar {
-                        policy: ScrollBar.AsNeeded
-                        contentItem: Rectangle {
-                            implicitWidth: 4
-                            radius: 2
-                            color: ColorsModule.Colors.outline_variant
-                            opacity: 0.7
-                        }
+                    ScrollBar.vertical: StyledScrollBar {
+                        thickness: 4
+                        handleColor: Colors.outline_variant
+                        handleOpacity: 0.7
                     }
 
                     onAtYEndChanged: {
                         if (atYEnd) Wallhaven.fetchNextPage()
                     }
 
-                    delegate: Rectangle {
+                    delegate: ClickableRect {
                         id: wallpaperItemImageContainer
                         required property var modelData
                         width: grid.cellWidth
                         height: grid.cellHeight
                         radius: 10
-                        color: area.containsMouse ? ColorsModule.Colors.primary : "transparent"
+                        color: wallpaperItemImageContainer.hovered ? Colors.primary : "transparent"
 
                         Image {
                             id: thumbnail
@@ -461,14 +458,13 @@ Rectangle {
                         Rectangle {
                             anchors.centerIn: parent
                             width: 28; height: 28; radius: 14
-                            color: ColorsModule.Colors.surface_container
+                            color: Colors.surface_container
                             visible: thumbnail.status === Image.Loading
 
-                            Text {
+                            StyledText {
                                 anchors.centerIn: parent
                                 text: "…"
                                 font.pixelSize: 14
-                                color: ColorsModule.Colors.on_surface
                             }
                         }
 
@@ -477,7 +473,7 @@ Rectangle {
                             anchors.fill: parent
                             anchors.margins: 5
                             radius: 10
-                            color: ColorsModule.Colors.surface
+                            color: Colors.surface
                             opacity: 0.85
                             visible: Wallhaven.downloadingWallpaperId === wallpaperItemImageContainer.modelData.id
 
@@ -485,11 +481,11 @@ Rectangle {
                                 anchors.centerIn: parent
                                 spacing: 6
 
-                                Text {
+                                StyledText {
                                     anchors.horizontalCenter: parent.horizontalCenter
                                     text: "⬇"
                                     font.pixelSize: 22
-                                    color: ColorsModule.Colors.primary
+                                    color: Colors.primary
 
                                     SequentialAnimation on opacity {
                                         running: Wallhaven.downloadingWallpaperId === wallpaperItemImageContainer.modelData.id
@@ -499,23 +495,17 @@ Rectangle {
                                     }
                                 }
 
-                                Text {
+                                StyledText {
                                     anchors.horizontalCenter: parent.horizontalCenter
                                     text: "Downloading…"
                                     font.pixelSize: 11
                                     font.weight: Font.Bold
-                                    color: ColorsModule.Colors.on_surface
                                 }
                             }
                         }
 
-                        MouseArea {
-                            id: area
-                            anchors.fill: parent
-                            hoverEnabled: true
-                            cursorShape: Qt.PointingHandCursor
-                            onClicked: Wallhaven.downloadAndSetWallpaper(wallpaperItemImageContainer.modelData)
-                        }
+                        cursorShape: Qt.PointingHandCursor
+                        onClicked: Wallhaven.downloadAndSetWallpaper(wallpaperItemImageContainer.modelData)
                     }
                 } // GridView
             } // Item

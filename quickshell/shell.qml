@@ -23,6 +23,13 @@ import qs.modules.workspacedisc
 import qs.modules.expose
 import qs.modules.cava
 import qs.aikira
+import qs.modules.notes
+import qs.modules.clipboard
+import qs.modules.notepad
+import qs.modules.ollama
+import qs.modules.power
+import qs.modules.github
+import qs.modules.avatar
 
 ShellRoot {
     id: root

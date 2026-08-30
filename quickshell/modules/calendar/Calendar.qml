@@ -2,7 +2,8 @@ import QtQuick
 import QtQuick.Layouts
 import QtQuick.Controls
 import qs.services as Services
-import "../colors" as ColorsModule
+import qs.colors
+import qs.components
 
 Item {
     id: root
@@ -61,15 +62,12 @@ Item {
     }
 
     // ───────────────────────── Calendar card ─────────────────────────
-    Rectangle {
+    Card {
         id: calCard
         width: root.width
         y: 0
         height: col.height + 32
         radius: 26
-        color: ColorsModule.Colors.surface_container
-        border.color: ColorsModule.Colors.outline_variant
-        border.width: 1
 
         Rectangle {
             anchors.fill: parent
@@ -93,67 +91,58 @@ Item {
                 width: col.width
                 spacing: 6
 
-                Rectangle {
+                ClickableRect {
+                    id: prevHoverRect
                     Layout.preferredWidth: 34
                     Layout.preferredHeight: 34
                     radius: 17
-                    color: prevHover.containsMouse ? ColorsModule.Colors.surface_container_highest : "transparent"
+                    color: prevHoverRect.hovered ? Colors.surface_container_highest : "transparent"
                     Behavior on color { ColorAnimation { duration: 150 } }
-                    Text {
+                    StyledText {
                         anchors.centerIn: parent
                         text: "‹"
                         font.pixelSize: 22
-                        color: ColorsModule.Colors.on_surface_variant
+                        color: Colors.on_surface_variant
                     }
-                    MouseArea {
-                        id: prevHover
-                        anchors.fill: parent
-                        hoverEnabled: true
-                        cursorShape: Qt.PointingHandCursor
-                        onClicked: root.currentDate = new Date(root.dispY, root.dispM - 1, 1)
-                    }
+                    cursorShape: Qt.PointingHandCursor
+                    onClicked: root.currentDate = new Date(root.dispY, root.dispM - 1, 1)
                 }
 
                 ColumnLayout {
                     Layout.fillWidth: true
                     spacing: 0
-                    Text {
+                    StyledText {
                         Layout.fillWidth: true
                         horizontalAlignment: Text.AlignHCenter
                         text: Qt.formatDate(root.currentDate, "MMMM")
                         font.pixelSize: 16
                         font.weight: Font.DemiBold
-                        color: ColorsModule.Colors.on_surface
                     }
-                    Text {
+                    StyledText {
                         Layout.fillWidth: true
                         horizontalAlignment: Text.AlignHCenter
                         text: Qt.formatDate(root.currentDate, "yyyy")
                         font.pixelSize: 11
-                        color: ColorsModule.Colors.on_surface_variant
+                        color: Colors.on_surface_variant
                         opacity: 0.8
                     }
                 }
 
-                Rectangle {
+                ClickableRect {
+                    id: nextHoverRect
                     Layout.preferredWidth: 34
                     Layout.preferredHeight: 34
                     radius: 17
-                    color: nextHover.containsMouse ? ColorsModule.Colors.surface_container_highest : "transparent"
+                    color: nextHoverRect.hovered ? Colors.surface_container_highest : "transparent"
                     Behavior on color { ColorAnimation { duration: 150 } }
-                    Text {
+                    StyledText {
                         anchors.centerIn: parent
                         text: "›"
                         font.pixelSize: 22
-                        color: ColorsModule.Colors.on_surface_variant
+                        color: Colors.on_surface_variant
                     }
-                    MouseArea {
-                        id: nextHover
-                        anchors.fill: parent
-                        hoverEnabled: true
-                        cursorShape: Qt.PointingHandCursor
-                        onClicked: root.currentDate = new Date(root.dispY, root.dispM + 1, 1)
-                    }
+                    cursorShape: Qt.PointingHandCursor
+                    onClicked: root.currentDate = new Date(root.dispY, root.dispM + 1, 1)
                 }
             }
 
@@ -166,13 +155,13 @@ Item {
                     delegate: Item {
                         width: col.cellW
                         height: 22
-                        Text {
+                        StyledText {
                             anchors.centerIn: parent
                             text: modelData
                             font.pixelSize: 11
                             font.weight: Font.DemiBold
-                            color: index >= 5 ? ColorsModule.Colors.tertiary
-                                              : ColorsModule.Colors.on_surface_variant
+                            color: index >= 5 ? Colors.tertiary
+                                              : Colors.on_surface_variant
                             opacity: 0.85
                         }
                     }
@@ -210,23 +199,23 @@ Item {
                             height: 38
                             radius: 19
                             color: cell.today
-                                   ? ColorsModule.Colors.primary
+                                   ? Colors.primary
                                    : (cellMa.containsMouse && cell.valid
-                                      ? ColorsModule.Colors.surface_container_highest
+                                      ? Colors.surface_container_highest
                                       : "transparent")
                             border.width: cell.selected && !cell.today ? 1.5 : 0
-                            border.color: ColorsModule.Colors.primary
+                            border.color: Colors.primary
                             Behavior on color { ColorAnimation { duration: 150 } }
 
-                            Text {
+                            StyledText {
                                 anchors.centerIn: parent
                                 text: cell.valid ? modelData.day : ""
                                 font.pixelSize: 13
                                 font.weight: (cell.today || cell.selected) ? Font.DemiBold : Font.Normal
-                                color: cell.today ? ColorsModule.Colors.on_primary
-                                      : cell.selected ? ColorsModule.Colors.primary
-                                      : cell.weekend ? ColorsModule.Colors.on_surface_variant
-                                      : ColorsModule.Colors.on_surface
+                                color: cell.today ? Colors.on_primary
+                                      : cell.selected ? Colors.primary
+                                      : cell.weekend ? Colors.on_surface_variant
+                                      : Colors.on_surface
                             }
                         }
 
@@ -237,8 +226,8 @@ Item {
                             anchors.horizontalCenter: parent.horizontalCenter
                             anchors.top: pill.bottom
                             anchors.topMargin: -4
-                            color: cell.today ? ColorsModule.Colors.on_primary
-                                              : ColorsModule.Colors.tertiary
+                            color: cell.today ? Colors.on_primary
+                                              : Colors.tertiary
                         }
 
                         MouseArea {
@@ -268,14 +257,11 @@ Item {
         visible: opacity > 0.01
         Behavior on opacity { NumberAnimation { duration: 180 } }
 
-        Rectangle {
+        Card {
             id: notesBg
             width: parent.width
             height: notesCol.implicitHeight + 32
             radius: 26
-            color: ColorsModule.Colors.surface_container
-            border.color: ColorsModule.Colors.outline_variant
-            border.width: 1
 
             Rectangle {
                 anchors.fill: parent
@@ -299,16 +285,15 @@ Item {
                     ColumnLayout {
                         Layout.fillWidth: true
                         spacing: 0
-                        Text {
+                        StyledText {
                             text: Qt.formatDate(root.selectedDate, "dddd")
                             font.pixelSize: 14
                             font.weight: Font.DemiBold
-                            color: ColorsModule.Colors.on_surface
                         }
-                        Text {
+                        StyledText {
                             text: Qt.formatDate(root.selectedDate, "d MMMM yyyy")
                             font.pixelSize: 11
-                            color: ColorsModule.Colors.on_surface_variant
+                            color: Colors.on_surface_variant
                         }
                     }
 
@@ -317,35 +302,31 @@ Item {
                         Layout.preferredHeight: 22
                         Layout.preferredWidth: Math.max(22, badge.contentWidth + 16)
                         radius: 11
-                        color: ColorsModule.Colors.primary_container
-                        Text {
+                        color: Colors.primary_container
+                        StyledText {
                             id: badge
                             anchors.centerIn: parent
                             text: Services.CalendarNotes.countFor(root.selectedKey)
                             font.pixelSize: 11
                             font.weight: Font.DemiBold
-                            color: ColorsModule.Colors.on_primary_container
+                            color: Colors.on_primary_container
                         }
                     }
 
-                    Rectangle {
+                    ClickableRect {
+                        id: closeRect
                         Layout.preferredWidth: 28
                         Layout.preferredHeight: 28
                         radius: 14
-                        color: closeMa.containsMouse ? ColorsModule.Colors.surface_container_highest : "transparent"
-                        Text {
+                        color: closeRect.hovered ? Colors.surface_container_highest : "transparent"
+                        StyledText {
                             anchors.centerIn: parent
                             text: "×"
                             font.pixelSize: 18
-                            color: ColorsModule.Colors.on_surface_variant
+                            color: Colors.on_surface_variant
                         }
-                        MouseArea {
-                            id: closeMa
-                            anchors.fill: parent
-                            hoverEnabled: true
-                            cursorShape: Qt.PointingHandCursor
-                            onClicked: root.notesOpen = false
-                        }
+                        cursorShape: Qt.PointingHandCursor
+                        onClicked: root.notesOpen = false
                     }
                 }
 
@@ -354,7 +335,7 @@ Item {
                     Layout.fillWidth: true
                     Layout.preferredHeight: Math.min(Math.max(listCol.implicitHeight + 12, 44), 156)
                     radius: 16
-                    color: ColorsModule.Colors.surface_container_low
+                    color: Colors.surface_container_low
 
                     ScrollView {
                         anchors.fill: parent
@@ -369,14 +350,14 @@ Item {
 
                             property var notesModel: Services.CalendarNotes.notesFor(root.selectedKey)
 
-                            Text {
+                            StyledText {
                                 visible: listCol.notesModel.length === 0
                                 Layout.fillWidth: true
                                 horizontalAlignment: Text.AlignHCenter
                                 topPadding: 10; bottomPadding: 10
                                 text: "No notes yet — add one below"
                                 font.pixelSize: 12
-                                color: ColorsModule.Colors.on_surface_variant
+                                color: Colors.on_surface_variant
                                 opacity: 0.7
                             }
 
@@ -386,7 +367,7 @@ Item {
                                     Layout.fillWidth: true
                                     Layout.preferredHeight: Math.max(34, noteTxt.implicitHeight + 16)
                                     radius: 12
-                                    color: ColorsModule.Colors.surface_container_high
+                                    color: Colors.surface_container_high
 
                                     RowLayout {
                                         anchors.fill: parent
@@ -394,64 +375,54 @@ Item {
                                         anchors.rightMargin: 6
                                         spacing: 8
 
-                                        Text {
+                                        StyledText {
                                             id: noteTxt
                                             Layout.fillWidth: true
                                             Layout.alignment: Qt.AlignVCenter
                                             text: modelData.text
                                             wrapMode: Text.Wrap
                                             font.pixelSize: 12
-                                            color: ColorsModule.Colors.on_surface
                                         }
 
                                         // recurrence toggle (filled when this note repeats yearly)
-                                        Rectangle {
+                                        ClickableRect {
                                             id: repBtn
                                             Layout.preferredWidth: 24
                                             Layout.preferredHeight: 24
                                             Layout.alignment: Qt.AlignVCenter
                                             radius: 12
                                             property bool recurring: modelData.repeat === "yearly"
-                                            color: recurring ? ColorsModule.Colors.primary_container
-                                                  : (repMa.containsMouse ? ColorsModule.Colors.surface_container_highest : "transparent")
+                                            color: recurring ? Colors.primary_container
+                                                  : (repBtn.hovered ? Colors.surface_container_highest : "transparent")
                                             Behavior on color { ColorAnimation { duration: 150 } }
-                                            Text {
+                                            StyledText {
                                                 anchors.centerIn: parent
                                                 text: "↻"
                                                 font.pixelSize: 14
                                                 font.bold: true
-                                                color: repBtn.recurring ? ColorsModule.Colors.on_primary_container
-                                                                        : ColorsModule.Colors.on_surface_variant
+                                                color: repBtn.recurring ? Colors.on_primary_container
+                                                                        : Colors.on_surface_variant
                                                 opacity: repBtn.recurring ? 1 : 0.55
                                             }
-                                            MouseArea {
-                                                id: repMa
-                                                anchors.fill: parent
-                                                hoverEnabled: true
-                                                cursorShape: Qt.PointingHandCursor
-                                                onClicked: Services.CalendarNotes.toggleRepeat(modelData.id)
-                                            }
+                                            cursorShape: Qt.PointingHandCursor
+                                            onClicked: Services.CalendarNotes.toggleRepeat(modelData.id)
                                         }
 
-                                        Rectangle {
+                                        ClickableRect {
+                                            id: delRect
                                             Layout.preferredWidth: 24
                                             Layout.preferredHeight: 24
                                             Layout.alignment: Qt.AlignVCenter
                                             radius: 12
-                                            color: delMa.containsMouse ? ColorsModule.Colors.error_container : "transparent"
-                                            Text {
+                                            color: delRect.hovered ? Colors.error_container : "transparent"
+                                            StyledText {
                                                 anchors.centerIn: parent
                                                 text: "🗑"
                                                 font.pixelSize: 12
-                                                color: ColorsModule.Colors.on_surface_variant
+                                                color: Colors.on_surface_variant
                                             }
-                                            MouseArea {
-                                                id: delMa
-                                                anchors.fill: parent
-                                                hoverEnabled: true
-                                                cursorShape: Qt.PointingHandCursor
-                                                onClicked: Services.CalendarNotes.remove(modelData.id)
-                                            }
+                                            cursorShape: Qt.PointingHandCursor
+                                            onClicked: Services.CalendarNotes.remove(modelData.id)
                                         }
                                     }
                                 }
@@ -465,10 +436,10 @@ Item {
                     Layout.fillWidth: true
                     Layout.preferredHeight: 42
                     radius: 16
-                    color: ColorsModule.Colors.surface_container_high
+                    color: Colors.surface_container_high
                     border.width: 1.5
-                    border.color: noteInput.activeFocus ? ColorsModule.Colors.primary
-                                                        : ColorsModule.Colors.outline_variant
+                    border.color: noteInput.activeFocus ? Colors.primary
+                                                        : Colors.outline_variant
                     Behavior on border.color { ColorAnimation { duration: 150 } }
 
                     RowLayout {
@@ -482,41 +453,36 @@ Item {
                             Layout.fillWidth: true
                             Layout.alignment: Qt.AlignVCenter
                             placeholderText: "Add a note for this day…"
-                            placeholderTextColor: ColorsModule.Colors.on_surface_variant
-                            color: ColorsModule.Colors.on_surface
+                            placeholderTextColor: Colors.on_surface_variant
+                            color: Colors.on_surface
                             font.pixelSize: 12
                             background: Rectangle { color: "transparent" }
                             onAccepted: root.addNoteForSelected(noteInput)
                         }
 
                         // "repeat yearly" toggle for the note about to be added
-                        Rectangle {
+                        ClickableRect {
                             id: repeatToggle
                             Layout.preferredWidth: 30
                             Layout.preferredHeight: 30
                             Layout.alignment: Qt.AlignVCenter
                             radius: 15
-                            color: root.newNoteRecurring ? ColorsModule.Colors.primary_container
-                                  : (rtMa.containsMouse ? ColorsModule.Colors.surface_container_highest : "transparent")
+                            color: root.newNoteRecurring ? Colors.primary_container
+                                  : (repeatToggle.hovered ? Colors.surface_container_highest : "transparent")
                             border.width: root.newNoteRecurring ? 0 : 1
-                            border.color: ColorsModule.Colors.outline_variant
+                            border.color: Colors.outline_variant
                             Behavior on color { ColorAnimation { duration: 150 } }
-                            Text {
+                            StyledText {
                                 anchors.centerIn: parent
                                 text: "↻"
                                 font.pixelSize: 15
                                 font.bold: true
-                                color: root.newNoteRecurring ? ColorsModule.Colors.on_primary_container
-                                                             : ColorsModule.Colors.on_surface_variant
+                                color: root.newNoteRecurring ? Colors.on_primary_container
+                                                             : Colors.on_surface_variant
                                 opacity: root.newNoteRecurring ? 1 : 0.6
                             }
-                            MouseArea {
-                                id: rtMa
-                                anchors.fill: parent
-                                hoverEnabled: true
-                                cursorShape: Qt.PointingHandCursor
-                                onClicked: root.newNoteRecurring = !root.newNoteRecurring
-                            }
+                            cursorShape: Qt.PointingHandCursor
+                            onClicked: root.newNoteRecurring = !root.newNoteRecurring
                         }
 
                         Rectangle {
@@ -525,17 +491,17 @@ Item {
                             Layout.alignment: Qt.AlignVCenter
                             radius: 15
                             color: noteInput.text.trim().length > 0
-                                   ? ColorsModule.Colors.primary
-                                   : ColorsModule.Colors.surface_container_highest
+                                   ? Colors.primary
+                                   : Colors.surface_container_highest
                             Behavior on color { ColorAnimation { duration: 150 } }
-                            Text {
+                            StyledText {
                                 anchors.centerIn: parent
                                 text: "↑"
                                 font.pixelSize: 16
                                 font.weight: Font.Bold
                                 color: noteInput.text.trim().length > 0
-                                       ? ColorsModule.Colors.on_primary
-                                       : ColorsModule.Colors.on_surface_variant
+                                       ? Colors.on_primary
+                                       : Colors.on_surface_variant
                             }
                             MouseArea {
                                 anchors.fill: parent

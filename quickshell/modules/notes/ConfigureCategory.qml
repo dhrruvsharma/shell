@@ -3,7 +3,8 @@ import QtQuick.Layouts
 import QtQuick.Controls
 import Quickshell
 import qs.services as Services
-import "../colors" as ColorsModule
+import qs.colors
+import qs.components
 
 Dialog {
     id: commandDialog
@@ -20,11 +21,9 @@ Dialog {
     height: 380  // Increased height to accommodate new option
     parent: root
 
-    background: Rectangle {
+    background: Card {
         radius: 28
-        color: ColorsModule.Colors.surface_container_lowest
-        border.color: ColorsModule.Colors.outline_variant
-        border.width: 1
+        color: Colors.surface_container_lowest
 
         Rectangle {
             anchors.fill: parent
@@ -38,7 +37,7 @@ Dialog {
     header: Rectangle {
         height: 64
         radius: 28
-        color: ColorsModule.Colors.surface_container_lowest
+        color: Colors.surface_container_lowest
 
         Rectangle {
             width: 48
@@ -47,16 +46,15 @@ Dialog {
             anchors.topMargin: 12
             anchors.horizontalCenter: parent.horizontalCenter
             radius: 2
-            color: ColorsModule.Colors.outline_variant
+            color: Colors.outline_variant
             opacity: 0.3
         }
 
-        Text {
+        StyledText {
             anchors.centerIn: parent
             text: "Configure: " + commandDialog.categoryName
             font.pixelSize: 20
             font.weight: Font.Bold
-            color: ColorsModule.Colors.on_surface
         }
     }
 
@@ -65,51 +63,40 @@ Dialog {
         anchors.margins: 24
         spacing: 12
 
-        Text {
+        StyledText {
             text: "Enter command to execute when clicking notes in this category.\nUse $text or $note as placeholder for the main note content."
-            color: ColorsModule.Colors.on_surface_variant
+            color: Colors.on_surface_variant
             font.pixelSize: 12
             wrapMode: Text.WordWrap
             Layout.fillWidth: true
         }
 
-        TextField {
+        StyledTextField {
             id: commandInput
             Layout.fillWidth: true
             text: commandDialog.commandText
             placeholderText: "e.g., ani-cli $text"
             font.pixelSize: 14
             focus: true
-            color: ColorsModule.Colors.on_surface
-            placeholderTextColor: ColorsModule.Colors.on_surface_variant
-
-            background: Rectangle {
-                radius: 14
-                color: ColorsModule.Colors.surface_container_high
-                border.color: commandInput.activeFocus
-                    ? ColorsModule.Colors.primary
-                    : ColorsModule.Colors.outline_variant
-                border.width: 2
-            }
+            radius: 14
+            borderWidth: 2
+            backgroundColor: Colors.surface_container_high
+            focusBorderColor: Colors.primary
         }
 
         // Keep terminal open option
-        Rectangle {
+        Card {
             Layout.fillWidth: true
             Layout.preferredHeight: 50
             radius: 12
-            color: ColorsModule.Colors.surface_container
-            border.width: 1
-            border.color: ColorsModule.Colors.outline_variant
 
             RowLayout {
                 anchors.fill: parent
                 anchors.margins: 12
                 spacing: 12
 
-                Text {
+                StyledText {
                     text: "Keep terminal open after execution:"
-                    color: ColorsModule.Colors.on_surface
                     font.pixelSize: 13
                     Layout.fillWidth: true
                 }
@@ -126,11 +113,11 @@ Dialog {
                         y: parent.height / 2 - height / 2
                         radius: 12
                         color: keepOpenSwitch.checked
-                            ? ColorsModule.Colors.primary
-                            : ColorsModule.Colors.surface_container_highest
+                            ? Colors.primary
+                            : Colors.surface_container_highest
                         border.color: keepOpenSwitch.checked
-                            ? ColorsModule.Colors.primary
-                            : ColorsModule.Colors.outline_variant
+                            ? Colors.primary
+                            : Colors.outline_variant
                         border.width: 1
 
                         Rectangle {
@@ -139,10 +126,10 @@ Dialog {
                             width: 20
                             height: 20
                             radius: 10
-                            color: ColorsModule.Colors.on_primary
+                            color: Colors.on_primary
                             border.color: keepOpenSwitch.checked
-                                ? ColorsModule.Colors.primary
-                                : ColorsModule.Colors.outline_variant
+                                ? Colors.primary
+                                : Colors.outline_variant
                             border.width: 1
 
                             Behavior on x {
@@ -158,23 +145,18 @@ Dialog {
                 delay: 500
                 visible: parent.hovered
                 width: 300
-                background: Rectangle {
+                background: Card {
                     radius: 6
-                    color: ColorsModule.Colors.surface_container_highest
-                    border.width: 1
-                    border.color: ColorsModule.Colors.outline_variant
+                    color: Colors.surface_container_highest
                 }
             }
         }
 
         // Example preview
-        Rectangle {
+        Card {
             Layout.fillWidth: true
             Layout.preferredHeight: 48
             radius: 10
-            color: ColorsModule.Colors.surface_container
-            border.width: 1
-            border.color: ColorsModule.Colors.outline_variant
             visible: commandInput.text.trim().length > 0
 
             ColumnLayout {
@@ -182,16 +164,16 @@ Dialog {
                 anchors.margins: 8
                 spacing: 4
 
-                Text {
+                StyledText {
                     text: "Preview:"
-                    color: ColorsModule.Colors.on_surface_variant
+                    color: Colors.on_surface_variant
                     font.pixelSize: 11
                     font.bold: true
                 }
 
-                Text {
+                StyledText {
                     text: commandInput.text.replace(/\$text/g, "example").replace(/\$note/g, "example")
-                    color: ColorsModule.Colors.primary
+                    color: Colors.primary
                     font.pixelSize: 12
                     font.bold: true
                     elide: Text.ElideRight
@@ -213,18 +195,15 @@ Dialog {
                 Layout.fillWidth: true
                 Layout.preferredHeight: 44
 
-                background: Rectangle {
+                background: Card {
                     radius: 12
                     color: parent.hovered
-                        ? ColorsModule.Colors.surface_container_high
+                        ? Colors.surface_container_high
                         : "transparent"
-                    border.width: 1
-                    border.color: ColorsModule.Colors.outline_variant
                 }
 
-                contentItem: Text {
+                contentItem: StyledText {
                     text: parent.text
-                    color: ColorsModule.Colors.on_surface
                     font.pixelSize: 14
                     font.weight: Font.Medium
                     horizontalAlignment: Text.AlignHCenter
@@ -242,18 +221,15 @@ Dialog {
                 Layout.fillWidth: true
                 Layout.preferredHeight: 44
 
-                background: Rectangle {
+                background: Card {
                     radius: 12
                     color: parent.hovered
-                        ? ColorsModule.Colors.surface_container_high
+                        ? Colors.surface_container_high
                         : "transparent"
-                    border.width: 1
-                    border.color: ColorsModule.Colors.outline_variant
                 }
 
-                contentItem: Text {
+                contentItem: StyledText {
                     text: parent.text
-                    color: ColorsModule.Colors.on_surface
                     font.pixelSize: 14
                     font.weight: Font.Medium
                     horizontalAlignment: Text.AlignHCenter
@@ -273,16 +249,16 @@ Dialog {
                 background: Rectangle {
                     radius: 12
                     color: parent.hovered
-                        ? Qt.darker(ColorsModule.Colors.primary_container, 1.2)
-                        : ColorsModule.Colors.primary_container
+                        ? Qt.darker(Colors.primary_container, 1.2)
+                        : Colors.primary_container
                     border.width: 2
-                    border.color: ColorsModule.Colors.primary
+                    border.color: Colors.primary
                     opacity: 0.3
                 }
 
-                contentItem: Text {
+                contentItem: StyledText {
                     text: parent.text
-                    color: ColorsModule.Colors.on_primary_container
+                    color: Colors.on_primary_container
                     font.pixelSize: 14
                     font.weight: Font.Bold
                     horizontalAlignment: Text.AlignHCenter

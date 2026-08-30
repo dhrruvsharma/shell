@@ -1,5 +1,6 @@
 import QtQuick
 import QtQuick.Shapes
+import qs.components
 
 Item {
     id: root
@@ -57,7 +58,7 @@ Item {
         anchors.verticalCenterOffset: 10
         spacing: 2
 
-        Text {
+        StyledText {
             text: Math.round(root.value) + "%"
             color: "white"
             font.pixelSize: 16
@@ -65,7 +66,7 @@ Item {
             anchors.horizontalCenter: parent.horizontalCenter
         }
 
-        Text {
+        StyledText {
             text: root.label
             color: "#888888"
             font.pixelSize: 10

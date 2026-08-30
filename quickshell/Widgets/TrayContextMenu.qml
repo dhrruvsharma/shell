@@ -3,7 +3,8 @@ import QtQuick
 import QtQuick.Layouts
 import Quickshell
 import Quickshell.Wayland
-import "../colors" as ColorsModule
+import qs.colors
+import qs.components
 
 PanelWindow {
     id: root
@@ -14,7 +15,6 @@ PanelWindow {
     property bool hasCurrent: false
     property int animLength: 400
     property var animCurve: [0.05, 0, 0.133, 0.06, 0.166, 0.4, 0.208, 0.82, 0.25, 1, 1, 1]
-    property var colors: ColorsModule.Colors
 
     function open(handle, x, y) {
         menuHandle = handle;
@@ -63,7 +63,7 @@ PanelWindow {
             id: menuBg
 
             anchors.fill: parent
-            color: root.colors.surface_container  // was: colors.on_surface
+            color: Colors.surface_container  // was: Colors.on_surface
             clip: true
             topLeftRadius: 0
             topRightRadius: 0
@@ -87,7 +87,7 @@ PanelWindow {
                 width: parent.width - 16
                 height: 36
                 radius: 8
-                color: root.colors.secondary  // was: colors.secondary
+                color: Colors.secondary  // was: Colors.secondary
                 opacity: active ? 0.15 : 0
 
                 Behavior on y {
@@ -131,12 +131,11 @@ PanelWindow {
                         width: menuColumn.width
                         height: isSeparator ? 12 : 36
 
-                        Rectangle {
+                        Divider {
                             visible: isSeparator
                             anchors.centerIn: parent
                             width: parent.width - 16
-                            height: 1
-                            color: root.colors.outline_variant  // was: colors.border
+                            color: Colors.outline_variant  // was: colors.border
                             opacity: 0.5
                         }
 
@@ -145,7 +144,7 @@ PanelWindow {
                             width: 3
                             height: 16
                             radius: 2
-                            color: root.colors.primary  // was: colors.accent
+                            color: Colors.primary  // was: colors.accent
                             anchors.left: parent.left
                             anchors.leftMargin: 4
                             anchors.verticalCenter: parent.verticalCenter
@@ -173,33 +172,33 @@ PanelWindow {
 
                                     layer.effect: ColorOverlay {
                                         color: (highlight.active && highlight.targetY === menuItem.y)
-                                            ? root.colors.primary           // was: colors.accent
-                                            : root.colors.on_surface_variant // was: colors.muted
+                                            ? Colors.primary           // was: colors.accent
+                                            : Colors.on_surface_variant // was: colors.muted
                                     }
 
                                 }
 
-                                Text {
+                                StyledText {
                                     anchors.centerIn: parent
                                     visible: !(modelData.icon !== undefined && modelData.icon !== "")
                                     text: ""
                                     font.family: "Symbols Nerd Font"
                                     font.pixelSize: 6
                                     color: (highlight.active && highlight.targetY === menuItem.y)
-                                        ? root.colors.on_surface          // was: colors.on_surface
-                                        : root.colors.on_surface_variant  // was: colors.muted
+                                        ? Colors.on_surface          // was: Colors.on_surface
+                                        : Colors.on_surface_variant  // was: colors.muted
                                 }
 
                             }
 
-                            Text {
+                            StyledText {
                                 text: modelData.text || ""
                                 color: (highlight.active && highlight.targetY === menuItem.y)
-                                    ? root.colors.on_surface  // was: colors.fg
+                                    ? Colors.on_surface  // was: colors.fg
                                     : Qt.rgba(
-                                        Qt.color(root.colors.on_surface).r,
-                                        Qt.color(root.colors.on_surface).g,
-                                        Qt.color(root.colors.on_surface).b,
+                                        Qt.color(Colors.on_surface).r,
+                                        Qt.color(Colors.on_surface).g,
+                                        Qt.color(Colors.on_surface).b,
                                         0.8
                                     )                        // was: Qt.rgba(colors.fg.r/g/b, 0.8)
                                 Layout.fillWidth: true
@@ -210,11 +209,11 @@ PanelWindow {
                                 verticalAlignment: Text.AlignVCenter
                             }
 
-                            Text {
+                            StyledText {
                                 visible: (modelData.checkable && modelData.checked) || menuItem.hasChildren
                                 text: menuItem.hasChildren ? "" : ""
                                 font.family: "Symbols Nerd Font"
-                                color: root.colors.primary  // was: colors.accent
+                                color: Colors.primary  // was: colors.accent
                                 font.pixelSize: 12
                             }
 

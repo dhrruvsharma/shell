@@ -2,6 +2,7 @@ pragma Singleton
 import QtQuick
 import Quickshell
 import Quickshell.Io
+import qs.services
 
 Singleton {
     id: root
@@ -155,36 +156,16 @@ Singleton {
         }
     }
 
-    Timer {
+    HealthPoller {
         id: healthPoller
-        interval: 150
-        repeat: true
-        running: true
-        onTriggered: {
-            var xhr = new XMLHttpRequest()
-            xhr.onreadystatechange = function() {
-                if (xhr.readyState === XMLHttpRequest.DONE && xhr.status === 200) {
-                    healthPoller.stop()
-                    root.serverReady = true
-                    console.log("[ServiceAnime] Backend ready at", root.apiUrl)
-                    fetchPopular()
-                }
-            }
-            xhr.open("GET", root.apiUrl + "/health")
-            xhr.send()
+        url: root.apiUrl
+        onReady: {
+            root.serverReady = true
+            console.log("[ServiceAnime] Backend ready at", root.apiUrl)
+            fetchPopular()
         }
     }
 
-    function _get(url, onDone) {
-        var xhr = new XMLHttpRequest()
-        xhr.onreadystatechange = function() {
-            if (xhr.readyState !== XMLHttpRequest.DONE) return
-            if (xhr.status === 200) onDone(null, xhr.responseText)
-            else onDone("HTTP " + xhr.status, null)
-        }
-        xhr.open("GET", url)
-        xhr.send()
-    }
 
 
     function fetchPopular(reset) {
@@ -199,7 +180,7 @@ Singleton {
         animeError = ""
 
         const url = root.apiUrl + "/popular?size=20&page=" + popularPage + "&date_range=1"
-        _get(url, function(err, body) {
+        Http.get(url, function(err, body) {
             if (err) { animeError = "Request failed: " + err; isFetchingAnime = false; return }
             _parsePopularResults(body)
         })
@@ -240,7 +221,7 @@ Singleton {
         const url = root.apiUrl + "/latest?limit=26&page=" + latestPage
             + "&mode=" + currentMode
             + "&country=" + currentCountry
-        _get(url, function(err, body) {
+        Http.get(url, function(err, body) {
             if (err) { animeError = "Request failed: " + err; isFetchingAnime = false; return }
             _parseLatestResults(body)
         })
@@ -276,7 +257,7 @@ Singleton {
 
         const url = root.apiUrl + "/search?q=" + encodeURIComponent(query)
             + "&mode=" + currentMode
-        _get(url, function(err, body) {
+        Http.get(url, function(err, body) {
             if (err) { animeError = "Request failed: " + err; isFetchingAnime = false; return }
             _parseSearchResults(body)
         })
@@ -348,7 +329,7 @@ Singleton {
 
         const url = root.apiUrl + "/episodes?id=" + encodeURIComponent(show.id)
             + "&mode=" + currentMode
-        _get(url, function(err, body) {
+        Http.get(url, function(err, body) {
             if (err) { detailError = "Request failed: " + err; isFetchingDetail = false; return }
             _parseAnimeDetail(show, body)
         })
@@ -398,7 +379,7 @@ Singleton {
             + "&ep=" + encodeURIComponent(episodeNum)
             + "&mode=" + currentMode
             + "&quality=" + encodeURIComponent(q)
-        _get(url, function(err, body) {
+        Http.get(url, function(err, body) {
             if (err) { linksError = "Request failed: " + err; isFetchingLinks = false; return }
             _parseStreamLinks(body)
         })

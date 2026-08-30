@@ -8,7 +8,8 @@ import Quickshell.Hyprland
 import Qt5Compat.GraphicalEffects
 import qs.services as Svc
 import "."
-import "../../colors" as ColorsModule
+import qs.colors
+import qs.components
 
 PanelWindow {
     id: root
@@ -29,7 +30,7 @@ PanelWindow {
 
     Rectangle {
         anchors.fill: parent
-        color: ColorsModule.Colors.surface_dim
+        color: Colors.surface_dim
         opacity: 0.85
 
         layer.enabled: true
@@ -53,7 +54,7 @@ PanelWindow {
     Rectangle {
         anchors { top: parent.top; left: parent.left; right: parent.right }
         height: 3
-        color: ColorsModule.Colors.primary
+        color: Colors.primary
         opacity: 0.7
     }
 
@@ -354,10 +355,10 @@ PanelWindow {
                         Rectangle {
                             anchors.verticalCenter: parent.verticalCenter
                             width: 6; height: 6; radius: 3
-                            color: ColorsModule.Colors.primary
+                            color: Colors.primary
                             opacity: 0.9
                         }
-                        Text {
+                        StyledText {
                             anchors.verticalCenter: parent.verticalCenter
                             text: {
                                 var wc = winRepeater.count
@@ -369,7 +370,7 @@ PanelWindow {
                             font.pixelSize: 13
                             font.weight: Font.Medium
                             font.letterSpacing: 0.2
-                            color: ColorsModule.Colors.on_surface_variant
+                            color: Colors.on_surface_variant
                             opacity: 0.75
                         }
                     }
@@ -379,11 +380,11 @@ PanelWindow {
                         anchors.verticalCenter: parent.verticalCenter
                         spacing: 16
 
-                        Text {
+                        StyledText {
                             anchors.verticalCenter: parent.verticalCenter
                             text: "↵ focus  ·  esc close"
                             font.pixelSize: 11
-                            color: ColorsModule.Colors.on_surface_variant
+                            color: Colors.on_surface_variant
                             opacity: 0.4
                         }
                     }
@@ -472,13 +473,13 @@ PanelWindow {
                                 radius: 10
                                 color: "transparent"
                                 border.width: 2
-                                border.color: ColorsModule.Colors.primary
+                                border.color: Colors.primary
                                 opacity: 0.9
 
                                 Rectangle {
                                     anchors.fill: parent
                                     radius: 10
-                                    color: ColorsModule.Colors.primary
+                                    color: Colors.primary
                                     opacity: 0.1
                                 }
                             }
@@ -521,7 +522,7 @@ PanelWindow {
                                 layer.enabled: true
                                 layer.effect: MultiEffect {
                                     shadowEnabled: true
-                                    shadowColor:           ColorsModule.Colors.shadow
+                                    shadowColor:           Colors.shadow
                                     shadowOpacity:         0.35
                                     shadowBlur:            0.5
                                     shadowHorizontalOffset: 2
@@ -543,7 +544,7 @@ PanelWindow {
                                 border.width: 1
                                 border.color: Qt.rgba(1, 1, 1, 0.15)
 
-                                Text {
+                                StyledText {
                                     id: wsNumText
                                     anchors.centerIn: parent
                                     text: modelData.workspaceId
@@ -638,21 +639,17 @@ PanelWindow {
                         width:  dragState.ghostW
                         height: dragState.ghostH
                         radius: 10
-                        color:  Qt.rgba(
-                            ColorsModule.Colors.primary.r,
-                            ColorsModule.Colors.primary.g,
-                            ColorsModule.Colors.primary.b, 0.18)
+                        color:  Colors.withAlpha(Colors.primary, 0.18)
                         border.width: 2
-                        border.color: ColorsModule.Colors.primary
+                        border.color: Colors.primary
                         z: 9999
 
-                        Text {
+                        StyledText {
                             anchors.centerIn: parent
                             width: parent.width - 16
                             text: dragState.ghostLabel
                             font.pixelSize: 13
                             font.weight: Font.Medium
-                            color: ColorsModule.Colors.on_surface
                             horizontalAlignment: Text.AlignHCenter
                             elide: Text.ElideRight
                             wrapMode: Text.NoWrap
@@ -661,7 +658,7 @@ PanelWindow {
                         layer.enabled: dragState.active
                         layer.effect: MultiEffect {
                             shadowEnabled: true
-                            shadowColor:   ColorsModule.Colors.primary
+                            shadowColor:   Colors.primary
                             shadowOpacity: 0.55
                             shadowBlur:    0.8
                         }

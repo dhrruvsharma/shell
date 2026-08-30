@@ -1,9 +1,10 @@
 import QtQuick
 import QtQuick.Layouts
 import QtQuick.Controls
-import "../colors" as ColorsModule
+import qs.colors
 import qs.services as Services
 import Quickshell.Io
+import qs.components
 
 
 Rectangle {
@@ -18,8 +19,8 @@ Rectangle {
     radius: width / 2
 
     /* ---------- matugen colors ---------- */
-    color: ColorsModule.Colors.surface_container
-    border.color: ColorsModule.Colors.outline_variant
+    color: Colors.surface_container
+    border.color: Colors.outline_variant
     border.width: 2
 
     /* ---------- time tracking for smooth updates ---------- */
@@ -69,7 +70,7 @@ Rectangle {
             Rectangle {
                 width: index % 3 === 0 ? 4 : 2
                 height: index % 3 === 0 ? 16 : 10
-                color: index % 3 === 0 ? ColorsModule.Colors.primary : ColorsModule.Colors.on_surface_variant
+                color: index % 3 === 0 ? Colors.primary : Colors.on_surface_variant
                 opacity: index % 3 === 0 ? 1.0 : 0.7
                 radius: width / 2
                 layer.enabled: true
@@ -90,7 +91,7 @@ Rectangle {
                     height: parent.height + 2
                     radius: width / 2
                     color: "transparent"
-                    border.color: ColorsModule.Colors.primary
+                    border.color: Colors.primary
                     border.width: 1
                     opacity: parent.opacity * 0.3
                     anchors.centerIn: parent
@@ -105,7 +106,7 @@ Rectangle {
             Rectangle {
                 width: 2
                 height: 4
-                color: ColorsModule.Colors.on_surface_variant
+                color: Colors.on_surface_variant
                 opacity: 0.3
                 radius: width / 2
                 visible: index % 5 !== 0  // Don't show where hour markers are
@@ -126,7 +127,7 @@ Rectangle {
             id: hourHand
             width: 6
             height: parent.height * 0.3
-            color: ColorsModule.Colors.primary
+            color: Colors.primary
             radius: width / 2
             antialiasing: true
             layer.enabled: true
@@ -138,8 +139,8 @@ Rectangle {
 
             // Gradient effect
             gradient: Gradient {
-                GradientStop { position: 0.0; color: ColorsModule.Colors.primary }
-                GradientStop { position: 0.8; color: Qt.darker(ColorsModule.Colors.primary, 1.2) }
+                GradientStop { position: 0.0; color: Colors.primary }
+                GradientStop { position: 0.8; color: Qt.darker(Colors.primary, 1.2) }
             }
 
             transform: Rotation {
@@ -160,7 +161,7 @@ Rectangle {
             id: minuteHand
             width: 4
             height: parent.height * 0.4
-            color: ColorsModule.Colors.primary
+            color: Colors.primary
             radius: width / 2
             antialiasing: true
             layer.enabled: true
@@ -172,8 +173,8 @@ Rectangle {
 
             // Gradient effect
             gradient: Gradient {
-                GradientStop { position: 0.0; color: ColorsModule.Colors.primary }
-                GradientStop { position: 0.8; color: Qt.darker(ColorsModule.Colors.primary, 1.1) }
+                GradientStop { position: 0.0; color: Colors.primary }
+                GradientStop { position: 0.8; color: Qt.darker(Colors.primary, 1.1) }
             }
 
             transform: Rotation {
@@ -194,7 +195,7 @@ Rectangle {
             id: secondHand
             width: 2
             height: parent.height * 0.45
-            color: ColorsModule.Colors.tertiary
+            color: Colors.tertiary
             radius: width / 2
             antialiasing: true
             visible: root.showSeconds
@@ -210,7 +211,7 @@ Rectangle {
                 width: 6
                 height: 6
                 radius: width / 2
-                color: ColorsModule.Colors.tertiary
+                color: Colors.tertiary
                 anchors.horizontalCenter: parent.horizontalCenter
                 anchors.bottom: parent.top
                 anchors.bottomMargin: -3
@@ -234,7 +235,7 @@ Rectangle {
             width: 16
             height: 16
             radius: width / 2
-            color: ColorsModule.Colors.primary
+            color: Colors.primary
             anchors.centerIn: parent
             layer.enabled: true
             layer.samples: 4
@@ -244,7 +245,7 @@ Rectangle {
                 width: 8
                 height: 8
                 radius: width / 2
-                color: ColorsModule.Colors.surface_container
+                color: Colors.surface_container
                 anchors.centerIn: parent
             }
 
@@ -254,7 +255,7 @@ Rectangle {
                 height: parent.height + 4
                 radius: width / 2
                 color: "transparent"
-                border.color: ColorsModule.Colors.primary
+                border.color: Colors.primary
                 border.width: 1
                 opacity: 0.3
                 anchors.centerIn: parent
@@ -266,12 +267,12 @@ Rectangle {
             anchors.horizontalCenter: parent.horizontalCenter
             anchors.bottom: parent.bottom
             anchors.bottomMargin: 10
-            color: ColorsModule.Colors.surface_container
+            color: Colors.surface_container
             radius: 12
             height: 24
             width: digitalTime.width + 16
 
-            Text {
+            StyledText {
                 id: digitalTime
                 text: {
                     var hours = timeTracker.currentTime.getHours()
@@ -281,7 +282,6 @@ Rectangle {
                     hours = hours ? hours : 12 // 12-hour format
                     return hours + ":" + (minutes < 10 ? "0" + minutes : minutes) + " " + ampm
                 }
-                color: ColorsModule.Colors.on_surface
                 font.pixelSize: 12
                 font.bold: true
                 anchors.centerIn: parent
@@ -295,7 +295,7 @@ Rectangle {
         anchors.fill: parent
         radius: parent.radius
         color: "transparent"
-        border.color: ColorsModule.Colors.surface_tint
+        border.color: Colors.surface_tint
         border.width: 1
         opacity: 0.08
     }

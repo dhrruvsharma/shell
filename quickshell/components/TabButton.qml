@@ -1,5 +1,6 @@
 import QtQuick
-import "../colors" as ColorsModule
+import qs.colors
+import qs.components
 
 Rectangle {
     id: root
@@ -9,14 +10,13 @@ Rectangle {
     width: 90
     height: 32
     radius: 8
-    color: active ? ColorsModule.Colors.primary_container : ColorsModule.Colors.secondary_container
+    color: active ? Colors.primary_container : Colors.secondary_container
 
     signal clicked()
 
-    Text {
+    StyledText {
         anchors.centerIn: parent
         text: root.text
-        color: ColorsModule.Colors.on_surface
     }
 
     MouseArea {

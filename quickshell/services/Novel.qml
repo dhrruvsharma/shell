@@ -2,6 +2,7 @@ pragma Singleton
 import QtQuick
 import Quickshell
 import Quickshell.Io
+import qs.services
 
 Singleton {
     id: root
@@ -69,7 +70,7 @@ Singleton {
     function switchProvider(name) {
         if (name === activeProvider || isSwitchingProvider) return
         isSwitchingProvider = true
-        _post(root.apiUrl + "/provider/switch", { provider: name }, function(err, body) {
+        Http.post(root.apiUrl + "/provider/switch", { provider: name }, function(err, body) {
             isSwitchingProvider = false
             if (err) { console.warn("[ServiceNovel] Provider switch failed:", err); return }
             activeProvider = name
@@ -181,49 +182,18 @@ Singleton {
         }
     }
 
-    Timer {
+    HealthPoller {
         id: healthPoller
-        interval: 150
-        repeat: true
-        running: true
-        onTriggered: {
-            var xhr = new XMLHttpRequest()
-            xhr.onreadystatechange = function() {
-                if (xhr.readyState === XMLHttpRequest.DONE && xhr.status === 200) {
-                    healthPoller.stop()
-                    root.serverReady = true
-                    console.log("[ServiceNovel] Backend ready at", root.apiUrl)
-                    fetchHot()
-                }
-            }
-            xhr.open("GET", root.apiUrl + "/health")
-            xhr.send()
+        url: root.apiUrl
+        onReady: {
+            root.serverReady = true
+            console.log("[ServiceNovel] Backend ready at", root.apiUrl)
+            fetchHot()
         }
     }
 
     // ── HTTP helpers ──────────────────────────────────────────────────────────
-    function _get(url, onDone) {
-        var xhr = new XMLHttpRequest()
-        xhr.onreadystatechange = function() {
-            if (xhr.readyState !== XMLHttpRequest.DONE) return
-            if (xhr.status === 200) onDone(null, xhr.responseText)
-            else onDone("HTTP " + xhr.status, null)
-        }
-        xhr.open("GET", url)
-        xhr.send()
-    }
 
-    function _post(url, data, onDone) {
-        var xhr = new XMLHttpRequest()
-        xhr.onreadystatechange = function() {
-            if (xhr.readyState !== XMLHttpRequest.DONE) return
-            if (xhr.status === 200) onDone(null, xhr.responseText)
-            else onDone("HTTP " + xhr.status, null)
-        }
-        xhr.open("POST", url)
-        xhr.setRequestHeader("Content-Type", "application/json")
-        xhr.send(JSON.stringify(data))
-    }
 
     // ── Browse / Search ───────────────────────────────────────────────────────
     function fetchHot() {
@@ -233,7 +203,7 @@ Singleton {
         novelList = []
         currentSearchText = ""
         currentGenre = ""
-        _get(root.apiUrl + "/hot", function(err, body) {
+        Http.get(root.apiUrl + "/hot", function(err, body) {
             if (err) { novelError = "Request failed: " + err; isFetchingNovel = false; return }
             _parseNovelResults(body, true)
         })
@@ -245,7 +215,7 @@ Singleton {
         currentSearchText = ""
         isFetchingNovel = true
         novelError = ""
-        _get(root.apiUrl + "/latest?page=" + latestPage, function(err, body) {
+        Http.get(root.apiUrl + "/latest?page=" + latestPage, function(err, body) {
             if (err) { novelError = "Request failed: " + err; isFetchingNovel = false; return }
             _parseNovelResults(body, false)
         })
@@ -262,7 +232,7 @@ Singleton {
         var url = root.apiUrl + "/search?q=" + encodeURIComponent(query) + "&page=1"
         if (genre)  url += "&genre="  + encodeURIComponent(genre)
         if (status && status !== "All") url += "&status=" + encodeURIComponent(status)
-        _get(url, function(err, body) {
+        Http.get(url, function(err, body) {
             if (err) { novelError = "Request failed: " + err; isFetchingNovel = false; return }
             _parseNovelResults(body, false)
         })
@@ -279,7 +249,7 @@ Singleton {
             if (currentGenre)  url += "&genre="  + encodeURIComponent(currentGenre)
             if (currentStatus && currentStatus !== "All")
                 url += "&status=" + encodeURIComponent(currentStatus)
-            _get(url, function(err, body) {
+            Http.get(url, function(err, body) {
                 if (err) { novelError = "Request failed: " + err; isFetchingNovel = false; return }
                 _parseNovelResults(body, false)
             })
@@ -323,7 +293,7 @@ Singleton {
         currentNovel = null
         detailError = ""
         const url = root.apiUrl + "/info?id=" + encodeURIComponent(novelId)
-        _get(url, function(err, body) {
+        Http.get(url, function(err, body) {
             if (err) { detailError = "Request failed: " + err; isFetchingDetail = false; return }
             _parseNovelDetail(body)
         })
@@ -365,7 +335,7 @@ Singleton {
         currentChapter = null
         chapterError = ""
         const url = root.apiUrl + "/chapter?id=" + encodeURIComponent(chapterId)
-        _get(url, function(err, body) {
+        Http.get(url, function(err, body) {
             if (err) { chapterError = "Request failed: " + err; isFetchingChapter = false; return }
             _parseChapter(body)
         })

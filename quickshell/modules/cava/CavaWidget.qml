@@ -4,7 +4,7 @@ import Quickshell.Wayland
 import qs.services as Services
 import qs.components
 import qs.Core
-import "../../colors" as ColorsModule
+import qs.colors
 
 // Draggable desktop cava visualizer.
 //
@@ -30,7 +30,7 @@ Scope {
 
     function resolveAccent(a) {
         if (!a || a.length === 0)
-            return ColorsModule.Colors.primary;
+            return Colors.primary;
         if (a.charAt(0) === "@")
             return root.roleColor(a.substring(1));
         return a;
@@ -38,15 +38,15 @@ Scope {
     function roleColor(name) {
         switch (name) {
         case "secondary":
-            return ColorsModule.Colors.secondary;
+            return Colors.secondary;
         case "tertiary":
-            return ColorsModule.Colors.tertiary;
+            return Colors.tertiary;
         case "error":
-            return ColorsModule.Colors.error;
+            return Colors.error;
         case "on_surface":
-            return ColorsModule.Colors.on_surface;
+            return Colors.on_surface;
         default:
-            return ColorsModule.Colors.primary;
+            return Colors.primary;
         }
     }
 
@@ -170,17 +170,16 @@ Scope {
             x: Services.CavaWidget.posX + Services.CavaWidget.boxWidth - width / 2
             y: Services.CavaWidget.posY - height / 2
             readonly property bool shown: hoverArea.containsMouse || editBtnArea.containsMouse
-            color: editBtnArea.containsMouse ? root.resolvedAccent : ColorsModule.Colors.surface_container_high
+            color: editBtnArea.containsMouse ? root.resolvedAccent : Colors.surface_container_high
             border.color: root.resolvedAccent
             border.width: 1
             opacity: editBtn.shown ? (editBtnArea.containsMouse ? 1 : 0.85) : 0
 
-            Text {
+            MaterialIcon {
                 anchors.centerIn: parent
                 text: Icons.settings
-                font.family: "Material Design Icons"
                 font.pixelSize: 15
-                color: editBtnArea.containsMouse ? ColorsModule.Colors.background : root.resolvedAccent
+                color: editBtnArea.containsMouse ? Colors.background : root.resolvedAccent
             }
 
             MouseArea {
@@ -327,7 +326,7 @@ Scope {
                     radius: 9
                     anchors.right: parent.right
                     anchors.top: parent.top
-                    color: ColorsModule.Colors.tertiary
+                    color: Colors.tertiary
                     MouseArea {
                         id: skewArea
                         anchors.fill: parent
@@ -355,12 +354,12 @@ Scope {
                     radius: 9
                     anchors.left: parent.left
                     anchors.bottom: parent.bottom
-                    color: ColorsModule.Colors.secondary
+                    color: Colors.secondary
 
-                    Text {
+                    StyledText {
                         anchors.centerIn: parent
                         text: "↻"   // ↻
-                        color: ColorsModule.Colors.background
+                        color: Colors.background
                         font.pixelSize: 12
                     }
 
@@ -405,12 +404,12 @@ Scope {
                     radius: 4
                     anchors.left: parent.left
                     anchors.top: parent.top
-                    color: ColorsModule.Colors.primary
+                    color: Colors.primary
 
-                    Text {
+                    StyledText {
                         anchors.centerIn: parent
                         text: "◈"
-                        color: ColorsModule.Colors.background
+                        color: Colors.background
                         font.pixelSize: 11
                     }
 
@@ -442,14 +441,11 @@ Scope {
             }
 
             // Toolbar (top center)
-            Rectangle {
+            Card {
                 anchors.horizontalCenter: parent.horizontalCenter
                 anchors.top: parent.top
                 anchors.topMargin: 16
                 radius: 18
-                color: ColorsModule.Colors.surface_container
-                border.color: ColorsModule.Colors.outline_variant
-                border.width: 1
                 implicitWidth: toolRow.implicitWidth + 24
                 implicitHeight: 44
 
@@ -504,11 +500,11 @@ Scope {
                         spacing: 6
                         Repeater {
                             model: [
-                                { token: "",            swatch: ColorsModule.Colors.primary,    auto: true },
-                                { token: "@secondary",  swatch: ColorsModule.Colors.secondary,  auto: false },
-                                { token: "@tertiary",   swatch: ColorsModule.Colors.tertiary,   auto: false },
-                                { token: "@error",      swatch: ColorsModule.Colors.error,      auto: false },
-                                { token: "@on_surface", swatch: ColorsModule.Colors.on_surface, auto: false }
+                                { token: "",            swatch: Colors.primary,    auto: true },
+                                { token: "@secondary",  swatch: Colors.secondary,  auto: false },
+                                { token: "@tertiary",   swatch: Colors.tertiary,   auto: false },
+                                { token: "@error",      swatch: Colors.error,      auto: false },
+                                { token: "@on_surface", swatch: Colors.on_surface, auto: false }
                             ]
                             Rectangle {
                                 width: 22
@@ -516,16 +512,16 @@ Scope {
                                 radius: 11
                                 color: modelData.swatch
                                 border.width: Services.CavaWidget.accentColor === modelData.token ? 3 : 1
-                                border.color: ColorsModule.Colors.on_surface
+                                border.color: Colors.on_surface
 
                                 // "A" marks the wallpaper-following Auto swatch.
-                                Text {
+                                StyledText {
                                     anchors.centerIn: parent
                                     visible: modelData.auto
                                     text: "A"
                                     font.pixelSize: 12
                                     font.bold: true
-                                    color: ColorsModule.Colors.background
+                                    color: Colors.background
                                 }
 
                                 MouseArea {
@@ -559,12 +555,12 @@ Scope {
         implicitWidth: chipText.implicitWidth + 20
         implicitHeight: 30
         radius: 15
-        color: chip.accent ? root.resolvedAccent : ColorsModule.Colors.surface_container_high
-        Text {
+        color: chip.accent ? root.resolvedAccent : Colors.surface_container_high
+        StyledText {
             id: chipText
             anchors.centerIn: parent
             text: chip.label
-            color: chip.accent ? ColorsModule.Colors.background : ColorsModule.Colors.on_surface
+            color: chip.accent ? Colors.background : Colors.on_surface
             font.pixelSize: 13
         }
         MouseArea {

@@ -1,14 +1,14 @@
 import QtQuick
 import QtQuick.Controls
 import QtQuick.Layouts
-import "../../../colors" as ColorsModule
+import qs.colors
 import qs.services
+import qs.components
 
 Item {
     id: readerView
 
     // ── Exposed API ──────────────────────────────────────────────────────────
-    readonly property var c: ColorsModule.Colors
     readonly property string fontDisplay: "Noto Serif"
     readonly property string fontBody:    "Noto Sans"
 
@@ -59,7 +59,7 @@ Item {
                         : "transparent"
                     Behavior on color { ColorAnimation { duration: 130 } }
                 }
-                Text {
+                StyledText {
                     anchors.centerIn: parent
                     text: "←"
                     font.pixelSize: 18
@@ -77,7 +77,7 @@ Item {
             }
 
             // Title
-            Text {
+            StyledText {
                 Layout.fillWidth: true
                 text: Manga.currentManga ? Manga.currentManga.title : ""
                 font.family: readerView.fontDisplay
@@ -96,7 +96,7 @@ Item {
                 border.color: Qt.rgba(1, 1, 1, 0.12)
                 border.width: 1
 
-                Text {
+                StyledText {
                     id: pageCountText
                     anchors.centerIn: parent
                     text: (pageListView.currentIndex + 1) + " / " + Manga.chapterPages.length
@@ -120,19 +120,12 @@ Item {
             anchors.centerIn: parent
             spacing: 16
 
-            Rectangle {
-                width: 40; height: 40; radius: 20
+            Spinner {
+                width: 40
                 anchors.horizontalCenter: parent.horizontalCenter
-                color: "transparent"
-                border.color: c.primary; border.width: 2.5
-                RotationAnimator on rotation {
-                    from: 0; to: 360; duration: 800
-                    loops: Animation.Infinite
-                    running: parent.visible
-                    easing.type: Easing.Linear
-                }
+                border.width: 2.5
             }
-            Text {
+            StyledText {
                 anchors.horizontalCenter: parent.horizontalCenter
                 text: "loading pages"
                 color: Qt.rgba(1, 1, 1, 0.4)
@@ -154,14 +147,14 @@ Item {
             anchors.centerIn: parent
             spacing: 10
 
-            Text {
+            StyledText {
                 text: "⚠"
                 font.pixelSize: 32
-                color: c.error
+                color: Colors.error
                 anchors.horizontalCenter: parent.horizontalCenter
                 opacity: 0.85
             }
-            Text {
+            StyledText {
                 text: Manga.pagesError
                 color: Qt.rgba(1, 1, 1, 0.45)
                 font.pixelSize: 11
@@ -223,20 +216,14 @@ Item {
                         anchors.centerIn: parent
                         spacing: 10
 
-                        Rectangle {
-                            width: 18; height: 18; radius: 9
+                        Spinner {
+                            width: 18
                             anchors.horizontalCenter: parent.horizontalCenter
-                            color: "transparent"
                             border.color: Qt.rgba(1, 1, 1, 0.2)
                             border.width: 1.5
-                            RotationAnimator on rotation {
-                                from: 0; to: 360; duration: 1200
-                                loops: Animation.Infinite
-                                running: parent.visible
-                                easing.type: Easing.Linear
-                            }
+                            duration: 1200
                         }
-                        Text {
+                        StyledText {
                             anchors.horizontalCenter: parent.horizontalCenter
                             text: "p. " + (modelData.index + 1)
                             color: Qt.rgba(1, 1, 1, 0.2)
@@ -249,14 +236,10 @@ Item {
             }
         }
 
-        ScrollBar.vertical: ScrollBar {
-            policy: ScrollBar.AsNeeded
-            contentItem: Rectangle {
-                implicitWidth: 2
-                color: c.primary
-                opacity: 0.35
-                radius: 1
-            }
+        ScrollBar.vertical: StyledScrollBar {
+            thickness: 2
+            handleOpacity: 0.35
+            handleRadius: 1
         }
     }
 
@@ -279,7 +262,7 @@ Item {
                 ? parent.width * ((pageListView.currentIndex + 1) / Manga.chapterPages.length)
                 : 0
             height: parent.height
-            color: c.primary
+            color: Colors.primary
             Behavior on width { NumberAnimation { duration: 220; easing.type: Easing.OutCubic } }
         }
     }

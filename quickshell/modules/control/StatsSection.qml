@@ -1,9 +1,4 @@
-import QtQuick
 import QtQuick.Layouts
-import QtQuick.Controls
-import Quickshell
-import Quickshell.Io
-import "../../colors" as ColorsModule
 import qs.components
 import qs.services as Services
 
@@ -14,33 +9,14 @@ ColumnLayout {
     Layout.topMargin: 20
     spacing: 14
 
-    RowLayout {
-        Layout.fillWidth: true
-
-        Text {
-            Layout.fillWidth: true
-            text: "System Resources"
-            font.pixelSize: 15
-            font.weight: Font.DemiBold
-            font.letterSpacing: 0.3
-            color: ColorsModule.Colors.on_surface
-        }
-
-        Text {
-            text: "󰍛"
-            font.family: "Material Design Icons"
-            font.pixelSize: 16
-            color: ColorsModule.Colors.primary
-            opacity: 0.6
-        }
+    SectionHeader {
+        title: "System Resources"
+        icon: "󰍛"
     }
-    Rectangle {
+
+    Card {
         Layout.fillWidth: true
         Layout.preferredHeight: statsColumn.implicitHeight + 28
-        radius: 16
-        color: ColorsModule.Colors.surface_container
-        border.width: 1
-        border.color: ColorsModule.Colors.outline_variant
 
         ColumnLayout {
             id: statsColumn
@@ -55,11 +31,7 @@ ColumnLayout {
                 icon: "󰻠"
             }
 
-            Rectangle {
-                Layout.fillWidth: true
-                height: 1
-                color: ColorsModule.Colors.outline_variant
-            }
+            Divider { Layout.fillWidth: true }
 
             StatBar {
                 Layout.fillWidth: true
@@ -68,11 +40,7 @@ ColumnLayout {
                 icon: "󰍛"
             }
 
-            Rectangle {
-                Layout.fillWidth: true
-                height: 1
-                color: ColorsModule.Colors.outline_variant
-            }
+            Divider { Layout.fillWidth: true }
 
             StatBar {
                 Layout.fillWidth: true
@@ -81,11 +49,7 @@ ColumnLayout {
                 icon: "󰋊"
             }
 
-            Rectangle {
-                Layout.fillWidth: true
-                height: 1
-                color: ColorsModule.Colors.outline_variant
-            }
+            Divider { Layout.fillWidth: true }
 
             StatBar {
                 Layout.fillWidth: true

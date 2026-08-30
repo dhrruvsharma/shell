@@ -5,7 +5,8 @@ import QtQuick.Window
 import Quickshell
 import Quickshell.Io
 import qs.services
-import "../../colors" as ColorsModule
+import qs.colors
+import qs.components
 
 Rectangle {
     id: window
@@ -359,7 +360,7 @@ Rectangle {
 
                     // Favorite toggle (top-left). Clicking it toggles the
                     // favorite without selecting the wallpaper.
-                    Rectangle {
+                    ClickableRect {
                         id: favBtn
                         anchors.top: parent.top
                         anchors.left: parent.left
@@ -368,7 +369,7 @@ Rectangle {
                         width: 32
                         height: 32
                         radius: 16
-                        color: favArea.containsMouse ? "#90000000" : "#60000000"
+                        color: favBtn.hovered ? "#90000000" : "#60000000"
 
                         onVisibleChanged: if (visible) heartCanvas.requestPaint()
 
@@ -398,13 +399,8 @@ Rectangle {
                             }
                         }
 
-                        MouseArea {
-                            id: favArea
-                            anchors.fill: parent
-                            hoverEnabled: true
-                            cursorShape: Qt.PointingHandCursor
-                            onClicked: window.favoriteToggle(overlay.shownName)
-                        }
+                        cursorShape: Qt.PointingHandCursor
+                        onClicked: window.favoriteToggle(overlay.shownName)
                     }
                 }
             }
@@ -458,7 +454,7 @@ Rectangle {
                     Rectangle {
                         anchors.fill: parent
                         radius: 6
-                        color: tabPill.active ? ColorsModule.Colors.primary : ColorsModule.Colors.surface_container
+                        color: tabPill.active ? Colors.primary : Colors.surface_container
                         Behavior on color { ColorAnimation { duration: 150 } }
 
                         transform: Matrix4x4 {
@@ -476,22 +472,22 @@ Rectangle {
                         anchors.centerIn: parent
                         spacing: 6
 
-                        Text {
+                        StyledText {
                             visible: tabPill.modelData.fav
                             anchors.verticalCenter: parent.verticalCenter
                             text: "♥"
                             font.pixelSize: 14
-                            color: tabPill.active ? ColorsModule.Colors.on_primary : "#FF5C7A"
+                            color: tabPill.active ? Colors.on_primary : "#FF5C7A"
                         }
 
-                        Text {
+                        StyledText {
                             anchors.verticalCenter: parent.verticalCenter
                             text: tabPill.modelData.fav
                                 ? tabPill.modelData.label + " (" + WallpaperFavorites.favorites.length + ")"
                                 : tabPill.modelData.label
                             font.pixelSize: 13
                             font.weight: Font.Bold
-                            color: tabPill.active ? ColorsModule.Colors.on_primary : ColorsModule.Colors.on_surface
+                            color: tabPill.active ? Colors.on_primary : Colors.on_surface
                         }
                     }
 
@@ -512,25 +508,24 @@ Rectangle {
             implicitWidth: emptyRow.implicitWidth + 40
             implicitHeight: emptyRow.implicitHeight + 28
             radius: 18
-            color: ColorsModule.Colors.surface_container
+            color: Colors.surface_container
 
             Row {
                 id: emptyRow
                 anchors.centerIn: parent
                 spacing: 10
 
-                Text {
+                StyledText {
                     anchors.verticalCenter: parent.verticalCenter
                     text: "♥"
                     font.pixelSize: 22
                     color: "#FF5C7A"
                 }
 
-                Text {
+                StyledText {
                     anchors.verticalCenter: parent.verticalCenter
                     text: "No favorites yet — focus a wallpaper and press F (or tap the heart)"
                     font.pixelSize: 15
-                    color: ColorsModule.Colors.on_surface
                 }
             }
         }

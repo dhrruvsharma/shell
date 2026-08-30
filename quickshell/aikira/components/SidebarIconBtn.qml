@@ -1,5 +1,6 @@
 import QtQuick
-import "../../colors" as ColorsModule
+import qs.colors
+import qs.components
 
 Item {
     id: root
@@ -14,18 +15,18 @@ Item {
         anchors.fill: parent
         radius: 8
         color: active
-            ? ColorsModule.Colors.primary_container
-            : (area.containsMouse ? ColorsModule.Colors.surface_container_high : "transparent")
+            ? Colors.primary_container
+            : (area.containsMouse ? Colors.surface_container_high : "transparent")
 
         Behavior on color { ColorAnimation { duration: 110 } }
 
-        Text {
+        StyledText {
             anchors.centerIn: parent
             text: root.icon
             font.pixelSize: 14
             color: active
-                ? ColorsModule.Colors.on_primary_container
-                : ColorsModule.Colors.on_surface_variant
+                ? Colors.on_primary_container
+                : Colors.on_surface_variant
         }
     }
 
@@ -43,15 +44,14 @@ Item {
         anchors { bottom: parent.top; horizontalCenter: parent.horizontalCenter; bottomMargin: 4 }
         width: tipText.implicitWidth + 12; height: 22
         radius: 6
-        color: ColorsModule.Colors.surface_container_highest
+        color: Colors.surface_container_highest
         z: 99
 
-        Text {
+        StyledText {
             id: tipText
             anchors.centerIn: parent
             text: root.tooltip
             font.pixelSize: 10
-            color: ColorsModule.Colors.on_surface
         }
     }
 }

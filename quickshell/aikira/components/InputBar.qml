@@ -1,7 +1,8 @@
 import QtQuick
 import qs.aikira
 import QtQuick.Layouts
-import "../../colors" as ColorsModule
+import qs.colors
+import qs.components
 
 Item {
     id: root
@@ -12,12 +13,10 @@ Item {
 
     Rectangle {
         anchors.fill: parent
-        color: ColorsModule.Colors.surface_container
+        color: Colors.surface_container
 
-        Rectangle {
+        Divider {
             anchors { top: parent.top; left: parent.left; right: parent.right }
-            height: 1
-            color: ColorsModule.Colors.outline_variant
             opacity: 0.4
         }
 
@@ -30,18 +29,18 @@ Item {
                 height: 36
                 radius: 18
                 clip: true
-                color: ColorsModule.Colors.surface_container_highest
+                color: Colors.surface_container_highest
                 border {
                     width: inputField.activeFocus ? 1 : 0
-                    color: ColorsModule.Colors.primary
+                    color: Colors.primary
                 }
 
                 Behavior on border.width { NumberAnimation { duration: 100 } }
 
-                Text {
+                StyledText {
                     anchors { fill: parent; leftMargin: 16; rightMargin: 16; topMargin: 8; bottomMargin: 8 }
                     text: root.enabled ? "type a message…" : "waiting for response…"
-                    color: ColorsModule.Colors.on_surface_variant
+                    color: Colors.on_surface_variant
                     opacity: 0.4
                     font { pixelSize: 13; family: "monospace" }
                     visible: inputField.text.length === 0
@@ -62,7 +61,7 @@ Item {
                     TextEdit {
                         id: inputField
                         width: inputFlickable.width
-                        color: ColorsModule.Colors.on_surface
+                        color: Colors.on_surface
                         font { pixelSize: 13; family: "monospace" }
                         wrapMode: TextEdit.Wrap
                         enabled: root.enabled
@@ -83,18 +82,18 @@ Item {
             Rectangle {
                 width: 36; height: 36; radius: 18
                 color: root.enabled && inputField.text.trim().length > 0
-                    ? ColorsModule.Colors.primary
-                    : ColorsModule.Colors.surface_container_highest
+                    ? Colors.primary
+                    : Colors.surface_container_highest
 
                 Behavior on color { ColorAnimation { duration: 150 } }
 
-                Text {
+                StyledText {
                     anchors.centerIn: parent
                     text: AppState.streaming ? "◼" : "↑"
                     font { pixelSize: 15; weight: Font.Bold }
                     color: root.enabled && inputField.text.trim().length > 0
-                        ? ColorsModule.Colors.on_primary
-                        : ColorsModule.Colors.on_surface_variant
+                        ? Colors.on_primary
+                        : Colors.on_surface_variant
                 }
 
                 MouseArea {

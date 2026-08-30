@@ -2,7 +2,7 @@ import QtQuick
 import QtQuick.Layouts
 import QtQuick.Controls
 import qs.services as Services
-import "../colors" as ColorsModule
+import qs.colors
 import Qt5Compat.GraphicalEffects
 import qs.components
 import Quickshell.Io
@@ -33,7 +33,7 @@ Item {
     Rectangle {
         anchors.fill: parent
         radius: 20
-        color: ColorsModule.Colors.background
+        color: Colors.background
 
         ColumnLayout {
             anchors.fill: parent
@@ -48,7 +48,7 @@ Item {
                     width: 72
                     height: 72
                     radius: 12
-                    color: ColorsModule.Colors.surface_container_highest
+                    color: Colors.surface_container_highest
                     clip: true
 
                     Image {
@@ -62,13 +62,13 @@ Item {
                         Rectangle {
                             anchors.fill: parent
                             visible: parent.status !== Image.Ready
-                            color: ColorsModule.Colors.surface_container_highest
+                            color: Colors.surface_container_highest
 
-                            Text {
+                            StyledText {
                                 anchors.centerIn: parent
                                 text: "🎵"
                                 font.pixelSize: 32
-                                color: ColorsModule.Colors.on_surface_variant
+                                color: Colors.on_surface_variant
                             }
                         }
                     }
@@ -80,18 +80,17 @@ Item {
                     Layout.fillHeight: true
                     spacing: 4
 
-                    Text {
+                    StyledText {
                         text: Services.Media.title || "No media playing"
-                        color: ColorsModule.Colors.on_surface
                         font.pixelSize: 15
                         font.weight: Font.DemiBold
                         elide: Text.ElideRight
                         Layout.fillWidth: true
                     }
 
-                    Text {
+                    StyledText {
                         text: Services.Media.artist || "Unknown artist"
-                        color: ColorsModule.Colors.on_surface_variant
+                        color: Colors.on_surface_variant
                         font.pixelSize: 13
                         elide: Text.ElideRight
                         Layout.fillWidth: true
@@ -108,7 +107,7 @@ Item {
                         background: Rectangle {
                             radius: 4
                             color: visToggleBtn.hovered
-                                ? ColorsModule.Colors.surface_container_highest
+                                ? Colors.surface_container_highest
                                 : "transparent"
 
                             Behavior on color {
@@ -116,10 +115,10 @@ Item {
                             }
                         }
 
-                        contentItem: Text {
+                        contentItem: StyledText {
                             text: "♪"
                             font.pixelSize: 12
-                            color: ColorsModule.Colors.on_surface_variant
+                            color: Colors.on_surface_variant
                             horizontalAlignment: Text.AlignHCenter
                             verticalAlignment: Text.AlignVCenter
                         }
@@ -150,20 +149,20 @@ Item {
                             background: Rectangle {
                                 radius: parent.width / 2
                                 color: index === 1
-                                    ? (parent.hovered ? ColorsModule.Colors.primary_container : ColorsModule.Colors.primary)
-                                    : (parent.hovered ? ColorsModule.Colors.surface_container_highest : "transparent")
+                                    ? (parent.hovered ? Colors.primary_container : Colors.primary)
+                                    : (parent.hovered ? Colors.surface_container_highest : "transparent")
 
                                 Behavior on color {
                                     ColorAnimation { duration: 150 }
                                 }
                             }
 
-                            contentItem: Text {
+                            contentItem: StyledText {
                                 text: parent.text
                                 font.pixelSize: index === 1 ? 18 : 16
                                 color: index === 1
-                                    ? ColorsModule.Colors.on_primary
-                                    : ColorsModule.Colors.on_surface
+                                    ? Colors.on_primary
+                                    : Colors.on_surface
                                 horizontalAlignment: Text.AlignHCenter
                                 verticalAlignment: Text.AlignVCenter
                             }
@@ -185,23 +184,23 @@ Item {
 
                     background: Rectangle {
                         radius: 4
-                        color: parent.hovered ? ColorsModule.Colors.surface_container_highest : "transparent"
+                        color: parent.hovered ? Colors.surface_container_highest : "transparent"
                         Behavior on color { ColorAnimation { duration: 150 } }
                     }
 
-                    contentItem: Text {
+                    contentItem: StyledText {
                         text: "‹"
                         font.pixelSize: 16
-                        color: ColorsModule.Colors.on_surface_variant
+                        color: Colors.on_surface_variant
                         horizontalAlignment: Text.AlignHCenter
                         verticalAlignment: Text.AlignVCenter
                     }
                 }
 
-                Text {
+                StyledText {
                     Layout.fillWidth: true
                     text: Services.Media.currentPlayerName
-                    color: ColorsModule.Colors.on_surface_variant
+                    color: Colors.on_surface_variant
                     font.pixelSize: 11
                     horizontalAlignment: Text.AlignHCenter
                     elide: Text.ElideRight
@@ -215,14 +214,14 @@ Item {
 
                     background: Rectangle {
                         radius: 4
-                        color: parent.hovered ? ColorsModule.Colors.surface_container_highest : "transparent"
+                        color: parent.hovered ? Colors.surface_container_highest : "transparent"
                         Behavior on color { ColorAnimation { duration: 150 } }
                     }
 
-                    contentItem: Text {
+                    contentItem: StyledText {
                         text: "›"
                         font.pixelSize: 16
-                        color: ColorsModule.Colors.on_surface_variant
+                        color: Colors.on_surface_variant
                         horizontalAlignment: Text.AlignHCenter
                         verticalAlignment: Text.AlignVCenter
                     }
@@ -250,12 +249,12 @@ Item {
                         width: progressSlider.availableWidth
                         height: implicitHeight
                         radius: 2
-                        color: ColorsModule.Colors.surface_container_highest
+                        color: Colors.surface_container_highest
 
                         Rectangle {
                             width: progressSlider.visualPosition * parent.width
                             height: parent.height
-                            color: ColorsModule.Colors.primary
+                            color: Colors.primary
                             radius: 2
                         }
                     }
@@ -266,8 +265,8 @@ Item {
                         implicitWidth: 12
                         implicitHeight: 12
                         radius: 6
-                        color: progressSlider.pressed ? ColorsModule.Colors.primary_fixed : ColorsModule.Colors.primary
-                        border.color: ColorsModule.Colors.primary_container
+                        color: progressSlider.pressed ? Colors.primary_fixed : Colors.primary
+                        border.color: Colors.primary_container
                         border.width: 1
                     }
                 }
@@ -275,17 +274,17 @@ Item {
                 RowLayout {
                     Layout.fillWidth: true
 
-                    Text {
+                    StyledText {
                         text: formatTime(Services.Media.position)
-                        color: ColorsModule.Colors.on_surface_variant
+                        color: Colors.on_surface_variant
                         font.pixelSize: 11
                     }
 
                     Item { Layout.fillWidth: true }
 
-                    Text {
+                    StyledText {
                         text: formatTime(Services.Media.length)
-                        color: ColorsModule.Colors.on_surface_variant
+                        color: Colors.on_surface_variant
                         font.pixelSize: 11
                     }
                 }
@@ -320,11 +319,11 @@ Item {
                         id: lyricsRepeater
                         model: lyricsModel
 
-                        Text {
+                        StyledText {
                             text: modelData.text
                             color: modelData.isCurrent
-                                ? ColorsModule.Colors.on_surface
-                                : ColorsModule.Colors.on_surface_variant
+                                ? Colors.on_surface
+                                : Colors.on_surface_variant
                             font.pixelSize: modelData.isCurrent ? 14 : 12
                             font.weight: modelData.isCurrent ? Font.DemiBold : Font.Normal
                             opacity: modelData.isCurrent ? 1.0 : 0.5

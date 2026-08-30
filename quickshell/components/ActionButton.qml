@@ -1,6 +1,7 @@
 import QtQuick
 import QtQuick.Layouts
-import "../colors" as ColorsModule
+import qs.colors
+import qs.components
 
 Rectangle {
     id: root
@@ -15,7 +16,7 @@ Rectangle {
 
     radius: 16
     border.width: 1
-    border.color: ColorsModule.Colors.outline_variant
+    border.color: Colors.outline_variant
 
     property bool hovered: false
     property bool pressed: false
@@ -28,18 +29,15 @@ Rectangle {
         anchors.centerIn: parent
         spacing: 12
 
-        Text {
+        MaterialIcon {
             text: icon
-            font.family: "Material Design Icons"
             font.pixelSize: 22
-            color: ColorsModule.Colors.on_surface
         }
 
-        Text {
+        StyledText {
             text: label
             font.pixelSize: 14
             font.weight: Font.DemiBold
-            color: ColorsModule.Colors.on_surface
         }
     }
 

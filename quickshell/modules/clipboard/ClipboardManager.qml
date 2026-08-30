@@ -4,7 +4,8 @@ import QtQuick.Layouts
 import QtQuick.Effects
 import Quickshell
 import Quickshell.Io
-import "../colors" as ColorsModule
+import qs.colors
+import qs.components
 
 Item {
     id: root
@@ -178,7 +179,7 @@ Item {
     Rectangle {
         id: scrim
         anchors.fill: parent
-        color: ColorsModule.Colors.scrim
+        color: Colors.scrim
         opacity: 0
         enabled: opacity > 0.01
         Behavior on opacity { NumberAnimation { duration: 280; easing.type: Easing.OutCubic } }
@@ -208,7 +209,7 @@ Item {
         width: 420
         x: root.width   // starts off-screen; animated to root.width - width
 
-        color: ColorsModule.Colors.surface_container_low
+        color: Colors.surface_container_low
         enabled: scrim.opacity > 0.01
 
         // Left border
@@ -217,7 +218,7 @@ Item {
             anchors.top: parent.top
             anchors.bottom: parent.bottom
             width: 1
-            color: ColorsModule.Colors.outline_variant
+            color: Colors.outline_variant
             opacity: 0.6
         }
 
@@ -264,22 +265,20 @@ Item {
                     anchors.rightMargin: 16
                     spacing: 10
 
-                    Text {
+                    MaterialIcon {
                         text: "󰅍"
-                        font.family: "Material Design Icons"
                         font.pixelSize: 20
-                        color: ColorsModule.Colors.primary
+                        color: Colors.primary
                         opacity: 0.85
                         Layout.alignment: Qt.AlignVCenter
                     }
 
-                    Text {
+                    StyledText {
                         text: root.currentTab === 0 ? "Clipboard"
                             : root.currentTab === 1 ? "Emoji"
                             :                         "Kaomoji"
                         font.pixelSize: 16
                         font.weight: Font.SemiBold
-                        color: ColorsModule.Colors.on_surface
                         Layout.fillWidth: true
                         Layout.alignment: Qt.AlignVCenter
                         Behavior on text {}
@@ -290,22 +289,21 @@ Item {
                         visible: root.currentTab === 0
                         width: 30; height: 30; radius: 15
                         color: wipeMA.containsMouse
-                            ? ColorsModule.Colors.error_container : "transparent"
+                            ? Colors.error_container : "transparent"
                         border.color: wipeMA.containsMouse
-                            ? ColorsModule.Colors.error : ColorsModule.Colors.outline_variant
+                            ? Colors.error : Colors.outline_variant
                         border.width: 1
                         Layout.alignment: Qt.AlignVCenter
                         Behavior on color        { ColorAnimation { duration: 140 } }
                         Behavior on border.color { ColorAnimation { duration: 140 } }
 
-                        Text {
+                        MaterialIcon {
                             anchors.centerIn: parent
                             text: "󰩺"
-                            font.family: "Material Design Icons"
                             font.pixelSize: 15
                             color: wipeMA.containsMouse
-                                ? ColorsModule.Colors.error
-                                : ColorsModule.Colors.on_surface_variant
+                                ? Colors.error
+                                : Colors.on_surface_variant
                             Behavior on color { ColorAnimation { duration: 140 } }
                         }
                         MouseArea {
@@ -319,34 +317,29 @@ Item {
                     }
 
                     // Close
-                    Rectangle {
+                    ClickableRect {
+                        id: closeRect
                         width: 30; height: 30; radius: 15
-                        color: closeHov.containsMouse
-                            ? ColorsModule.Colors.surface_container_high : "transparent"
+                        color: closeRect.hovered
+                            ? Colors.surface_container_high : "transparent"
                         Layout.alignment: Qt.AlignVCenter
                         Behavior on color { ColorAnimation { duration: 120 } }
 
-                        Text {
+                        MaterialIcon {
                             anchors.centerIn: parent
                             text: "󰅖"
-                            font.family: "Material Design Icons"
                             font.pixelSize: 16
-                            color: ColorsModule.Colors.on_surface_variant
+                            color: Colors.on_surface_variant
                         }
-                        MouseArea {
-                            id: closeHov; anchors.fill: parent
-                            hoverEnabled: true; cursorShape: Qt.PointingHandCursor
-                            onClicked: root.close()
-                        }
+                        cursorShape: Qt.PointingHandCursor
+                        onClicked: root.close()
                     }
                 }
 
                 // bottom separator
-                Rectangle {
+                Divider {
                     anchors.bottom: parent.bottom
                     anchors.left: parent.left; anchors.right: parent.right
-                    height: 1
-                    color: ColorsModule.Colors.outline_variant
                     opacity: 0.4
                 }
             }
@@ -372,7 +365,8 @@ Item {
                             { label: "Kaomoji",   icon: "󰙃", idx: 2 }
                         ]
 
-                        delegate: Rectangle {
+                        delegate: ClickableRect {
+                            id: tabRect
                             required property var modelData
                             property bool active: root.currentTab === modelData.idx
 
@@ -381,9 +375,9 @@ Item {
                             radius: 10
 
                             color: active
-                                ? ColorsModule.Colors.primary_container
-                                : tabHov.containsMouse
-                                    ? ColorsModule.Colors.surface_container
+                                ? Colors.primary_container
+                                : tabRect.hovered
+                                    ? Colors.surface_container
                                     : "transparent"
 
                             Behavior on color { ColorAnimation { duration: 150 } }
@@ -392,47 +386,41 @@ Item {
                                 anchors.centerIn: parent
                                 spacing: 6
 
-                                Text {
+                                MaterialIcon {
                                     anchors.verticalCenter: parent.verticalCenter
                                     text: modelData.icon
-                                    font.family: "Material Design Icons"
                                     font.pixelSize: 14
                                     color: active
-                                        ? ColorsModule.Colors.on_primary_container
-                                        : ColorsModule.Colors.on_surface_variant
+                                        ? Colors.on_primary_container
+                                        : Colors.on_surface_variant
                                     Behavior on color { ColorAnimation { duration: 150 } }
                                 }
-                                Text {
+                                StyledText {
                                     anchors.verticalCenter: parent.verticalCenter
                                     text: modelData.label
                                     font.pixelSize: 12
                                     font.family: "Noto Sans"
                                     font.weight: active ? Font.SemiBold : Font.Normal
                                     color: active
-                                        ? ColorsModule.Colors.on_primary_container
-                                        : ColorsModule.Colors.on_surface_variant
+                                        ? Colors.on_primary_container
+                                        : Colors.on_surface_variant
                                     Behavior on color { ColorAnimation { duration: 150 } }
                                 }
                             }
 
-                            MouseArea {
-                                id: tabHov; anchors.fill: parent
-                                hoverEnabled: true; cursorShape: Qt.PointingHandCursor
-                                onClicked: {
+                            cursorShape: Qt.PointingHandCursor
+                            onClicked: {
                                     root.currentTab = modelData.idx
                                     searchField.text = ""
                                     searchField.forceActiveFocus()
                                 }
-                            }
                         }
                     }
                 }
 
-                Rectangle {
+                Divider {
                     anchors.bottom: parent.bottom
                     anchors.left: parent.left; anchors.right: parent.right
-                    height: 1
-                    color: ColorsModule.Colors.outline_variant
                     opacity: 0.4
                 }
             }
@@ -449,13 +437,12 @@ Item {
                     anchors.rightMargin: 14
                     spacing: 10
 
-                    Text {
+                    MaterialIcon {
                         text: "󰍉"
-                        font.family: "Material Design Icons"
                         font.pixelSize: 18
                         color: searchField.activeFocus
-                            ? ColorsModule.Colors.primary
-                            : ColorsModule.Colors.on_surface_variant
+                            ? Colors.primary
+                            : Colors.on_surface_variant
                         opacity: searchField.activeFocus ? 1 : 0.6
                         Layout.alignment: Qt.AlignVCenter
                         Behavior on color   { ColorAnimation  { duration: 150 } }
@@ -471,8 +458,8 @@ Item {
                                        :                         "Search kaomoji…"
                         font.pixelSize: 13
                         font.family: "Noto Sans"
-                        color: ColorsModule.Colors.on_surface
-                        placeholderTextColor: ColorsModule.Colors.on_surface_variant
+                        color: Colors.on_surface
+                        placeholderTextColor: Colors.on_surface_variant
                         background: Item {}
                         leftPadding: 0
                         onTextChanged: root.searchText = text
@@ -492,35 +479,31 @@ Item {
                         }
                     }
 
-                    Rectangle {
+                    ClickableRect {
+                        id: clrRect
                         visible: searchField.text.length > 0
                         width: 22; height: 22; radius: 11
-                        color: clrHov.containsMouse
-                            ? ColorsModule.Colors.surface_container_highest : "transparent"
+                        color: clrRect.hovered
+                            ? Colors.surface_container_highest : "transparent"
                         Layout.alignment: Qt.AlignVCenter
                         Behavior on color { ColorAnimation { duration: 100 } }
-                        Text {
+                        MaterialIcon {
                             anchors.centerIn: parent; text: "󰅖"
-                            font.family: "Material Design Icons"
                             font.pixelSize: 13
-                            color: ColorsModule.Colors.on_surface_variant
+                            color: Colors.on_surface_variant
                         }
-                        MouseArea {
-                            id: clrHov; anchors.fill: parent
-                            hoverEnabled: true; cursorShape: Qt.PointingHandCursor
-                            onClicked: searchField.text = ""
-                        }
+                        cursorShape: Qt.PointingHandCursor
+                        onClicked: searchField.text = ""
                     }
                 }
 
                 // focused underline
-                Rectangle {
+                Divider {
                     anchors.bottom: parent.bottom
                     anchors.left: parent.left; anchors.right: parent.right
-                    height: 1
                     color: searchField.activeFocus
-                        ? ColorsModule.Colors.primary
-                        : ColorsModule.Colors.outline_variant
+                        ? Colors.primary
+                        : Colors.outline_variant
                     opacity: searchField.activeFocus ? 0.85 : 0.35
                     Behavior on color   { ColorAnimation  { duration: 180 } }
                     Behavior on opacity { NumberAnimation { duration: 180 } }
@@ -546,14 +529,10 @@ Item {
                     currentIndex: -1
                     model: root.clipFiltered
 
-                    ScrollBar.vertical: ScrollBar {
-                        policy: ScrollBar.AsNeeded
-                        contentItem: Rectangle {
-                            implicitWidth: 3; radius: 2
-                            color: ColorsModule.Colors.outline
-                            opacity: 0.6
-                        }
+                    ScrollBar.vertical: StyledScrollBar {
                         background: Item {}
+                        handleColor: Colors.outline
+                        handleOpacity: 0.6
                     }
 
                     Keys.onReturnPressed:  { if (currentIndex >= 0) root.pasteClipEntry(root.clipFiltered[currentIndex]) }
@@ -577,10 +556,10 @@ Item {
                             anchors.fill: parent
                             radius: 10
                             clip: true
-                            color: isFoc ? ColorsModule.Colors.surface_container_high
-                                 : isHov ? ColorsModule.Colors.surface_container
+                            color: isFoc ? Colors.surface_container_high
+                                 : isHov ? Colors.surface_container
                                  :         "transparent"
-                            border.color: isFoc ? ColorsModule.Colors.primary : "transparent"
+                            border.color: isFoc ? Colors.primary : "transparent"
                             border.width: isFoc ? 1.5 : 0
                             Behavior on color        { ColorAnimation { duration: 100 } }
                             Behavior on border.color { ColorAnimation { duration: 100 } }
@@ -600,7 +579,7 @@ Item {
                                 visible: entry && entry.isImage && thumbImg.status !== Image.Ready
                             }
 
-                            Text {
+                            StyledText {
                                 id: clipText
                                 visible: entry && !entry.isImage
                                 anchors {
@@ -611,8 +590,8 @@ Item {
                                 text: entry ? entry.preview : ""
                                 font { pixelSize: 13; family: "Noto Sans" }
                                 color: isFoc
-                                    ? ColorsModule.Colors.on_surface
-                                    : ColorsModule.Colors.on_surface_variant
+                                    ? Colors.on_surface
+                                    : Colors.on_surface_variant
                                 wrapMode: Text.WrapAtWordBoundaryOrAnywhere
                                 maximumLineCount: 10
                                 elide: Text.ElideRight
@@ -632,16 +611,16 @@ Item {
                         anchors.centerIn: parent
                         visible: root.clipFiltered.length === 0
                         spacing: 10
-                        Text {
+                        MaterialIcon {
                             anchors.horizontalCenter: parent.horizontalCenter
-                            text: "󰅍"; font.family: "Material Design Icons"; font.pixelSize: 32
-                            color: ColorsModule.Colors.on_surface_variant; opacity: 0.3
+                            text: "󰅍"; font.pixelSize: 32
+                            color: Colors.on_surface_variant; opacity: 0.3
                         }
-                        Text {
+                        StyledText {
                             anchors.horizontalCenter: parent.horizontalCenter
                             text: root.clipAllEntries.length === 0 ? "No clipboard history" : "No matches"
                             font { pixelSize: 13; family: "Noto Sans" }
-                            color: ColorsModule.Colors.on_surface_variant; opacity: 0.55
+                            color: Colors.on_surface_variant; opacity: 0.55
                         }
                     }
                 }
@@ -658,13 +637,10 @@ Item {
                     currentIndex: -1
                     model: root.emojiFiltered
 
-                    ScrollBar.vertical: ScrollBar {
-                        policy: ScrollBar.AsNeeded
-                        contentItem: Rectangle {
-                            implicitWidth: 3; radius: 2
-                            color: ColorsModule.Colors.outline; opacity: 0.6
-                        }
+                    ScrollBar.vertical: StyledScrollBar {
                         background: Item {}
+                        handleColor: Colors.outline
+                        handleOpacity: 0.6
                     }
 
                     Keys.onReturnPressed: {
@@ -687,10 +663,10 @@ Item {
                         Rectangle {
                             anchors { fill: parent; margins: 3 }
                             radius: 10
-                            color: isFoc ? ColorsModule.Colors.surface_container_high
-                                 : isHov ? ColorsModule.Colors.surface_container
+                            color: isFoc ? Colors.surface_container_high
+                                 : isHov ? Colors.surface_container
                                  :         "transparent"
-                            border.color: isFoc ? ColorsModule.Colors.primary : "transparent"
+                            border.color: isFoc ? Colors.primary : "transparent"
                             border.width: isFoc ? 1.5 : 0
                             Behavior on color        { ColorAnimation { duration: 100 } }
                             Behavior on border.color { ColorAnimation { duration: 100 } }
@@ -719,16 +695,16 @@ Item {
                         anchors.centerIn: parent
                         visible: root.emojiFiltered.length === 0
                         spacing: 10
-                        Text {
+                        MaterialIcon {
                             anchors.horizontalCenter: parent.horizontalCenter
-                            text: "󰞅"; font.family: "Material Design Icons"; font.pixelSize: 32
-                            color: ColorsModule.Colors.on_surface_variant; opacity: 0.3
+                            text: "󰞅"; font.pixelSize: 32
+                            color: Colors.on_surface_variant; opacity: 0.3
                         }
-                        Text {
+                        StyledText {
                             anchors.horizontalCenter: parent.horizontalCenter
                             text: "No emoji found"
                             font { pixelSize: 13; family: "Noto Sans" }
-                            color: ColorsModule.Colors.on_surface_variant; opacity: 0.55
+                            color: Colors.on_surface_variant; opacity: 0.55
                         }
                     }
                 }
@@ -746,13 +722,10 @@ Item {
                     currentIndex: -1
                     model: root.kaoFiltered
 
-                    ScrollBar.vertical: ScrollBar {
-                        policy: ScrollBar.AsNeeded
-                        contentItem: Rectangle {
-                            implicitWidth: 3; radius: 2
-                            color: ColorsModule.Colors.outline; opacity: 0.6
-                        }
+                    ScrollBar.vertical: StyledScrollBar {
                         background: Item {}
+                        handleColor: Colors.outline
+                        handleOpacity: 0.6
                     }
 
                     Keys.onReturnPressed:  { if (currentIndex >= 0) root.copyText(root.kaoFiltered[currentIndex].text) }
@@ -769,10 +742,10 @@ Item {
                         Rectangle {
                             anchors.fill: parent
                             radius: 10
-                            color: isFoc ? ColorsModule.Colors.surface_container_high
-                                 : isHov ? ColorsModule.Colors.surface_container
+                            color: isFoc ? Colors.surface_container_high
+                                 : isHov ? Colors.surface_container
                                  :         "transparent"
-                            border.color: isFoc ? ColorsModule.Colors.primary : "transparent"
+                            border.color: isFoc ? Colors.primary : "transparent"
                             border.width: isFoc ? 1.5 : 0
                             Behavior on color        { ColorAnimation { duration: 100 } }
                             Behavior on border.color { ColorAnimation { duration: 100 } }
@@ -781,13 +754,13 @@ Item {
                                 anchors { fill: parent; leftMargin: 12; rightMargin: 12 }
                                 spacing: 10
 
-                                Text {
+                                StyledText {
                                     Layout.fillWidth: true
                                     text: item ? item.text : ""
                                     font { pixelSize: 14; family: "Noto Sans" }
                                     color: isFoc
-                                        ? ColorsModule.Colors.on_surface
-                                        : ColorsModule.Colors.on_surface_variant
+                                        ? Colors.on_surface
+                                        : Colors.on_surface_variant
                                     elide: Text.ElideRight
                                     Behavior on color { ColorAnimation { duration: 100 } }
                                 }
@@ -796,13 +769,13 @@ Item {
                                     visible: item && item.category !== ""
                                     height: 18; width: catLabel.implicitWidth + 12
                                     radius: 6
-                                    color: ColorsModule.Colors.surface_container_high
-                                    Text {
+                                    color: Colors.surface_container_high
+                                    StyledText {
                                         id: catLabel
                                         anchors.centerIn: parent
                                         text: item ? item.category : ""
                                         font { pixelSize: 10; family: "Noto Sans" }
-                                        color: ColorsModule.Colors.on_surface_variant
+                                        color: Colors.on_surface_variant
                                         elide: Text.ElideRight; maximumLineCount: 1
                                     }
                                 }
@@ -821,16 +794,16 @@ Item {
                         anchors.centerIn: parent
                         visible: root.kaoFiltered.length === 0
                         spacing: 10
-                        Text {
+                        MaterialIcon {
                             anchors.horizontalCenter: parent.horizontalCenter
-                            text: "󰙃"; font.family: "Material Design Icons"; font.pixelSize: 32
-                            color: ColorsModule.Colors.on_surface_variant; opacity: 0.3
+                            text: "󰙃"; font.pixelSize: 32
+                            color: Colors.on_surface_variant; opacity: 0.3
                         }
-                        Text {
+                        StyledText {
                             anchors.horizontalCenter: parent.horizontalCenter
                             text: "No kaomoji found"
                             font { pixelSize: 13; family: "Noto Sans" }
-                            color: ColorsModule.Colors.on_surface_variant; opacity: 0.55
+                            color: Colors.on_surface_variant; opacity: 0.55
                         }
                     }
                 }
@@ -842,11 +815,10 @@ Item {
                 Layout.fillWidth: true
                 height: 38
 
-                Rectangle {
+                Divider {
                     anchors.top: parent.top
                     anchors.left: parent.left; anchors.right: parent.right
-                    height: 1
-                    color: ColorsModule.Colors.outline_variant; opacity: 0.4
+                    opacity: 0.4
                 }
 
                 RowLayout {
@@ -856,24 +828,24 @@ Item {
 
                     Rectangle {
                         width: 5; height: 5; radius: 3
-                        color: ColorsModule.Colors.primary; opacity: 0.6
+                        color: Colors.primary; opacity: 0.6
                     }
-                    Text {
+                    StyledText {
                         text: root.currentTab === 0
                             ? root.clipFiltered.length + " item" + (root.clipFiltered.length !== 1 ? "s" : "")
                             : root.currentTab === 1
                             ? root.emojiFiltered.length + " emoji"
                             : root.kaoFiltered.length + " kaomoji"
                         font { pixelSize: 11; family: "Noto Sans" }
-                        color: ColorsModule.Colors.on_surface_variant; opacity: 0.65
+                        color: Colors.on_surface_variant; opacity: 0.65
                     }
                     Item { Layout.fillWidth: true }
-                    Text {
+                    StyledText {
                         text: root.currentTab === 0
                             ? "↵ paste  ·  Esc close"
                             : "↵ copy  ·  Esc close"
                         font { pixelSize: 11; family: "Noto Sans" }
-                        color: ColorsModule.Colors.on_surface_variant; opacity: 0.35
+                        color: Colors.on_surface_variant; opacity: 0.35
                     }
                 }
             }

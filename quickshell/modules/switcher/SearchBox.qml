@@ -1,6 +1,7 @@
 import QtQuick
 import Quickshell
-import "../../colors" as ColorsModule
+import qs.colors
+import qs.components
 
 Item {
     id: searchBar
@@ -17,30 +18,30 @@ Item {
         anchors.fill: parent
         radius: 22
         color: Qt.rgba(
-            Qt.color(ColorsModule.Colors.surface_container_high).r,
-            Qt.color(ColorsModule.Colors.surface_container_high).g,
-            Qt.color(ColorsModule.Colors.surface_container_high).b, 0.75)
+            Qt.color(Colors.surface_container_high).r,
+            Qt.color(Colors.surface_container_high).g,
+            Qt.color(Colors.surface_container_high).b, 0.75)
         border.width: 1
         border.color: searchInput.activeFocus
             ? Qt.rgba(
-                Qt.color(ColorsModule.Colors.primary).r,
-                Qt.color(ColorsModule.Colors.primary).g,
-                Qt.color(ColorsModule.Colors.primary).b, 0.6)
+                Qt.color(Colors.primary).r,
+                Qt.color(Colors.primary).g,
+                Qt.color(Colors.primary).b, 0.6)
             : Qt.rgba(1, 1, 1, 0.10)
 
         Behavior on border.color { ColorAnimation { duration: 160 } }
 
         // search icon
-        Text {
+        StyledText {
             anchors.left: parent.left
             anchors.leftMargin: 16
             anchors.verticalCenter: parent.verticalCenter
             text: "⌕"
             font.pixelSize: 18
             color: Qt.rgba(
-                Qt.color(ColorsModule.Colors.on_surface_variant).r,
-                Qt.color(ColorsModule.Colors.on_surface_variant).g,
-                Qt.color(ColorsModule.Colors.on_surface_variant).b, 0.55)
+                Qt.color(Colors.on_surface_variant).r,
+                Qt.color(Colors.on_surface_variant).g,
+                Qt.color(Colors.on_surface_variant).b, 0.55)
         }
 
         TextInput {
@@ -49,7 +50,7 @@ Item {
             anchors.leftMargin: 40
             anchors.rightMargin: 16
             verticalAlignment: TextInput.AlignVCenter
-            color: ColorsModule.Colors.on_surface
+            color: Colors.on_surface
             font.pixelSize: 15
             font.weight: Font.Normal
             activeFocusOnTab: false
@@ -60,13 +61,13 @@ Item {
                 if (searchBar.onTextChanged) searchBar.onTextChanged(text)
             }
 
-            Text {
+            StyledText {
                 anchors.fill: parent
                 verticalAlignment: Text.AlignVCenter
                 color: Qt.rgba(
-                    Qt.color(ColorsModule.Colors.on_surface_variant).r,
-                    Qt.color(ColorsModule.Colors.on_surface_variant).g,
-                    Qt.color(ColorsModule.Colors.on_surface_variant).b, 0.45)
+                    Qt.color(Colors.on_surface_variant).r,
+                    Qt.color(Colors.on_surface_variant).g,
+                    Qt.color(Colors.on_surface_variant).b, 0.45)
                 font.pixelSize: 15
                 text: "Search windows…"
                 visible: !searchInput.text || searchInput.text.length === 0

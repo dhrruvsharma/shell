@@ -1,7 +1,16 @@
 #version 440
 
-// GPU cava spectrum shader. Adapted from zesis-shell
-// (https://github.com/zesis-shell/zesis, widgets/cava/cavashader/cava.frag).
+// SPDX-License-Identifier: GPL-3.0-or-later
+//
+// GPU cava spectrum shader.
+// Copyright (C) 2026 Squirrel Modeller (zesis-shell)
+//   https://github.com/zesis-shell/zesis  (widgets/cava/cavashader/cava.frag)
+//
+// This shader is taken verbatim from zesis-shell and is used here with the
+// author's permission under the GNU General Public License, version 3 or (at
+// your option) any later version. The compiled cava.frag.qsb produced from this
+// file is a derivative of it and covered by the same license. See the full
+// license text in shaders/LICENSE. Distributed WITHOUT ANY WARRANTY.
 //
 // The CPU only uploads a 1-row, barCount-wide texture whose red channel is the
 // normalized bar height (0..1); this shader does all the drawing on the GPU, so

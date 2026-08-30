@@ -2,6 +2,7 @@ pragma Singleton
 import QtQuick
 import Quickshell
 import Quickshell.Io
+import qs.services
 
 Singleton {
     id: root
@@ -144,25 +145,15 @@ Singleton {
         }
     }
 
-    Timer {
+    HealthPoller {
         id: healthPoller
-        interval: 150
-        repeat: true
-        running: true
-        onTriggered: {
-            var xhr = new XMLHttpRequest()
-            xhr.onreadystatechange = function() {
-                if (xhr.readyState === XMLHttpRequest.DONE && xhr.status === 200) {
-                    healthPoller.stop()
-                    root.serverReady = true
-                    console.log("[ServiceManga] Backend ready at", root.apiUrl)
-                    fetchByOrigin("", true)
-                    fetchFavorites()
-                    fetchDownloads()
-                }
-            }
-            xhr.open("GET", root.apiUrl + "/health")
-            xhr.send()
+        url: root.apiUrl
+        onReady: {
+            root.serverReady = true
+            console.log("[ServiceManga] Backend ready at", root.apiUrl)
+            fetchByOrigin("", true)
+            fetchFavorites()
+            fetchDownloads()
         }
     }
 
@@ -196,28 +187,7 @@ Singleton {
     }
 
     // ── HTTP helpers ──────────────────────────────────────────────────────────
-    function _get(url, onDone) {
-        var xhr = new XMLHttpRequest()
-        xhr.onreadystatechange = function() {
-            if (xhr.readyState !== XMLHttpRequest.DONE) return
-            if (xhr.status === 200) onDone(null, xhr.responseText)
-            else onDone("HTTP " + xhr.status, null)
-        }
-        xhr.open("GET", url)
-        xhr.send()
-    }
 
-    function _post(url, data, onDone) {
-        var xhr = new XMLHttpRequest()
-        xhr.onreadystatechange = function() {
-            if (xhr.readyState !== XMLHttpRequest.DONE) return
-            if (xhr.status === 200) onDone(null, xhr.responseText)
-            else onDone("HTTP " + xhr.status, null)
-        }
-        xhr.open("POST", url)
-        xhr.setRequestHeader("Content-Type", "application/json")
-        xhr.send(JSON.stringify(data))
-    }
 
     // ── Origin → type mapping ─────────────────────────────────────────────────
     function _originType(origin) {
@@ -238,7 +208,7 @@ Singleton {
             isFetchingManga = true
             mangaError = ""
             const url = root.apiUrl + "/hot"
-            _get(url, function(err, body) {
+            Http.get(url, function(err, body) {
                 if (err) { mangaError = "Request failed: " + err; isFetchingManga = false; return }
                 _parseMangaResults(body)
             })
@@ -247,7 +217,7 @@ Singleton {
             isFetchingManga = true
             mangaError = ""
             const url = root.apiUrl + "/latest?page=" + latestPage
-            _get(url, function(err, body) {
+            Http.get(url, function(err, body) {
                 if (err) { mangaError = "Request failed: " + err; isFetchingManga = false; return }
                 _parseMangaResults(body)
             })
@@ -281,7 +251,7 @@ Singleton {
         let url = root.apiUrl + "/search?q=" + encodeURIComponent(query)
             + "&offset=" + offset + "&sort=" + encodeURIComponent(sort)
         if (type) url += "&type=" + encodeURIComponent(type)
-        _get(url, function(err, body) {
+        Http.get(url, function(err, body) {
             if (err) { mangaError = "Request failed: " + err; isFetchingManga = false; return }
             _parseMangaResults(body)
         })
@@ -324,7 +294,7 @@ Singleton {
         currentManga = null
         detailError = ""
         const url = root.apiUrl + "/info?id=" + encodeURIComponent(mangaId)
-        _get(url, function(err, body) {
+        Http.get(url, function(err, body) {
             if (err) { detailError = "Request failed: " + err; isFetchingDetail = false; return }
             _parseMangaDetail(body)
         })
@@ -368,7 +338,7 @@ Singleton {
         chapterPages = []
         pagesError = ""
         const url = root.apiUrl + "/pages?chapterId=" + encodeURIComponent(chapterId)
-        _get(url, function(err, body) {
+        Http.get(url, function(err, body) {
             if (err) { pagesError = "Request failed: " + err; isFetchingPages = false; return }
             _parseChapterPages(body)
         })
@@ -381,7 +351,7 @@ Singleton {
         chapterPages = []
         pagesError = ""
         const url = root.apiUrl + "/dl/pages?chapterId=" + encodeURIComponent(chapterId)
-        _get(url, function(err, body) {
+        Http.get(url, function(err, body) {
             if (err) { pagesError = "Request failed: " + err; isFetchingPages = false; return }
             _parseChapterPages(body)
         })
@@ -418,7 +388,7 @@ Singleton {
     function fetchFavorites() {
         if (isFetchingFavs) return
         isFetchingFavs = true
-        _get(root.apiUrl + "/favorites", function(err, body) {
+        Http.get(root.apiUrl + "/favorites", function(err, body) {
             isFetchingFavs = false
             if (err) { console.warn("[ServiceManga] favorites fetch failed:", err); return }
             try {
@@ -433,13 +403,13 @@ Singleton {
 
     function addFavorite(manga) {
         const rawUrl = _extractRawUrl(manga.coverUrl)
-        _post(root.apiUrl + "/favorites/add",
+        Http.post(root.apiUrl + "/favorites/add",
             { id: manga.id, title: manga.title, imageUrl: rawUrl },
                 function(err, body) { if (!err) fetchFavorites() })
     }
 
     function removeFavorite(mangaId) {
-        _post(root.apiUrl + "/favorites/remove", { id: mangaId },
+        Http.post(root.apiUrl + "/favorites/remove", { id: mangaId },
                 function(err, body) { if (!err) fetchFavorites() })
     }
 
@@ -448,13 +418,13 @@ Singleton {
     }
 
     function markChapterSeen(mangaId, chapterId) {
-        _post(root.apiUrl + "/favorites/mark-seen",
+        Http.post(root.apiUrl + "/favorites/mark-seen",
             { id: mangaId, chapterId: chapterId },
                 function(err, body) { if (!err) fetchFavorites() })
     }
 
     function checkFavoritesForUpdates() {
-        _get(root.apiUrl + "/favorites/check", function(err, body) {
+        Http.get(root.apiUrl + "/favorites/check", function(err, body) {
             if (err) { console.warn("[ServiceManga] fav check failed:", err); return }
             try {
                 const data = JSON.parse(body)
@@ -465,7 +435,7 @@ Singleton {
 
     // ── Downloads ─────────────────────────────────────────────────────────────
     function fetchDownloads() {
-        _get(root.apiUrl + "/dl/list", function(err, body) {
+        Http.get(root.apiUrl + "/dl/list", function(err, body) {
             if (err) { console.warn("[ServiceManga] dl/list failed:", err); return }
             try { downloadsList = JSON.parse(body) }
             catch (e) { console.error("[ServiceManga] dl/list parse error:", e) }
@@ -478,7 +448,7 @@ Singleton {
         dp[chapter.id] = { status: "pending", total: 0, done: 0 }
         downloadProgress = dp
         dlPoller.start()
-        _post(root.apiUrl + "/dl/start", {
+        Http.post(root.apiUrl + "/dl/start", {
             mangaId:      manga.id,
             chapterId:    chapter.id,
             chapterNum:   chapter.chapter,
@@ -495,7 +465,7 @@ Singleton {
     }
 
     function _pollOne(chapterId) {
-        _get(root.apiUrl + "/dl/progress?chapterId=" + encodeURIComponent(chapterId),
+        Http.get(root.apiUrl + "/dl/progress?chapterId=" + encodeURIComponent(chapterId),
                 function(err, body) {
                 if (err) return
                 try {
@@ -513,7 +483,7 @@ Singleton {
     }
 
     function deleteDownload(chapterId) {
-        _post(root.apiUrl + "/dl/delete", { chapterId: chapterId },
+        Http.post(root.apiUrl + "/dl/delete", { chapterId: chapterId },
                 function(err, body) { if (!err) fetchDownloads() })
     }
 

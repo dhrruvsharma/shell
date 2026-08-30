@@ -3,7 +3,7 @@ import QtQuick.Layouts
 import QtQuick.Controls
 import Quickshell
 import qs.services as Services
-import "../colors" as ColorsModule
+import qs.colors
 import qs.components
 
 Item {
@@ -15,7 +15,7 @@ Item {
     property int drawerWidth: 900
 
     // Theme accent as a real color (so we can derive translucent tints from it).
-    readonly property color accent: ColorsModule.Colors.primary
+    readonly property color accent: Colors.primary
 
     anchors.bottom: parent.bottom
     anchors.horizontalCenter: parent.horizontalCenter
@@ -35,7 +35,7 @@ Item {
         clip: true
         alignment: 4
         radius: 32
-        color: ColorsModule.Colors.surface_container_lowest
+        color: Colors.surface_container_lowest
 
         Rectangle {
             anchors.fill: parent
@@ -53,7 +53,7 @@ Item {
             anchors.topMargin: -1.5
             anchors.horizontalCenter: parent.horizontalCenter
             radius: 1.5
-            color: ColorsModule.Colors.primary
+            color: Colors.primary
             opacity: 0.6
         }
 
@@ -62,13 +62,10 @@ Item {
             anchors.margins: 24
             spacing: 16
 
-            Rectangle {
+            Card {
                 Layout.fillWidth: true
                 Layout.preferredHeight: 56
                 radius: 20
-                color: ColorsModule.Colors.surface_container
-                border.width: 1
-                border.color: ColorsModule.Colors.outline_variant
                 opacity: 0.8
 
                 Rectangle {
@@ -85,11 +82,10 @@ Item {
                     anchors.rightMargin: 16
                     spacing: 16
 
-                    Text {
+                    StyledText {
                         text: "Quick Notes"
                         font.pixelSize: 18
                         font.weight: Font.Bold
-                        color: ColorsModule.Colors.on_surface
                         Layout.alignment: Qt.AlignVCenter
                     }
 
@@ -103,22 +99,21 @@ Item {
                         Layout.alignment: Qt.AlignVCenter
                         flat: true
 
-                        contentItem: Text {
+                        contentItem: StyledText {
                             text: Services.Notes.sortDescending ? "↓" : "↑"
                             font.pixelSize: 18
                             font.weight: Font.Bold
                             horizontalAlignment: Text.AlignHCenter
                             verticalAlignment: Text.AlignVCenter
-                            color: ColorsModule.Colors.on_surface
                         }
 
                         background: Rectangle {
                             radius: 18
                             color: sortBtn.hovered
-                                ? ColorsModule.Colors.surface_container_highest
+                                ? Colors.surface_container_highest
                                 : "transparent"
                             border.width: sortBtn.hovered ? 1 : 0
-                            border.color: ColorsModule.Colors.outline_variant
+                            border.color: Colors.outline_variant
                         }
 
                         onClicked: Services.Notes.toggleSortOrder()
@@ -127,11 +122,9 @@ Item {
                             text: Services.Notes.sortDescending ? "Sort: Newest first" : "Sort: Oldest first"
                             delay: 300
                             visible: parent.hovered
-                            background: Rectangle {
+                            background: Card {
                                 radius: 6
-                                color: ColorsModule.Colors.surface_container_highest
-                                border.width: 1
-                                border.color: ColorsModule.Colors.outline_variant
+                                color: Colors.surface_container_highest
                             }
                         }
                     }
@@ -141,7 +134,7 @@ Item {
                         Layout.preferredWidth: Math.max(36, countText.contentWidth + 24)
                         Layout.alignment: Qt.AlignVCenter
                         radius: 18
-                        color: ColorsModule.Colors.primary_container
+                        color: Colors.primary_container
                         opacity: Services.Notes.getNotesForCategory(
                             Services.Notes.currentCategory).length > 0 ? 1 : 0.4
 
@@ -158,14 +151,14 @@ Item {
                             }
                         }
 
-                        Text {
+                        StyledText {
                             id: countText
                             anchors.centerIn: parent
                             text: Services.Notes.getNotesForCategory(
                                 Services.Notes.currentCategory).length
                             font.pixelSize: 14
                             font.weight: Font.DemiBold
-                            color: ColorsModule.Colors.on_primary_container
+                            color: Colors.on_primary_container
                         }
                     }
 
@@ -176,20 +169,20 @@ Item {
                         Layout.alignment: Qt.AlignVCenter
                         flat: true
 
-                        contentItem: Text {
+                        contentItem: StyledText {
                             text: "+"
                             font.pixelSize: 20
                             font.weight: Font.Bold
                             horizontalAlignment: Text.AlignHCenter
                             verticalAlignment: Text.AlignVCenter
-                            color: ColorsModule.Colors.on_primary
+                            color: Colors.on_primary
                         }
 
                         background: Rectangle {
                             radius: 18
                             color: addCategoryBtn.hovered
-                                ? Qt.darker(ColorsModule.Colors.primary_container, 1.2)
-                                : ColorsModule.Colors.primary_container
+                                ? Qt.darker(Colors.primary_container, 1.2)
+                                : Colors.primary_container
 
                             Rectangle {
                                 anchors.fill: parent
@@ -210,24 +203,18 @@ Item {
                             text: "Add new category"
                             delay: 300
                             visible: parent.hovered
-                            background: Rectangle {
+                            background: Card {
                                 radius: 6
-                                color: ColorsModule.Colors.surface_container_highest
-                                border.width: 1
-                                border.color: ColorsModule.Colors.outline_variant
+                                color: Colors.surface_container_highest
                             }
                         }
                     }
                 }
             }
 
-            Rectangle {
+            Card {
                 Layout.fillWidth: true
                 Layout.preferredHeight: 44
-                radius: 16
-                color: ColorsModule.Colors.surface_container
-                border.width: 1
-                border.color: ColorsModule.Colors.outline_variant
                 opacity: 0.6
 
                 ScrollView {
@@ -263,17 +250,17 @@ Item {
 
                                     radius: 18
                                     color: categoryItem.isCurrent
-                                        ? ColorsModule.Colors.primary
+                                        ? Colors.primary
                                         : mouseArea.containsMouse
-                                            ? ColorsModule.Colors.surface_container_highest
-                                            : ColorsModule.Colors.surface_container
+                                            ? Colors.surface_container_highest
+                                            : Colors.surface_container
 
                                     Rectangle {
                                         anchors.fill: parent
                                         radius: parent.radius
                                         color: "transparent"
                                         border.width: categoryItem.isCurrent ? 2 : 0
-                                        border.color: ColorsModule.Colors.primary
+                                        border.color: Colors.primary
                                         opacity: 0.5
                                     }
 
@@ -301,13 +288,13 @@ Item {
                                         anchors.rightMargin: categoryItem.isDefault ? 12 : 4
                                         spacing: 6
 
-                                        Text {
+                                        StyledText {
                                             id: categoryText
                                             text: modelData.charAt(0).toUpperCase() + modelData.slice(1)
                                             Layout.alignment: Qt.AlignVCenter
                                             color: categoryItem.isCurrent
-                                                ? ColorsModule.Colors.on_primary
-                                                : ColorsModule.Colors.on_surface
+                                                ? Colors.on_primary
+                                                : Colors.on_surface
                                             font.pixelSize: 13
                                             font.weight: Font.Medium
                                             elide: Text.ElideRight
@@ -322,26 +309,23 @@ Item {
                                             Layout.preferredHeight: 16
                                             Layout.alignment: Qt.AlignVCenter
                                             radius: 8
-                                            color: ColorsModule.Colors.primary
+                                            color: Colors.primary
                                             opacity: 0.7
 
-                                            Text {
+                                            StyledText {
                                                 anchors.centerIn: parent
                                                 text: "⌘"
                                                 font.pixelSize: 10
                                                 font.bold: true
-                                                color: ColorsModule.Colors.on_primary
+                                                color: Colors.on_primary
                                             }
 
                                             ToolTip {
                                                 text: "Command: " + Services.Notes.categoryCommands[modelData]
                                                 delay: 500
                                                 visible: parent.hovered ? true : false
-                                                background: Rectangle {
+                                                background: Card {
                                                     radius: 6
-                                                    color: ColorsModule.Colors.surface_container
-                                                    border.width: 1
-                                                    border.color: ColorsModule.Colors.outline_variant
                                                 }
                                             }
                                         }
@@ -353,25 +337,22 @@ Item {
                                             Layout.preferredHeight: 16
                                             Layout.alignment: Qt.AlignVCenter
                                             radius: 8
-                                            color: ColorsModule.Colors.secondary
+                                            color: Colors.secondary
                                             opacity: 0.7
 
-                                            Text {
+                                            StyledText {
                                                 anchors.centerIn: parent
                                                 text: "🔓"
                                                 font.pixelSize: 10
-                                                color: ColorsModule.Colors.on_secondary
+                                                color: Colors.on_secondary
                                             }
 
                                             ToolTip {
                                                 text: "Terminal stays open after command"
                                                 delay: 500
                                                 visible: parent.hovered ? true : false
-                                                background: Rectangle {
+                                                background: Card {
                                                     radius: 6
-                                                    color: ColorsModule.Colors.surface_container
-                                                    border.width: 1
-                                                    border.color: ColorsModule.Colors.outline_variant
                                                 }
                                             }
                                         }
@@ -390,14 +371,14 @@ Item {
                                                 flat: true
                                                 opacity: mouseArea.containsMouse ? 1 : 0.6
 
-                                                contentItem: Text {
+                                                contentItem: StyledText {
                                                     text: "⚙"
                                                     font.pixelSize: 12
                                                     horizontalAlignment: Text.AlignHCenter
                                                     verticalAlignment: Text.AlignVCenter
                                                     color: categoryItem.isCurrent
-                                                        ? ColorsModule.Colors.on_primary
-                                                        : ColorsModule.Colors.on_surface
+                                                        ? Colors.on_primary
+                                                        : Colors.on_surface
                                                 }
 
                                                 background: Rectangle {
@@ -418,11 +399,9 @@ Item {
                                                     text: "Configure category"
                                                     delay: 500
                                                     visible: parent.hovered
-                                                    background: Rectangle {
+                                                    background: Card {
                                                         radius: 6
-                                                        color: ColorsModule.Colors.surface_container_highest
-                                                        border.width: 1
-                                                        border.color: ColorsModule.Colors.outline_variant
+                                                        color: Colors.surface_container_highest
                                                     }
                                                 }
                                             }
@@ -434,15 +413,15 @@ Item {
                                                 flat: true
                                                 opacity: mouseArea.containsMouse ? 1 : 0.6
 
-                                                contentItem: Text {
+                                                contentItem: StyledText {
                                                     text: "×"
                                                     font.pixelSize: 16
                                                     font.weight: Font.Bold
                                                     horizontalAlignment: Text.AlignHCenter
                                                     verticalAlignment: Text.AlignVCenter
                                                     color: categoryItem.isCurrent
-                                                        ? ColorsModule.Colors.on_primary
-                                                        : ColorsModule.Colors.on_surface
+                                                        ? Colors.on_primary
+                                                        : Colors.on_surface
                                                 }
 
                                                 background: Rectangle {
@@ -458,11 +437,9 @@ Item {
                                                     text: "Remove category"
                                                     delay: 500
                                                     visible: parent.hovered
-                                                    background: Rectangle {
+                                                    background: Card {
                                                         radius: 6
-                                                        color: ColorsModule.Colors.surface_container_highest
-                                                        border.width: 1
-                                                        border.color: ColorsModule.Colors.outline_variant
+                                                        color: Colors.surface_container_highest
                                                     }
                                                 }
                                             }
@@ -475,13 +452,10 @@ Item {
                 }
             }
 
-            Rectangle {
+            Card {
                 Layout.fillWidth: true
                 Layout.fillHeight: true
                 radius: 20
-                color: ColorsModule.Colors.surface_container
-                border.width: 1
-                border.color: ColorsModule.Colors.outline_variant
 
                 Rectangle {
                     anchors.fill: parent
@@ -503,7 +477,7 @@ Item {
                         contentItem: Rectangle {
                             implicitWidth: 6
                             radius: 3
-                            color: ColorsModule.Colors.outline_variant
+                            color: Colors.outline_variant
                             opacity: notesVBar.pressed ? 0.9 : (notesVBar.hovered ? 0.7 : 0.35)
                             Behavior on opacity { NumberAnimation { duration: 150 } }
                         }
@@ -533,17 +507,16 @@ Item {
                                     opacity: 0.5
                                     Layout.alignment: Qt.AlignHCenter
                                 }
-                                Text {
+                                StyledText {
                                     text: "No notes here yet"
-                                    color: ColorsModule.Colors.on_surface
                                     font.pixelSize: 15
                                     font.weight: Font.DemiBold
                                     opacity: 0.85
                                     Layout.alignment: Qt.AlignHCenter
                                 }
-                                Text {
+                                StyledText {
                                     text: "Jot something down using the field below"
-                                    color: ColorsModule.Colors.on_surface_variant
+                                    color: Colors.on_surface_variant
                                     font.pixelSize: 12
                                     opacity: 0.7
                                     Layout.alignment: Qt.AlignHCenter
@@ -565,7 +538,7 @@ Item {
                                 property var originalNote: modelData
 
                                 radius: 16
-                                color: ColorsModule.Colors.surface_container_high
+                                color: Colors.surface_container_high
 
                                 Rectangle {
                                     anchors.fill: parent
@@ -573,9 +546,9 @@ Item {
                                     color: "transparent"
                                     border.width: 1
                                     border.color: noteMouseArea.containsMouse && !isEditing
-                                        ? ColorsModule.Colors.primary
+                                        ? Colors.primary
                                         : isEditing
-                                            ? ColorsModule.Colors.secondary
+                                            ? Colors.secondary
                                             : Qt.rgba(255, 255, 255, 0.05)
                                     opacity: noteMouseArea.containsMouse && !isEditing ? 0.3 : 0.1
                                 }
@@ -591,7 +564,7 @@ Item {
                                     anchors.topMargin: 16
                                     anchors.bottomMargin: 16
                                     visible: !noteCard.isEditing
-                                    color: ColorsModule.Colors.primary
+                                    color: Colors.primary
                                     opacity: noteMouseArea.containsMouse ? 0.85 : 0.3
                                     Behavior on opacity { NumberAnimation { duration: 200 } }
                                 }
@@ -639,12 +612,9 @@ Item {
                                                 text: originalNote.text
                                                 placeholderText: "Main text (required)..."
                                                 font.pixelSize: 14
-                                                color: ColorsModule.Colors.on_surface
-                                                background: Rectangle {
-                                                    color: ColorsModule.Colors.surface_container
+                                                color: Colors.on_surface
+                                                background: Card {
                                                     radius: 8
-                                                    border.width: 1
-                                                    border.color: ColorsModule.Colors.outline_variant
                                                 }
 
                                                 onAccepted: card.saveEdit()
@@ -657,12 +627,9 @@ Item {
                                                 text: originalNote.subtext || ""
                                                 placeholderText: "Subtext (optional)..."
                                                 font.pixelSize: 13
-                                                color: ColorsModule.Colors.on_surface_variant
-                                                background: Rectangle {
-                                                    color: ColorsModule.Colors.surface_container
+                                                color: Colors.on_surface_variant
+                                                background: Card {
                                                     radius: 8
-                                                    border.width: 1
-                                                    border.color: ColorsModule.Colors.outline_variant
                                                 }
 
                                                 onAccepted: card.saveEdit()
@@ -681,21 +648,18 @@ Item {
                                                     Layout.preferredWidth: 80
                                                     Layout.preferredHeight: 32
 
-                                                    contentItem: Text {
+                                                    contentItem: StyledText {
                                                         text: "Cancel"
                                                         font.pixelSize: 12
                                                         horizontalAlignment: Text.AlignHCenter
                                                         verticalAlignment: Text.AlignVCenter
-                                                        color: ColorsModule.Colors.on_surface_variant
+                                                        color: Colors.on_surface_variant
                                                     }
 
-                                                    background: Rectangle {
-                                                        radius: 16
+                                                    background: Card {
                                                         color: parent.hovered
-                                                            ? ColorsModule.Colors.surface_container_highest
+                                                            ? Colors.surface_container_highest
                                                             : "transparent"
-                                                        border.width: 1
-                                                        border.color: ColorsModule.Colors.outline_variant
                                                     }
 
                                                     onClicked: card.isEditing = false
@@ -707,20 +671,20 @@ Item {
                                                     Layout.preferredHeight: 32
                                                     enabled: mainInputField.text.trim().length > 0
 
-                                                    contentItem: Text {
+                                                    contentItem: StyledText {
                                                         text: "Save"
                                                         font.pixelSize: 12
                                                         font.weight: Font.Medium
                                                         horizontalAlignment: Text.AlignHCenter
                                                         verticalAlignment: Text.AlignVCenter
-                                                        color: ColorsModule.Colors.on_primary
+                                                        color: Colors.on_primary
                                                     }
 
                                                     background: Rectangle {
                                                         radius: 16
                                                         color: parent.hovered && parent.enabled
-                                                            ? Qt.darker(ColorsModule.Colors.primary, 1.2)
-                                                            : ColorsModule.Colors.primary
+                                                            ? Qt.darker(Colors.primary, 1.2)
+                                                            : Colors.primary
                                                         opacity: parent.enabled ? 1 : 0.4
                                                     }
 
@@ -745,24 +709,23 @@ Item {
                                         Layout.alignment: Qt.AlignVCenter
 
                                         // Main text (bold and slightly larger)
-                                        Text {
+                                        StyledText {
                                             id: mainText
                                             text: modelData.text
                                             Layout.fillWidth: true
                                             wrapMode: Text.Wrap
-                                            color: ColorsModule.Colors.on_surface
                                             font.pixelSize: 15
                                             lineHeight: 1.4
                                             font.weight: Font.Medium
                                         }
 
                                         // Subtext (optional, smaller and muted)
-                                        Text {
+                                        StyledText {
                                             visible: modelData.subtext && modelData.subtext.trim() !== ""
                                             text: modelData.subtext
                                             Layout.fillWidth: true
                                             wrapMode: Text.Wrap
-                                            color: ColorsModule.Colors.on_surface_variant
+                                            color: Colors.on_surface_variant
                                             font.pixelSize: 12
                                             lineHeight: 1.4
                                             font.weight: Font.Normal
@@ -770,7 +733,7 @@ Item {
                                         }
 
                                         // Command hint with keep-open status
-                                        Text {
+                                        StyledText {
                                             visible: !!(Services.Notes.categoryCommands[modelData.category] &&
                                                 Services.Notes.categoryCommands[modelData.category] !== "")
                                             text: {
@@ -784,7 +747,7 @@ Item {
                                                 return base
                                             }
                                             font.pixelSize: 10
-                                            color: ColorsModule.Colors.primary
+                                            color: Colors.primary
                                             opacity: 0.7
                                             Layout.fillWidth: true
                                             wrapMode: Text.Wrap
@@ -804,22 +767,21 @@ Item {
                                             flat: true
                                             opacity: noteMouseArea.containsMouse ? 1 : 0.4
 
-                                            contentItem: Text {
+                                            contentItem: StyledText {
                                                 text: "✎"
                                                 font.pixelSize: 16
                                                 horizontalAlignment: Text.AlignHCenter
                                                 verticalAlignment: Text.AlignVCenter
-                                                color: ColorsModule.Colors.on_surface
                                             }
 
                                             background: Rectangle {
                                                 radius: 16
                                                 color: editBtn.hovered
-                                                    ? ColorsModule.Colors.surface_container_highest
+                                                    ? Colors.surface_container_highest
                                                     : "transparent"
                                                 border.width: 1
                                                 border.color: editBtn.hovered
-                                                    ? ColorsModule.Colors.outline_variant
+                                                    ? Colors.outline_variant
                                                     : "transparent"
                                             }
 
@@ -831,11 +793,9 @@ Item {
                                                 text: "Edit note"
                                                 delay: 300
                                                 visible: parent.hovered
-                                                background: Rectangle {
+                                                background: Card {
                                                     radius: 6
-                                                    color: ColorsModule.Colors.surface_container_highest
-                                                    border.width: 1
-                                                    border.color: ColorsModule.Colors.outline_variant
+                                                    color: Colors.surface_container_highest
                                                 }
                                             }
                                         }
@@ -849,29 +809,29 @@ Item {
 
                                             property bool copied: false
 
-                                            contentItem: Text {
+                                            contentItem: StyledText {
                                                 text: copyBtn.copied ? "✓" : "⎘"
                                                 font.pixelSize: 16
                                                 font.family: "monospace"
                                                 horizontalAlignment: Text.AlignHCenter
                                                 verticalAlignment: Text.AlignVCenter
                                                 color: copyBtn.copied
-                                                    ? ColorsModule.Colors.primary
-                                                    : ColorsModule.Colors.on_surface
+                                                    ? Colors.primary
+                                                    : Colors.on_surface
                                             }
 
                                             background: Rectangle {
                                                 radius: 16
                                                 color: copyBtn.hovered
                                                     ? copyBtn.copied
-                                                        ? ColorsModule.Colors.primary_container
-                                                        : ColorsModule.Colors.surface_container_highest
+                                                        ? Colors.primary_container
+                                                        : Colors.surface_container_highest
                                                     : "transparent"
                                                 border.width: 1
                                                 border.color: copyBtn.hovered
                                                     ? copyBtn.copied
-                                                        ? ColorsModule.Colors.primary
-                                                        : ColorsModule.Colors.outline_variant
+                                                        ? Colors.primary
+                                                        : Colors.outline_variant
                                                     : "transparent"
                                             }
 
@@ -896,11 +856,9 @@ Item {
                                                 text: copyBtn.copied ? "Copied!" : "Copy to clipboard"
                                                 delay: 300
                                                 visible: parent.hovered
-                                                background: Rectangle {
+                                                background: Card {
                                                     radius: 6
-                                                    color: ColorsModule.Colors.surface_container_highest
-                                                    border.width: 1
-                                                    border.color: ColorsModule.Colors.outline_variant
+                                                    color: Colors.surface_container_highest
                                                 }
                                             }
                                         }
@@ -912,22 +870,21 @@ Item {
                                             flat: true
                                             opacity: noteMouseArea.containsMouse ? 1 : 0.4
 
-                                            contentItem: Text {
+                                            contentItem: StyledText {
                                                 text: "🗑"
                                                 font.pixelSize: 16
                                                 horizontalAlignment: Text.AlignHCenter
                                                 verticalAlignment: Text.AlignVCenter
-                                                color: ColorsModule.Colors.on_surface
                                             }
 
                                             background: Rectangle {
                                                 radius: 16
                                                 color: deleteBtn.hovered
-                                                    ? ColorsModule.Colors.error_container
+                                                    ? Colors.error_container
                                                     : "transparent"
                                                 border.width: 1
                                                 border.color: deleteBtn.hovered
-                                                    ? ColorsModule.Colors.error
+                                                    ? Colors.error
                                                     : "transparent"
                                             }
 
@@ -942,11 +899,9 @@ Item {
                                                 text: "Delete note"
                                                 delay: 300
                                                 visible: parent.hovered
-                                                background: Rectangle {
+                                                background: Card {
                                                     radius: 6
-                                                    color: ColorsModule.Colors.surface_container_highest
-                                                    border.width: 1
-                                                    border.color: ColorsModule.Colors.outline_variant
+                                                    color: Colors.surface_container_highest
                                                 }
                                             }
                                         }
@@ -983,10 +938,10 @@ Item {
                 Layout.fillWidth: true
                 Layout.preferredHeight: 100
                 radius: 20
-                color: ColorsModule.Colors.surface_container_high
+                color: Colors.surface_container_high
                 border.color: (mainInput.activeFocus || subtextInput.activeFocus)
-                    ? ColorsModule.Colors.primary
-                    : ColorsModule.Colors.outline_variant
+                    ? Colors.primary
+                    : Colors.outline_variant
                 border.width: 2
 
                 Rectangle {
@@ -1013,8 +968,8 @@ Item {
                             Layout.preferredHeight: 36
                             placeholderText: "Main text (required)..."
                             font.pixelSize: 14
-                            placeholderTextColor: ColorsModule.Colors.on_surface_variant
-                            color: ColorsModule.Colors.on_surface
+                            placeholderTextColor: Colors.on_surface_variant
+                            color: Colors.on_surface
                             background: Rectangle {
                                 color: "transparent"
                                 border.width: 0
@@ -1024,11 +979,11 @@ Item {
                         }
 
                         // Character count for main text
-                        Text {
+                        StyledText {
                             text: mainInput.text.length + "/200"
                             color: mainInput.text.length > 200
-                                ? ColorsModule.Colors.error
-                                : ColorsModule.Colors.on_surface_variant
+                                ? Colors.error
+                                : Colors.on_surface_variant
                             font.pixelSize: 11
                             visible: mainInput.text.length > 0
                         }
@@ -1045,8 +1000,8 @@ Item {
                             Layout.preferredHeight: 36
                             placeholderText: "Subtext (optional details)..."
                             font.pixelSize: 13
-                            placeholderTextColor: ColorsModule.Colors.on_surface_variant
-                            color: ColorsModule.Colors.on_surface_variant
+                            placeholderTextColor: Colors.on_surface_variant
+                            color: Colors.on_surface_variant
                             background: Rectangle {
                                 color: "transparent"
                                 border.width: 0
@@ -1057,11 +1012,11 @@ Item {
                         }
 
                         // Character count for subtext
-                        Text {
+                        StyledText {
                             text: subtextInput.text.length + "/500"
                             color: subtextInput.text.length > 500
-                                ? ColorsModule.Colors.error
-                                : ColorsModule.Colors.on_surface_variant
+                                ? Colors.error
+                                : Colors.on_surface_variant
                             font.pixelSize: 11
                             visible: subtextInput.text.length > 0
                         }
@@ -1080,21 +1035,18 @@ Item {
                             Layout.preferredHeight: 32
                             visible: mainInput.text.length > 0 || subtextInput.text.length > 0
 
-                            contentItem: Text {
+                            contentItem: StyledText {
                                 text: "Clear"
                                 font.pixelSize: 12
                                 horizontalAlignment: Text.AlignHCenter
                                 verticalAlignment: Text.AlignVCenter
-                                color: ColorsModule.Colors.on_surface_variant
+                                color: Colors.on_surface_variant
                             }
 
-                            background: Rectangle {
-                                radius: 16
+                            background: Card {
                                 color: parent.hovered
-                                    ? ColorsModule.Colors.surface_container_highest
+                                    ? Colors.surface_container_highest
                                     : "transparent"
-                                border.width: 1
-                                border.color: ColorsModule.Colors.outline_variant
                             }
 
                             onClicked: {
@@ -1110,27 +1062,27 @@ Item {
                             enabled: mainInput.text.trim().length > 0 && mainInput.text.length <= 200
                             opacity: enabled ? 1 : 0.4
 
-                            contentItem: Text {
+                            contentItem: StyledText {
                                 text: "Add Note ↑"
                                 font.pixelSize: 12
                                 font.weight: Font.Medium
                                 horizontalAlignment: Text.AlignHCenter
                                 verticalAlignment: Text.AlignVCenter
-                                color: ColorsModule.Colors.on_primary
+                                color: Colors.on_primary
                             }
 
                             background: Rectangle {
                                 radius: 16
                                 color: sendButton.hovered && sendButton.enabled
-                                    ? Qt.darker(ColorsModule.Colors.primary_container, 1.2)
-                                    : ColorsModule.Colors.primary_container
+                                    ? Qt.darker(Colors.primary_container, 1.2)
+                                    : Colors.primary_container
 
                                 Rectangle {
                                     anchors.fill: parent
                                     radius: parent.radius
                                     color: "transparent"
                                     border.width: 2
-                                    border.color: ColorsModule.Colors.primary
+                                    border.color: Colors.primary
                                     opacity: 0.3
                                 }
 

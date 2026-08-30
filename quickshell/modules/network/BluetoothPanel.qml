@@ -4,7 +4,8 @@ import QtQuick.Controls
 import Quickshell.Io
 import Quickshell
 import qs.services as Services
-import "../../colors" as ColorsModule
+import qs.colors
+import qs.components
 
 Item {
     id: btRoot
@@ -12,7 +13,7 @@ Item {
     readonly property bool adapterPresent: Services.Bluetooth.defaultAdapter !== null
     readonly property bool bluetoothEnabled: Services.Bluetooth.defaultAdapter?.enabled ?? false
     readonly property var activeDevice: Services.Bluetooth.activeDevice
-    readonly property color accent: ColorsModule.Colors.primary
+    readonly property color accent: Colors.primary
     property bool scanning: false
 
     Timer {
@@ -30,13 +31,11 @@ Item {
         spacing: 12
 
         // ── Hero status card ──
-        Rectangle {
+        Card {
             Layout.fillWidth: true
             Layout.preferredHeight: 78
             radius: 18
-            color: ColorsModule.Colors.surface_container_high
-            border.width: 1
-            border.color: ColorsModule.Colors.outline_variant
+            color: Colors.surface_container_high
 
             RowLayout {
                 anchors.fill: parent
@@ -50,40 +49,38 @@ Item {
                     radius: 24
                     color: btRoot.bluetoothEnabled
                         ? Qt.rgba(btRoot.accent.r, btRoot.accent.g, btRoot.accent.b, 0.16)
-                        : ColorsModule.Colors.surface_container_highest
+                        : Colors.surface_container_highest
                     Behavior on color { ColorAnimation { duration: 200 } }
 
-                    Text {
+                    MaterialIcon {
                         anchors.centerIn: parent
                         text: btRoot.bluetoothEnabled ? "󰂯" : "󰂲"
-                        font.family: "Material Design Icons"
                         font.pixelSize: 24
                         color: btRoot.bluetoothEnabled
-                            ? ColorsModule.Colors.primary
-                            : ColorsModule.Colors.on_surface_variant
+                            ? Colors.primary
+                            : Colors.on_surface_variant
                     }
                 }
 
                 ColumnLayout {
                     Layout.fillWidth: true
                     spacing: 2
-                    Text {
+                    StyledText {
                         Layout.fillWidth: true
                         elide: Text.ElideRight
                         text: btRoot.activeDevice ? (btRoot.activeDevice.name || "Connected device") : "Bluetooth"
                         font.pixelSize: 16
                         font.weight: Font.DemiBold
-                        color: ColorsModule.Colors.on_surface
                     }
-                    Text {
+                    StyledText {
                         text: !btRoot.adapterPresent ? "No adapter"
                             : btRoot.activeDevice ? "Connected"
                             : btRoot.bluetoothEnabled ? "On"
                             : "Off"
                         font.pixelSize: 12
                         color: btRoot.activeDevice
-                            ? ColorsModule.Colors.primary
-                            : ColorsModule.Colors.on_surface_variant
+                            ? Colors.primary
+                            : Colors.on_surface_variant
                     }
                 }
 
@@ -94,8 +91,8 @@ Item {
                     radius: 14
                     opacity: btRoot.adapterPresent ? 1 : 0.4
                     color: btRoot.bluetoothEnabled
-                        ? ColorsModule.Colors.primary
-                        : ColorsModule.Colors.surface_container_highest
+                        ? Colors.primary
+                        : Colors.surface_container_highest
                     Behavior on color { ColorAnimation { duration: 150 } }
 
                     Rectangle {
@@ -103,8 +100,8 @@ Item {
                         y: 3
                         x: btRoot.bluetoothEnabled ? parent.width - width - 3 : 3
                         color: btRoot.bluetoothEnabled
-                            ? ColorsModule.Colors.on_primary
-                            : ColorsModule.Colors.on_surface_variant
+                            ? Colors.on_primary
+                            : Colors.on_surface_variant
                         Behavior on x { NumberAnimation { duration: 160; easing.type: Easing.OutCubic } }
                     }
                     MouseArea {
@@ -127,42 +124,37 @@ Item {
             spacing: 8
             visible: btRoot.bluetoothEnabled
 
-            Text {
+            StyledText {
                 Layout.fillWidth: true
                 text: btRoot.scanning ? "Scanning for devices…" : "Devices"
                 font.pixelSize: 13
                 font.weight: Font.DemiBold
                 font.letterSpacing: 0.3
-                color: ColorsModule.Colors.on_surface_variant
+                color: Colors.on_surface_variant
             }
 
-            Rectangle {
+            ClickableRect {
+                id: scanRect
                 Layout.preferredWidth: 30; Layout.preferredHeight: 30
                 radius: 15
-                color: scanMa.containsMouse ? ColorsModule.Colors.surface_container_highest : "transparent"
-                Text {
+                color: scanRect.hovered ? Colors.surface_container_highest : "transparent"
+                MaterialIcon {
                     anchors.centerIn: parent
                     text: "󰑐"
-                    font.family: "Material Design Icons"
                     font.pixelSize: 16
-                    color: btRoot.scanning ? ColorsModule.Colors.primary : ColorsModule.Colors.on_surface_variant
+                    color: btRoot.scanning ? Colors.primary : Colors.on_surface_variant
                     RotationAnimator on rotation {
                         from: 0; to: 360; duration: 900; loops: Animation.Infinite
                         running: btRoot.scanning
                     }
                 }
-                MouseArea {
-                    id: scanMa
-                    anchors.fill: parent
-                    hoverEnabled: true
-                    cursorShape: Qt.PointingHandCursor
-                    onClicked: {
+                cursorShape: Qt.PointingHandCursor
+                onClicked: {
                         if (!btRoot.bluetoothEnabled) return
                         Services.Bluetooth.defaultAdapter.discovering = true
                         btRoot.scanning = true
                         scanStopTimer.restart()
                     }
-                }
             }
         }
 
@@ -171,7 +163,7 @@ Item {
             Layout.fillWidth: true
             Layout.fillHeight: true
             radius: 16
-            color: ColorsModule.Colors.surface_container_low
+            color: Colors.surface_container_low
             clip: true
 
             // empty / off state
@@ -181,20 +173,19 @@ Item {
                 spacing: 6
                 visible: Services.Bluetooth.devices.length === 0
 
-                Text {
+                MaterialIcon {
                     Layout.alignment: Qt.AlignHCenter
                     text: btRoot.bluetoothEnabled ? "󰂯" : "󰂲"
-                    font.family: "Material Design Icons"
                     font.pixelSize: 42
                     opacity: 0.5
-                    color: ColorsModule.Colors.on_surface_variant
+                    color: Colors.on_surface_variant
                 }
-                Text {
+                StyledText {
                     Layout.alignment: Qt.AlignHCenter
                     text: !btRoot.adapterPresent ? "No Bluetooth adapter"
                         : btRoot.bluetoothEnabled ? "No devices found"
                         : "Bluetooth is off"
-                    color: ColorsModule.Colors.on_surface_variant
+                    color: Colors.on_surface_variant
                     font.pixelSize: 13
                 }
             }
@@ -227,10 +218,10 @@ Item {
 
                             color: modelData.connected
                                 ? Qt.rgba(btRoot.accent.r, btRoot.accent.g, btRoot.accent.b, 0.14)
-                                : (devMa.containsMouse ? ColorsModule.Colors.surface_container_highest
-                                                       : ColorsModule.Colors.surface_container)
+                                : (devMa.containsMouse ? Colors.surface_container_highest
+                                                       : Colors.surface_container)
                             border.width: modelData.connected ? 1 : 0
-                            border.color: ColorsModule.Colors.primary
+                            border.color: Colors.primary
                             Behavior on color { ColorAnimation { duration: 150 } }
 
                             MouseArea {
@@ -260,15 +251,14 @@ Item {
                                     radius: 19
                                     color: modelData.connected
                                         ? Qt.rgba(btRoot.accent.r, btRoot.accent.g, btRoot.accent.b, 0.18)
-                                        : ColorsModule.Colors.surface_container_highest
-                                    Text {
+                                        : Colors.surface_container_highest
+                                    MaterialIcon {
                                         anchors.centerIn: parent
                                         text: "󰂯"
-                                        font.family: "Material Design Icons"
                                         font.pixelSize: 20
                                         color: modelData.connected
-                                            ? ColorsModule.Colors.primary
-                                            : ColorsModule.Colors.on_surface_variant
+                                            ? Colors.primary
+                                            : Colors.on_surface_variant
                                     }
                                 }
 
@@ -276,16 +266,15 @@ Item {
                                     Layout.fillWidth: true
                                     spacing: 1
 
-                                    Text {
+                                    StyledText {
                                         Layout.fillWidth: true
                                         text: modelData.name || "Unknown device"
                                         elide: Text.ElideRight
                                         font.pixelSize: 14
                                         font.weight: modelData.connected ? Font.DemiBold : Font.Normal
-                                        color: ColorsModule.Colors.on_surface
                                     }
 
-                                    Text {
+                                    StyledText {
                                         text: {
                                             var base = modelData.connected ? "Connected"
                                                 : modelData.paired ? "Paired"
@@ -295,40 +284,35 @@ Item {
                                             return base
                                         }
                                         font.pixelSize: 11
-                                        color: modelData.connected ? ColorsModule.Colors.primary
-                                                                   : ColorsModule.Colors.on_surface_variant
+                                        color: modelData.connected ? Colors.primary
+                                                                   : Colors.on_surface_variant
                                     }
                                 }
 
                                 // unpair (paired devices)
-                                Rectangle {
+                                ClickableRect {
+                                    id: unpairRect
                                     visible: modelData.paired
                                     Layout.preferredWidth: 30; Layout.preferredHeight: 30
                                     radius: 15
-                                    opacity: (unpairMa.containsMouse || devMa.containsMouse) ? 1 : 0
-                                    color: unpairMa.containsMouse ? ColorsModule.Colors.error_container : "transparent"
+                                    opacity: (unpairRect.hovered || devMa.containsMouse) ? 1 : 0
+                                    color: unpairRect.hovered ? Colors.error_container : "transparent"
                                     Behavior on opacity { NumberAnimation { duration: 120 } }
 
-                                    Text {
+                                    MaterialIcon {
                                         anchors.centerIn: parent
                                         text: "󰚃"
-                                        font.family: "Material Design Icons"
                                         font.pixelSize: 15
-                                        color: unpairMa.containsMouse
-                                            ? ColorsModule.Colors.on_error_container
-                                            : ColorsModule.Colors.on_surface_variant
+                                        color: unpairRect.hovered
+                                            ? Colors.on_error_container
+                                            : Colors.on_surface_variant
                                     }
-                                    MouseArea {
-                                        id: unpairMa
-                                        anchors.fill: parent
-                                        hoverEnabled: true
-                                        cursorShape: Qt.PointingHandCursor
-                                        onClicked: mouse => {
+                                    cursorShape: Qt.PointingHandCursor
+                                    onClicked: mouse => {
                                             mouse.accepted = true
                                             if (modelData.connected) modelData.disconnect()
                                             modelData.forget()
                                         }
-                                    }
                                 }
                             }
                         }

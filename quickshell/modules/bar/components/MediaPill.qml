@@ -4,7 +4,7 @@ import QtQuick.Controls
 import Quickshell
 import qs.services
 import Quickshell.Io
-import "../../../colors" as ColorsModule
+import qs.colors
 import qs.components
 
 Item {
@@ -25,7 +25,7 @@ Item {
 
         radius: height / 2
         height: 32
-        color: ColorsModule.Colors.background
+        color: Colors.background
 
         clip: true
 
@@ -54,20 +54,18 @@ Item {
                     id: marqueeRow
                     spacing: 50
 
-                    Text {
+                    StyledText {
                         id: mediaText
                         text: media.artist
                             ? media.title + " — " + media.artist
                             : media.title
 
-                        color: ColorsModule.Colors.on_surface
                         font.pixelSize: 17
                     }
 
-                    Text {
+                    StyledText {
                         visible: mouseArea.containsMouse
                         text: mediaText.text
-                        color: ColorsModule.Colors.on_surface
                         font.pixelSize: 17
                     }
 

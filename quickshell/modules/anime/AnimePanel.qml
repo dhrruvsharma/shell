@@ -1,9 +1,10 @@
 import QtQuick
 import QtQuick.Controls
 import QtQuick.Layouts
-import "../../colors" as ColorsModule
+import qs.colors
 import qs.services
 import qs.modules.anime.components
+import qs.components
 
 Item {
     id: root
@@ -15,7 +16,6 @@ Item {
     implicitWidth: 540
     visible: false
 
-    readonly property var c: ColorsModule.Colors
     readonly property string fontBody: "Noto Sans"
 
     // ── Tab state ─────────────────────────────────────────────────────────────
@@ -29,12 +29,10 @@ Item {
     // ── Background ────────────────────────────────────────────────────────────
     Rectangle {
         anchors.fill: parent
-        color: c.background
+        color: Colors.background
         // Top edge shadow / divider
-        Rectangle {
+        Divider {
             anchors { top: parent.top; left: parent.left; right: parent.right }
-            height: 1
-            color: c.outline_variant
             opacity: 0.5
         }
     }
@@ -108,12 +106,12 @@ Item {
         Rectangle {
             Layout.fillWidth: true
             height: 48
-            color: c.surface_container_low
+            color: Colors.surface_container_low
 
             // Top hairline
             Rectangle {
                 anchors { top: parent.top; left: parent.left; right: parent.right }
-                height: 1; color: c.outline_variant; opacity: 0.4
+                height: 1; color: Colors.outline_variant; opacity: 0.4
             }
 
             Row {
@@ -134,7 +132,7 @@ Item {
                         Rectangle {
                             anchors.fill: parent
                             color: tabArea.containsMouse && !active
-                                ? Qt.rgba(c.primary.r, c.primary.g, c.primary.b, 0.05)
+                                ? Colors.withAlpha(Colors.primary, 0.05)
                                 : "transparent"
                             Behavior on color { ColorAnimation { duration: 120 } }
                         }
@@ -143,21 +141,21 @@ Item {
                             anchors.centerIn: parent
                             spacing: 2
 
-                            Text {
+                            StyledText {
                                 anchors.horizontalCenter: parent.horizontalCenter
                                 text: modelData.icon
                                 font.pixelSize: 13
-                                color: active ? c.primary : c.on_surface_variant
+                                color: active ? Colors.primary : Colors.on_surface_variant
                                 opacity: active ? 1 : 0.5
                                 Behavior on color { ColorAnimation { duration: 180 } }
                             }
-                            Text {
+                            StyledText {
                                 anchors.horizontalCenter: parent.horizontalCenter
                                 text: modelData.label
                                 font.family: root.fontBody
                                 font.pixelSize: 10
                                 font.letterSpacing: 0.6
-                                color: active ? c.primary : c.on_surface_variant
+                                color: active ? Colors.primary : Colors.on_surface_variant
                                 opacity: active ? 1 : 0.5
                                 Behavior on color { ColorAnimation { duration: 180 } }
                             }
@@ -171,7 +169,7 @@ Item {
                             }
                             width: active ? 28 : 0
                             height: 2; radius: 1
-                            color: c.primary
+                            color: Colors.primary
                             Behavior on width { NumberAnimation { duration: 200; easing.type: Easing.OutCubic } }
                         }
 

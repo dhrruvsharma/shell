@@ -1,6 +1,7 @@
 import QtQuick
 import QtQuick.Layouts
-import "../../colors" as ColorsModule
+import qs.colors
+import qs.components
 
 Item {
     id: root
@@ -15,8 +16,8 @@ Item {
         anchors { fill: parent; leftMargin: 8; rightMargin: 8 }
         radius: 7
         color: selected
-            ? ColorsModule.Colors.secondary_container
-            : (area.containsMouse ? ColorsModule.Colors.surface_container : "transparent")
+            ? Colors.secondary_container
+            : (area.containsMouse ? Colors.surface_container : "transparent")
 
         Behavior on color { ColorAnimation { duration: 120 } }
 
@@ -32,22 +33,22 @@ Item {
             anchors { fill: parent; leftMargin: 12; rightMargin: 6 }
             spacing: 6
 
-            Text {
+            StyledText {
                 text: "›"
                 font.pixelSize: 14
                 color: selected
-                    ? ColorsModule.Colors.on_secondary_container
-                    : ColorsModule.Colors.on_surface_variant
+                    ? Colors.on_secondary_container
+                    : Colors.on_surface_variant
                 opacity: selected ? 1 : 0.5
             }
 
-            Text {
+            StyledText {
                 Layout.fillWidth: true
                 text: conversation ? conversation.title : ""
                 font { pixelSize: 12 }
                 color: selected
-                    ? ColorsModule.Colors.on_secondary_container
-                    : ColorsModule.Colors.on_surface
+                    ? Colors.on_secondary_container
+                    : Colors.on_surface
                 elide: Text.ElideRight
             }
 
@@ -55,14 +56,14 @@ Item {
                 width: 22; height: 22; radius: 6
                 visible: area.containsMouse
                 color: delHov.containsMouse
-                    ? ColorsModule.Colors.error_container : "transparent"
+                    ? Colors.error_container : "transparent"
                 Behavior on color { ColorAnimation { duration: 100 } }
 
-                Text {
+                StyledText {
                     anchors.centerIn: parent; text: "×"; font.pixelSize: 14
                     color: delHov.containsMouse
-                        ? ColorsModule.Colors.on_error_container
-                        : ColorsModule.Colors.error
+                        ? Colors.on_error_container
+                        : Colors.error
                     opacity: delHov.containsMouse ? 1 : 0.7
                 }
 

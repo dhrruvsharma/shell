@@ -3,7 +3,8 @@ import QtQuick.Layouts
 import QtQuick.Controls
 import Quickshell
 import qs.services as Services
-import "../colors" as ColorsModule
+import qs.colors
+import qs.components
 
 Dialog {
     id: categoryDialog
@@ -16,11 +17,9 @@ Dialog {
     height: 220
     parent: root
 
-    background: Rectangle {
+    background: Card {
         radius: 28
-        color: ColorsModule.Colors.surface_container_lowest
-        border.color: ColorsModule.Colors.outline_variant
-        border.width: 1
+        color: Colors.surface_container_lowest
 
         Rectangle {
             anchors.fill: parent
@@ -34,7 +33,7 @@ Dialog {
     header: Rectangle {
         height: 64
         radius: 28
-        color: ColorsModule.Colors.surface_container_lowest
+        color: Colors.surface_container_lowest
 
         Rectangle {
             width: 48
@@ -43,16 +42,15 @@ Dialog {
             anchors.topMargin: 12
             anchors.horizontalCenter: parent.horizontalCenter
             radius: 2
-            color: ColorsModule.Colors.outline_variant
+            color: Colors.outline_variant
             opacity: 0.3
         }
 
-        Text {
+        StyledText {
             anchors.centerIn: parent
             text: categoryDialog.title
             font.pixelSize: 20
             font.weight: Font.Bold
-            color: ColorsModule.Colors.on_surface
         }
     }
 
@@ -61,23 +59,16 @@ Dialog {
         anchors.margins: 24
         spacing: 24
 
-        TextField {
+        StyledTextField {
             id: categoryInput
             Layout.fillWidth: true
             placeholderText: "Enter category name..."
             font.pixelSize: 14
             focus: true
-            color: ColorsModule.Colors.on_surface
-            placeholderTextColor: ColorsModule.Colors.on_surface_variant
-
-            background: Rectangle {
-                radius: 14
-                color: ColorsModule.Colors.surface_container_high
-                border.color: categoryInput.activeFocus
-                    ? ColorsModule.Colors.primary
-                    : ColorsModule.Colors.outline_variant
-                border.width: 2
-            }
+            radius: 14
+            borderWidth: 2
+            backgroundColor: Colors.surface_container_high
+            focusBorderColor: Colors.primary
 
             onAccepted: {
                 if (text.trim().length > 0) {
@@ -97,18 +88,15 @@ Dialog {
                 Layout.fillWidth: true
                 Layout.preferredHeight: 48
 
-                background: Rectangle {
+                background: Card {
                     radius: 14
                     color: parent.hovered
-                        ? ColorsModule.Colors.surface_container_high
+                        ? Colors.surface_container_high
                         : "transparent"
-                    border.width: 1
-                    border.color: ColorsModule.Colors.outline_variant
                 }
 
-                contentItem: Text {
+                contentItem: StyledText {
                     text: parent.text
-                    color: ColorsModule.Colors.on_surface
                     font.pixelSize: 14
                     font.weight: Font.Medium
                     horizontalAlignment: Text.AlignHCenter
@@ -130,16 +118,16 @@ Dialog {
                 background: Rectangle {
                     radius: 14
                     color: parent.hovered && parent.enabled
-                        ? Qt.darker(ColorsModule.Colors.primary_container, 1.2)
-                        : ColorsModule.Colors.primary_container
+                        ? Qt.darker(Colors.primary_container, 1.2)
+                        : Colors.primary_container
                     border.width: 2
-                    border.color: ColorsModule.Colors.primary
+                    border.color: Colors.primary
                     opacity: 0.3
                 }
 
-                contentItem: Text {
+                contentItem: StyledText {
                     text: parent.text
-                    color: ColorsModule.Colors.on_primary_container
+                    color: Colors.on_primary_container
                     font.pixelSize: 14
                     font.weight: Font.Bold
                     horizontalAlignment: Text.AlignHCenter

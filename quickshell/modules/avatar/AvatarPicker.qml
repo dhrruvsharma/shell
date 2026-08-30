@@ -5,7 +5,8 @@ import Qt.labs.folderlistmodel
 import Quickshell
 import Quickshell.Io
 import QtQuick.Controls
-import "../colors" as ColorsModule
+import qs.colors
+import qs.components
 
 Item {
     id: root
@@ -58,7 +59,7 @@ Item {
         height: 104
 
         radius: 24
-        color:  ColorsModule.Colors.surface_container
+        color:  Colors.surface_container
 
         // bottom shadow strip
         Rectangle {
@@ -82,9 +83,9 @@ Item {
             anchors.fill: parent; radius: parent.radius; color: "transparent"
             border.width: 1
             border.color: Qt.rgba(
-                Qt.color(ColorsModule.Colors.outline_variant).r,
-                Qt.color(ColorsModule.Colors.outline_variant).g,
-                Qt.color(ColorsModule.Colors.outline_variant).b, 0.5)
+                Qt.color(Colors.outline_variant).r,
+                Qt.color(Colors.outline_variant).g,
+                Qt.color(Colors.outline_variant).b, 0.5)
         }
 
         // ── Avatar row ────────────────────────────────────────────────────────
@@ -126,7 +127,7 @@ Item {
                     radius: tile.radius + 4
                     color:  "transparent"
                     border.width: 2
-                    border.color: ColorsModule.Colors.primary
+                    border.color: Colors.primary
                     opacity: cell.sel ? 0.8 : cell.hov ? 0.3 : 0.0
                     Behavior on opacity { NumberAnimation { duration: 200 } }
                 }
@@ -156,7 +157,7 @@ Item {
                     // shimmer placeholder
                     Rectangle {
                         anchors.fill: parent
-                        color: ColorsModule.Colors.surface_container_highest
+                        color: Colors.surface_container_highest
                         visible: img.status !== Image.Ready
                         SequentialAnimation on opacity {
                             running: img.status !== Image.Ready
@@ -183,7 +184,7 @@ Item {
                     width:  cell.sel ? 16 : 4
                     height: 3
                     radius: 2
-                    color:  ColorsModule.Colors.primary
+                    color:  Colors.primary
                     opacity: cell.sel ? 1.0 : cell.hov ? 0.4 : 0.0
                     Behavior on width   { NumberAnimation { duration: 220; easing.type: Easing.OutCubic } }
                     Behavior on opacity { NumberAnimation { duration: 180 } }
@@ -201,14 +202,14 @@ Item {
         }
 
         // empty state
-        Text {
+        StyledText {
             anchors.centerIn: parent
             visible:    folderModel.count === 0
             text:       "~/Pictures/avatars"
             font.pixelSize: 11
-            color: Qt.rgba(Qt.color(ColorsModule.Colors.on_surface).r,
-                           Qt.color(ColorsModule.Colors.on_surface).g,
-                           Qt.color(ColorsModule.Colors.on_surface).b, 0.3)
+            color: Qt.rgba(Qt.color(Colors.on_surface).r,
+                           Qt.color(Colors.on_surface).g,
+                           Qt.color(Colors.on_surface).b, 0.3)
         }
     }
 

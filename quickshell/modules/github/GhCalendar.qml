@@ -3,7 +3,8 @@ import QtQuick.Layouts
 import QtQuick.Controls
 import QtQuick.Shapes
 import qs.services as Services
-import "../colors" as ColorsModule
+import qs.colors
+import qs.components
 
 Item {
     id: contributionCalendar
@@ -15,7 +16,7 @@ Item {
     property bool showLabels: true
     property int cellSize: 12
     property int cellSpacing: 2
-    property color backgroundColor: ColorsModule.Colors.surface
+    property color backgroundColor: Colors.surface
     property string username: "dhrruvsharma"
 
     anchors {
@@ -43,11 +44,9 @@ Item {
         opacity: 0.95
 
         // Border
-        Rectangle {
+        Card {
             anchors.fill: parent
             color: "transparent"
-            border.width: 1
-            border.color: ColorsModule.Colors.outline_variant
             radius: 12
         }
     }
@@ -69,22 +68,20 @@ Item {
                 width: 24
                 height: 24
                 radius: 12
-                color: ColorsModule.Colors.primary
+                color: Colors.primary
 
-                Text {
+                StyledText {
                     anchors.centerIn: parent
                     text: "🐙"
                     font.pixelSize: 16
-                    color: ColorsModule.Colors.on_surface
                 }
             }
 
             // Username
-            Text {
+            StyledText {
                 text: username
                 font.pixelSize: 16
                 font.bold: true
-                color: ColorsModule.Colors.on_surface
             }
 
             // Spacer
@@ -93,7 +90,7 @@ Item {
             }
 
             // Stats summary
-            Text {
+            StyledText {
                 text: {
                     let total = 0
                     let maxLevel = 0
@@ -105,7 +102,7 @@ Item {
                     return `${total} contributions in the last year`
                 }
                 font.pixelSize: 12
-                color: ColorsModule.Colors.on_surface_variant
+                color: Colors.on_surface_variant
                 opacity: 0.8
             }
         }
@@ -121,7 +118,7 @@ Item {
                 policy: ScrollBar.AsNeeded
                 width: 6
                 contentItem: Rectangle {
-                    color: ColorsModule.Colors.primary
+                    color: Colors.primary
                     radius: 3
                     opacity: 0.5
                 }
@@ -178,7 +175,7 @@ Item {
 
                                         // Border for empty cells
                                         border.width: getLevel() === 0 ? 1 : 0
-                                        border.color: ColorsModule.Colors.outline_variant
+                                        border.color: Colors.outline_variant
 
                                         HoverHandler {
                                             id: hoverHandler
@@ -223,30 +220,28 @@ Item {
             Layout.alignment: Qt.AlignRight
             spacing: 8
 
-            Text {
+            StyledText {
                 text: "Less"
                 font.pixelSize: 10
-                color: ColorsModule.Colors.on_surface_variant
+                color: Colors.on_surface_variant
                 opacity: 0.7
             }
 
             // Color scale
             Repeater {
                 model: [0, 1, 2, 3, 4]
-                delegate: Rectangle {
+                delegate: Card {
                     width: 12
                     height: 12
                     radius: 2
                     color: contributionColor(modelData)
-                    border.width: 1
-                    border.color: ColorsModule.Colors.outline_variant
                 }
             }
 
-            Text {
+            StyledText {
                 text: "More"
                 font.pixelSize: 10
-                color: ColorsModule.Colors.on_surface_variant
+                color: Colors.on_surface_variant
                 opacity: 0.7
             }
         }
@@ -266,11 +261,11 @@ Item {
                 running: true
             }
 
-            Text {
+            StyledText {
                 Layout.alignment: Qt.AlignHCenter
                 text: "Loading contributions for " + username + "..."
                 font.pixelSize: 12
-                color: ColorsModule.Colors.on_surface_variant
+                color: Colors.on_surface_variant
             }
         }
     }
@@ -288,18 +283,18 @@ Item {
                 font.pixelSize: 32
             }
 
-            Text {
+            StyledText {
                 Layout.alignment: Qt.AlignHCenter
                 text: "Failed to load contributions"
                 font.pixelSize: 12
-                color: ColorsModule.Colors.error
+                color: Colors.error
             }
 
-            Text {
+            StyledText {
                 Layout.alignment: Qt.AlignHCenter
                 text: Services.Github.error || "Unknown error"
                 font.pixelSize: 10
-                color: ColorsModule.Colors.errorContainer
+                color: Colors.errorContainer
                 opacity: 0.8
             }
         }

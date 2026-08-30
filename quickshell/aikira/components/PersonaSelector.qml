@@ -1,7 +1,8 @@
 import QtQuick
 import qs.aikira
 import QtQuick.Layouts
-import "../../colors" as ColorsModule
+import qs.colors
+import qs.components
 
 Item {
     id: root
@@ -27,13 +28,13 @@ Item {
         showForm = true
     }
 
-    Rectangle { anchors.fill: parent; color: ColorsModule.Colors.background }
+    Rectangle { anchors.fill: parent; color: Colors.background }
 
     Rectangle {
         id: psHead
         anchors { top: parent.top; left: parent.left; right: parent.right }
         height: 56
-        color: ColorsModule.Colors.surface_container
+        color: Colors.surface_container
 
         RowLayout {
             anchors { fill: parent; leftMargin: 20; rightMargin: 16 }
@@ -41,47 +42,45 @@ Item {
 
             ColumnLayout {
                 spacing: 2
-                Text {
+                StyledText {
                     text: "Personas"
                     font { pixelSize: 15; weight: Font.Medium; letterSpacing: 0.3 }
-                    color: ColorsModule.Colors.on_surface
                 }
-                Text {
+                StyledText {
                     text: "Click a card to use as active persona"
                     font.pixelSize: 10
-                    color: ColorsModule.Colors.on_surface_variant; opacity: 0.45
+                    color: Colors.on_surface_variant; opacity: 0.45
                 }
             }
 
             Item { Layout.fillWidth: true }
 
-            Rectangle {
+            ClickableRect {
+                id: addPRect
                 width: 116; height: 32; radius: 16
-                color: addPHov.containsMouse
-                    ? ColorsModule.Colors.primary : ColorsModule.Colors.primary_container
+                color: addPRect.hovered
+                    ? Colors.primary : Colors.primary_container
                 Behavior on color { ColorAnimation { duration: 140 } }
 
                 RowLayout {
                     anchors.centerIn: parent; spacing: 5
-                    Text {
+                    StyledText {
                         text: "＋"; font { pixelSize: 13 }
-                        color: addPHov.containsMouse
-                            ? ColorsModule.Colors.on_primary
-                            : ColorsModule.Colors.on_primary_container
+                        color: addPRect.hovered
+                            ? Colors.on_primary
+                            : Colors.on_primary_container
                     }
-                    Text {
+                    StyledText {
                         text: "Add persona"
                         font { pixelSize: 12; weight: Font.Medium }
-                        color: addPHov.containsMouse
-                            ? ColorsModule.Colors.on_primary
-                            : ColorsModule.Colors.on_primary_container
+                        color: addPRect.hovered
+                            ? Colors.on_primary
+                            : Colors.on_primary_container
                     }
                 }
 
-                MouseArea {
-                    id: addPHov; anchors.fill: parent; hoverEnabled: true
-                    cursorShape: Qt.PointingHandCursor; onClicked: root.openNew()
-                }
+                cursorShape: Qt.PointingHandCursor
+                onClicked: root.openNew()
             }
         }
     }
@@ -97,22 +96,22 @@ Item {
         ColumnLayout {
             anchors.centerIn: parent; spacing: 10
 
-            Text {
+            StyledText {
                 Layout.alignment: Qt.AlignHCenter
                 text: "◈"; font.pixelSize: 44
-                color: ColorsModule.Colors.primary; opacity: 0.15
+                color: Colors.primary; opacity: 0.15
             }
-            Text {
+            StyledText {
                 Layout.alignment: Qt.AlignHCenter
                 text: "No personas yet"
                 font { pixelSize: 14; letterSpacing: 0.3 }
-                color: ColorsModule.Colors.on_surface_variant; opacity: 0.45
+                color: Colors.on_surface_variant; opacity: 0.45
             }
-            Text {
+            StyledText {
                 Layout.alignment: Qt.AlignHCenter
                 text: "Add a persona to tell the AI who you are"
                 font.pixelSize: 11
-                color: ColorsModule.Colors.on_surface_variant; opacity: 0.3
+                color: Colors.on_surface_variant; opacity: 0.3
             }
         }
     }
@@ -142,11 +141,11 @@ Item {
                 anchors { fill: parent; margins: 4 }
                 radius: 14
                 color: isActive
-                    ? ColorsModule.Colors.secondary_container
-                    : (cardHovered ? ColorsModule.Colors.surface_container_high : ColorsModule.Colors.surface_container)
+                    ? Colors.secondary_container
+                    : (cardHovered ? Colors.surface_container_high : Colors.surface_container)
                 border {
                     width: modelData.is_default ? 1 : 0
-                    color: ColorsModule.Colors.primary
+                    color: Colors.primary
                 }
                 Behavior on color { ColorAnimation { duration: 130 } }
 
@@ -171,16 +170,16 @@ Item {
                         Rectangle {
                             width: 36; height: 36; radius: 18
                             color: isActive
-                                ? ColorsModule.Colors.primary
-                                : ColorsModule.Colors.primary_container
+                                ? Colors.primary
+                                : Colors.primary_container
 
-                            Text {
+                            StyledText {
                                 anchors.centerIn: parent
                                 text: modelData.name.charAt(0).toUpperCase()
                                 font { pixelSize: 15; weight: Font.Medium }
                                 color: isActive
-                                    ? ColorsModule.Colors.on_primary
-                                    : ColorsModule.Colors.on_primary_container
+                                    ? Colors.on_primary
+                                    : Colors.on_primary_container
                             }
                         }
 
@@ -188,11 +187,10 @@ Item {
                             Layout.fillWidth: true
                             spacing: 3
 
-                            Text {
+                            StyledText {
                                 Layout.fillWidth: true
                                 text: modelData.name
                                 font { pixelSize: 13; weight: Font.Medium }
-                                color: ColorsModule.Colors.on_surface
                                 elide: Text.ElideRight
                             }
 
@@ -203,24 +201,24 @@ Item {
                                 Rectangle {
                                     visible: modelData.is_default
                                     width: defBadge.implicitWidth + 8; height: 16; radius: 8
-                                    color: ColorsModule.Colors.primary; opacity: 0.15
-                                    Text {
+                                    color: Colors.primary; opacity: 0.15
+                                    StyledText {
                                         id: defBadge
                                         anchors.centerIn: parent
                                         text: "default"; font.pixelSize: 9
-                                        color: ColorsModule.Colors.primary
+                                        color: Colors.primary
                                     }
                                 }
 
                                 Rectangle {
                                     visible: isActive
                                     width: actBadge.implicitWidth + 8; height: 16; radius: 8
-                                    color: ColorsModule.Colors.secondary; opacity: 0.15
-                                    Text {
+                                    color: Colors.secondary; opacity: 0.15
+                                    StyledText {
                                         id: actBadge
                                         anchors.centerIn: parent
                                         text: "active"; font.pixelSize: 9
-                                        color: ColorsModule.Colors.secondary
+                                        color: Colors.secondary
                                     }
                                 }
                             }
@@ -233,12 +231,12 @@ Item {
                             Rectangle {
                                 width: 26; height: 26; radius: 7
                                 color: editBtnHov.containsMouse
-                                    ? ColorsModule.Colors.surface_container_highest : "transparent"
+                                    ? Colors.surface_container_highest : "transparent"
                                 Behavior on color { ColorAnimation { duration: 100 } }
 
-                                Text {
+                                StyledText {
                                     anchors.centerIn: parent; text: "✎"; font.pixelSize: 12
-                                    color: ColorsModule.Colors.on_surface_variant
+                                    color: Colors.on_surface_variant
                                 }
 
                                 MouseArea {
@@ -248,24 +246,23 @@ Item {
                                 }
                             }
 
-                            Rectangle {
+                            ClickableRect {
+                                id: delBtnRect
                                 width: 26; height: 26; radius: 7
-                                color: delBtnHov.containsMouse
-                                    ? ColorsModule.Colors.error_container : "transparent"
+                                color: delBtnRect.hovered
+                                    ? Colors.error_container : "transparent"
                                 Behavior on color { ColorAnimation { duration: 100 } }
 
-                                Text {
+                                StyledText {
                                     anchors.centerIn: parent; text: "×"; font.pixelSize: 15
-                                    color: delBtnHov.containsMouse
-                                        ? ColorsModule.Colors.on_error_container
-                                        : ColorsModule.Colors.error
-                                    opacity: delBtnHov.containsMouse ? 1 : 0.7
+                                    color: delBtnRect.hovered
+                                        ? Colors.on_error_container
+                                        : Colors.error
+                                    opacity: delBtnRect.hovered ? 1 : 0.7
                                 }
 
-                                MouseArea {
-                                    id: delBtnHov; anchors.fill: parent; hoverEnabled: true
-                                    cursorShape: Qt.PointingHandCursor
-                                    onClicked: (mouse) => {
+                                cursorShape: Qt.PointingHandCursor
+                                onClicked: (mouse) => {
                                         mouse.accepted = true
                                         Api.deletePersona(modelData.id, function(err) {
                                             if (!err) {
@@ -275,7 +272,6 @@ Item {
                                             }
                                         })
                                     }
-                                }
                             }
                         }
                     }
@@ -283,11 +279,11 @@ Item {
                     Item { height: 8 }
 
                     // Description
-                    Text {
+                    StyledText {
                         Layout.fillWidth: true
                         text: modelData.description || ""
                         font.pixelSize: 11
-                        color: ColorsModule.Colors.on_surface_variant; opacity: 0.65
+                        color: Colors.on_surface_variant; opacity: 0.65
                         wrapMode: Text.WordWrap; maximumLineCount: 2; elide: Text.ElideRight
                         visible: text.length > 0
                     }
@@ -301,8 +297,8 @@ Item {
         visible: showForm
         anchors { right: parent.right; top: parent.top; bottom: parent.bottom }
         width: showForm ? 340 : 0
-        color: ColorsModule.Colors.surface_container_low
-        border { width: 1; color: ColorsModule.Colors.outline_variant }
+        color: Colors.surface_container_low
+        border { width: 1; color: Colors.outline_variant }
         clip: true
         Behavior on width { NumberAnimation { duration: 220; easing.type: Easing.OutCubic } }
 
@@ -322,33 +318,31 @@ Item {
 
                     ColumnLayout {
                         spacing: 2
-                        Text {
+                        StyledText {
                             text: editing ? "Edit persona" : "New persona"
                             font { pixelSize: 14; weight: Font.Medium }
-                            color: ColorsModule.Colors.on_surface
                         }
-                        Text {
+                        StyledText {
                             text: editing ? "Update persona details" : "Create a new persona"
                             font.pixelSize: 10
-                            color: ColorsModule.Colors.on_surface_variant; opacity: 0.45
+                            color: Colors.on_surface_variant; opacity: 0.45
                         }
                     }
 
                     Item { Layout.fillWidth: true }
 
-                    Rectangle {
+                    ClickableRect {
+                        id: pcRect
                         width: 30; height: 30; radius: 8
-                        color: pcHov.containsMouse
-                            ? ColorsModule.Colors.surface_container_high : "transparent"
+                        color: pcRect.hovered
+                            ? Colors.surface_container_high : "transparent"
                         Behavior on color { ColorAnimation { duration: 110 } }
-                        Text {
+                        StyledText {
                             anchors.centerIn: parent; text: "×"; font.pixelSize: 18
-                            color: ColorsModule.Colors.on_surface_variant
+                            color: Colors.on_surface_variant
                         }
-                        MouseArea {
-                            id: pcHov; anchors.fill: parent; hoverEnabled: true
-                            cursorShape: Qt.PointingHandCursor; onClicked: showForm = false
-                        }
+                        cursorShape: Qt.PointingHandCursor
+                        onClicked: showForm = false
                     }
                 }
 
@@ -356,18 +350,18 @@ Item {
                 Column {
                     width: parent.width; spacing: 6
 
-                    Text {
+                    StyledText {
                         text: "NAME"
                         font { pixelSize: 10; letterSpacing: 1.5; weight: Font.Bold }
-                        color: ColorsModule.Colors.on_surface_variant; opacity: 0.6
+                        color: Colors.on_surface_variant; opacity: 0.6
                     }
 
                     Rectangle {
                         width: parent.width; height: 38; radius: 9
-                        color: ColorsModule.Colors.surface_container_highest
+                        color: Colors.surface_container_highest
                         border {
                             width: pnField.activeFocus ? 1 : 0
-                            color: ColorsModule.Colors.primary
+                            color: Colors.primary
                         }
                         Behavior on border.width { NumberAnimation { duration: 100 } }
 
@@ -375,16 +369,16 @@ Item {
                             id: pnField
                             anchors { fill: parent; leftMargin: 12; rightMargin: 12 }
                             verticalAlignment: TextInput.AlignVCenter
-                            color: ColorsModule.Colors.on_surface
+                            color: Colors.on_surface
                             font { pixelSize: 13; family: "monospace" }
                             selectByMouse: true
 
-                            Text {
+                            StyledText {
                                 anchors.fill: parent
                                 verticalAlignment: Text.AlignVCenter
                                 text: "e.g. Traveler"
                                 font { pixelSize: 13; family: "monospace" }
-                                color: ColorsModule.Colors.on_surface_variant; opacity: 0.3
+                                color: Colors.on_surface_variant; opacity: 0.3
                                 visible: pnField.text.length === 0
                             }
                         }
@@ -395,32 +389,32 @@ Item {
                 Column {
                     width: parent.width; spacing: 6
 
-                    Text {
+                    StyledText {
                         text: "DESCRIPTION"
                         font { pixelSize: 10; letterSpacing: 1.5; weight: Font.Bold }
-                        color: ColorsModule.Colors.on_surface_variant; opacity: 0.6
+                        color: Colors.on_surface_variant; opacity: 0.6
                     }
-                    Text {
+                    StyledText {
                         text: "How you want to be described to the AI"
                         font.pixelSize: 10
-                        color: ColorsModule.Colors.on_surface_variant; opacity: 0.38
+                        color: Colors.on_surface_variant; opacity: 0.38
                     }
 
                     Rectangle {
                         width: parent.width
                         height: Math.max(90, pdField.implicitHeight + 24)
                         radius: 9; clip: true
-                        color: ColorsModule.Colors.surface_container_highest
+                        color: Colors.surface_container_highest
                         border {
                             width: pdField.activeFocus ? 1 : 0
-                            color: ColorsModule.Colors.primary
+                            color: Colors.primary
                         }
                         Behavior on border.width { NumberAnimation { duration: 100 } }
 
                         TextEdit {
                             id: pdField
                             anchors { fill: parent; margins: 12 }
-                            color: ColorsModule.Colors.on_surface
+                            color: Colors.on_surface
                             font { pixelSize: 13; family: "monospace" }
                             wrapMode: TextEdit.Wrap
                             selectByMouse: true
@@ -435,14 +429,14 @@ Item {
                     Rectangle {
                         id: pdDef; property bool on: false
                         width: 42; height: 24; radius: 12
-                        color: on ? ColorsModule.Colors.primary : ColorsModule.Colors.surface_container_highest
+                        color: on ? Colors.primary : Colors.surface_container_highest
                         Behavior on color { ColorAnimation { duration: 150 } }
 
                         Rectangle {
                             width: 18; height: 18; radius: 9
                             anchors.verticalCenter: parent.verticalCenter
                             x: parent.on ? parent.width - width - 3 : 3
-                            color: parent.on ? ColorsModule.Colors.on_primary : ColorsModule.Colors.on_surface_variant
+                            color: parent.on ? Colors.on_primary : Colors.on_surface_variant
                             opacity: parent.on ? 1 : 0.5
                             Behavior on x { NumberAnimation { duration: 150; easing.type: Easing.OutCubic } }
                         }
@@ -455,15 +449,14 @@ Item {
 
                     ColumnLayout {
                         spacing: 1
-                        Text {
+                        StyledText {
                             text: "default persona"
                             font { pixelSize: 12; weight: Font.Medium }
-                            color: ColorsModule.Colors.on_surface
                         }
-                        Text {
+                        StyledText {
                             text: "used automatically in new chats"
                             font.pixelSize: 10
-                            color: ColorsModule.Colors.on_surface_variant; opacity: 0.4
+                            color: Colors.on_surface_variant; opacity: 0.4
                         }
                     }
                 }
@@ -472,7 +465,7 @@ Item {
                 Text {
                     id: pErrMsg; visible: false
                     text: "name is required"
-                    font.pixelSize: 11; color: ColorsModule.Colors.error
+                    font.pixelSize: 11; color: Colors.error
                 }
 
                 // Action buttons
@@ -480,24 +473,23 @@ Item {
                     width: parent.width; spacing: 8
 
                     // Delete button (editing only)
-                    Rectangle {
+                    ClickableRect {
+                        id: pdelRect
                         visible: editing !== null
                         width: 80; height: 36; radius: 18
-                        color: pdelHov.containsMouse
-                            ? ColorsModule.Colors.error : ColorsModule.Colors.error_container
+                        color: pdelRect.hovered
+                            ? Colors.error : Colors.error_container
                         Behavior on color { ColorAnimation { duration: 120 } }
 
-                        Text {
+                        StyledText {
                             anchors.centerIn: parent; text: "delete"
                             font { pixelSize: 13; weight: Font.Medium }
-                            color: pdelHov.containsMouse
-                                ? "white" : ColorsModule.Colors.on_error_container
+                            color: pdelRect.hovered
+                                ? "white" : Colors.on_error_container
                         }
 
-                        MouseArea {
-                            id: pdelHov; anchors.fill: parent; hoverEnabled: true
-                            cursorShape: Qt.PointingHandCursor
-                            onClicked: {
+                        cursorShape: Qt.PointingHandCursor
+                        onClicked: {
                                 Api.deletePersona(editing.id, function(err) {
                                     if (!err) {
                                         if (AppState.activePersona && AppState.activePersona.id === editing.id)
@@ -507,49 +499,45 @@ Item {
                                     }
                                 })
                             }
-                        }
                     }
 
                     Item { Layout.fillWidth: true }
 
                     // Cancel button
-                    Rectangle {
+                    ClickableRect {
+                        id: pcanRect
                         width: 76; height: 36; radius: 18
-                        color: pcanHov.containsMouse
-                            ? ColorsModule.Colors.surface_container_high
-                            : ColorsModule.Colors.surface_container_highest
+                        color: pcanRect.hovered
+                            ? Colors.surface_container_high
+                            : Colors.surface_container_highest
                         Behavior on color { ColorAnimation { duration: 120 } }
 
-                        Text {
+                        StyledText {
                             anchors.centerIn: parent; text: "cancel"
                             font { pixelSize: 13; weight: Font.Medium }
-                            color: ColorsModule.Colors.on_surface_variant
+                            color: Colors.on_surface_variant
                         }
 
-                        MouseArea {
-                            id: pcanHov; anchors.fill: parent; hoverEnabled: true
-                            cursorShape: Qt.PointingHandCursor
-                            onClicked: showForm = false
-                        }
+                        cursorShape: Qt.PointingHandCursor
+                        onClicked: showForm = false
                     }
 
                     // Save button
-                    Rectangle {
+                    ClickableRect {
+                        id: psvRect
                         width: 76; height: 36; radius: 18
-                        color: psvHov.containsMouse
-                            ? ColorsModule.Colors.primary_fixed_dim : ColorsModule.Colors.primary
+                        color: psvRect.hovered
+                            ? Colors.primary_fixed_dim : Colors.primary
                         Behavior on color { ColorAnimation { duration: 120 } }
 
-                        Text {
+                        StyledText {
                             anchors.centerIn: parent; text: "save"
                             font { pixelSize: 13; weight: Font.Medium }
-                            color: ColorsModule.Colors.on_primary
+                            color: Colors.on_primary
                         }
 
-                        MouseArea {
-                            id: psvHov; anchors.fill: parent; hoverEnabled: true
-                            cursorShape: Qt.PointingHandCursor
-                            onClicked: {
+                        cursorShape: Qt.PointingHandCursor
+                        onClicked: {
                                 const name = pnField.text.trim()
                                 if (!name) { pErrMsg.visible = true; return }
                                 pErrMsg.visible = false
@@ -566,7 +554,6 @@ Item {
                                     })
                                 }
                             }
-                        }
                     }
                 }
             }
