@@ -295,7 +295,7 @@ Item {
                 Layout.preferredHeight: 100
                 radius: 10
                 color: "transparent"
-                visible: mediaControl.isSpotify && Services.LyricsService.available
+                visible: mediaControl.isSpotify
 
                 Behavior on Layout.preferredHeight {
                     NumberAnimation { duration: 200 }
@@ -310,10 +310,12 @@ Item {
                     clip: true
                 }
 
+                // Lyrics only when the optional lyrics server is running
                 ColumnLayout {
                     anchors.fill: parent
                     anchors.margins: 12
                     spacing: 6
+                    visible: Services.LyricsService.available
 
                     Repeater {
                         id: lyricsRepeater
