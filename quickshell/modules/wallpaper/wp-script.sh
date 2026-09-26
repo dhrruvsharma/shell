@@ -2,7 +2,7 @@
 
 # CONFIG
 QML_PATH="$HOME/.config/quickshell/modules/wallpaper/Wallpaper.qml"
-SRC_DIR="/home/igris/Pictures/wallpapers"
+SRC_DIR="$HOME/Pictures/wallpapers"
 
 # 1. Kill if running
 if pgrep -f "quickshell.*Wallpaper.qml" > /dev/null; then

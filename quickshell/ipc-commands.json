@@ -1,0 +1,118 @@
+[
+  {
+    "text": "qs ipc call aikiraChat changeVisible",
+    "subtext": "Toggle Aikira Chat"
+  },
+  {
+    "text": "qs ipc call animePlayer toggle",
+    "subtext": "Toggle Anime Player"
+  },
+  {
+    "text": "qs ipc call avatarPicker toggle",
+    "subtext": "Toggle Avatar Picker \u00b7 SUPER+A"
+  },
+  {
+    "text": "qs ipc call barLayout reset",
+    "subtext": "Reset Bar Layout"
+  },
+  {
+    "text": "qs ipc call calendarWindow toggle",
+    "subtext": "Toggle Calendar Window"
+  },
+  {
+    "text": "qs ipc call cavaPanel toggle",
+    "subtext": "Toggle Cava Panel"
+  },
+  {
+    "text": "qs ipc call cavaWidget edit",
+    "subtext": "Edit Cava Widget \u00b7 SUPER+T"
+  },
+  {
+    "text": "qs ipc call cavaWidget reset",
+    "subtext": "Reset Cava Widget"
+  },
+  {
+    "text": "qs ipc call cavaWidget toggle",
+    "subtext": "Toggle Cava Widget"
+  },
+  {
+    "text": "qs ipc call clipboardManager changeVisible",
+    "subtext": "Toggle Clipboard Manager"
+  },
+  {
+    "text": "qs ipc call clockWindow toggle",
+    "subtext": "Toggle Clock Window"
+  },
+  {
+    "text": "qs ipc call controlCenter changeVisible",
+    "subtext": "Toggle Control Center \u00b7 ALT+SHIFT+C"
+  },
+  {
+    "text": "qs ipc call expose hide",
+    "subtext": "Hide Expose"
+  },
+  {
+    "text": "qs ipc call expose show",
+    "subtext": "Show Expose"
+  },
+  {
+    "text": "qs ipc call expose toggle",
+    "subtext": "Toggle Expose \u00b7 ALT+TAB"
+  },
+  {
+    "text": "qs ipc call launcherWindow toggle",
+    "subtext": "Toggle Launcher Window \u00b7 SUPER+R"
+  },
+  {
+    "text": "qs ipc call mangaReader toggle",
+    "subtext": "Toggle Manga Reader"
+  },
+  {
+    "text": "qs ipc call mediaPanel toggle",
+    "subtext": "Toggle Media Panel"
+  },
+  {
+    "text": "qs ipc call networkPanel changeVisible",
+    "subtext": "Toggle Network Panel \u00b7 ALT+SHIFT+N"
+  },
+  {
+    "text": "qs ipc call notepad toggle",
+    "subtext": "Toggle Notepad \u00b7 SUPER+N"
+  },
+  {
+    "text": "qs ipc call novelReader toggle",
+    "subtext": "Toggle Novel Reader"
+  },
+  {
+    "text": "qs ipc call ollamaChat changeVisible",
+    "subtext": "Toggle Ollama Chat"
+  },
+  {
+    "text": "qs ipc call powerMenu toggle",
+    "subtext": "Toggle Power Menu \u00b7 SUPER+P"
+  },
+  {
+    "text": "qs ipc call systemPanel toggle",
+    "subtext": "Toggle System Panel"
+  },
+  {
+    "text": "qs ipc call updatesPanel refresh",
+    "subtext": "Refresh Updates Panel"
+  },
+  {
+    "text": "qs ipc call updatesPanel toggle",
+    "subtext": "Toggle Updates Panel"
+  },
+  {
+    "text": "qs ipc call wallhavenPanel toggle",
+    "subtext": "Toggle Wallhaven Panel \u00b7 SUPER+SHIFT+W"
+  },
+  {
+    "text": "qs ipc call wallpaper toggle",
+    "subtext": "Toggle Wallpaper \u00b7 SUPER+W"
+  },
+  {
+    "text": "quickshell -p ~/.config/quickshell/Lock.qml",
+    "subtext": "Lock Screen \u00b7 ALT+H"
+  }
+]

@@ -19,11 +19,11 @@ QtObject {
     // added widget still shows up instead of silently vanishing.
     readonly property var knownIds: [
         "cpu", "battery", "clock", "bluetooth",
-        "network", "volume", "temp", "memory"
+        "network", "volume", "temp", "memory", "updates"
     ]
 
     readonly property var defaultLeft: [["cpu"], ["battery"], ["clock"], ["bluetooth"]]
-    readonly property var defaultRight: [["network"], ["volume"], ["temp"], ["memory"]]
+    readonly property var defaultRight: [["updates"], ["network"], ["volume"], ["temp"], ["memory"]]
 
     property var left: root.defaultLeft
     property var right: root.defaultRight

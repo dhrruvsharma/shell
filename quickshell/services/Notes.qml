@@ -1,6 +1,7 @@
 pragma Singleton
 import QtQuick
 import QtCore
+import Quickshell
 import Quickshell.Io
 import qs.components
 
@@ -14,6 +15,11 @@ QtObject {
     property var categoryKeepOpen: ({})
     property bool sortDescending: true  // New property for sort order
 
+    // Commands from ipc-commands.json (scripts/gen-ipc-commands.py) land here
+    readonly property string ipcCategory: "IPC Toggle"
+    // Merging before load() would save over the stored notes
+    property bool loaded: false
+
     property Settings store: Settings {
         location: StandardPaths.standardLocations(StandardPaths.ConfigLocation)[0] + "/quickshell/notes.conf"
         category: "notes"
@@ -23,6 +29,17 @@ QtObject {
         property string categoryCommandsData: "{}"
         property string categoryKeepOpenData: "{}"
         property string sortDescendingData: "true"  // New store property
+        // Commands already seeded from ipc-commands.json, so deleted ones stay deleted
+        property string seededIpcData: "[]"
+    }
+
+    property FileView ipcFile: FileView {
+        path: Quickshell.shellDir + "/ipc-commands.json"
+        blockLoading: true
+        watchChanges: true
+        printErrors: false
+        onFileChanged: reload()
+        onLoaded: root.mergeIpcCommands()
     }
 
     function load() {
@@ -77,6 +94,59 @@ QtObject {
         }
 
         currentCategory = store.currentCategoryData || "notes"
+
+        loaded = true
+        mergeIpcCommands()
+    }
+
+    function mergeIpcCommands() {
+        if (!loaded) return
+        var entries, seeded
+        try {
+            entries = JSON.parse(ipcFile.text())
+        } catch (e) {
+            return
+        }
+        try {
+            seeded = JSON.parse(store.seededIpcData)
+        } catch (e) {
+            seeded = []
+        }
+
+        var norm = function(s) { return s.trim().split(/\s+/).join(" ") }
+        var present = {}
+        for (var i = 0; i < notes.length; i++) {
+            if (notes[i].category === ipcCategory) present[norm(notes[i].text)] = true
+        }
+
+        var added = []
+        var newSeeded = seeded.slice()
+        for (var j = 0; j < entries.length; j++) {
+            var cmd = norm(entries[j].text)
+            if (seeded.indexOf(cmd) === -1) newSeeded.push(cmd)
+            if (present[cmd] || seeded.indexOf(cmd) !== -1) continue
+            added.push({
+                id: Date.now() + Math.random(),
+                text: cmd,
+                subtext: entries[j].subtext || "",
+                time: Date.now() - j,
+                category: ipcCategory
+            })
+        }
+        if (added.length === 0 && newSeeded.length === seeded.length) return
+
+        if (categories.indexOf(ipcCategory) === -1) {
+            categories = categories.concat([ipcCategory])
+            var newCommands = JSON.parse(JSON.stringify(categoryCommands))
+            newCommands[ipcCategory] = "$text"
+            categoryCommands = newCommands
+            var newKeepOpen = JSON.parse(JSON.stringify(categoryKeepOpen))
+            newKeepOpen[ipcCategory] = false
+            categoryKeepOpen = newKeepOpen
+        }
+        notes = added.concat(notes)
+        store.seededIpcData = JSON.stringify(newSeeded)
+        save()
     }
 
     function save() {

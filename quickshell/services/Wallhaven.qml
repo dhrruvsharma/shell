@@ -10,8 +10,8 @@ pragma ComponentBehavior: Bound
 Singleton {
     id: root
 
-    property string wallpaperDir: "/home/igris/Pictures/wallpapers"
-    property string wallpaperScript: "/home/igris/.local/bin/setwall"
+    property string wallpaperDir: Quickshell.env("HOME") + "/Pictures/wallpapers"
+    property string wallpaperScript: Quickshell.env("HOME") + "/.local/bin/setwall"
     property string scheme: "material"
     property string theme: "dark"
 

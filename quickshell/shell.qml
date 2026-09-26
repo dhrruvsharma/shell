@@ -30,6 +30,7 @@ import qs.modules.ollama
 import qs.modules.power
 import qs.modules.github
 import qs.modules.avatar
+import qs.modules.updates
 
 ShellRoot {
     id: root
@@ -95,6 +96,13 @@ ShellRoot {
         }
         SystemPanel {
             id: systemPanel
+        }
+        UpdatesPanel {
+            id: updatesPanel
+            anchors {
+                right: parent.right
+                top: parent.top
+            }
         }
         WallhavenWrapper{
             id: wallhavenWrapper
@@ -307,6 +315,9 @@ ShellRoot {
             }
             Region {
                 item: ghPopout
+            }
+            Region {
+                item: updatesPanel.opened ? updatesPanel : null
             }
             Region{
                 item: launcherTrigger
@@ -629,6 +640,18 @@ ShellRoot {
         target: "barLayout"
         function reset(): void {
             Services.BarLayout.reset()
+        }
+    }
+
+    IpcHandler {
+        target: "updatesPanel"
+        function toggle(): void {
+            updatesPanel.opened = !updatesPanel.opened
+            if (updatesPanel.opened)
+                Services.Updates.refresh()
+        }
+        function refresh(): void {
+            Services.Updates.refresh()
         }
     }
 

@@ -139,7 +139,7 @@ Singleton {
     Process {
         id: loader
         running: true
-        command: ["bash", "-c", "/home/igris/.config/scripts/find-apps.sh"]
+        command: ["bash", Quickshell.shellDir + "/scripts/find-apps.sh"]
 
         stdout: SplitParser {
             onRead: (data) => {

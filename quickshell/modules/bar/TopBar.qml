@@ -7,11 +7,6 @@ import qs.colors
 // living in an island (a group of 1+ atoms sharing a pill/tray). Islands live in
 // two ordered regions, left and right, driven by the BarLayout service. The
 // center media pill and the right-edge system tray are fixed and never move.
-//
-// Interaction: press-and-hold ~250ms on a widget, then drag it. A quick tap
-// still fires the widget's own click. Drop a widget onto another island to merge
-// them; drop it in a gap to place it as its own island. Press-and-hold on the
-// padding/gap of a grouped island drags the whole group.
 Item {
     id: topBar
 
@@ -32,7 +27,8 @@ Item {
             "network": "components/Network.qml",
             "volume": "components/Volume.qml",
             "temp": "components/Temp.qml",
-            "memory": "components/Memory.qml"
+            "memory": "components/Memory.qml",
+            "updates": "components/Updates.qml"
         })
 
     // ---- drag state -------------------------------------------------------

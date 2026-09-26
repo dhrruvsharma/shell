@@ -1,15 +1,15 @@
 {
-    "accentColor": "@secondary",
-    "boxHeight": 211,
-    "boxWidth": 270,
+    "accentColor": "@on_surface",
+    "boxHeight": 193,
+    "boxWidth": 187,
     "enabled": true,
     "flip": 0,
     "orientation": 0,
-    "posX": 1425,
-    "posY": 890,
-    "rotation": -180,
-    "skew": -0.014013812687924121,
+    "posX": 1137,
+    "posY": 257,
+    "rotation": -4,
+    "skew": 0.0016710274193109317,
     "style": 0,
-    "tiltX": 180,
-    "tiltY": 117
+    "tiltX": 0,
+    "tiltY": 0
 }
