@@ -6,17 +6,57 @@ import QtQuick
 QtObject {
     id: root
 
+    // Local spotify-lyrics-api server (https://github.com/akashrchandran/spotify-lyrics-api).
+    // It is optional: until it answers, `available` stays false and the media
+    // panel hides the lyrics instead of showing "Loading lyrics..." forever.
+    readonly property string apiUrl: "http://localhost:8080/"
+    property bool available: false
+
     property var lines: []
     property bool loaded: false
     property string status
     property string trackid
 
+    // Look for the server once a minute until it shows up
+    property Timer probeTimer: Timer {
+        interval: 60000
+        running: !root.available
+        repeat: true
+        triggeredOnStart: true
+        onTriggered: root.probe()
+    }
+
+    onAvailableChanged: {
+        if (available) {
+            // Refetch the current track even if it didn't change while offline
+            trackid = ""
+            checkSpotify.running = true
+        }
+    }
+
     // Poll Spotify status every 2 seconds
     property Timer statusPoller: Timer {
         interval: 2000
-        running: true
+        running: root.available
         repeat: true
         onTriggered: checkSpotify.running = true
+    }
+
+    // Without a trackid the API answers 400 with {"error": true, "usage": ...},
+    // which is enough to tell it apart from anything else on the port
+    function probe() {
+        let xhr = new XMLHttpRequest();
+        xhr.open("GET", apiUrl);
+        xhr.onreadystatechange = function() {
+            if (xhr.readyState !== XMLHttpRequest.DONE)
+                return
+            try {
+                root.available = typeof JSON.parse(xhr.responseText).error === "boolean"
+            } catch (e) {
+                root.available = false
+            }
+        }
+        xhr.send();
     }
 
     property Process checkSpotify: Process {
@@ -57,25 +97,32 @@ QtObject {
             return;
 
         let xhr = new XMLHttpRequest();
-        xhr.open("GET", "http://localhost:8080/?trackid=" + trackId);
+        xhr.open("GET", apiUrl + "?trackid=" + trackId);
 
         xhr.onreadystatechange = function() {
-            if (xhr.readyState === XMLHttpRequest.DONE) {
-                if (xhr.status === 200) {
-                    try {
-                        let data = JSON.parse(xhr.responseText);
-                        root.lines = data.lines || [];
-                        root.loaded = true;
-                        console.log("Lyrics loaded:", root.lines.length, "lines");
-                    } catch(e) {
-                        console.log("Lyrics parse error:", e);
-                        root.loaded = false;
-                    }
-                } else {
-                    console.log("HTTP error:", xhr.status);
-                    root.loaded = false;
-                }
+            if (xhr.readyState !== XMLHttpRequest.DONE)
+                return
+            // Ignore answers for a track that is no longer playing
+            if (trackId !== root.trackid)
+                return
+
+            if (xhr.status === 0) {
+                // Server went away; hide lyrics and go back to probing
+                root.available = false
+                root.loaded = false
+                return
             }
+
+            try {
+                let data = JSON.parse(xhr.responseText);
+                // Error answers (e.g. 404 "lyrics not available") mean no lyrics
+                root.lines = xhr.status === 200 ? (data.lines || []) : [];
+                console.log("Lyrics loaded:", root.lines.length, "lines");
+            } catch(e) {
+                console.log("Lyrics parse error:", e);
+                root.lines = [];
+            }
+            root.loaded = true;
         }
 
         xhr.send();

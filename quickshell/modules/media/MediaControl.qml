@@ -295,7 +295,7 @@ Item {
                 Layout.preferredHeight: 100
                 radius: 10
                 color: "transparent"
-                visible: mediaControl.isSpotify
+                visible: mediaControl.isSpotify && Services.LyricsService.available
 
                 Behavior on Layout.preferredHeight {
                     NumberAnimation { duration: 200 }
@@ -371,6 +371,9 @@ Item {
         function onLinesChanged() {
             updateLyricsModel()
         }
+        function onAvailableChanged() {
+            updateLyricsModel()
+        }
     }
 
     Component.onCompleted: {
@@ -378,6 +381,11 @@ Item {
     }
 
     function updateLyricsModel() {
+        if (!Services.LyricsService.available) {
+            lyricsModel = []
+            return
+        }
+
         let currentPos = Math.floor(Services.Media.position)
 
         if (Math.abs(currentPos - _lastPosition) < 1 && lyricsModel.length > 0) {

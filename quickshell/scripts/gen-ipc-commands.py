@@ -4,7 +4,9 @@
 Sources:
   * every IpcHandler in the shell's QML (typed, zero-argument functions only;
     Quickshell does not expose untyped ones over IPC)
-  * `qs ipc` / `quickshell -p` commands bound in hyprland.lua and hyprland.conf
+  * `qs ipc` / `quickshell -p` commands bound in the Hyprland config: every
+    *.lua in ~/.config/hypr (hyprland.lua, quickshell.lua, ...), or
+    hyprland.conf when there is no Lua config (Hyprland then ignores it)
 
 Services/Notes.qml merges the result into the notes drawer's "IPC Toggle"
 category. Run again after adding handlers or binds.
@@ -96,24 +98,28 @@ def conf_binds(path):
         yield "+".join(mods.split() + [key]), cmd
 
 
+def hypr_binds():
+    if (HYPR_DIR / "hyprland.lua").exists():
+        for path in sorted(HYPR_DIR.glob("*.lua")):
+            yield from lua_binds(path)
+    elif (HYPR_DIR / "hyprland.conf").exists():
+        yield from conf_binds(HYPR_DIR / "hyprland.conf")
+
+
 def main():
     cmds = qml_commands()
     keys = {}
 
-    for name, parser in (("hyprland.lua", lua_binds), ("hyprland.conf", conf_binds)):
-        path = HYPR_DIR / name
-        if not path.exists():
+    for key, cmd in hypr_binds():
+        cmd = norm(cmd)
+        if not IS_SHELL_CMD.match(cmd):
             continue
-        for key, cmd in parser(path):
-            cmd = norm(cmd)
-            if not IS_SHELL_CMD.match(cmd):
-                continue
-            keys.setdefault(cmd, [])
-            if key not in keys[cmd]:
-                keys[cmd].append(key)
-            if cmd not in cmds:
-                ipc = re.match(r"qs ipc call (\S+) (\S+)$", cmd)
-                cmds[cmd] = describe(*ipc.groups()) if ipc else "Lock Screen" if "Lock.qml" in cmd else cmd
+        keys.setdefault(cmd, [])
+        if key not in keys[cmd]:
+            keys[cmd].append(key)
+        if cmd not in cmds:
+            ipc = re.match(r"qs ipc call (\S+) (\S+)$", cmd)
+            cmds[cmd] = describe(*ipc.groups()) if ipc else "Lock Screen" if "Lock.qml" in cmd else cmd
 
     entries = []
     for cmd in sorted(cmds):
@@ -122,7 +128,7 @@ def main():
             sub += " · " + ", ".join(keys[cmd])
         entries.append({"text": cmd, "subtext": sub})
 
-    OUT.write_text(json.dumps(entries, indent=2) + "\n")
+    OUT.write_text(json.dumps(entries, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
     print(f"wrote {len(entries)} commands to {OUT}", file=sys.stderr)
 
 

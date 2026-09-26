@@ -17,7 +17,7 @@ Item {
     property int cellSize: 12
     property int cellSpacing: 2
     property color backgroundColor: Colors.surface
-    property string username: "dhrruvsharma"
+    property string username: Services.Github.author
 
     anchors {
         bottom: parent.bottom

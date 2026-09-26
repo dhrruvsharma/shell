@@ -9,19 +9,57 @@ pragma ComponentBehavior: Bound
 Singleton {
     id: root
     property int contribution_number
-    property string author: "dhrruvsharma" // Fixed: quotes were missing
+    // Username lives outside the repo so each install shows its own profile;
+    // empty disables the widget. Set with `qs ipc call github setUser <name>`.
+    property string author: config.username.trim()
+    readonly property bool enabled: author !== ""
     property var contributions: []
+
+    function refresh() {
+        if (enabled) getContributions.running = true
+    }
+
+    onAuthorChanged: {
+        contributions = []
+        contribution_number = 0
+        refresh()
+    }
+
+    IpcHandler {
+        target: "github"
+
+        function setUser(name: string): void {
+            config.username = name.trim()
+        }
+
+        function refresh(): void {
+            root.refresh()
+        }
+    }
+
+    FileView {
+        id: configFile
+        path: Quickshell.env("HOME") + "/.local/share/quickshell/github.json"
+        watchChanges: true
+        printErrors: false
+        onFileChanged: reload()
+        onAdapterUpdated: writeAdapter()
+
+        adapter: JsonAdapter {
+            id: config
+            property string username: ""
+        }
+    }
 
     Timer {
         interval: 600000 // 10 minutes
-        running: true
+        running: root.enabled
         repeat: true
-        onTriggered: getContributions.running = true
+        onTriggered: root.refresh()
     }
 
     Process {
         id: getContributions
-        running: true
         command: ["curl", `https://github-contributions-api.jogruber.de/v4/${root.author}`]
         stdout: StdioCollector {
             onStreamFinished: {

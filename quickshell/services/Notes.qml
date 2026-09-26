@@ -116,24 +116,46 @@ QtObject {
         var norm = function(s) { return s.trim().split(/\s+/).join(" ") }
         var present = {}
         for (var i = 0; i < notes.length; i++) {
-            if (notes[i].category === ipcCategory) present[norm(notes[i].text)] = true
+            if (notes[i].category === ipcCategory) present[norm(notes[i].text)] = i
         }
 
         var added = []
+        var updated = notes.slice()
+        var changed = false
         var newSeeded = seeded.slice()
         for (var j = 0; j < entries.length; j++) {
             var cmd = norm(entries[j].text)
+            var subtext = entries[j].subtext || ""
             if (seeded.indexOf(cmd) === -1) newSeeded.push(cmd)
-            if (present[cmd] || seeded.indexOf(cmd) !== -1) continue
+
+            // Refresh generated sub-notes ("Toggle X" or "Toggle X · KEY") when the
+            // keybind changes; hand-written ones are left alone
+            if (present[cmd] !== undefined) {
+                var note = updated[present[cmd]]
+                var old = note.subtext || ""
+                var base = subtext.split(" · ")[0]
+                if (old !== subtext && (old === "" || old === base || old.indexOf(base + " · ") === 0)) {
+                    updated[present[cmd]] = {
+                        id: note.id,
+                        text: note.text,
+                        subtext: subtext,
+                        time: note.time,
+                        category: note.category
+                    }
+                    changed = true
+                }
+                continue
+            }
+            if (seeded.indexOf(cmd) !== -1) continue
             added.push({
                 id: Date.now() + Math.random(),
                 text: cmd,
-                subtext: entries[j].subtext || "",
+                subtext: subtext,
                 time: Date.now() - j,
                 category: ipcCategory
             })
         }
-        if (added.length === 0 && newSeeded.length === seeded.length) return
+        if (added.length === 0 && !changed && newSeeded.length === seeded.length) return
 
         if (categories.indexOf(ipcCategory) === -1) {
             categories = categories.concat([ipcCategory])
@@ -144,7 +166,7 @@ QtObject {
             newKeepOpen[ipcCategory] = false
             categoryKeepOpen = newKeepOpen
         }
-        notes = added.concat(notes)
+        notes = added.concat(updated)
         store.seededIpcData = JSON.stringify(newSeeded)
         save()
     }

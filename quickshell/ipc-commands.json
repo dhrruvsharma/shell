@@ -9,7 +9,7 @@
   },
   {
     "text": "qs ipc call avatarPicker toggle",
-    "subtext": "Toggle Avatar Picker \u00b7 SUPER+A"
+    "subtext": "Toggle Avatar Picker · SUPER+A"
   },
   {
     "text": "qs ipc call barLayout reset",
@@ -25,7 +25,7 @@
   },
   {
     "text": "qs ipc call cavaWidget edit",
-    "subtext": "Edit Cava Widget \u00b7 SUPER+T"
+    "subtext": "Edit Cava Widget · SUPER+T"
   },
   {
     "text": "qs ipc call cavaWidget reset",
@@ -45,7 +45,7 @@
   },
   {
     "text": "qs ipc call controlCenter changeVisible",
-    "subtext": "Toggle Control Center \u00b7 ALT+SHIFT+C"
+    "subtext": "Toggle Control Center · ALT+SHIFT+C"
   },
   {
     "text": "qs ipc call expose hide",
@@ -57,11 +57,15 @@
   },
   {
     "text": "qs ipc call expose toggle",
-    "subtext": "Toggle Expose \u00b7 ALT+TAB"
+    "subtext": "Toggle Expose · ALT+TAB"
+  },
+  {
+    "text": "qs ipc call github refresh",
+    "subtext": "Refresh Github"
   },
   {
     "text": "qs ipc call launcherWindow toggle",
-    "subtext": "Toggle Launcher Window \u00b7 SUPER+R"
+    "subtext": "Toggle Launcher Window · SUPER+R"
   },
   {
     "text": "qs ipc call mangaReader toggle",
@@ -73,11 +77,11 @@
   },
   {
     "text": "qs ipc call networkPanel changeVisible",
-    "subtext": "Toggle Network Panel \u00b7 ALT+SHIFT+N"
+    "subtext": "Toggle Network Panel · ALT+SHIFT+N"
   },
   {
     "text": "qs ipc call notepad toggle",
-    "subtext": "Toggle Notepad \u00b7 SUPER+N"
+    "subtext": "Toggle Notepad · SUPER+N"
   },
   {
     "text": "qs ipc call novelReader toggle",
@@ -89,7 +93,7 @@
   },
   {
     "text": "qs ipc call powerMenu toggle",
-    "subtext": "Toggle Power Menu \u00b7 SUPER+P"
+    "subtext": "Toggle Power Menu · SUPER+P"
   },
   {
     "text": "qs ipc call systemPanel toggle",
@@ -105,14 +109,14 @@
   },
   {
     "text": "qs ipc call wallhavenPanel toggle",
-    "subtext": "Toggle Wallhaven Panel \u00b7 SUPER+SHIFT+W"
+    "subtext": "Toggle Wallhaven Panel · SUPER+SHIFT+W"
   },
   {
     "text": "qs ipc call wallpaper toggle",
-    "subtext": "Toggle Wallpaper \u00b7 SUPER+W"
+    "subtext": "Toggle Wallpaper · SUPER+W"
   },
   {
     "text": "quickshell -p ~/.config/quickshell/Lock.qml",
-    "subtext": "Lock Screen \u00b7 ALT+H"
+    "subtext": "Lock Screen · ALT+H"
   }
 ]

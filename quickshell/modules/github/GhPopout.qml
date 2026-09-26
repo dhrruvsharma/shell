@@ -4,13 +4,16 @@ import Quickshell.Io
 import qs.components
 import qs.colors
 import qs.modules.timer
+import qs.services as Services
 
 Popout {
     id: root
     alignment: 3
     property bool opened: false
     visible: true
-    property int currentTab: 0
+    // Without a GitHub username only the Timer tab is shown
+    readonly property bool githubEnabled: Services.Github.enabled
+    property int currentTab: githubEnabled ? 0 : 1
     focus: true
 
     property int headerHeight: 48
@@ -62,6 +65,7 @@ Popout {
 
                         TabButton {
                             text: "GitHub"
+                            visible: root.githubEnabled
                             active: currentTab === 0
                             onClicked: currentTab = 0
                         }
@@ -125,7 +129,7 @@ Popout {
                 Loader {
                     id: contentLoader
                     anchors.fill: parent
-                    sourceComponent: currentTab === 0 ? ghCalendar : timerComponent
+                    sourceComponent: currentTab === 0 && root.githubEnabled ? ghCalendar : timerComponent
 
                     opacity: 1
                     Behavior on opacity {
