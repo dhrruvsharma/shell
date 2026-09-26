@@ -75,29 +75,29 @@ Item {
         return minutes + "m";
     }
 
-    Process {
-        id: batProc
+    // Read sysfs directly rather than spawning sh + cat every poll.
+    FileView {
+        id: capacityFile
+        path: "/sys/class/power_supply/BAT0/capacity"
+        printErrors: false
+        onLoaded: root.percentage = parseInt(text()) || 0
+    }
 
-        command: ["sh", "-c", "echo $(cat /sys/class/power_supply/BAT0/capacity) $(cat /sys/class/power_supply/BAT0/status)"]
-
-        stdout: SplitParser {
-            onRead: (data) => {
-                const parts = data.trim().split(" ");
-                if (parts.length >= 2) {
-                    percentage = parseInt(parts[0]) || 0;
-                    charging = parts[1] === "Charging";
-                }
-            }
-        }
-
+    FileView {
+        id: statusFile
+        path: "/sys/class/power_supply/BAT0/status"
+        printErrors: false
+        onLoaded: root.charging = text().trim() === "Charging"
     }
 
     Timer {
         interval: 5000
         running: true
         repeat: true
-        triggeredOnStart: true
-        onTriggered: batProc.running = true
+        onTriggered: {
+            capacityFile.reload();
+            statusFile.reload();
+        }
     }
 
 }

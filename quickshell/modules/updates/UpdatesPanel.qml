@@ -13,7 +13,9 @@ import qs.services as Services
 Popout {
     id: root
     alignment: 1                    // attachedTopRight — hangs below the bar, right side
-    visible: true
+    // Hidden once fully collapsed so its spinner (and any repaint) stops;
+    // a zero-width but visible panel still drives frames of the whole shell.
+    visible: root.opened || root.implicitWidth > 0
     focus: true
 
     property bool opened: false

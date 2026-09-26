@@ -12,11 +12,11 @@ Item {
 
     default property alias content: contentWrapper.data
 
-    layer.enabled: true
-    layer.samples: 16
-    layer.smooth: true
-    antialiasing: true
-    smooth: true
+    // Keeps the content inside the bubble while it grows/shrinks. This used to
+    // be a 16x MSAA layer (twice, nested with BubbleShape's), which reallocated
+    // two multisampled offscreen buffers on every frame of an open/close
+    // animation. A clip is just a scissor rect; the shape antialiases itself.
+    clip: true
 
     readonly property real _halfW: root.width * 0.5
     readonly property real _halfH: root.height * 0.5
@@ -45,11 +45,9 @@ Item {
 
     component BubbleShape: Shape {
         anchors.fill: parent
-        smooth: true
-        antialiasing: true
-        layer.enabled: true
-        layer.smooth: true
-        layer.samples: 16
+        // The curve renderer antialiases edges in its shader, so no MSAA
+        // layer is needed for smooth corners.
+        preferredRendererType: Shape.CurveRenderer
 
         default property alias pathElements: shapePath.pathElements
 
@@ -58,7 +56,7 @@ Item {
             fillColor: root.color
             // This outline thing still isn't ready yet.. [very unstable like rendering issues].
             strokeColor: Colors.background
-            strokeWidth: 0
+            strokeWidth: -1
             joinStyle: ShapePath.RoundJoin
             capStyle: ShapePath.RoundCap
         }

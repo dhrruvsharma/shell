@@ -1,5 +1,11 @@
 {
     "accentColor": "@on_surface",
+    "bezierEnabled": true,
+    "bezierFit": false,
+    "bezierY0": 0,
+    "bezierY1": 0,
+    "bezierY2": 0,
+    "bezierY3": 0,
     "boxHeight": 193,
     "boxWidth": 187,
     "enabled": true,

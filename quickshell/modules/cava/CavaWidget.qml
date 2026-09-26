@@ -88,6 +88,12 @@ Scope {
             orientation: Services.CavaWidget.orientation
             style: Services.CavaWidget.style
             flip: Services.CavaWidget.flip
+            bezierEnabled: Services.CavaWidget.bezierEnabled
+            bezierFit: Services.CavaWidget.bezierFit
+            bezierY0: Services.CavaWidget.bezierY0
+            bezierY1: Services.CavaWidget.bezierY1
+            bezierY2: Services.CavaWidget.bezierY2
+            bezierY3: Services.CavaWidget.bezierY3
             transform: Matrix4x4 {
                 matrix: Qt.matrix4x4(1, Services.CavaWidget.skew, 0, 0,
                                      0, 1, 0, 0,
@@ -105,93 +111,121 @@ Scope {
         WlrLayershell.layer: WlrLayer.Bottom
         WlrLayershell.keyboardFocus: WlrKeyboardFocus.None
         exclusionMode: ExclusionMode.Ignore
+
+        // The surface only covers the widget, not the whole screen. Every
+        // repaint of a Bottom-layer surface makes Hyprland recomposite what is
+        // above it, so a fullscreen surface redrawing at cava's framerate made
+        // the whole desktop expensive. The square is centred on the box and
+        // wide enough for any rotation and for the skew (which shears about
+        // the box's top-left, pushing one corner further out), with slack for
+        // the 3D tilt's perspective and the hover margin + gear.
+        readonly property real boxCX: Services.CavaWidget.posX + Services.CavaWidget.boxWidth / 2
+        readonly property real boxCY: Services.CavaWidget.posY + Services.CavaWidget.boxHeight / 2
+        readonly property real extent: Math.ceil(Math.hypot(
+            Services.CavaWidget.boxWidth + 2 * Math.abs(Services.CavaWidget.skew) * Services.CavaWidget.boxHeight,
+            Services.CavaWidget.boxHeight) / 2 * 1.2) + 32
+        readonly property real screenW: displayWin.screen ? displayWin.screen.width : 100000
+        readonly property real screenH: displayWin.screen ? displayWin.screen.height : 100000
+        readonly property int winX: Math.max(0, Math.floor(displayWin.boxCX - displayWin.extent))
+        readonly property int winY: Math.max(0, Math.floor(displayWin.boxCY - displayWin.extent))
+
         anchors {
             left: true
-            right: true
             top: true
-            bottom: true
         }
+        margins.left: displayWin.winX
+        margins.top: displayWin.winY
+        implicitWidth: Math.max(1, Math.min(displayWin.screenW, Math.ceil(displayWin.boxCX + displayWin.extent)) - displayWin.winX)
+        implicitHeight: Math.max(1, Math.min(displayWin.screenH, Math.ceil(displayWin.boxCY + displayWin.extent)) - displayWin.winY)
+
         // Input region = the box plus a small margin (so the gear at the
         // corner is included). Only this area catches the mouse; the rest of
         // the desktop stays click-through. Being in the mask is also what lets
         // us detect hover at all — regions outside it never see the pointer.
         mask: Region { item: hoverZone }
 
+        // Children keep using screen coordinates (posX/posY); this shifts them
+        // into the smaller surface.
         Item {
-            id: hoverZone
-            x: Services.CavaWidget.posX - 16
-            y: Services.CavaWidget.posY - 16
-            width: Services.CavaWidget.boxWidth + 32
-            height: Services.CavaWidget.boxHeight + 32
+            x: -displayWin.winX
+            y: -displayWin.winY
 
-            // Tracks hover without swallowing clicks (the gear handles those).
-            MouseArea {
-                id: hoverArea
-                anchors.fill: parent
-                hoverEnabled: true
-                acceptedButtons: Qt.NoButton
-            }
-        }
+            Item {
+                id: hoverZone
+                x: Services.CavaWidget.posX - 16
+                y: Services.CavaWidget.posY - 16
+                width: Services.CavaWidget.boxWidth + 32
+                height: Services.CavaWidget.boxHeight + 32
 
-        CavaVisual {
-            x: Services.CavaWidget.posX
-            y: Services.CavaWidget.posY
-            width: Services.CavaWidget.boxWidth
-            height: Services.CavaWidget.boxHeight
-            rotation: Services.CavaWidget.rotation
-            // 3D perspective tilt (out-of-plane). Turning about the vertical
-            // axis foreshortens the far side; near 90° the bars stack up.
-            // NOTE: origin must be a resolvable reference — a bare `width` here
-            // resolves to the file root (NaN), which poisons the matrix once the
-            // angle is non-zero and flings the widget away. Use the box size.
-            transform: [
-                Rotation {
-                    origin.x: Services.CavaWidget.boxWidth / 2
-                    origin.y: Services.CavaWidget.boxHeight / 2
-                    axis.x: 1; axis.y: 0; axis.z: 0
-                    angle: Services.CavaWidget.tiltX
-                },
-                Rotation {
-                    origin.x: Services.CavaWidget.boxWidth / 2
-                    origin.y: Services.CavaWidget.boxHeight / 2
-                    axis.x: 0; axis.y: 1; axis.z: 0
-                    angle: Services.CavaWidget.tiltY
+                // Tracks hover without swallowing clicks (the gear handles those).
+                MouseArea {
+                    id: hoverArea
+                    anchors.fill: parent
+                    hoverEnabled: true
+                    acceptedButtons: Qt.NoButton
                 }
-            ]
-        }
-
-        // Small gear that enters edit mode. Hidden until the pointer is over
-        // the widget, then fades in. Pinned to the box's top-right corner.
-        Rectangle {
-            id: editBtn
-            width: 26
-            height: 26
-            radius: 13
-            x: Services.CavaWidget.posX + Services.CavaWidget.boxWidth - width / 2
-            y: Services.CavaWidget.posY - height / 2
-            readonly property bool shown: hoverArea.containsMouse || editBtnArea.containsMouse
-            color: editBtnArea.containsMouse ? root.resolvedAccent : Colors.surface_container_high
-            border.color: root.resolvedAccent
-            border.width: 1
-            opacity: editBtn.shown ? (editBtnArea.containsMouse ? 1 : 0.85) : 0
-
-            MaterialIcon {
-                anchors.centerIn: parent
-                text: Icons.settings
-                font.pixelSize: 15
-                color: editBtnArea.containsMouse ? Colors.background : root.resolvedAccent
             }
 
-            MouseArea {
-                id: editBtnArea
-                anchors.fill: parent
-                hoverEnabled: true
-                cursorShape: Qt.PointingHandCursor
-                onClicked: root.enterEdit()
+            CavaVisual {
+                x: Services.CavaWidget.posX
+                y: Services.CavaWidget.posY
+                width: Services.CavaWidget.boxWidth
+                height: Services.CavaWidget.boxHeight
+                rotation: Services.CavaWidget.rotation
+                // 3D perspective tilt (out-of-plane). Turning about the vertical
+                // axis foreshortens the far side; near 90° the bars stack up.
+                // NOTE: origin must be a resolvable reference — a bare `width` here
+                // resolves to the file root (NaN), which poisons the matrix once the
+                // angle is non-zero and flings the widget away. Use the box size.
+                transform: [
+                    Rotation {
+                        origin.x: Services.CavaWidget.boxWidth / 2
+                        origin.y: Services.CavaWidget.boxHeight / 2
+                        axis.x: 1; axis.y: 0; axis.z: 0
+                        angle: Services.CavaWidget.tiltX
+                    },
+                    Rotation {
+                        origin.x: Services.CavaWidget.boxWidth / 2
+                        origin.y: Services.CavaWidget.boxHeight / 2
+                        axis.x: 0; axis.y: 1; axis.z: 0
+                        angle: Services.CavaWidget.tiltY
+                    }
+                ]
             }
 
-            Behavior on opacity {
-                NumberAnimation { duration: 120 }
+            // Small gear that enters edit mode. Hidden until the pointer is over
+            // the widget, then fades in. Pinned to the box's top-right corner.
+            Rectangle {
+                id: editBtn
+                width: 26
+                height: 26
+                radius: 13
+                x: Services.CavaWidget.posX + Services.CavaWidget.boxWidth - width / 2
+                y: Services.CavaWidget.posY - height / 2
+                readonly property bool shown: hoverArea.containsMouse || editBtnArea.containsMouse
+                color: editBtnArea.containsMouse ? root.resolvedAccent : Colors.surface_container_high
+                border.color: root.resolvedAccent
+                border.width: 1
+                opacity: editBtn.shown ? (editBtnArea.containsMouse ? 1 : 0.85) : 0
+
+                MaterialIcon {
+                    anchors.centerIn: parent
+                    text: Icons.settings
+                    font.pixelSize: 15
+                    color: editBtnArea.containsMouse ? Colors.background : root.resolvedAccent
+                }
+
+                MouseArea {
+                    id: editBtnArea
+                    anchors.fill: parent
+                    hoverEnabled: true
+                    cursorShape: Qt.PointingHandCursor
+                    onClicked: root.enterEdit()
+                }
+
+                Behavior on opacity {
+                    NumberAnimation { duration: 120 }
+                }
             }
         }
     }
@@ -285,6 +319,69 @@ Scope {
                         Services.CavaWidget.posY = Math.round(moveArea.startY + (p.y - moveArea.grabY));
                     }
                     onReleased: Services.CavaWidget.save()
+                }
+
+                // Bezier baseline control points, shown while the curve is on.
+                // They sit at 0, 1/3, 2/3, 1 across the widget (screen order —
+                // the shader places the curve before applying flip) and drag
+                // along the growth axis only. Value = distance from the edge
+                // the bars grow from, as a fraction of the bar extent (-1..1).
+                // The x follows the shader's skew so each puck sits on the curve.
+                Repeater {
+                    model: Services.CavaWidget.bezierEnabled ? 4 : 0
+
+                    Rectangle {
+                        id: puck
+                        required property int index
+
+                        readonly property int orient: Services.CavaWidget.orientation
+                        readonly property bool vertical: puck.orient === 2 || puck.orient === 3
+                        readonly property real t: puck.index / 3
+                        readonly property real value: [Services.CavaWidget.bezierY0, Services.CavaWidget.bezierY1,
+                            Services.CavaWidget.bezierY2, Services.CavaWidget.bezierY3][puck.index]
+                        readonly property real extent: puck.vertical ? editBox.width : editBox.height
+                        readonly property real along: puck.value * puck.extent
+                        readonly property real centerY: puck.vertical ? puck.t * editBox.height
+                            : (puck.orient === 1 ? puck.along : editBox.height - puck.along)
+                        readonly property real centerX: (puck.vertical
+                            ? (puck.orient === 2 ? puck.along : editBox.width - puck.along)
+                            : puck.t * editBox.width) + Services.CavaWidget.skew * puck.centerY
+
+                        width: 14
+                        height: 14
+                        radius: 7
+                        x: puck.centerX - width / 2
+                        y: puck.centerY - height / 2
+                        color: Colors.background
+                        border.color: root.resolvedAccent
+                        border.width: 2
+
+                        MouseArea {
+                            id: puckArea
+                            anchors.fill: parent
+                            anchors.margins: -4
+                            cursorShape: puck.vertical ? Qt.SizeHorCursor : Qt.SizeVerCursor
+                            property real grab: 0
+                            property real startValue: 0
+                            // Pointer position along the growth axis, in box space
+                            // (so it stays correct under the box's rotation).
+                            function axisPos(mouse) {
+                                var p = puckArea.mapToItem(editBox, mouse.x, mouse.y);
+                                return puck.vertical ? p.x : p.y;
+                            }
+                            onPressed: mouse => {
+                                puckArea.grab = puckArea.axisPos(mouse);
+                                puckArea.startValue = puck.value;
+                            }
+                            onPositionChanged: mouse => {
+                                // Top/left grow along +axis; bottom/right grow against it.
+                                var sign = (puck.orient === 1 || puck.orient === 2) ? 1 : -1;
+                                var d = (puckArea.axisPos(mouse) - puckArea.grab) / Math.max(1, puck.extent);
+                                Services.CavaWidget.setBezierPoint(puck.index, puckArea.startValue + sign * d);
+                            }
+                            onReleased: Services.CavaWidget.save()
+                        }
+                    }
                 }
 
                 // Resize (bottom-right)
@@ -489,6 +586,28 @@ Scope {
                             Services.CavaWidget.tiltY = 0;
                             Services.CavaWidget.save();
                         }
+                    }
+                    ChipBtn {
+                        label: Services.CavaWidget.bezierEnabled ? "Curve: on" : "Curve: off"
+                        onClicked: {
+                            Services.CavaWidget.bezierEnabled = !Services.CavaWidget.bezierEnabled;
+                            Services.CavaWidget.save();
+                        }
+                    }
+                    // Fit: keep the baseline inside the box and shrink bars into
+                    // the room above it, instead of cutting them off at the edge.
+                    ChipBtn {
+                        visible: Services.CavaWidget.bezierEnabled
+                        label: Services.CavaWidget.bezierFit ? "Fit: on" : "Fit: off"
+                        onClicked: {
+                            Services.CavaWidget.bezierFit = !Services.CavaWidget.bezierFit;
+                            Services.CavaWidget.save();
+                        }
+                    }
+                    ChipBtn {
+                        visible: Services.CavaWidget.bezierEnabled
+                        label: "Reset curve"
+                        onClicked: Services.CavaWidget.resetBezier()
                     }
 
                     // Swatches store a theme-role *token* (not a frozen hex),

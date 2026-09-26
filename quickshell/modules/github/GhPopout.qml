@@ -10,7 +10,9 @@ Popout {
     id: root
     alignment: 3
     property bool opened: false
-    visible: true
+    // Hidden once fully collapsed so the calendar's loading indicator (and any
+    // repaint) stops; a zero-width but visible panel still drives frames.
+    visible: root.opened || root.implicitWidth > 0
     // Without a GitHub username only the Timer tab is shown
     readonly property bool githubEnabled: Services.Github.enabled
     property int currentTab: githubEnabled ? 0 : 1

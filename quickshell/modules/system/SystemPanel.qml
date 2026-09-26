@@ -12,6 +12,7 @@ Item {
     focus: true
     implicitWidth: 550
     implicitHeight: opened ? 200 : 0
+    visible: opened || implicitHeight > 0
     anchors.horizontalCenter: parent.horizontalCenter
 
     Behavior on implicitHeight {

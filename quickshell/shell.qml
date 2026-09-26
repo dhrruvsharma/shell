@@ -118,19 +118,6 @@ ShellRoot {
 
         OsdWindow {}
 
-        PanelWindow{
-            implicitHeight: 42
-            implicitWidth: 0
-            anchors {
-                top: true
-            }
-            color: "transparent"
-            mask: rootPanel.mask
-        }
-
-        TopBar{
-            id: topBar
-        }
         NotesDrawer{
             id: notesDrawer
         }
@@ -295,9 +282,6 @@ ShellRoot {
             Region{
                 item: systemPanel
             }
-            Region{
-                item: topBar
-            }
             Region {
                 item: networkPanelLoader.item && networkPanelLoader.item.visible ? networkPanelLoader.item : null
             }
@@ -355,6 +339,47 @@ ShellRoot {
             Region {
                 item: avatarPicker
             }
+        }
+    }
+
+    // The bar has its own 42px surface: hover animations and value updates in
+    // the bar then repaint a thin strip instead of the fullscreen panel
+    // surface above. It also reserves the bar's exclusive zone. Declared after
+    // rootPanel so it stacks above it on the Top layer.
+    //
+    // Inside the old shared surface, panels declared after TopBar drew over
+    // it while the ones before it (media, GitHub, system, updates, network,
+    // which hang from the bar) drew under it. To keep that, the bar drops to
+    // the Bottom layer — beneath rootPanel — while any of the later panels is
+    // open. The layer changes in place (layer-shell set_layer), no remap.
+    PanelWindow {
+        id: barWindow
+
+        readonly property bool coveredByPanel: notesDrawer.opened
+            || launcherWindow.isOpen
+            || wallpaper.visible
+            || (controlCenterLoader.item !== null && controlCenterLoader.item.visible)
+            || chatLoader.active
+            || (mangaLoader.item !== null && mangaLoader.item.visible)
+            || (novelLoader.item !== null && novelLoader.item.visible)
+            || (animeLoader.item !== null && animeLoader.item.visible)
+            || aikiraLoader.active
+            || clipboardManager.visible
+            || notepad.visible
+            || powerMenu.visible
+            || avatarPicker.visible
+
+        WlrLayershell.layer: coveredByPanel ? WlrLayer.Bottom : WlrLayer.Top
+        anchors {
+            top: true
+            left: true
+            right: true
+        }
+        implicitHeight: 42
+        color: "transparent"
+
+        TopBar {
+            id: topBar
         }
     }
 

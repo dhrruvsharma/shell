@@ -18,6 +18,8 @@ Item {
     anchors.bottom: parent.bottom
     implicitWidth:  dockCard.width + 20
     implicitHeight: opened ? dockCard.height + 20 : 0
+    // Hidden once fully collapsed so the tiles' shimmer can't keep repainting.
+    visible: opened || implicitHeight > 0
     clip: true
 
     Behavior on implicitHeight {
@@ -160,7 +162,7 @@ Item {
                         color: Colors.surface_container_highest
                         visible: img.status !== Image.Ready
                         SequentialAnimation on opacity {
-                            running: img.status !== Image.Ready
+                            running: root.visible && img.status !== Image.Ready
                             loops: Animation.Infinite
                             NumberAnimation { to: 0.35; duration: 700 }
                             NumberAnimation { to: 1.0;  duration: 700 }

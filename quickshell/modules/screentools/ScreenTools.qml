@@ -40,7 +40,7 @@ Item {
             anchors.margins: 12
 
             SequentialAnimation on opacity {
-                running: recording
+                running: recordingIndicator.visible
                 loops: Animation.Infinite
                 NumberAnimation { from: 1.0; to: 0.2; duration: 700; easing.type: Easing.InOutQuad }
                 NumberAnimation { from: 0.2; to: 1.0; duration: 700; easing.type: Easing.InOutQuad }

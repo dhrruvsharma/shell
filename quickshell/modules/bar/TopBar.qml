@@ -385,7 +385,8 @@ Item {
             // Placeholder until the grabbed image is ready.
             visible: topBar.dragActive && (!topBar.dragGrab || ghost.status !== Image.Ready)
             x: topBar.dragPos.x - width / 2
-            y: topBar.dragPos.y - height / 2
+            // Kept inside the bar strip: the bar is its own 42px surface.
+            y: Math.max(0, Math.min(topBar.height - height, topBar.dragPos.y - height / 2))
             width: topBar.dragW
             height: topBar.dragH
             radius: 14
@@ -398,7 +399,8 @@ Item {
             visible: topBar.dragActive && topBar.dragGrab && status === Image.Ready
             source: topBar.dragGrab ? topBar.dragGrab.url : ""
             x: topBar.dragPos.x - width / 2
-            y: topBar.dragPos.y - height / 2
+            // Kept inside the bar strip: the bar is its own 42px surface.
+            y: Math.max(0, Math.min(topBar.height - height, topBar.dragPos.y - height / 2))
             width: topBar.dragW
             height: topBar.dragH
             opacity: 0.9

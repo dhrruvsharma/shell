@@ -10,6 +10,7 @@ Singleton {
     property var values: []
     property int barsCount: 32
     property var _parseBuffer: new Array(barsCount)
+    property bool _silent: false
     property var config: ({
         "general": {
             "bars": barsCount,
@@ -64,18 +65,29 @@ Singleton {
                 const buffer = root._parseBuffer;
                 let idx = 0;
                 let num = 0;
+                let silent = true;
                 for (let i = 0, len = data.length - 1; i < len; i++) {
                     const c = data.charCodeAt(i);
                     if (c === 59) {
+                        if (num !== 0)
+                            silent = false;
                         buffer[idx++] = num * 0.01;
                         num = 0;
                     } else if (c >= 48 && c <= 57) {
                         num = num * 10 + (c - 48);
                     }
                 }
-                if (num > 0 || idx < root.barsCount)
+                if (num > 0 || idx < root.barsCount) {
+                    if (num !== 0)
+                        silent = false;
                     buffer[idx++] = num * 0.01;
+                }
 
+                // cava keeps emitting all-zero frames when nothing plays; only
+                // publish the first one, so consumers stop repainting in silence.
+                if (silent && root._silent)
+                    return;
+                root._silent = silent;
                 root.values = buffer.slice(0, idx);
             }
         }

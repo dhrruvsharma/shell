@@ -11,6 +11,8 @@
 // your option) any later version. The compiled cava.frag.qsb produced from this
 // file is a derivative of it and covered by the same license. See the full
 // license text in shaders/LICENSE. Distributed WITHOUT ANY WARRANTY.
+// Last synced with upstream main on 2026-09-26 (adds the bezier baseline and
+// the per-cell anti-aliasing fix).
 //
 // The CPU only uploads a 1-row, barCount-wide texture whose red channel is the
 // normalized bar height (0..1); this shader does all the drawing on the GPU, so
@@ -25,15 +27,22 @@ layout(std140, binding = 0) uniform buf {
     float itemWidth;
     float itemHeight;
     int barCount;
-    int styleMode;   // 0 = bars, 1 = area
+    int styleMode; // 0 = bars, 1 = area
     int orientation; // 0 = bottom, 1 = top, 2 = left, 3 = right
-    int flip;        // 1 = reverse bar order along the cross axis
+    int flip; // 1 = reverse bar order along the cross axis
     float gapPx;
     float lineWidthPx;
+    int bezEnabled; // 1 = displace the baseline along a cubic curve
+    float bezY0; // control point at cross 0, fraction of bar extent
+    float bezY1; // control point at cross 1/3
+    float bezY2; // control point at cross 2/3
+    float bezY3; // control point at cross 1
+    int bezFit; // 1 = shrink bars into room left above the raised baseline
     vec4 accentColor;
 } ubuf;
 
-// 1 row, barCount texels; grayscale = normalized 0 .. 1 bar height
+// 1 row barCount texels
+// grayscale = normalized 0 .. 1 bar height
 layout(binding = 1) uniform sampler2D dataTex;
 
 float sampleBar(int i) {
@@ -73,6 +82,23 @@ void main() {
     float crossExtent = vertical ? ubuf.itemHeight : ubuf.itemWidth;
     float barExtent = vertical ? ubuf.itemWidth : ubuf.itemHeight;
     float cross = vertical ? py : px;
+
+    // Baseline displacement from the curve.
+    float bezT = clamp(cross / max(crossExtent, 0.0001), 0.0, 1.0);
+    float bezOff = 0.0;
+
+    float bezEdge = 0.0;
+    if (ubuf.bezEnabled != 0) {
+        float omt = 1.0 - bezT;
+        bezOff = (omt * omt * omt * ubuf.bezY0 + 3.0 * omt * omt * bezT * ubuf.bezY1 + 3.0 * omt * bezT * bezT * ubuf.bezY2 + bezT * bezT * bezT * ubuf.bezY3) * barExtent;
+        bezEdge = mix(ubuf.bezY0, ubuf.bezY3, bezT) * barExtent;
+    }
+    // clamp the baseline into the box and shrink the bar to the room left
+    // above it.
+    float bezBase = (ubuf.bezFit != 0) ? clamp(bezOff, 0.0, barExtent) : bezOff;
+    float bezEdgeC = (ubuf.bezFit != 0) ? clamp(bezEdge, 0.0, barExtent) : bezEdge;
+    float bezAvail = (ubuf.bezFit != 0) ? (barExtent - bezBase) : barExtent;
+
     if (ubuf.flip != 0)
         cross = crossExtent - cross;
 
@@ -94,11 +120,13 @@ void main() {
         float u = step > 0.0 ? clamp(cross / step, 0.0, float(n - 1)) : 0.0;
         // CatmullRom can clip past the defined bounds on a sharp transient.
         // We clamp the value
-        float curveVal = clamp(catmullRom(u), 0.0, 1.0) * barExtent;
+        float curveVal = clamp(catmullRom(u), 0.0, 1.0) * bezAvail;
 
-        float dist = alongFromEdge - curveVal;
+        float dist = (alongFromEdge - bezBase) - curveVal;
         float aa = max(fwidth(dist), 0.0001);
         float fillMask = 1.0 - smoothstep(-aa, aa, dist);
+        // Clip the fill below the (endpoint-lerped) baseline.
+        fillMask *= smoothstep(-aa, aa, alongFromEdge - bezEdgeC);
 
         float gradT = clamp(alongFromEdge / max(barExtent, 0.0001), 0.0, 1.0);
         float gradAlpha = mix(0.08, 0.75, gradT);
@@ -115,13 +143,18 @@ void main() {
         int idx = int(clamp(idxF, 0.0, float(n - 1)));
         float posInCell = cross - idxF * cellPitch;
 
-        float barLen = sampleBar(idx) * barExtent;
+        float barLen = sampleBar(idx) * bezAvail;
 
-        float aaCell = max(fwidth(posInCell), 0.0001);
+        // AA width from `cross` (continuous), NOT `posInCell` (sawtooth) -
+        // fwidth() of the per-cell reset blows up one pixel column at every
+        // boundary and leaks the neighbouring bar's height into it.
+        float aaCell = max(fwidth(cross), 0.0001);
         float cellMask = 1.0 - smoothstep(pitch - aaCell, pitch + aaCell, posInCell);
 
+        // Curve translates the whole bar off the edge, so bound both ends.
+        float ae = alongFromEdge - bezBase;
         float aaFill = max(fwidth(alongFromEdge), 0.0001);
-        float fillMask = 1.0 - smoothstep(barLen - aaFill, barLen + aaFill, alongFromEdge);
+        float fillMask = (1.0 - smoothstep(barLen - aaFill, barLen + aaFill, ae)) * smoothstep(-aaFill, aaFill, ae);
 
         alpha = cellMask * fillMask;
     }

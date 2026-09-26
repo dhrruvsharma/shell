@@ -22,6 +22,34 @@ Singleton {
     property alias orientation: adapter.orientation   // 0 bottom, 1 top, 2 left, 3 right
     property alias style: adapter.style               // 0 bars, 1 area
     property alias flip: adapter.flip
+    // Bezier baseline (see components/CavaShader.qml). Control points are a
+    // fraction of the bar extent, clamped to -1..1.
+    property alias bezierEnabled: adapter.bezierEnabled
+    property alias bezierFit: adapter.bezierFit
+    property alias bezierY0: adapter.bezierY0
+    property alias bezierY1: adapter.bezierY1
+    property alias bezierY2: adapter.bezierY2
+    property alias bezierY3: adapter.bezierY3
+
+    function setBezierPoint(i, v) {
+        v = Math.max(-1, Math.min(1, v));
+        if (i === 0)
+            adapter.bezierY0 = v;
+        else if (i === 1)
+            adapter.bezierY1 = v;
+        else if (i === 2)
+            adapter.bezierY2 = v;
+        else
+            adapter.bezierY3 = v;
+    }
+
+    function resetBezier() {
+        adapter.bezierY0 = 0;
+        adapter.bezierY1 = 0;
+        adapter.bezierY2 = 0;
+        adapter.bezierY3 = 0;
+        root.save();
+    }
 
     // Coalesce live edit-mode updates into one disk write.
     function save() {
@@ -42,6 +70,12 @@ Singleton {
         adapter.orientation = 0;
         adapter.style = 0;
         adapter.flip = 0;
+        adapter.bezierEnabled = false;
+        adapter.bezierFit = true;
+        adapter.bezierY0 = 0;
+        adapter.bezierY1 = 0;
+        adapter.bezierY2 = 0;
+        adapter.bezierY3 = 0;
         root.save();
     }
 
@@ -74,6 +108,12 @@ Singleton {
         property int orientation: 0
         property int style: 0
         property int flip: 0
+        property bool bezierEnabled: false
+        property bool bezierFit: true
+        property real bezierY0: 0
+        property real bezierY1: 0
+        property real bezierY2: 0
+        property real bezierY3: 0
     }
 
     FileView {

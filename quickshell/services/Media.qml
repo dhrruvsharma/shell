@@ -1,5 +1,4 @@
 import Quickshell
-import Quickshell.Io
 import QtQuick
 import Quickshell.Services.Mpris
 
@@ -22,6 +21,19 @@ Singleton {
 
     // Track ID (Spotify gives something like spotify:track:xxxxx)
     property string trackId
+
+    // The player `playerctl -p spotify` would pick (spotify or
+    // spotify.instanceN). Read over MPRIS directly so polling never spawns
+    // a process.
+    readonly property var spotifyPlayer: Mpris.players.values.find(
+        p => /(^|\.)spotify(\.|$)/.test(p.dbusName)) ?? null
+
+    function spotifyTrackId() {
+        const raw = root.spotifyPlayer && root.spotifyPlayer.metadata
+            ? String(root.spotifyPlayer.metadata["mpris:trackid"] || "") : "";
+        // extract last segment
+        return raw.split("/").pop();
+    }
 
     property var _players: Mpris.players.values
     property int playerCount: _players.length
@@ -114,7 +126,12 @@ Singleton {
 
             if (activePlayer)
                 root.position = activePlayer.position;
-            trackIdProcess.running = true
+
+            const id = root.spotifyTrackId();
+            if (id && root.trackId !== id) {
+                root.trackId = id
+                console.log("Track ID:", id)
+            }
         }
     }
 
@@ -127,26 +144,4 @@ Singleton {
             updateActivePlayer();
         }
     }
-    Process {
-        id: trackIdProcess
-        command: ["playerctl", "-p", "spotify", "metadata", "mpris:trackid"]
-
-        stdout: StdioCollector {
-            onStreamFinished: {
-                let raw = text.trim()
-
-                if (!raw || raw === "")
-                    return
-
-                // extract last segment
-                let id = raw.split("/").pop()
-
-                if (root.trackId !== id) {
-                    root.trackId = id
-                    console.log("Track ID:", id)
-                }
-            }
-        }
-    }
-
 }

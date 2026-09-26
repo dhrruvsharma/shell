@@ -1,7 +1,8 @@
 pragma Singleton
 import Quickshell
-import Quickshell.Io
+import Quickshell.Services.Mpris
 import QtQuick
+import qs.services
 
 QtObject {
     id: root
@@ -30,7 +31,7 @@ QtObject {
         if (available) {
             // Refetch the current track even if it didn't change while offline
             trackid = ""
-            checkSpotify.running = true
+            root.poll()
         }
     }
 
@@ -39,7 +40,7 @@ QtObject {
         interval: 2000
         running: root.available
         repeat: true
-        onTriggered: checkSpotify.running = true
+        onTriggered: root.poll()
     }
 
     // Without a trackid the API answers 400 with {"error": true, "usage": ...},
@@ -59,36 +60,27 @@ QtObject {
         xhr.send();
     }
 
-    property Process checkSpotify: Process {
-        command: ["playerctl", "-p", "spotify", "status"]
-
-        stdout: StdioCollector {
-            onStreamFinished: {
-                root.status = text.trim()
-
-                if (root.status === "Playing")
-                    getTrackId.running = true
-            }
+    // Reads Spotify's MPRIS state directly (formerly two playerctl processes
+    // every poll).
+    function poll() {
+        const sp = Media.spotifyPlayer
+        if (!sp) {
+            root.status = ""
+            return
         }
-    }
+        root.status = sp.playbackState === MprisPlaybackState.Playing ? "Playing"
+            : sp.playbackState === MprisPlaybackState.Paused ? "Paused" : "Stopped"
 
-    property Process getTrackId: Process {
-        command: ["playerctl", "-p", "spotify", "metadata", "mpris:trackid"]
+        if (root.status !== "Playing")
+            return
 
-        stdout: StdioCollector {
-            onStreamFinished: {
-                let raw = text.trim()
-                let parts = raw.split("/")
-                let id = parts[parts.length - 1]
-
-                // Only fetch if track changed
-                if (root.trackid !== id) {
-                    root.trackid = id
-                    root.loaded = false // Reset while fetching
-                    root.fetchLyrics(id)
-                    console.log("Track ID:", id)
-                }
-            }
+        const id = Media.spotifyTrackId()
+        // Only fetch if track changed
+        if (id && root.trackid !== id) {
+            root.trackid = id
+            root.loaded = false // Reset while fetching
+            root.fetchLyrics(id)
+            console.log("Track ID:", id)
         }
     }
 

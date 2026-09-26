@@ -258,7 +258,7 @@ Item {
                 Layout.alignment: Qt.AlignHCenter
                 width: 40
                 height: 20
-                running: true
+                running: visible
             }
 
             StyledText {

@@ -58,6 +58,14 @@ Singleton {
         onTriggered: root.refresh()
     }
 
+    // A failed fetch (typically at login, before the network is up) retries
+    // soon instead of leaving the calendar empty until the 10-minute refresh.
+    Timer {
+        id: retryTimer
+        interval: 30000
+        onTriggered: root.refresh()
+    }
+
     Process {
         id: getContributions
         command: ["curl", `https://github-contributions-api.jogruber.de/v4/${root.author}`]
@@ -68,6 +76,7 @@ Singleton {
 
                     if (!json.contributions || !Array.isArray(json.contributions)) {
                         console.error("Invalid API response:", json);
+                        retryTimer.restart();
                         return;
                     }
 
@@ -113,6 +122,7 @@ Singleton {
 
                 } catch (e) {
                     console.error("Failed to parse GitHub contributions:", e);
+                    retryTimer.restart();
                 }
             }
         }

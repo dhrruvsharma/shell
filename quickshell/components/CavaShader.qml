@@ -30,40 +30,51 @@ Item {
     property real gapPx: 2
     property real lineWidthPx: 1.5
     property int flip: 0
+    // Bezier baseline: the bars' base follows a cubic curve across the widget.
+    // y0..y3 are control points at 0, 1/3, 2/3, 1 of the cross axis, as a
+    // fraction of the bar extent (-1..1). bezierFit shrinks bars into the room
+    // left above a raised baseline instead of letting them overflow.
+    property bool bezierEnabled: false
+    property bool bezierFit: true
+    property real bezierY0: 0
+    property real bezierY1: 0
+    property real bezierY2: 0
+    property real bezierY3: 0
 
     readonly property int barCount: root.bars ? root.bars.length : 0
 
     // 1xN grayscale data texture: red channel = normalized bar height.
-    Canvas {
-        id: dataCanvas
-        width: Math.max(1, root.barCount)
-        height: 1
-        visible: false
+    // The canvas is itself the shader's texture provider. It sits in a
+    // zero-size clipped host so it stays "visible" (and keeps producing its
+    // texture) without ever drawing on screen. Going through a
+    // ShaderEffectSource instead cost a second frame per cava update.
+    Item {
+        width: 0
+        height: 0
+        clip: true
 
-        property var barsData: root.bars
-        onBarsDataChanged: dataCanvas.requestPaint()
-        Component.onCompleted: dataCanvas.requestPaint()
+        Canvas {
+            id: dataCanvas
+            width: Math.max(1, root.barCount)
+            height: 1
+            smooth: false
 
-        onPaint: {
-            var ctx = getContext("2d");
-            ctx.clearRect(0, 0, width, height);
-            var bars = root.bars;
-            var n = bars ? bars.length : 0;
-            for (var i = 0; i < n; i++) {
-                var v = Math.max(0, Math.min(1, bars[i]));
-                ctx.fillStyle = Qt.rgba(v, v, v, 1);
-                ctx.fillRect(i, 0, 1, 1);
+            property var barsData: root.bars
+            onBarsDataChanged: dataCanvas.requestPaint()
+            Component.onCompleted: dataCanvas.requestPaint()
+
+            onPaint: {
+                var ctx = getContext("2d");
+                ctx.clearRect(0, 0, width, height);
+                var bars = root.bars;
+                var n = bars ? bars.length : 0;
+                for (var i = 0; i < n; i++) {
+                    var v = Math.max(0, Math.min(1, bars[i]));
+                    ctx.fillStyle = Qt.rgba(v, v, v, 1);
+                    ctx.fillRect(i, 0, 1, 1);
+                }
             }
-            dataTexSource.scheduleUpdate();
         }
-    }
-
-    ShaderEffectSource {
-        id: dataTexSource
-        sourceItem: dataCanvas
-        hideSource: true
-        smooth: false
-        live: false
     }
 
     ShaderEffect {
@@ -71,7 +82,7 @@ Item {
         anchors.fill: parent
         visible: root.barCount > 0
 
-        property variant dataTex: dataTexSource
+        property variant dataTex: dataCanvas
         property real itemWidth: width
         property real itemHeight: height
         property int barCount: root.barCount
@@ -80,6 +91,12 @@ Item {
         property int flip: root.flip
         property real gapPx: root.gapPx
         property real lineWidthPx: root.lineWidthPx
+        property int bezEnabled: root.bezierEnabled ? 1 : 0
+        property int bezFit: root.bezierFit ? 1 : 0
+        property real bezY0: root.bezierY0
+        property real bezY1: root.bezierY1
+        property real bezY2: root.bezierY2
+        property real bezY3: root.bezierY3
         property color accentColor: root.accentColor
 
         fragmentShader: Qt.resolvedUrl("../shaders/cava.frag.qsb")
