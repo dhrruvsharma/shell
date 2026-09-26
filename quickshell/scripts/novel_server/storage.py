@@ -1,7 +1,7 @@
 """
 Persistent storage: favorites and downloads.
 Completely provider-agnostic — every stored ID is a PREFIXED ID
-(e.g. "novelbin:b/some-slug") so records survive provider switches.
+(e.g. "freewebnovel:novel/some-slug") so records survive provider switches.
 """
 
 import os
@@ -177,7 +177,7 @@ def _dl_worker(novel_id, chapter_id, chapter_num, chapter_title,
     from providers.utils import fetch_bytes
 
     # Safe filesystem names — strip prefix too
-    raw_nid  = novel_id.split(":")[-1]   # "novelbin:b/slug" → "b/slug"
+    raw_nid  = novel_id.split(":")[-1]   # "freewebnovel:novel/slug" → "novel/slug"
     raw_cid  = chapter_id.split(":")[-1]
     safe_nid = re.sub(r"[^a-zA-Z0-9_-]", "_", raw_nid.split("/")[-1])
     safe_cid = re.sub(r"[^a-zA-Z0-9_-]", "_", raw_cid.split("/")[-1])

@@ -29,12 +29,10 @@ from concurrent.futures import ThreadPoolExecutor
 # Install: pip install curl_cffi --user
 try:
     from curl_cffi.requests import Session as CffiSession
-    _session = CffiSession(impersonate="firefox")
     _USE_CFFI = True
     print("[manga-server] Using curl_cffi (Firefox impersonation)")
 except ImportError:
     import requests as _requests_mod
-    _session = _requests_mod.Session()
     _USE_CFFI = False
     print("[manga-server] curl_cffi not found, falling back to requests (may timeout on Cloudflare)")
 
@@ -43,6 +41,8 @@ BASE        = "https://weebcentral.com"
 COVER_SMALL = "https://temp.compsci88.com/cover/small"
 COVER_BASE  = "https://temp.compsci88.com/cover/fallback"
 PAGE_LIMIT  = 32
+# WeebCentral links are root-relative now ("/series/…"); older markup was absolute
+HREF        = r'href="(?:https://weebcentral\.com)?'
 
 # ── Persistent storage ─────────────────────────────────────────────────────
 DATA_DIR       = os.path.expanduser("~/.local/share/quickshell-manga")
@@ -74,8 +74,32 @@ SEARCH_HEADERS = {
     "X-Requested-With":  "XMLHttpRequest",
 }
 
-if not _USE_CFFI:
-    _session.headers.update(HEADERS)
+# One session per thread: the server and _info() fetch concurrently, and a
+# shared curl handle intermittently fails the TLS handshake.
+_tls = threading.local()
+
+
+def _session():
+    sess = getattr(_tls, "session", None)
+    if sess is None:
+        if _USE_CFFI:
+            sess = CffiSession(impersonate="firefox")
+        else:
+            sess = _requests_mod.Session()
+            sess.headers.update(HEADERS)
+        _tls.session = sess
+    return sess
+
+
+def _get(url, headers, timeout):
+    """GET with one retry on connection-level errors (TLS resets, timeouts)."""
+    try:
+        return _session().get(url, headers=headers, timeout=timeout)
+    except Exception as e:
+        if getattr(e, "response", None) is not None:
+            raise
+        _tls.session = None
+        return _session().get(url, headers=headers, timeout=timeout)
 
 
 # ── TTL Cache ──────────────────────────────────────────────────────────────
@@ -107,20 +131,14 @@ def _cached(key, ttl, fn):
 
 def fetch(url, extra_headers=None, timeout=30):
     headers = {**HEADERS, **(extra_headers or {})}
-    if _USE_CFFI:
-        r = _session.get(url, headers=headers, timeout=timeout)
-    else:
-        r = _session.get(url, headers=headers, timeout=timeout)
+    r = _get(url, headers, timeout)
     r.raise_for_status()
     return r.text
 
 
 def _raw_get(url, timeout=30):
     """Return raw bytes + content-type for image proxy."""
-    if _USE_CFFI:
-        r = _session.get(url, headers=HEADERS, timeout=timeout)
-    else:
-        r = _session.get(url, headers=HEADERS, timeout=timeout)
+    r = _get(url, HEADERS, timeout)
     r.raise_for_status()
     return r.content, r.headers.get("Content-Type", "image/jpeg")
 
@@ -164,7 +182,7 @@ def _search(query, mtype, offset, sort):
 
     results = []
     for a in articles:
-        href  = re.search(r'href="https://weebcentral\.com/series/([^"]+)"', a)
+        href  = re.search(HREF + r'/series/([^"]+)"', a)
         title = re.search(r"<h2[^>]*>([^<]+)</h2>", a)
         if not (href and title):
             continue
@@ -209,7 +227,7 @@ def _info(full_id):
     og_img   = re.search(r'og:image" content="([^"]+)"', detail_html)
 
     authors = []
-    for block in re.findall(r'(?:Authors?|Artists?): </strong>(.*?)(?:</li>|</ul>)', detail_html, re.S):
+    for block in re.findall(r'(?:Author|Artist)(?:s|\(s\))?: </strong>(.*?)(?:</li>|</ul>)', detail_html, re.S):
         for name in re.findall(r"<a[^>]+>([^<]+)</a>", block):
             n = name.strip()
             if n and n not in authors:
@@ -223,7 +241,7 @@ def _info(full_id):
             break
 
     anchors = re.findall(
-        r'<a\s+href="https://weebcentral\.com/chapters/([^"]+)"[^>]*>([\s\S]*?)</a>',
+        r'<a\s+' + HREF + r'/chapters/([^"]+)"[^>]*>([\s\S]*?)</a>',
         ch_html, re.S
     )
     chapters = []
@@ -231,7 +249,7 @@ def _info(full_id):
         spans      = re.findall(r"<span[^>]*>([\s\S]*?)</span>", inner)
         text_spans = [clean_text(s) for s in spans if clean_text(s) and "{" not in s and len(clean_text(s)) > 1]
         ch_label   = text_spans[0] if text_spans else ""
-        ch_num     = re.sub(r"(?i)chapter\s*", "", ch_label).strip()
+        ch_num     = re.sub(r"(?i)(?:chapter|episode)\s*", "", ch_label).strip()
         dt_m       = re.search(r'datetime="([^"]+)"', inner)
         chapters.append({
             "id":        cid,
@@ -266,9 +284,9 @@ def _latest_updates(page):
 
     for attrs, body in articles:
         title_m = re.search(r'data-tip="([^"]+)"', attrs)
-        series  = re.search(r'href="https://weebcentral\.com/series/([A-Z0-9]+)/([^"]+)"', body)
+        series  = re.search(HREF + r'/series/([A-Z0-9]+)/([^"]+)"', body)
         cover   = re.search(r'<img src="(https://temp\.compsci88\.com/[^"]+)"', body)
-        ch_num  = re.search(r"Chapter ([0-9][^<]*)<", body)
+        ch_num  = re.search(r"(?:Chapter|Episode) ([0-9][^<]*)<", body)
         dt      = re.search(r'datetime="([^"]+)"', body)
 
         if not (series and title_m):
@@ -286,7 +304,7 @@ def _latest_updates(page):
         })
 
     has_more = bool(re.search(
-        rf'hx-get="https://weebcentral\.com/latest-updates/{page + 1}"', html
+        rf'hx-get="(?:https://weebcentral\.com)?/latest-updates/{page + 1}"', html
     ))
 
     return {
@@ -309,11 +327,11 @@ def _hot_updates():
     seen     = set()
 
     for a in articles:
-        series  = re.search(r'href="https://weebcentral\.com/series/([A-Z0-9]+)/([^"]+)"', a)
-        chapter = re.search(r'href="https://weebcentral\.com/chapters/([A-Z0-9]+)"', a)
+        series  = re.search(HREF + r'/series/([A-Z0-9]+)/([^"]+)"', a)
+        chapter = re.search(HREF + r'/chapters/([A-Z0-9]+)"', a)
         cover   = re.search(r'<img src="(https://temp\.compsci88\.com/[^"]+)"', a)
         title   = re.search(r'alt="([^"]+) cover"', a)
-        ch_num  = re.search(r"Chapter ([0-9][^<]*)</", a)
+        ch_num  = re.search(r"(?:Chapter|Episode) ([0-9][^<]*)</", a)
         dt      = re.search(r'datetime="([^"]+)"', a)
 
         if not (series and chapter and title):

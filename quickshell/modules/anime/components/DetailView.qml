@@ -22,7 +22,7 @@ Item {
         id: mpvProcess
     }
 
-    function _playWithMpv(url, referer, title) {
+    function _playWithMpv(url, referer, subtitle, title) {
         if (!url || url.length === 0) {
             console.warn("[AnimeDetail] _playWithMpv called with empty URL, aborting")
             return
@@ -40,6 +40,8 @@ Item {
 
         if (referer && referer.length > 0)
             args.push("--referrer=" + referer)
+        if (subtitle && subtitle.length > 0)
+            args.push("--sub-file=" + subtitle)
 
         args.push(url)
         mpvProcess.command = args
@@ -368,7 +370,7 @@ Item {
                 ? (Anime.currentAnime.englishName || Anime.currentAnime.name)
                 + " — Ep." + Anime.currentEpisode
                 : ""
-            detailView._playWithMpv(lnk.url, lnk.referer, title)
+            detailView._playWithMpv(lnk.url, lnk.referer, lnk.subtitle, title)
             Anime.clearStreamLinks()
         }
     }

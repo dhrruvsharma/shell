@@ -1,18 +1,15 @@
 """
 ani-cli Python API
-Exposes ani-cli scraping logic as HTTP endpoints.
+Browse/search/episode lists come from allanime; streams are resolved the way
+ani-cli 5.1 does it (hianime.at / ZokoAnime embed).
 Run: pip install flask requests && python ani_api.py
 """
 
 import base64
-import hashlib
+import html
 import json
 import re
-import subprocess
 import threading
-import time
-import urllib.parse
-from concurrent.futures import ThreadPoolExecutor, as_completed
 
 import requests
 from flask import Flask, jsonify, request
@@ -23,9 +20,6 @@ AGENT = "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:109.0) Gecko/20100101 Fire
 ALLANIME_REFR = "https://allmanga.to"
 ALLANIME_BASE = "allanime.day"
 ALLANIME_API = f"https://api.{ALLANIME_BASE}"
-# SHA-256 of the hardcoded passphrase, used for AES-256-CTR decryption of "tobeparsed" blobs.
-# Mirrors: printf '%s' 'Xot36i3lK3:v1' | openssl dgst -sha256 -binary | od -A n -t x1 | tr -d ' \n'
-ALLANIME_KEY = hashlib.sha256(b"Xot36i3lK3:v1").hexdigest()
 
 HEADERS = {
     "User-Agent": AGENT,
@@ -38,37 +32,6 @@ GQL_HEADERS = {
     "Referer": ALLANIME_REFR,
     "Content-Type": "application/json",
 }
-
-HEX_MAP = {
-    "79": "A", "7a": "B", "7b": "C", "7c": "D", "7d": "E", "7e": "F", "7f": "G",
-    "70": "H", "71": "I", "72": "J", "73": "K", "74": "L", "75": "M", "76": "N",
-    "77": "O", "68": "P", "69": "Q", "6a": "R", "6b": "S", "6c": "T", "6d": "U",
-    "6e": "V", "6f": "W", "60": "X", "61": "Y", "62": "Z",
-    "59": "a", "5a": "b", "5b": "c", "5c": "d", "5d": "e", "5e": "f", "5f": "g",
-    "50": "h", "51": "i", "52": "j", "53": "k", "54": "l", "55": "m", "56": "n",
-    "57": "o", "48": "p", "49": "q", "4a": "r", "4b": "s", "4c": "t", "4d": "u",
-    "4e": "v", "4f": "w", "40": "x", "41": "y", "42": "z",
-    "08": "0", "09": "1", "0a": "2", "0b": "3", "0c": "4", "0d": "5",
-    "0e": "6", "0f": "7", "00": "8", "01": "9",
-    "15": "-", "16": ".", "67": "_", "46": "~", "02": ":", "17": "/",
-    "07": "?", "1b": "#", "63": "[", "65": "]", "78": "@", "19": "!",
-    "1c": "$", "1e": "&", "10": "(", "11": ")", "12": "*", "13": "+",
-    "14": ",", "03": ";", "05": "=", "1d": "%",
-}
-
-
-def decode_provider_url(encoded: str) -> str:
-    """
-    Decode the hex-encoded provider URL produced by the shell script's
-    `provider_init` sed chain. Each pair of hex chars maps to a character
-    via HEX_MAP; anything not in the map is passed through as-is.
-    """
-    pairs = [encoded[i:i+2] for i in range(0, len(encoded), 2)]
-    result = "".join(HEX_MAP.get(p, p) for p in pairs)
-    # allanime clock path fix
-    result = result.replace("/clock", "/clock.json")
-    return result
-
 
 def gql_post(variables: dict, query: str) -> str:
     """Fire a GraphQL POST request against the allanime API and return raw text.
@@ -187,337 +150,179 @@ def episodes_list(show_id: str, mode: str = "sub") -> list[str]:
 
 
 # ---------------------------------------------------------------------------
-# Provider / link extraction
+# Stream links — mirrors ani-cli 5.1 (hianime.at / ZokoAnime embed)
+#
+# allanime's episode source API now answers AA_CRYPTO_MISSING, so streams come
+# from the ZokoAnime embed that hianime.at uses. That embed is keyed by MAL id
+# (zokoanime.video/stream/mal/<mal>/<ep>/<sub|dub>), and allanime still knows
+# each show's malId, so browse/search/library IDs stay allanime ones. Shows
+# without a malId fall back to ani-cli's route: hianime search → episode list
+# → servers → ZokoAnime hash.
 # ---------------------------------------------------------------------------
-EPISODE_EMBED_GQL = (
-    "query ($showId: String!, $translationType: VaildTranslationTypeEnumType!, "
-    "$episodeString: String!) { episode( showId: $showId translationType: $translationType "
-    "episodeString: $episodeString ) { episodeString sourceUrls }}"
-)
-
-PROVIDER_PATTERNS = {
-    "wixmp":      r"Default\s*:([^\n]+)",
-    "youtube":    r"Yt-mp4\s*:([^\n]+)",
-    "sharepoint": r"S-mp4\s*:([^\n]+)",
-    "filemoon":   r"Fm-mp4\s*:([^\n]+)",
-    "hianime":    r"Luf-Mp4\s*:([^\n]+)",
+HIANIME_BASE = "https://hianime.at"
+ZOKO_BASE = "https://zokoanime.video"
+# The embed ships its config as base64(json XOR "otaku-embed-v1")
+ZOKO_KEY = b"otaku-embed-v1"
+HIANIME_HEADERS = {
+    "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 "
+                  "(KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36",
 }
 
+SHOW_META_GQL = "query ($showId: String!) { show( _id: $showId ) { _id name englishName malId }}"
 
-def _extract_provider_id(resp_normalized: str, pattern: str) -> str | None:
-    m = re.search(pattern, resp_normalized)
-    if not m:
-        return None
-    encoded = m.group(1).strip()
-    return decode_provider_url(encoded)
+_show_meta_cache: dict[str, dict] = {}
+_show_meta_lock = threading.Lock()
 
 
-def b64url_to_hex(s: str) -> str:
-    """Convert a base64url-encoded string to hex, adding padding as needed."""
-    pad = {2: "==", 3: "=", 0: "", 1: ""}
-    padded = s + pad[len(s) % 4]
-    padded = padded.replace("-", "+").replace("_", "/")
-    return base64.b64decode(padded).hex()
+def _show_meta(show_id: str) -> dict:
+    """{name, englishName, malId} for an allanime show, cached per process."""
+    with _show_meta_lock:
+        if show_id in _show_meta_cache:
+            return _show_meta_cache[show_id]
+    raw = gql_post({"showId": show_id}, SHOW_META_GQL)
+    show = (json.loads(raw).get("data") or {}).get("show") or {}
+    meta = {
+        "name": show.get("name") or "",
+        "englishName": show.get("englishName") or "",
+        "malId": str(show.get("malId") or ""),
+    }
+    with _show_meta_lock:
+        _show_meta_cache[show_id] = meta
+    return meta
 
 
-def get_filemoon_links(path: str) -> list[dict]:
-    """
-    Fetch and decrypt filemoon provider links.
-    Mirrors the shell script's get_filemoon_links() function.
-    """
-    url = f"https://{ALLANIME_BASE}{path}"
-    try:
-        resp = requests.get(url, headers=HEADERS, timeout=15)
-        resp.raise_for_status()
-        raw = resp.text
-    except Exception as e:
-        return [{"error": str(e), "url": url}]
-
-    try:
-        data = json.loads(raw)
-
-        iv = data.get("iv", "")
-        payload = data.get("payload", "")
-        key_parts = data.get("key_parts", [])
-
-        if len(key_parts) < 2 or not iv or not payload:
-            return [{"error": "Missing filemoon decryption fields"}]
-
-        kp1_hex = b64url_to_hex(key_parts[0])
-        kp2_hex = b64url_to_hex(key_parts[1])
-        key_hex = kp1_hex + kp2_hex
-        iv_hex = b64url_to_hex(iv) + "00000002"
-
-        # Decode payload from base64url
-        payload_pad = {2: "==", 3: "=", 0: "", 1: ""}
-        payload_padded = payload + payload_pad[len(payload) % 4]
-        payload_padded = payload_padded.replace("-", "+").replace("_", "/")
-        payload_bytes = base64.b64decode(payload_padded)
-
-        # Strip last 16 bytes (auth tag)
-        ct_bytes = payload_bytes[:-16]
-
-        result = subprocess.run(
-            [
-                "openssl", "enc", "-d", "-aes-256-ctr",
-                "-K", key_hex,
-                "-iv", iv_hex,
-                "-nosalt", "-nopad",
-            ],
-            input=ct_bytes,
-            capture_output=True,
-            timeout=10,
-        )
-        plain = result.stdout.decode("utf-8", errors="replace")
-
-        # Parse url/height pairs from decrypted JSON
-        links = []
-        for chunk in re.split(r"[{}\[\]]", plain):
-            # Match either "url":"...","height":N or "height":N,"url":"..."
-            m = re.search(r'"url":"([^"]*)".*?"height":(\d+)', chunk)
-            if not m:
-                m = re.search(r'"height":(\d+).*?"url":"([^"]*)"', chunk)
-                if m:
-                    height, stream_url = m.group(1), m.group(2)
-                else:
-                    continue
-            else:
-                stream_url, height = m.group(1), m.group(2)
-
-            # Unescape unicode sequences
-            stream_url = stream_url.replace("\\u0026", "&").replace("\\u003D", "=")
-            links.append({"quality": f"{height}p", "url": stream_url, "type": "mp4"})
-
-        links.sort(key=lambda x: int(re.match(r"(\d+)", x.get("quality", "0")).group(1)) if re.match(r"(\d+)", x.get("quality", "0")) else 0, reverse=True)
-        return links
-
-    except Exception as e:
-        return [{"error": f"Filemoon decryption failed: {e}"}]
+def _deobfuscate_blob(blob: str) -> dict:
+    raw = base64.b64decode(blob)
+    plain = bytes(b ^ ZOKO_KEY[i % len(ZOKO_KEY)] for i, b in enumerate(raw))
+    return json.loads(plain.decode("utf-8"))
 
 
-def _get_links_from_url(path: str) -> list[dict]:
-    """
-    Fetch the embed URL and parse out video links.
-    Returns list of {quality, url, type} dicts.
-    """
-    # Don't prepend base domain for absolute URLs
-    url = path if path.startswith("http") else f"https://{ALLANIME_BASE}{path}"
-    try:
-        resp = requests.get(url, headers=HEADERS, timeout=15)
-        resp.raise_for_status()
-        raw = resp.text
-    except Exception as e:
-        return [{"error": str(e), "url": url}]
+def _zoko_links(embed_url: str) -> list[dict]:
+    """Resolve a ZokoAnime embed into per-quality HLS links. [] if unavailable."""
+    referer = re.sub(r"^(https?://[^/]*).*", r"\1/", embed_url)
+    resp = requests.get(embed_url, headers=HIANIME_HEADERS, timeout=15)
+    resp.raise_for_status()
+    blob_m = re.search(r'window\.__P="([^"]*)"', resp.text)
+    if not blob_m:
+        return []  # the embed answers 200 without a blob for missing episodes
+
+    cfg = _deobfuscate_blob(blob_m.group(1))
+    master = cfg.get("src") or ""
+    if ".m3u8" not in master:
+        return []
+
+    # Several subtitle languages can be listed; the site marks English as default
+    subtitle = next((s.get("src") for s in cfg.get("subtitles") or [] if s.get("default")), None)
+    extra = {"referer": referer, **({"subtitle": subtitle} if subtitle else {})}
 
     links = []
-
-    if "repackager.wixmp.com" in raw:
-        for m in re.finditer(r'"link":"([^"]*repackager\.wixmp\.com[^"]*)".*?"resolutionStr":"([^"]*)"', raw):
-            links.append({"quality": m.group(2), "url": m.group(1), "type": "mp4"})
-        return links
-
-    if "master.m3u8" in raw:
-        m_url = re.search(r'"url":"([^"]*master\.m3u8[^"]*)"', raw)
-        m_refr = re.search(r'"Referer":"([^"]*)"', raw)
-        subtitle_m = re.search(r'"subtitles":\[.*?"lang":"en".*?"src":"([^"]*)"', raw)
-        referer = m_refr.group(1) if m_refr else ALLANIME_REFR
-        subtitle = subtitle_m.group(1) if subtitle_m else None
-        if m_url:
-            m3u8_url = m_url.group(1)
-            try:
-                m3u8_resp = requests.get(m3u8_url, headers={**HEADERS, "Referer": referer}, timeout=15)
-                m3u8_text = m3u8_resp.text
-                base = m3u8_url.rsplit("/", 1)[0] + "/"
-                stream_re = re.compile(r'#EXT-X-STREAM-INF[^\n]*RESOLUTION=\d+x(\d+)[^\n]*\n([^\n]+)')
-                for sm in stream_re.finditer(m3u8_text):
-                    height = sm.group(1)
-                    stream_path = sm.group(2).strip()
-                    stream_url = stream_path if stream_path.startswith("http") else base + stream_path
-                    links.append({
-                        "quality": f"{height}p",
-                        "url": stream_url,
-                        "type": "m3u8",
-                        "referer": referer,
-                        **({"subtitle": subtitle} if subtitle else {}),
-                    })
-                if not links:
-                    links.append({"quality": "best", "url": m3u8_url, "type": "m3u8", "referer": referer})
-            except Exception as e:
-                links.append({"quality": "best", "url": m3u8_url, "type": "m3u8",
-                               "referer": referer, "parse_error": str(e)})
-        return links
-
-    for m in re.finditer(r'"link":"([^"]*)".*?"resolutionStr":"([^"]*)"', raw):
-        links.append({"quality": m.group(2), "url": m.group(1), "type": "mp4"})
-
-    # Shell: printf "%s" "$*" | grep -q "tools.fast4speed.rsvp" && printf "Yt >$*"
-    # Check the path itself (not the response) for fast4speed/YouTube links
-    if "tools.fast4speed.rsvp" in path:
-        links.append({"quality": "best", "url": url, "type": "yt", "referer": ALLANIME_REFR})
-
+    try:
+        m3u8 = requests.get(master, headers={**HIANIME_HEADERS, "Referer": referer}, timeout=15)
+        m3u8.raise_for_status()
+        base = master.rsplit("/", 1)[0] + "/"
+        for sm in re.finditer(r"#EXT-X-STREAM-INF[^\n]*RESOLUTION=\d+x(\d+)[^\n]*\n([^\n]+)", m3u8.text):
+            path = sm.group(2).strip()
+            links.append({
+                "quality": f"{sm.group(1)}p",
+                "url": path if path.startswith("http") else base + path,
+                "type": "m3u8",
+                **extra,
+            })
+    except requests.RequestException:
+        pass
+    if not links:
+        links.append({"quality": "best", "url": master, "type": "m3u8", **extra})
     return links
 
 
-def decode_tobeparsed(blob: str) -> dict[str, str]:
-    """
-    Decrypt the 'tobeparsed' AES-256-CTR blob returned by the allanime API.
+def _norm_title(s: str) -> str:
+    return re.sub(r"[^a-z0-9]", "", s.lower())
 
-    Mirrors the shell script's decode_tobeparsed():
-      1. base64-decode the blob
-      2. first 12 bytes are the nonce/IV
-      3. counter = nonce + b'\\x00\\x00\\x00\\x02'  (matches shell: ctr="${iv}00000002")
-      4. decrypt with AES-256-CTR using ALLANIME_KEY
-      5. parse the plaintext for sourceUrl / sourceName pairs
 
-    Returns dict of {provider_name: hex-encoded-path} (paths still need
-    decode_provider_url() to become usable URLs, exactly like the non-tobeparsed path).
-    """
-    try:
-        data = base64.b64decode(blob)
-    except Exception:
-        return {}
+def _hianime_embed(meta: dict, ep_no: str, mode: str) -> str | None:
+    """ani-cli's lookup path: search → episode list → ZokoAnime server hash."""
+    names = [n for n in (meta["name"], meta["englishName"]) if n]
+    if not names:
+        return None
+    wanted = {_norm_title(n) for n in names}
 
-    # Shell: skip=1 count=12 for IV, skip=13 for ciphertext, exclude last 16 bytes (auth tag)
-    iv_bytes = data[1:13]
-    ciphertext = data[13:-16]
-    ctr_hex = iv_bytes.hex() + "00000002"  # 12-byte nonce + 4-byte counter = 16-byte AES block
-
-    try:
-        result = subprocess.run(
-            [
-                "openssl", "enc", "-d", "-aes-256-ctr",
-                "-K", ALLANIME_KEY,
-                "-iv", ctr_hex,
-                "-nosalt", "-nopad",
-            ],
-            input=ciphertext,
-            capture_output=True,
-            timeout=10,
+    cards = []
+    for query in names:
+        resp = requests.get(f"{HIANIME_BASE}/search", params={"keyword": query},
+                            headers=HIANIME_HEADERS, timeout=15)
+        resp.raise_for_status()
+        # The top-10 sidebar repeats the result markup, cut it off first
+        page = resp.text.split('id="main-sidebar"', 1)[0]
+        cards = re.findall(
+            r'<h3 class="film-name">\s*<a href="[^"]*/([^"/]*)"\s*title="([^"]*)"'
+            r'[^>]*?data-jname="([^"]*)"',
+            page,
         )
-        plain = result.stdout.decode("utf-8", errors="replace")
-    except Exception:
-        return {}
+        if cards:
+            break
+    if not cards:
+        return None
 
-    # tr '{}' '\n' | sed -nE 's|.*"sourceUrl":"--([^"]*)".*"sourceName":"([^"]*)".*|\2 :\1|p'
-    sources: dict[str, str] = {}
-    for chunk in re.split(r"[{}]", plain):
-        m = re.search(r'"sourceUrl":"--([^"]*)".*"sourceName":"([^"]*)"', chunk)
-        if m:
-            enc_path, name = m.group(1), m.group(2)
-            sources[name] = enc_path  # decoded by decode_provider_url below
-    return sources
+    slug = next(
+        (c[0] for c in cards
+         if _norm_title(html.unescape(c[1])) in wanted or _norm_title(html.unescape(c[2])) in wanted),
+        cards[0][0],
+    )
 
+    resp = requests.get(f"{HIANIME_BASE}/api/theme/episode/list/{slug.rsplit('-', 1)[-1]}",
+                        headers=HIANIME_HEADERS, timeout=15)
+    resp.raise_for_status()
+    ep_html = resp.json().get("html", "")
+    ep_id = next(
+        (m.group(2) for m in re.finditer(r'data-number="([^"]*)"\s*data-id="(\d+)"', ep_html)
+         if m.group(1) == ep_no),
+        None,
+    )
+    if not ep_id:
+        return None
 
-EPISODE_QUERY_HASH = "d405d0edd690624b66baba3068e0edc3ac90f1597d898a1ec8db4e5c43c00fec"
+    resp = requests.get(f"{HIANIME_BASE}/api/theme/episode/servers",
+                        params={"episodeId": ep_id}, headers=HIANIME_HEADERS, timeout=15)
+    resp.raise_for_status()
+    servers = resp.json().get("html", "")
+    # Only the ZokoAnime embed is understood; the other servers use different players
+    hash_m = re.search(
+        r'data-type="' + re.escape(mode) + r'"\s*data-server-name="ZokoAnime"\s*data-hash="([^"]*)"',
+        servers,
+    )
+    return base64.b64decode(hash_m.group(1)).decode() if hash_m else None
 
 
 def get_episode_links(show_id: str, ep_no: str, mode: str = "sub") -> dict:
     """
-    Full equivalent of get_episode_url() in the shell script.
+    Resolve stream links for one episode.
     Returns {providers: {name: [links]}, all_links: [...]}
     """
-    # Step 1: Try GET with persisted query hash first (mirrors shell's first attempt)
-    query_vars = json.dumps({
-        "showId": show_id,
-        "translationType": mode,
-        "episodeString": ep_no,
-    })
-    query_ext = json.dumps({
-        "persistedQuery": {
-            "version": 1,
-            "sha256Hash": EPISODE_QUERY_HASH,
-        }
-    })
-    get_headers = {
-        "User-Agent": AGENT,
-        "Referer": "https://youtu-chan.com",
-        "Origin": "https://youtu-chan.com",
-    }
-    try:
-        get_resp = requests.get(
-            f"{ALLANIME_API}/api",
-            params={"variables": query_vars, "extensions": query_ext},
-            headers=get_headers,
-            timeout=15,
-        )
-        get_resp.raise_for_status()
-        raw = get_resp.text
-    except Exception:
-        raw = ""
+    meta = _show_meta(show_id)
 
-    # Step 2: Fall back to POST if GET response is empty or missing "tobeparsed"
-    if not raw or "tobeparsed" not in raw:
-        payload = json.dumps({
-            "variables": {
-                "showId": show_id,
-                "translationType": mode,
-                "episodeString": ep_no,
-            },
-            "query": EPISODE_EMBED_GQL,
-        })
-        resp = requests.post(
-            f"{ALLANIME_API}/api",
-            data=payload,
-            headers=GQL_HEADERS,
-            timeout=15,
-        )
-        resp.raise_for_status()
-        raw = resp.text
+    links: list[dict] = []
+    if meta["malId"]:
+        links = _zoko_links(f"{ZOKO_BASE}/stream/mal/{meta['malId']}/{ep_no}/{mode}")
+    if not links:
+        embed = _hianime_embed(meta, ep_no, mode)
+        if embed:
+            links = _zoko_links(embed)
 
-    # Mirror the shell script's two-branch logic:
-    #   if response contains "tobeparsed" → decrypt AES-256-CTR blob
-    #   else → parse sourceUrl/sourceName pairs directly from the JSON text
-    if '"tobeparsed"' in raw:
-        blob_m = re.search(r'"tobeparsed":"([^"]*)"', raw)
-        if blob_m:
-            enc_sources = decode_tobeparsed(blob_m.group(1))
-            sources = {name: decode_provider_url(enc) for name, enc in enc_sources.items()}
-        else:
-            sources = {}
-    else:
-        raw_norm = raw.replace("\\u002F", "/").replace("\\|", "")
-        source_re = re.compile(r'sourceUrl":"--([^"]+)"[^}]*sourceName":"([^"]+)"')
-        sources = {}
-        for m in source_re.finditer(raw_norm):
-            encoded_url, name = m.group(1), m.group(2)
-            sources[name] = decode_provider_url(encoded_url)
-
-    if not sources:
-        return {"error": "No sources found for this episode", "raw_snippet": raw[:500]}
-
-    provider_results = {}
-
-    def fetch_provider(name, path):
-        # Route filemoon sources to dedicated handler
-        if name.lower() in ("fm-mp4", "filemoon") or "Fm-mp4" in name:
-            return name, get_filemoon_links(path)
-        return name, _get_links_from_url(path)
-
-    with ThreadPoolExecutor(max_workers=6) as pool:
-        futures = {pool.submit(fetch_provider, n, p): n for n, p in sources.items()}
-        for future in as_completed(futures):
-            name, links = future.result()
-            provider_results[name] = links
-
-    all_links = []
-    for name, links in provider_results.items():
-        for link in links:
-            # FIX: Only include links that have no "error" key
-            if "error" not in link:
-                all_links.append({**link, "provider": name})
+    if not links:
+        return {"error": f"No {mode} stream found for episode {ep_no}"}
 
     def quality_key(x):
-        q = x.get("quality", "")
-        m = re.match(r"(\d+)", q)
+        m = re.match(r"(\d+)", x.get("quality", ""))
         return int(m.group(1)) if m else 0
 
-    all_links.sort(key=quality_key, reverse=True)
+    links.sort(key=quality_key, reverse=True)
+    all_links = [{**link, "provider": "ZokoAnime"} for link in links]
 
     return {
         "show_id": show_id,
         "episode": ep_no,
         "mode": mode,
-        "providers": provider_results,
+        "providers": {"ZokoAnime": links},
         "all_links": all_links,
     }
 

@@ -265,7 +265,7 @@ python -m venv ~/.venv/manga
 - **Service:** `services/Novel.qml` — starts server, polls `http://127.0.0.1:5151/health`
 - **Module:** `modules/novel/` — Browse · Library · Detail · Reader views
 
-Supports two providers, switchable at runtime from within the UI or via:
+Uses the `freewebnovel` provider (the registry supports more; switchable at runtime from the UI or via):
 ```bash
 curl -X POST http://127.0.0.1:5151/provider/switch \
   -H 'Content-Type: application/json' \
@@ -274,7 +274,6 @@ curl -X POST http://127.0.0.1:5151/provider/switch \
 
 | Provider name | Source |
 |---|---|
-| `novelbin` | novelbin.me |
 | `freewebnovel` | freewebnovel.com |
 
 **Setup:**

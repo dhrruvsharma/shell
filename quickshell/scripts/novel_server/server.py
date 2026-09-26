@@ -25,11 +25,11 @@ Endpoints (unchanged from original):
 Provider-switching endpoints (new):
   GET  /provider/list         → [{name, label}, ...]
   GET  /provider/active       → {name, label}
-  POST /provider/switch       body: {provider: "novelbin"}
+  POST /provider/switch       body: {provider: "freewebnovel"}
 
 All novel/chapter IDs crossing the HTTP boundary are PREFIXED:
-  "novelbin:b/some-slug"
-  "novelbin:b/some-slug/chapter-5-title"
+  "freewebnovel:novel/some-slug"
+  "freewebnovel:novel/some-slug/chapter-5"
 The providers package handles stripping/adding prefixes transparently.
 """
 

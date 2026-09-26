@@ -4,24 +4,23 @@ Provider registry.
 Usage (in server.py):
     import providers
     providers.get()          → active NovelProvider instance
-    providers.switch("novelbin")
-    providers.list_all()     → [{"name": "novelbin", "label": "NovelBin"}, ...]
-    providers.active_name()  → "novelbin"
+    providers.switch("freewebnovel")
+    providers.list_all()     → [{"name": "freewebnovel", "label": "FreeWebNovel"}, ...]
+    providers.active_name()  → "freewebnovel"
 
 ID namespacing
 ──────────────
 Every novel/chapter ID that crosses the HTTP boundary is prefixed with the
 provider name so that favorites and downloads never collide across sources:
 
-    Internal (provider sees):   "b/some-slug"
-    External (client sees):     "novelbin:b/some-slug"
+    Internal (provider sees):   "novel/some-slug"
+    External (client sees):     "freewebnovel:novel/some-slug"
 
 Helper functions strip/add the prefix transparently.
 """
 
 import threading
 
-from .novelbin import NovelBinProvider
 from .freewebnovel import FreeWebNovelProvider
 
 from .base import NovelProvider
@@ -29,12 +28,11 @@ from .base import NovelProvider
 # ── Registry ───────────────────────────────────────────────────────────────
 # Add new providers here: name → class
 _REGISTRY: dict[str, type[NovelProvider]] = {
-    "novelbin":     NovelBinProvider,
     "freewebnovel": FreeWebNovelProvider,
 }
 
 _lock   = threading.Lock()
-_active: NovelProvider = NovelBinProvider()   # default on startup
+_active: NovelProvider = FreeWebNovelProvider()   # default on startup
 
 
 # ── Public API ─────────────────────────────────────────────────────────────
@@ -72,7 +70,7 @@ def list_all() -> list[dict]:
 def prefix_id(raw_id: str, provider_name: str | None = None) -> str:
     """
     Add a provider prefix to a raw ID.
-    "b/some-slug"  →  "novelbin:b/some-slug"
+    "novel/some-slug"  →  "freewebnovel:novel/some-slug"
     """
     pname = provider_name or active_name()
     if raw_id.startswith(f"{pname}:"):
@@ -83,7 +81,7 @@ def prefix_id(raw_id: str, provider_name: str | None = None) -> str:
 def strip_prefix(prefixed_id: str) -> tuple[str, str]:
     """
     Split a prefixed ID into (provider_name, raw_id).
-    "novelbin:b/some-slug"  →  ("novelbin", "b/some-slug")
+    "freewebnovel:novel/some-slug"  →  ("freewebnovel", "novel/some-slug")
     Raises ValueError if the prefix is not a registered provider.
     """
     parts = prefixed_id.split(":", 1)

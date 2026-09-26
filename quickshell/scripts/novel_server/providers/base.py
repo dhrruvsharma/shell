@@ -16,7 +16,7 @@ class NovelProvider(ABC):
     """
 
     # ── Identity ──────────────────────────────────────────────────────────
-    #  Set name = "novelbin" (or "novelfull", etc.) in each subclass.
+    #  Set name = "freewebnovel" (or "novelfull", etc.) in each subclass.
     name: str = ""
 
     #  Human-readable label shown in the UI / /provider/list response.

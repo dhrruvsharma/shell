@@ -60,10 +60,9 @@ Singleton {
         currentChapterIndex >= 0 && currentChapterIndex < currentSortedChapters.length - 1
 
     // ── Provider ─────────────────────────────────────────────────────────────
-    property string activeProvider: "novelbin"
+    property string activeProvider: "freewebnovel"
     property bool isSwitchingProvider: false
     readonly property var availableProviders: [
-        { name: "novelbin",     label: "NovelBin"     },
         { name: "freewebnovel", label: "FreeWebNovel" }
     ]
 
@@ -94,7 +93,7 @@ Singleton {
         onLoaded: {
             try {
                 var data = JSON.parse(libraryFile.text())
-                root.libraryList = Array.isArray(data) ? data : []
+                root.libraryList = root._migrateNovelbin(Array.isArray(data) ? data : [])
             } catch (e) {
                 console.warn("[ServiceNovel] library parse error:", e)
                 root.libraryList = []
@@ -117,6 +116,66 @@ Singleton {
     function _saveLibrary() {
         libraryWriter.setText(JSON.stringify(root.libraryList, null, 2))
         libraryWriter.save()
+    }
+
+    // NovelBin shut down; its slugs match FreeWebNovel's, so old entries are
+    // re-pointed there. Covers/titles came from novelbin and are refreshed
+    // from /info once the backend is up (_refreshMigratedEntries).
+    property var _migratedIds: []
+
+    function _migrateNovelbin(list) {
+        var migrated = []
+        var out = list.map(function(e) {
+            var m = String(e.id).match(/^novelbin:b\/([^\/]+)$/)
+            if (!m) return e
+            var slug = m[1]
+            var id = "freewebnovel:novel/" + slug
+            var ch = String(e.lastReadChapterId || "").match(/\/chapter-(\d+)/)
+            migrated.push(id)
+            return Object.assign({}, e, {
+                id:                id,
+                title:             String(e.title).replace(/ Novel - Read .* - Novel Bin$/, ""),
+                lastReadChapterId: ch ? id + "/chapter-" + ch[1] : ""
+            })
+        })
+        // Drop duplicates if the novel was also added from FreeWebNovel
+        var seen = {}
+        out = out.filter(function(e) {
+            if (seen[e.id]) return false
+            seen[e.id] = true
+            return true
+        })
+        if (migrated.length > 0) {
+            console.log("[ServiceNovel] Migrated", migrated.length, "NovelBin library entries to FreeWebNovel")
+            root._migratedIds = migrated
+            root.libraryList = out
+            _saveLibrary()
+            if (root.serverReady) root._refreshMigratedEntries()
+        }
+        return out
+    }
+
+    function _refreshMigratedEntries() {
+        var ids = root._migratedIds
+        root._migratedIds = []
+        ids.forEach(function(id) {
+            Http.get(root.apiUrl + "/info?id=" + encodeURIComponent(id), function(err, body) {
+                if (err) { console.warn("[ServiceNovel] Migrated novel not on FreeWebNovel:", id, err); return }
+                try {
+                    var info = JSON.parse(body)
+                    root.libraryList = root.libraryList.map(function(e) {
+                        if (e.id !== id) return e
+                        return Object.assign({}, e, {
+                            title:    info.title || e.title,
+                            coverUrl: info.image || e.coverUrl
+                        })
+                    })
+                    _saveLibrary()
+                } catch (e) {
+                    console.warn("[ServiceNovel] Migrated info parse error:", e)
+                }
+            })
+        })
     }
 
     function addToLibrary(novel) {
@@ -188,6 +247,7 @@ Singleton {
         onReady: {
             root.serverReady = true
             console.log("[ServiceNovel] Backend ready at", root.apiUrl)
+            if (root._migratedIds.length > 0) root._refreshMigratedEntries()
             fetchHot()
         }
     }
