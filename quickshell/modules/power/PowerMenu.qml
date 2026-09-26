@@ -1,6 +1,5 @@
 import QtQuick
 import QtQuick.Layouts
-import Quickshell
 import Quickshell.Io
 import qs.colors
 import qs.components
@@ -213,8 +212,9 @@ Item {
             glowColor: Colors.secondary
             onActivated: {
                 root.close()
-                proc.exec(["quickshell", "-p",
-                    Quickshell.env("HOME") + "/.config/quickshell/Lock.qml"])
+                // Wait out the fade like the other actions: the lock screen
+                // captures the desktop to animate from, menu included.
+                proc.exec(["bash", "-c", "sleep 0.35 && exec quickshell -p \"$HOME/.config/quickshell/Lock.qml\""])
             }
         }
 

@@ -31,6 +31,7 @@ import qs.modules.power
 import qs.modules.github
 import qs.modules.avatar
 import qs.modules.updates
+import qs.modules.lockthemes
 
 ShellRoot {
     id: root
@@ -273,6 +274,10 @@ ShellRoot {
             id: avatarPicker
         }
 
+        LockThemesPanel {
+            id: lockThemes
+        }
+
         property bool altHeld: false
 
         mask: Region{
@@ -316,13 +321,13 @@ ShellRoot {
                 item: chatLoader.active ? chatLoader : null
             }
             Region{
-                item: mangaLoader.item.visible ? mangaLoader.item : null
+                item: mangaLoader.item && mangaLoader.item.visible ? mangaLoader.item : null
             }
             Region{
-                item: novelLoader.item.visible ? novelLoader.item : null
+                item: novelLoader.item && novelLoader.item.visible ? novelLoader.item : null
             }
             Region{
-                item: animeLoader.item.visible ? animeLoader.item : null
+                item: animeLoader.item && animeLoader.item.visible ? animeLoader.item : null
             }
             Region {
                 item: aikiraLoader.active ? aikiraLoader : null
@@ -338,6 +343,9 @@ ShellRoot {
             }
             Region {
                 item: avatarPicker
+            }
+            Region {
+                item: lockThemes.visible ? lockThemes : null
             }
         }
     }
@@ -368,6 +376,7 @@ ShellRoot {
             || notepad.visible
             || powerMenu.visible
             || avatarPicker.visible
+            || lockThemes.visible
 
         WlrLayershell.layer: coveredByPanel ? WlrLayer.Bottom : WlrLayer.Top
         anchors {
@@ -647,6 +656,25 @@ ShellRoot {
             } else {
                 powerMenu.close()
             }
+        }
+    }
+
+    IpcHandler {
+        target: "lockscreen"
+        function toggle(): void {
+            lockThemes.toggle()
+        }
+        function open(): void {
+            lockThemes.open()
+        }
+        function close(): void {
+            lockThemes.close()
+        }
+        function lock(): void {
+            lockThemes.lockNow()
+        }
+        function preview(theme: string): void {
+            lockThemes.preview(theme)
         }
     }
 

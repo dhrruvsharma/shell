@@ -68,6 +68,22 @@
     "subtext": "Toggle Launcher Window · SUPER+R"
   },
   {
+    "text": "qs ipc call lockscreen close",
+    "subtext": "Close Lockscreen"
+  },
+  {
+    "text": "qs ipc call lockscreen lock",
+    "subtext": "Lock Lockscreen"
+  },
+  {
+    "text": "qs ipc call lockscreen open",
+    "subtext": "Open Lockscreen"
+  },
+  {
+    "text": "qs ipc call lockscreen toggle",
+    "subtext": "Toggle Lockscreen · ALT+SHIFT+H"
+  },
+  {
     "text": "qs ipc call mangaReader toggle",
     "subtext": "Toggle Manga Reader"
   },
