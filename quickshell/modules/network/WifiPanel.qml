@@ -23,7 +23,7 @@ Item {
         Card {
             Layout.fillWidth: true
             Layout.preferredHeight: 78
-            radius: 18
+            radius: Services.DesktopTheme.rad(18)
             color: Colors.surface_container_high
 
             RowLayout {
@@ -35,7 +35,7 @@ Item {
                 Rectangle {
                     Layout.preferredWidth: 48
                     Layout.preferredHeight: 48
-                    radius: 24
+                    radius: Services.DesktopTheme.rad(24)
                     color: Services.Network.wifiEnabled
                         ? Qt.rgba(wifiRoot.accent.r, wifiRoot.accent.g, wifiRoot.accent.b, 0.16)
                         : Colors.surface_container_highest
@@ -76,7 +76,7 @@ Item {
                 Rectangle {
                     Layout.preferredWidth: 50
                     Layout.preferredHeight: 28
-                    radius: 14
+                    radius: Services.DesktopTheme.rad(14)
                     color: Services.Network.wifiEnabled
                         ? Colors.primary
                         : Colors.surface_container_highest
@@ -119,7 +119,7 @@ Item {
             ClickableRect {
                 id: scanRect
                 Layout.preferredWidth: 30; Layout.preferredHeight: 30
-                radius: 15
+                radius: Services.DesktopTheme.rad(15)
                 color: scanRect.hovered ? Colors.surface_container_highest : "transparent"
                 MaterialIcon {
                     anchors.centerIn: parent
@@ -140,7 +140,7 @@ Item {
         Rectangle {
             Layout.fillWidth: true
             Layout.fillHeight: true
-            radius: 16
+            radius: Services.DesktopTheme.rad(16)
             color: Colors.surface_container_low
 
             // empty / off / scanning state
@@ -191,7 +191,7 @@ Item {
                             id: row
                             Layout.fillWidth: true
                             Layout.preferredHeight: rowCol.implicitHeight
-                            radius: 12
+                            radius: Services.DesktopTheme.rad(12)
 
                             property bool isExpanded: wifiRoot.expandedSsid === modelData.name
                             property bool isConnecting: Services.Network.connecting
@@ -242,7 +242,7 @@ Item {
 
                                         Rectangle {
                                             Layout.preferredWidth: 38; Layout.preferredHeight: 38
-                                            radius: 19
+                                            radius: Services.DesktopTheme.rad(19)
                                             color: (modelData.active || row.isConnecting)
                                                 ? Qt.rgba(wifiRoot.accent.r, wifiRoot.accent.g, wifiRoot.accent.b, 0.18)
                                                 : Colors.surface_container_highest
@@ -308,7 +308,7 @@ Item {
                                             id: forgetRect
                                             visible: modelData.saved && !row.isConnecting
                                             Layout.preferredWidth: 30; Layout.preferredHeight: 30
-                                            radius: 15
+                                            radius: Services.DesktopTheme.rad(15)
                                             opacity: (forgetRect.hovered || rowMa.containsMouse) ? 1 : 0
                                             color: forgetRect.hovered ? Colors.error_container : "transparent"
                                             Behavior on opacity { NumberAnimation { duration: 120 } }
@@ -333,7 +333,7 @@ Item {
                                             id: dcRect
                                             visible: modelData.active
                                             Layout.preferredWidth: 96; Layout.preferredHeight: 32
-                                            radius: 16
+                                            radius: Services.DesktopTheme.rad(16)
                                             color: dcRect.hovered ? Colors.primary : "transparent"
                                             border.width: 1
                                             border.color: Colors.primary
@@ -375,7 +375,7 @@ Item {
                                             Rectangle {
                                                 Layout.fillWidth: true
                                                 Layout.preferredHeight: 38
-                                                radius: 10
+                                                radius: Services.DesktopTheme.rad(10)
                                                 color: Colors.surface_container_highest
                                                 border.width: 1.5
                                                 border.color: row.hasError
@@ -410,7 +410,7 @@ Item {
                                                         property bool shown: false
                                                         Layout.preferredWidth: 28; Layout.preferredHeight: 28
                                                         Layout.alignment: Qt.AlignVCenter
-                                                        radius: 14
+                                                        radius: Services.DesktopTheme.rad(14)
                                                         color: showPw.hovered ? Colors.surface_container : "transparent"
                                                         MaterialIcon {
                                                             anchors.centerIn: parent
@@ -427,7 +427,7 @@ Item {
                                             ClickableRect {
                                                 id: connRect
                                                 Layout.preferredWidth: 78; Layout.preferredHeight: 38
-                                                radius: 10
+                                                radius: Services.DesktopTheme.rad(10)
                                                 color: Colors.primary
                                                 opacity: connRect.hovered ? 0.9 : 1
                                                 StyledText {

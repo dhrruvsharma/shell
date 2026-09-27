@@ -1,4 +1,5 @@
 import QtQuick
+import qs.services as Services
 import qs.aikira
 import QtQuick.Layouts
 import qs.colors
@@ -115,7 +116,7 @@ Item {
 
             Rectangle {
                 anchors { fill: parent; leftMargin: 10; rightMargin: 10; topMargin: 6 }
-                radius: 12
+                radius: Services.DesktopTheme.rad(12)
                 color: Colors.secondary_container
 
                 RowLayout {
@@ -295,7 +296,7 @@ Item {
                     ClickableRect {
                         id: newChatRect
                         anchors.fill: parent
-                        radius: 10
+                        radius: Services.DesktopTheme.rad(10)
                         color: newChatRect.hovered
                             ? Colors.primary
                             : Colors.primary_container

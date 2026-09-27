@@ -1,6 +1,7 @@
 import QtQuick
 import QtQuick.Layouts
 import qs.colors
+import qs.services as Services
 import qs.components
 
 RowLayout {
@@ -14,7 +15,7 @@ RowLayout {
     Rectangle {
         Layout.preferredWidth: 36
         Layout.preferredHeight: 36
-        radius: 8
+        radius: Services.DesktopTheme.rad(8)
         color: Colors.tertiary_container
 
         MaterialIcon {

@@ -40,14 +40,14 @@ Item {
     Rectangle {
         anchors.fill: parent
         color: backgroundColor
-        radius: 12
+        radius: Services.DesktopTheme.rad(12)
         opacity: 0.95
 
         // Border
         Card {
             anchors.fill: parent
             color: "transparent"
-            radius: 12
+            radius: Services.DesktopTheme.rad(12)
         }
     }
 
@@ -67,7 +67,7 @@ Item {
             Rectangle {
                 width: 24
                 height: 24
-                radius: 12
+                radius: Services.DesktopTheme.rad(12)
                 color: Colors.primary
 
                 StyledText {
@@ -119,7 +119,7 @@ Item {
                 width: 6
                 contentItem: Rectangle {
                     color: Colors.primary
-                    radius: 3
+                    radius: Services.DesktopTheme.rad(3)
                     opacity: 0.5
                 }
                 anchors {
@@ -155,7 +155,7 @@ Item {
                                     delegate: Rectangle {
                                         width: cellSize
                                         height: cellSize
-                                        radius: 3
+                                        radius: Services.DesktopTheme.rad(3)
 
                                         property int realIndex: weekIndex * 7 + index
 
@@ -233,7 +233,7 @@ Item {
                 delegate: Card {
                     width: 12
                     height: 12
-                    radius: 2
+                    radius: Services.DesktopTheme.rad(2)
                     color: contributionColor(modelData)
                 }
             }

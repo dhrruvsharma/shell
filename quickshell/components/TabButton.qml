@@ -1,5 +1,6 @@
 import QtQuick
 import qs.colors
+import qs.services as Services
 import qs.components
 
 Rectangle {
@@ -9,7 +10,7 @@ Rectangle {
 
     width: 90
     height: 32
-    radius: 8
+    radius: Services.DesktopTheme.rad(8)
     color: active ? Colors.primary_container : Colors.secondary_container
 
     signal clicked()

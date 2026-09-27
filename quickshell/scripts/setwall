@@ -1,4 +1,8 @@
 #!/usr/bin/env bash
+# Set the wallpaper. Quickshell draws it (services/WallpaperEngine.qml): with
+# the shell running this hands over to it, which plays the transition, points
+# ~/.cache/current_wallpaper at the image and runs matugen. Without the shell
+# it just does the last two, and the shell shows the image when it starts.
 
 # Use argument if provided, otherwise fall back to default
 if [[ -n "$1" ]]; then
@@ -18,18 +22,9 @@ if [[ ! -f "$WALL" ]]; then
     exit 1
 fi
 
-# Start awww daemon if not running
-if ! pgrep -x awww-daemon > /dev/null; then
-    awww-daemon > /dev/null 2>&1 &
-    sleep 0.5
+if qs ipc call wallpaper set "$WALL" >/dev/null 2>&1; then
+    exit 0
 fi
 
-# Set wallpaper with smooth transition
-awww img "$WALL" \
-    --transition-type grow \
-    --transition-duration 1 \
-    --transition-fps 60
-
-# Generate colors using matugen
+ln -sfn "$WALL" "$HOME/.cache/current_wallpaper"
 matugen image "$WALL" --source-color-index 0
-awww query | awk -F 'image: ' '{print $2}' | xargs -I{} ln -sf {} ~/.cache/current_wallpaper

@@ -1,4 +1,5 @@
 import QtQuick
+import qs.services as Services
 import QtQuick.Layouts
 import qs.aikira
 import qs.colors
@@ -200,7 +201,7 @@ Item {
                 width: 2
                 height: parent.height - 12
                 anchors { left: parent.left; leftMargin: 0; verticalCenter: parent.verticalCenter }
-                radius: 1
+                radius: Services.DesktopTheme.rad(1)
                 color: Colors.primary
                 opacity: 0.6
             }

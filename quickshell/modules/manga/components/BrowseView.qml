@@ -64,7 +64,7 @@ Item {
                     id: searchBar
                     Layout.fillWidth: true
                     height: 38
-                    radius: 19
+                    radius: DesktopTheme.rad(19)
                     color: Colors.surface_container
                     visible: false
                     border.color: searchField.activeFocus ? Colors.primary : Colors.outline_variant
@@ -206,7 +206,7 @@ Item {
                         anchors.centerIn: parent
                         implicitWidth: chipLabel.implicitWidth + 28
                         height: 30
-                        radius: 15
+                        radius: DesktopTheme.rad(15)
                         color: browseView.currentTagId === tagId
                             ? Colors.primary
                             : Colors.surface_container
@@ -337,7 +337,7 @@ Item {
                     ClickableRect {
                         id: card
                         anchors { fill: parent; margins: 5 }
-                        radius: 12
+                        radius: DesktopTheme.rad(12)
                         color: Colors.surface_container
                         clip: true
 
@@ -372,7 +372,7 @@ Item {
                                 visible: modelData.type && modelData.type.length > 0
                                 anchors { top: parent.top; right: parent.right; topMargin: 8; rightMargin: 8 }
                                 height: 20
-                                radius: 10
+                                radius: DesktopTheme.rad(10)
                                 width: typeText.implicitWidth + 14
                                 color: Qt.rgba(0, 0, 0, 0.7)
 
@@ -405,7 +405,7 @@ Item {
                             anchors { bottom: parent.bottom; left: parent.left; right: parent.right }
                             height: titleText.implicitHeight + 18
                             color: Colors.surface_container
-                            radius: 12
+                            radius: DesktopTheme.rad(12)
 
                             StyledText {
                                 id: titleText
@@ -428,7 +428,7 @@ Item {
                         // Hover + press overlay
                         Rectangle {
                             anchors.fill: parent
-                            radius: 12
+                            radius: DesktopTheme.rad(12)
                             color: Colors.primary
                             opacity: card.pressed
                                 ? 0.16

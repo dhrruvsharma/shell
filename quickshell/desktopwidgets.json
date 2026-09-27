@@ -1,0 +1,10 @@
+{
+    "on": {
+        "clock": true,
+        "music": true,
+        "quote": true,
+        "sysmon": true
+    },
+    "positions": {
+    }
+}

@@ -1,4 +1,5 @@
 import QtQuick
+import qs.services as Services
 import Quickshell
 import qs.colors
 import qs.components
@@ -16,7 +17,7 @@ Item {
 
     Rectangle {
         anchors.fill: parent
-        radius: 22
+        radius: Services.DesktopTheme.rad(22)
         color: Qt.rgba(
             Qt.color(Colors.surface_container_high).r,
             Qt.color(Colors.surface_container_high).g,

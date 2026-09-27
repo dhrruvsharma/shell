@@ -1,4 +1,6 @@
 import QtQuick
+import qs.components
+import qs.services as Services
 import qs.aikira
 import QtQuick.Layouts
 import Quickshell
@@ -141,7 +143,12 @@ Item {
     Rectangle {
         anchors.fill: parent
         color: Colors.background
-        radius: 12
+        radius: Services.DesktopTheme.rad(12)
+
+        PanelDecor {
+            radius: Services.DesktopTheme.rad(12)
+            title: "aikira"
+        }
     }
 
     RowLayout {

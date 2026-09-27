@@ -113,7 +113,7 @@ Item {
 
                     Rectangle {
                         anchors.fill: parent
-                        radius: height / 2
+                        radius: DesktopTheme.rad(height / 2)
                         color: detailView._inLibrary ? Colors.primary_container : Colors.surface_container
                         border.color: detailView._inLibrary ? Colors.primary : Colors.outline_variant
                         border.width: 1

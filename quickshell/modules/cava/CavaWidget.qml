@@ -5,6 +5,7 @@ import qs.services as Services
 import qs.components
 import qs.Core
 import qs.colors
+import qs.modules.desktopwidgets
 
 // Draggable desktop cava visualizer.
 //
@@ -13,7 +14,10 @@ import qs.colors
 //  - edit:    WlrLayer.Top, focusable, shown while editMode; a drag frame with
 //             move/resize/skew handles and a small toolbar. Exiting persists.
 //
-// Toggled/edited via IPC (see shell.qml): cavaWidget.toggle / .edit / .reset.
+// Toggled/edited via IPC (see shell.qml): cavaWidget.toggle / .edit / .reset,
+// and from the Themes panel's Widgets tab. Drag the widget itself to move it:
+// while held, the display surface grows to the whole screen so the box moves
+// with plain Qt dragging, then shrinks back around it.
 Scope {
     id: root
 
@@ -28,9 +32,14 @@ Scope {
     // Colors.json repaints the widget automatically.
     readonly property color resolvedAccent: root.resolveAccent(Services.CavaWidget.accentColor)
 
+    // The desktop theme's look (modules/desktopwidgets/WidgetStyle): its
+    // accent for "Auto", and a frame behind the spectrum.
+    readonly property string themeId: Services.DesktopTheme.enabled ? Services.DesktopTheme.theme : ""
+    readonly property var themeStyle: WidgetStyle.of(themeId)
+
     function resolveAccent(a) {
         if (!a || a.length === 0)
-            return Colors.primary;
+            return Colors[root.themeStyle.accentRole];
         if (a.charAt(0) === "@")
             return root.roleColor(a.substring(1));
         return a;
@@ -126,8 +135,13 @@ Scope {
             Services.CavaWidget.boxHeight) / 2 * 1.2) + 32
         readonly property real screenW: displayWin.screen ? displayWin.screen.width : 100000
         readonly property real screenH: displayWin.screen ? displayWin.screen.height : 100000
-        readonly property int winX: Math.max(0, Math.floor(displayWin.boxCX - displayWin.extent))
-        readonly property int winY: Math.max(0, Math.floor(displayWin.boxCY - displayWin.extent))
+        readonly property int restX: Math.max(0, Math.floor(displayWin.boxCX - displayWin.extent))
+        readonly property int restY: Math.max(0, Math.floor(displayWin.boxCY - displayWin.extent))
+        // Held for a drag: the surface covers the screen (see the header).
+        property bool held: false
+        readonly property bool full: displayWin.width >= displayWin.screenW - 1 && displayWin.height >= displayWin.screenH - 1
+        readonly property int winX: displayWin.held ? 0 : displayWin.restX
+        readonly property int winY: displayWin.held ? 0 : displayWin.restY
 
         anchors {
             left: true
@@ -135,8 +149,8 @@ Scope {
         }
         margins.left: displayWin.winX
         margins.top: displayWin.winY
-        implicitWidth: Math.max(1, Math.min(displayWin.screenW, Math.ceil(displayWin.boxCX + displayWin.extent)) - displayWin.winX)
-        implicitHeight: Math.max(1, Math.min(displayWin.screenH, Math.ceil(displayWin.boxCY + displayWin.extent)) - displayWin.winY)
+        implicitWidth: displayWin.held ? displayWin.screenW : Math.max(1, Math.min(displayWin.screenW, Math.ceil(displayWin.boxCX + displayWin.extent)) - displayWin.restX)
+        implicitHeight: displayWin.held ? displayWin.screenH : Math.max(1, Math.min(displayWin.screenH, Math.ceil(displayWin.boxCY + displayWin.extent)) - displayWin.restY)
 
         // Input region = the box plus a small margin (so the gear at the
         // corner is included). Only this area catches the mouse; the rest of
@@ -147,8 +161,8 @@ Scope {
         // Children keep using screen coordinates (posX/posY); this shifts them
         // into the smaller surface.
         Item {
-            x: -displayWin.winX
-            y: -displayWin.winY
+            x: displayWin.full ? 0 : -displayWin.restX
+            y: displayWin.full ? 0 : -displayWin.restY
 
             Item {
                 id: hoverZone
@@ -157,13 +171,47 @@ Scope {
                 width: Services.CavaWidget.boxWidth + 32
                 height: Services.CavaWidget.boxHeight + 32
 
-                // Tracks hover without swallowing clicks (the gear handles those).
+                // Hover (for the gear) and dragging the widget around.
                 MouseArea {
                     id: hoverArea
+
+                    property real pressX: 0
+                    property real pressY: 0
+
                     anchors.fill: parent
                     hoverEnabled: true
-                    acceptedButtons: Qt.NoButton
+                    cursorShape: pressed ? Qt.ClosedHandCursor : Qt.OpenHandCursor
+                    onPressed: mouse => {
+                        pressX = mouse.x;
+                        pressY = mouse.y;
+                        displayWin.held = true;
+                    }
+                    onPositionChanged: mouse => {
+                        if (!pressed || !displayWin.full)
+                            return;
+                        Services.CavaWidget.posX = Math.round(Math.max(0, Math.min(displayWin.screenW - Services.CavaWidget.boxWidth, Services.CavaWidget.posX + mouse.x - pressX)));
+                        Services.CavaWidget.posY = Math.round(Math.max(0, Math.min(displayWin.screenH - Services.CavaWidget.boxHeight, Services.CavaWidget.posY + mouse.y - pressY)));
+                    }
+                    onReleased: {
+                        displayWin.held = false;
+                        Services.CavaWidget.save();
+                    }
+                    onCanceled: displayWin.held = false
                 }
+            }
+
+            // The desktop theme's frame behind the spectrum.
+            WidgetFrame {
+                id: cavaFrame
+                visible: ["chamfer", "console", "glass", "scroll"].includes(root.themeStyle.frame)
+                x: Services.CavaWidget.posX - 12
+                y: Services.CavaWidget.posY - 12 - cavaFrame.tabRoom
+                width: Services.CavaWidget.boxWidth + 24
+                height: Services.CavaWidget.boxHeight + 24 + cavaFrame.tabRoom
+                rotation: Services.CavaWidget.rotation
+                themeId: root.themeId
+                title: root.themeStyle.frame === "console" ? "~ $ cava" : ""
+                seal: "音"
             }
 
             CavaVisual {

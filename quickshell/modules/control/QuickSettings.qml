@@ -77,5 +77,14 @@ ColumnLayout {
             active: false
             onClicked: run("hyprlock")
         }
+
+        // Opens the Themes panel on its Desktop tab (closing this centre);
+        // lit while a desktop theme is on.
+        ToggleTile {
+            label: Services.DesktopTheme.enabled ? Services.DesktopTheme.current.name : "Themes"
+            icon: "󰏘"
+            active: Services.DesktopTheme.enabled
+            onClicked: Quickshell.execDetached(["sh", "-c", "qs ipc call controlCenter changeVisible; qs ipc call themes desktop"])
+        }
     }
 }

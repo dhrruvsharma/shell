@@ -1,4 +1,5 @@
 import QtQuick
+import qs.services as Services
 import qs.aikira
 import QtQuick.Layouts
 import qs.colors
@@ -204,7 +205,7 @@ Item {
         anchors { top: parent.top; topMargin: 60; right: parent.right; rightMargin: 16 }
         width: 320
         height: Math.min(scenText.implicitHeight + 32, 240)
-        radius: 12
+        radius: Services.DesktopTheme.rad(12)
         color: Colors.surface_container_highest
         border { width: 1; color: Colors.outline_variant }
         clip: true

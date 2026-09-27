@@ -1,4 +1,5 @@
 import QtQuick
+import qs.services as Services
 import QtQuick.Layouts
 import qs.colors
 import qs.components
@@ -14,7 +15,7 @@ Item {
 
     Rectangle {
         anchors { fill: parent; leftMargin: 8; rightMargin: 8 }
-        radius: 10
+        radius: Services.DesktopTheme.rad(10)
         color: selected
             ? Colors.primary_container
             : (hover.containsMouse ? Colors.surface_container_high : "transparent")
@@ -36,7 +37,7 @@ Item {
             // Avatar circle
             Rectangle {
                 width: 34; height: 34
-                radius: 17
+                radius: Services.DesktopTheme.rad(17)
                 color: selected
                     ? Colors.primary
                     : Colors.surface_container_highest

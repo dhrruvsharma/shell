@@ -14,12 +14,8 @@ fi
 TARGET_INDEX=0
 CURRENT_SRC=""
 
-# Check current wallpaper using swww query (setwall uses swww internally)
-if command -v swww >/dev/null; then
-    # swww query output: "DP-1: /path/to/image.jpg ..."
-    CURRENT_SRC=$(swww query 2>/dev/null | grep -o "$SRC_DIR/[^ ]*" | head -n1)
-    CURRENT_SRC=$(basename "$CURRENT_SRC")
-fi
+# The wallpaper on screen (Quickshell keeps this link pointed at it)
+CURRENT_SRC=$(basename "$(readlink -f "$HOME/.cache/current_wallpaper" 2>/dev/null)")
 
 if [ -n "$CURRENT_SRC" ]; then
     # Find index in the source directory (sorted alphabetically)

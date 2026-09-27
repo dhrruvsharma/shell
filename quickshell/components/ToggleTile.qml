@@ -1,6 +1,7 @@
 import QtQuick
 import QtQuick.Layouts
 import qs.colors
+import qs.services as Services
 import qs.components
 
 Rectangle {
@@ -11,7 +12,7 @@ Rectangle {
 
         Layout.fillWidth: true
         Layout.preferredHeight: 82
-        radius: 16
+        radius: Services.DesktopTheme.rad(16)
 
         color: active
             ? Colors.primary_container
@@ -33,7 +34,7 @@ Rectangle {
                 Layout.alignment: Qt.AlignHCenter
                 width: 40
                 height: 40
-                radius: 20
+                radius: Services.DesktopTheme.rad(20)
                 color: active
                     ? Colors.primary
                     : Colors.surface_container_highest

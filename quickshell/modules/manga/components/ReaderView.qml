@@ -91,7 +91,7 @@ Item {
                 visible: Manga.chapterPages.length > 0
                 height: 24
                 width: pageCountText.implicitWidth + 18
-                radius: 12
+                radius: DesktopTheme.rad(12)
                 color: Qt.rgba(1, 1, 1, 0.09)
                 border.color: Qt.rgba(1, 1, 1, 0.12)
                 border.width: 1

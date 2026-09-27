@@ -88,7 +88,11 @@ Item {
 
         Rectangle {
             anchors.fill: parent
-            radius: 28
+            radius: Services.DesktopTheme.rad(28)
+
+            PanelDecor {
+                radius: Services.DesktopTheme.rad(28)
+            }
 
             color: Qt.rgba(1, 1, 1, 0.07)
             border.width: 1.5
@@ -259,7 +263,7 @@ Item {
                         anchors.centerIn: iconFrame
                         width: iconFrame.width + 20
                         height: iconFrame.height + 20
-                        radius: 24
+                        radius: Services.DesktopTheme.rad(24)
                         color: "transparent"
                         border.width: 1.5
                         border.color: Qt.rgba(
@@ -281,7 +285,7 @@ Item {
                         anchors.horizontalCenter: parent.horizontalCenter
                         width: 72
                         height: 72
-                        radius: 20
+                        radius: Services.DesktopTheme.rad(20)
 
                         color: Qt.rgba(1, 1, 1,
                             delegateRoot.isPressed ? 0.20
@@ -317,7 +321,7 @@ Item {
 
                             Rectangle {
                                 anchors.fill: parent
-                                radius: 10
+                                radius: Services.DesktopTheme.rad(10)
                                 color: Colors.primary_container
                                 visible: parent.status === Image.Error || parent.status === Image.Null
 

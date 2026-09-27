@@ -213,7 +213,7 @@ Item {
 
         RectangularShadow {
             anchors.fill: parent
-            radius: 16
+            radius: Svc.DesktopTheme.rad(16)
             blur: 24
             spread: 10
             color: "#55000000"
@@ -237,7 +237,7 @@ Item {
                     maskSource: Rectangle {
                         width: thumb.width
                         height: thumb.height
-                        radius: 16
+                        radius: Svc.DesktopTheme.rad(16)
                     }
                 }
 
@@ -253,7 +253,7 @@ Item {
                     border.color: thumbContainer.hovered
                         ? Colors.primary
                         : Qt.rgba(1, 1, 1, 0.12)
-                    radius: 16
+                    radius: Svc.DesktopTheme.rad(16)
                     Behavior on border.width { NumberAnimation { duration: 120 } }
                     Behavior on color        { ColorAnimation  { duration: 150 } }
                     Behavior on border.color { ColorAnimation  { duration: 150 } }
@@ -270,7 +270,7 @@ Item {
             x: (card.width - width) / 2
             y: card.height - height - 10
 
-            radius: 13
+            radius: Svc.DesktopTheme.rad(13)
             color: Qt.rgba(0, 0, 0, thumbContainer.hovered ? 0.72 : 0.55)
             border.width: 1
             border.color: thumbContainer.hovered

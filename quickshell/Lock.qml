@@ -10,8 +10,9 @@ import qs.services as Services
 //
 // 1. Grabs every screen first (ScreenCapture), so each lock surface can start
 //    on a frame identical to the desktop.
-// 2. Picks the theme (services/LockScreen.qml: the active one, or a random one
-//    from the active set in shuffle mode) and engages the session lock. Each
+// 2. Picks the theme (the desktop theme's matching one if it asks for it,
+//    else services/LockScreen.qml: the active one, or a random one from the
+//    active set in shuffle mode) and engages the session lock. Each
 //    monitor gets that theme through ThemeHost; LockContext holds the shared
 //    state and talks to PAM.
 // 3. When PAM accepts the password and the reward/outro has played,
@@ -25,7 +26,7 @@ ShellRoot {
     property bool engaged: false
     property bool releasing: false
     property string themeId: ""
-    readonly property bool settingsReady: Services.LockScreen.ready
+    readonly property bool settingsReady: Services.LockScreen.ready && Services.DesktopTheme.ready
 
     function maybeEngage() {
         if (capture.done && settingsReady)
@@ -36,7 +37,8 @@ ShellRoot {
         if (engaged)
             return;
         engaged = true;
-        themeId = Services.LockScreen.pick();
+        // A desktop theme can ask for its matching lock screen.
+        themeId = Services.DesktopTheme.lockTheme || Services.LockScreen.pick();
         Services.LockScreen.remember(themeId);
         lockCtx.configure(Services.LockScreen.theme(themeId));
         lockCtx.begin();

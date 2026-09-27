@@ -207,7 +207,7 @@ Item {
                         anchors { top: parent.bottom; right: parent.right; topMargin: 6 }
                         width: 150
                         height: popupColumn.implicitHeight + 10
-                        radius: 10
+                        radius: DesktopTheme.rad(10)
                         color: Colors.surface_container_high
                         border.color: Colors.outline_variant; border.width: 1
                         z: 100
@@ -230,7 +230,7 @@ Item {
                                     Rectangle {
                                         anchors.fill: parent
                                         anchors.leftMargin: 4; anchors.rightMargin: 4
-                                        radius: 7
+                                        radius: DesktopTheme.rad(7)
                                         color: {
                                             if (modelData.name === Novel.activeProvider)
                                                 return Colors.primary_container

@@ -20,8 +20,6 @@ Rectangle {
 
     readonly property string srcDir: "file://" + Quickshell.env("HOME") + "/Pictures/wallpapers"
 
-    readonly property string setwallCommand: Quickshell.env("HOME") + "/.local/bin/setwall '%1'"
-
     // Single-wallpaper stage size (one big card instead of a carousel)
     readonly property int itemWidth: 880
     readonly property int itemHeight: 520
@@ -69,10 +67,7 @@ Rectangle {
         const name = window.currentFileName()
         if (!name)
             return
-        let originalFile = window.srcDir + "/" + name
-        originalFile = originalFile.replace(/^file:\/\//, "")
-        const finalCmd = window.setwallCommand.arg(originalFile)
-        Quickshell.execDetached(["bash", "-c", finalCmd])
+        WallpaperEngine.set(window.srcDir + "/" + name)
         window.visible = false
     }
 

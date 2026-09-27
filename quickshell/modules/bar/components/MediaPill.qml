@@ -23,11 +23,22 @@ Item {
         id: pill
         anchors.fill: parent
 
-        radius: height / 2
+        // Desktop themes restyle the capsule; the HUD theme's is a chamfered
+        // frame.
+        readonly property var look: DesktopTheme.look
+        readonly property bool hud: look.shape === "chamfer"
+        radius: DesktopTheme.radius(look, height / 2, height)
+        border.width: hud ? 0 : look.border
+        border.color: DesktopTheme.borderColor(look)
         height: 32
-        color: Colors.background
+        color: hud ? "transparent" : Colors.background
 
         clip: true
+
+        HudFrame {
+            visible: pill.hud
+            fill: Colors.background
+        }
 
         implicitWidth: row.implicitWidth + 20
 

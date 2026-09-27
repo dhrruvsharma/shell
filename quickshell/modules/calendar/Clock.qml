@@ -16,7 +16,7 @@ Rectangle {
     /* ---------- sizing ---------- */
     width: 200
     height: width
-    radius: width / 2
+    radius: Services.DesktopTheme.rad(width / 2)
 
     /* ---------- matugen colors ---------- */
     color: Colors.surface_container
@@ -72,7 +72,7 @@ Rectangle {
                 height: index % 3 === 0 ? 16 : 10
                 color: index % 3 === 0 ? Colors.primary : Colors.on_surface_variant
                 opacity: index % 3 === 0 ? 1.0 : 0.7
-                radius: width / 2
+                radius: Services.DesktopTheme.rad(width / 2)
                 layer.enabled: true
                 layer.samples: 4
 
@@ -89,7 +89,7 @@ Rectangle {
                 Rectangle {
                     width: parent.width + 2
                     height: parent.height + 2
-                    radius: width / 2
+                    radius: Services.DesktopTheme.rad(width / 2)
                     color: "transparent"
                     border.color: Colors.primary
                     border.width: 1
@@ -108,7 +108,7 @@ Rectangle {
                 height: 4
                 color: Colors.on_surface_variant
                 opacity: 0.3
-                radius: width / 2
+                radius: Services.DesktopTheme.rad(width / 2)
                 visible: index % 5 !== 0  // Don't show where hour markers are
 
                 x: parent.width / 2 - width / 2
@@ -128,7 +128,7 @@ Rectangle {
             width: 6
             height: parent.height * 0.3
             color: Colors.primary
-            radius: width / 2
+            radius: Services.DesktopTheme.rad(width / 2)
             antialiasing: true
             layer.enabled: true
             layer.samples: 4
@@ -162,7 +162,7 @@ Rectangle {
             width: 4
             height: parent.height * 0.4
             color: Colors.primary
-            radius: width / 2
+            radius: Services.DesktopTheme.rad(width / 2)
             antialiasing: true
             layer.enabled: true
             layer.samples: 4
@@ -196,7 +196,7 @@ Rectangle {
             width: 2
             height: parent.height * 0.45
             color: Colors.tertiary
-            radius: width / 2
+            radius: Services.DesktopTheme.rad(width / 2)
             antialiasing: true
             visible: root.showSeconds
             layer.enabled: true
@@ -210,7 +210,7 @@ Rectangle {
             Rectangle {
                 width: 6
                 height: 6
-                radius: width / 2
+                radius: Services.DesktopTheme.rad(width / 2)
                 color: Colors.tertiary
                 anchors.horizontalCenter: parent.horizontalCenter
                 anchors.bottom: parent.top
@@ -234,7 +234,7 @@ Rectangle {
         Rectangle {
             width: 16
             height: 16
-            radius: width / 2
+            radius: Services.DesktopTheme.rad(width / 2)
             color: Colors.primary
             anchors.centerIn: parent
             layer.enabled: true
@@ -244,7 +244,7 @@ Rectangle {
             Rectangle {
                 width: 8
                 height: 8
-                radius: width / 2
+                radius: Services.DesktopTheme.rad(width / 2)
                 color: Colors.surface_container
                 anchors.centerIn: parent
             }
@@ -253,7 +253,7 @@ Rectangle {
             Rectangle {
                 width: parent.width + 4
                 height: parent.height + 4
-                radius: width / 2
+                radius: Services.DesktopTheme.rad(width / 2)
                 color: "transparent"
                 border.color: Colors.primary
                 border.width: 1
@@ -268,7 +268,7 @@ Rectangle {
             anchors.bottom: parent.bottom
             anchors.bottomMargin: 10
             color: Colors.surface_container
-            radius: 12
+            radius: Services.DesktopTheme.rad(12)
             height: 24
             width: digitalTime.width + 16
 

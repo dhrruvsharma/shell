@@ -1,4 +1,5 @@
 import QtQuick
+import qs.services as Services
 import QtQuick.Controls
 import QtQuick.Layouts
 import QtQuick.Effects
@@ -204,6 +205,10 @@ Item {
 
     Rectangle {
         id: panel
+
+        PanelDecor {
+            title: "clipboard"
+        }
         anchors.top: parent.top
         anchors.bottom: parent.bottom
         width: 420
@@ -372,7 +377,7 @@ Item {
 
                             Layout.fillWidth: true
                             height: 34
-                            radius: 10
+                            radius: Services.DesktopTheme.rad(10)
 
                             color: active
                                 ? Colors.primary_container
@@ -554,7 +559,7 @@ Item {
 
                         Rectangle {
                             anchors.fill: parent
-                            radius: 10
+                            radius: Services.DesktopTheme.rad(10)
                             clip: true
                             color: isFoc ? Colors.surface_container_high
                                  : isHov ? Colors.surface_container
@@ -662,7 +667,7 @@ Item {
 
                         Rectangle {
                             anchors { fill: parent; margins: 3 }
-                            radius: 10
+                            radius: Services.DesktopTheme.rad(10)
                             color: isFoc ? Colors.surface_container_high
                                  : isHov ? Colors.surface_container
                                  :         "transparent"
@@ -741,7 +746,7 @@ Item {
 
                         Rectangle {
                             anchors.fill: parent
-                            radius: 10
+                            radius: Services.DesktopTheme.rad(10)
                             color: isFoc ? Colors.surface_container_high
                                  : isHov ? Colors.surface_container
                                  :         "transparent"
@@ -768,7 +773,7 @@ Item {
                                 Rectangle {
                                     visible: item && item.category !== ""
                                     height: 18; width: catLabel.implicitWidth + 12
-                                    radius: 6
+                                    radius: Services.DesktopTheme.rad(6)
                                     color: Colors.surface_container_high
                                     StyledText {
                                         id: catLabel

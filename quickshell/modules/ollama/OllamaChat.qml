@@ -84,10 +84,15 @@ Item {
     Rectangle {
         anchors.fill: parent
         color:        theme.bg
-        radius:       theme.radius
+        radius:       DesktopTheme.rad(theme.radius)
         border.color: theme.border
         border.width: 1
         clip:         true
+
+        PanelDecor {
+            radius: parent.radius
+            title: "ollama"
+        }
 
         layer.enabled: true
         layer.effect:  MultiEffect {
@@ -166,7 +171,7 @@ Item {
 
                         background: Rectangle {
                             color:  theme.surfaceHigh
-                            radius: 6
+                            radius: DesktopTheme.rad(6)
                             border { color: theme.border; width: 1 }
                         }
 
@@ -177,7 +182,7 @@ Item {
 
                             background: Rectangle {
                                 color:  theme.surface
-                                radius: 8
+                                radius: DesktopTheme.rad(8)
                                 border { color: theme.border; width: 1 }
                             }
 
@@ -200,7 +205,7 @@ Item {
                             highlighted:  modelCombo.highlightedIndex === index
                             background:   Rectangle {
                                 color: highlighted ? theme.surfaceHigh : "transparent"
-                                radius: 5
+                                radius: DesktopTheme.rad(5)
                             }
                         }
                     }
@@ -215,7 +220,7 @@ Item {
                         ToolTip.text:   "Refresh models"
                         background: Rectangle {
                             color:  parent.hovered ? theme.surfaceHigh : "transparent"
-                            radius: 15
+                            radius: DesktopTheme.rad(15)
                         }
                         contentItem: StyledText {
                             text:             parent.text
@@ -240,7 +245,7 @@ Item {
                         ToolTip.text:   "Clear conversation"
                         background: Rectangle {
                             color:  parent.hovered ? theme.surfaceHigh : "transparent"
-                            radius: 15
+                            radius: DesktopTheme.rad(15)
                         }
                         contentItem: StyledText {
                             text:             parent.text
@@ -411,7 +416,7 @@ Item {
                         Layout.fillWidth: true
                         height: Math.min(Math.max(userInput.implicitHeight + 16, 40), 120)
                         color:  theme.surfaceHigh
-                        radius: 10
+                        radius: DesktopTheme.rad(10)
                         border { color: userInput.activeFocus ? theme.accent : theme.border; width: 1 }
 
                         Behavior on border.color { ColorAnimation { duration: 150 } }

@@ -42,7 +42,7 @@ PanelWindow {
         layer.effect: DropShadow {
             horizontalOffset: 0
             verticalOffset: 3
-            radius: 16
+            radius: Services.DesktopTheme.rad(16)
             samples: 24
             color: Colors.shadow
         }
@@ -131,7 +131,7 @@ PanelWindow {
                             Rectangle {
                                 width: 28
                                 height: 28
-                                radius: 7
+                                radius: Services.DesktopTheme.rad(7)
                                 color: "transparent"
                                 clip: true
 

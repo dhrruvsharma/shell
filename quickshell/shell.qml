@@ -13,7 +13,6 @@ import qs.components
 import qs.Osd
 import Quickshell.Wayland
 import Quickshell.Hyprland
-import qs.quotes
 import qs.modules.launcher
 import qs.modules.wallpaper
 import qs.modules.manga
@@ -32,12 +31,21 @@ import qs.modules.github
 import qs.modules.avatar
 import qs.modules.updates
 import qs.modules.lockthemes
+import qs.modules.desktoptheme
+import qs.modules.desktopwidgets
 
 ShellRoot {
     id: root
+
+    // This instance owns the compositor side of desktop themes (the lock
+    // screen instance only reads the choice).
+    Component.onCompleted: Services.DesktopTheme.manage = true
+
+    // The wallpaper, with the desktop theme's layer over it.
+    WallpaperLayer {}
     NotificationToasts {}
     CalendarWindow {}
-    RandomQuote{}
+    DesktopWidgetsLayer {}
     WorkspaceDiscWindow {}
     Expose {}
     CavaWidget { id: cavaWidget }
@@ -622,6 +630,12 @@ ShellRoot {
         function toggle() {
             wallpaper.visible = !wallpaper.visible
         }
+        function set(path: string): void {
+            Services.WallpaperEngine.set(path)
+        }
+        function current(): string {
+            return Services.WallpaperEngine.current
+        }
     }
 
     Timer {
@@ -656,6 +670,61 @@ ShellRoot {
             } else {
                 powerMenu.close()
             }
+        }
+    }
+
+    IpcHandler {
+        target: "desktopTheme"
+        function toggle(): void {
+            Services.DesktopTheme.toggle()
+        }
+        function enable(): void {
+            if (!Services.DesktopTheme.enabled)
+                Services.DesktopTheme.toggle()
+        }
+        function set(theme: string): void {
+            Services.DesktopTheme.setTheme(theme)
+        }
+        function disable(): void {
+            Services.DesktopTheme.setTheme("")
+        }
+        function screenEffect(mode: string): void {
+            Services.DesktopTheme.setScreenEffect(mode)
+        }
+    }
+
+    IpcHandler {
+        target: "themes"
+        function toggle(): void {
+            lockThemes.toggle()
+        }
+        function desktop(): void {
+            lockThemes.openTab("desktop")
+        }
+        function lockscreen(): void {
+            lockThemes.openTab("lock")
+        }
+        function widgets(): void {
+            lockThemes.openTab("widgets")
+        }
+    }
+
+    IpcHandler {
+        target: "widgets"
+        function toggle(): void {
+            if (lockThemes.visible && lockThemes.tab === "widgets")
+                lockThemes.close()
+            else
+                lockThemes.openTab("widgets")
+        }
+        function enable(id: string): void {
+            Services.DesktopWidgets.setEnabled(id, true)
+        }
+        function disable(id: string): void {
+            Services.DesktopWidgets.setEnabled(id, false)
+        }
+        function reset(): void {
+            Services.DesktopWidgets.resetPositions()
         }
     }
 

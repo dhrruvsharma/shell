@@ -1,4 +1,5 @@
 import QtQuick
+import qs.services as Services
 import qs.colors
 import qs.components
 
@@ -23,7 +24,7 @@ Item {
 
     Rectangle {
         anchors.fill: parent
-        radius: 20
+        radius: Services.DesktopTheme.rad(20)
         color: Colors.error_container
         border { width: 1; color: Colors.error }
 

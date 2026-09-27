@@ -1,0 +1,43 @@
+#version 320 es
+// Screen grade for the Still desktop theme, applied by Hyprland to the whole
+// output (decoration:screen_shader). services/DesktopTheme.qml fills in the
+// @PLACEHOLDERS@ and writes the result to ~/.cache/quickshell/desktop-theme.frag.
+//
+// Deliberately static: it never reads `time` (the grain is a fixed pattern),
+// so Hyprland keeps its damage tracking and an idle desktop costs nothing.
+
+precision highp float;
+
+in vec2 v_texcoord;
+uniform sampler2D tex;
+out vec4 fragColor;
+
+const float strength = @STRENGTH@;
+const float strong = @STRONG@;
+
+// Interleaved gradient noise: a stable per-pixel pattern.
+float grain(vec2 p) {
+    return fract(52.9829189 * fract(dot(p, vec2(0.06711056, 0.00583715))));
+}
+
+void main() {
+    vec4 c = texture(tex, v_texcoord);
+    float lum = dot(c.rgb, vec3(0.2126, 0.7152, 0.0722));
+
+    // Softer colour and slightly lifted, warm blacks.
+    c.rgb = mix(c.rgb, vec3(lum), 0.1 * strength);
+    c.rgb = c.rgb * (1.0 - 0.03 * strength) + 0.015 * strength * vec3(1.0, 0.96, 0.9);
+
+    // Warmer highlights when strong.
+    c.rgb *= mix(vec3(1.0), vec3(1.03, 1.0, 0.95), strong * smoothstep(0.5, 1.0, lum));
+
+    // Fine film grain.
+    c.rgb += (grain(floor(gl_FragCoord.xy)) - 0.5) * (0.018 + 0.017 * strong);
+
+    // A gentle vignette.
+    vec2 d = v_texcoord - 0.5;
+    float r = length(d * vec2(1.0, 1.1));
+    c.rgb *= 1.0 - smoothstep(0.6, 1.0, r) * 0.1 * strength;
+
+    fragColor = vec4(clamp(c.rgb, 0.0, 1.0), c.a);
+}

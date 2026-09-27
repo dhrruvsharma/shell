@@ -34,7 +34,7 @@ Item {
         Card {
             Layout.fillWidth: true
             Layout.preferredHeight: 78
-            radius: 18
+            radius: Services.DesktopTheme.rad(18)
             color: Colors.surface_container_high
 
             RowLayout {
@@ -46,7 +46,7 @@ Item {
                 Rectangle {
                     Layout.preferredWidth: 48
                     Layout.preferredHeight: 48
-                    radius: 24
+                    radius: Services.DesktopTheme.rad(24)
                     color: btRoot.bluetoothEnabled
                         ? Qt.rgba(btRoot.accent.r, btRoot.accent.g, btRoot.accent.b, 0.16)
                         : Colors.surface_container_highest
@@ -88,7 +88,7 @@ Item {
                 Rectangle {
                     Layout.preferredWidth: 50
                     Layout.preferredHeight: 28
-                    radius: 14
+                    radius: Services.DesktopTheme.rad(14)
                     opacity: btRoot.adapterPresent ? 1 : 0.4
                     color: btRoot.bluetoothEnabled
                         ? Colors.primary
@@ -136,7 +136,7 @@ Item {
             ClickableRect {
                 id: scanRect
                 Layout.preferredWidth: 30; Layout.preferredHeight: 30
-                radius: 15
+                radius: Services.DesktopTheme.rad(15)
                 color: scanRect.hovered ? Colors.surface_container_highest : "transparent"
                 MaterialIcon {
                     anchors.centerIn: parent
@@ -162,7 +162,7 @@ Item {
         Rectangle {
             Layout.fillWidth: true
             Layout.fillHeight: true
-            radius: 16
+            radius: Services.DesktopTheme.rad(16)
             color: Colors.surface_container_low
             clip: true
 
@@ -214,7 +214,7 @@ Item {
                             id: dev
                             Layout.fillWidth: true
                             Layout.preferredHeight: 60
-                            radius: 12
+                            radius: Services.DesktopTheme.rad(12)
 
                             color: modelData.connected
                                 ? Qt.rgba(btRoot.accent.r, btRoot.accent.g, btRoot.accent.b, 0.14)
@@ -248,7 +248,7 @@ Item {
 
                                 Rectangle {
                                     Layout.preferredWidth: 38; Layout.preferredHeight: 38
-                                    radius: 19
+                                    radius: Services.DesktopTheme.rad(19)
                                     color: modelData.connected
                                         ? Qt.rgba(btRoot.accent.r, btRoot.accent.g, btRoot.accent.b, 0.18)
                                         : Colors.surface_container_highest
@@ -294,7 +294,7 @@ Item {
                                     id: unpairRect
                                     visible: modelData.paired
                                     Layout.preferredWidth: 30; Layout.preferredHeight: 30
-                                    radius: 15
+                                    radius: Services.DesktopTheme.rad(15)
                                     opacity: (unpairRect.hovered || devMa.containsMouse) ? 1 : 0
                                     color: unpairRect.hovered ? Colors.error_container : "transparent"
                                     Behavior on opacity { NumberAnimation { duration: 120 } }

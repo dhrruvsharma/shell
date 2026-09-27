@@ -32,7 +32,7 @@ Item {
 
     Rectangle {
         anchors.fill: parent
-        radius: 20
+        radius: Services.DesktopTheme.rad(20)
         color: Colors.background
 
         ColumnLayout {
@@ -47,7 +47,7 @@ Item {
                 Rectangle {
                     width: 72
                     height: 72
-                    radius: 12
+                    radius: Services.DesktopTheme.rad(12)
                     color: Colors.surface_container_highest
                     clip: true
 
@@ -105,7 +105,7 @@ Item {
                         onClicked: toggleVisProc.running = true
 
                         background: Rectangle {
-                            radius: 4
+                            radius: Services.DesktopTheme.rad(4)
                             color: visToggleBtn.hovered
                                 ? Colors.surface_container_highest
                                 : "transparent"
@@ -183,7 +183,7 @@ Item {
                     onClicked: Services.Media.previousPlayer()
 
                     background: Rectangle {
-                        radius: 4
+                        radius: Services.DesktopTheme.rad(4)
                         color: parent.hovered ? Colors.surface_container_highest : "transparent"
                         Behavior on color { ColorAnimation { duration: 150 } }
                     }
@@ -213,7 +213,7 @@ Item {
                     onClicked: Services.Media.nextPlayer()
 
                     background: Rectangle {
-                        radius: 4
+                        radius: Services.DesktopTheme.rad(4)
                         color: parent.hovered ? Colors.surface_container_highest : "transparent"
                         Behavior on color { ColorAnimation { duration: 150 } }
                     }
@@ -248,14 +248,14 @@ Item {
                         implicitHeight: 4
                         width: progressSlider.availableWidth
                         height: implicitHeight
-                        radius: 2
+                        radius: Services.DesktopTheme.rad(2)
                         color: Colors.surface_container_highest
 
                         Rectangle {
                             width: progressSlider.visualPosition * parent.width
                             height: parent.height
                             color: Colors.primary
-                            radius: 2
+                            radius: Services.DesktopTheme.rad(2)
                         }
                     }
 
@@ -264,7 +264,7 @@ Item {
                         y: progressSlider.topPadding + progressSlider.availableHeight / 2 - height / 2
                         implicitWidth: 12
                         implicitHeight: 12
-                        radius: 6
+                        radius: Services.DesktopTheme.rad(6)
                         color: progressSlider.pressed ? Colors.primary_fixed : Colors.primary
                         border.color: Colors.primary_container
                         border.width: 1
@@ -293,7 +293,7 @@ Item {
             Rectangle {
                 Layout.fillWidth: true
                 Layout.preferredHeight: 100
-                radius: 10
+                radius: Services.DesktopTheme.rad(10)
                 color: "transparent"
                 visible: mediaControl.isSpotify
 

@@ -3,6 +3,7 @@ import QtQuick
 import QtQuick.Controls
 import QtQuick.Layouts
 import qs.colors
+import qs.services as Services
 import qs.components
 
 Item {
@@ -112,7 +113,7 @@ Item {
                     anchors.verticalCenter: parent.verticalCenter
                     width: slider.visualPosition * slider.width
                     height: slider.height - root.trackHeightDiff
-                    radius: height / 2
+                    radius: Services.DesktopTheme.rad(height / 2)
                     color: root.accentColor
 
                     Behavior on width {
@@ -129,7 +130,7 @@ Item {
                     anchors.verticalCenter: parent.verticalCenter
                     width: (1 - slider.visualPosition) * slider.width
                     height: slider.height - root.trackHeightDiff
-                    radius: height / 2
+                    radius: Services.DesktopTheme.rad(height / 2)
                     color: root.trackColor
 
                     Behavior on width {
@@ -147,7 +148,7 @@ Item {
 
                 width: slider.pressed ? 24 : 20
                 height: width
-                radius: width / 2
+                radius: Services.DesktopTheme.rad(width / 2)
                 color: root.accentColor
 
                 Behavior on x {

@@ -41,7 +41,7 @@ Popout {
     Rectangle {
         anchors.fill: parent
         color: root.backgroundColor
-        radius: 12
+        radius: Services.DesktopTheme.rad(12)
 
         clip: true
 
@@ -89,7 +89,7 @@ Popout {
                             id: closeButton
                             implicitWidth: 32
                             implicitHeight: 32
-                            radius: 16
+                            radius: Services.DesktopTheme.rad(16)
                             color: closeMouseArea.containsMouse ? root.closeButtonHoverColor : "transparent"
 
                             Behavior on color {

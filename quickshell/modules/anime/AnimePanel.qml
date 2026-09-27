@@ -184,4 +184,8 @@ Item {
             }
         }
     }
+
+    PanelDecor {
+        title: "anime"
+    }
 }

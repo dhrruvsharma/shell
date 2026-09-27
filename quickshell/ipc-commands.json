@@ -48,6 +48,18 @@
     "subtext": "Toggle Control Center · ALT+SHIFT+C"
   },
   {
+    "text": "qs ipc call desktopTheme disable",
+    "subtext": "Disable Desktop Theme"
+  },
+  {
+    "text": "qs ipc call desktopTheme enable",
+    "subtext": "Enable Desktop Theme"
+  },
+  {
+    "text": "qs ipc call desktopTheme toggle",
+    "subtext": "Toggle Desktop Theme"
+  },
+  {
     "text": "qs ipc call expose hide",
     "subtext": "Hide Expose"
   },
@@ -116,6 +128,22 @@
     "subtext": "Toggle System Panel"
   },
   {
+    "text": "qs ipc call themes desktop",
+    "subtext": "Desktop Themes"
+  },
+  {
+    "text": "qs ipc call themes lockscreen",
+    "subtext": "Lockscreen Themes"
+  },
+  {
+    "text": "qs ipc call themes toggle",
+    "subtext": "Toggle Themes"
+  },
+  {
+    "text": "qs ipc call themes widgets",
+    "subtext": "Widgets Themes"
+  },
+  {
     "text": "qs ipc call updatesPanel refresh",
     "subtext": "Refresh Updates Panel"
   },
@@ -128,8 +156,20 @@
     "subtext": "Toggle Wallhaven Panel · SUPER+SHIFT+W"
   },
   {
+    "text": "qs ipc call wallpaper current",
+    "subtext": "Current Wallpaper"
+  },
+  {
     "text": "qs ipc call wallpaper toggle",
     "subtext": "Toggle Wallpaper · SUPER+W"
+  },
+  {
+    "text": "qs ipc call widgets reset",
+    "subtext": "Reset Widgets"
+  },
+  {
+    "text": "qs ipc call widgets toggle",
+    "subtext": "Toggle Widgets · ALT+SHIFT+W"
   },
   {
     "text": "quickshell -p ~/.config/quickshell/Lock.qml",

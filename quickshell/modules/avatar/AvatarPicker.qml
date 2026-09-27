@@ -1,5 +1,6 @@
 pragma ComponentBehavior: Bound
 import QtQuick
+import qs.services as Services
 import QtQuick.Layouts
 import Qt.labs.folderlistmodel
 import Quickshell
@@ -52,6 +53,11 @@ Item {
 
     Rectangle {
         id: dockCard
+
+        PanelDecor {
+            radius: dockCard.radius
+            title: "avatar"
+        }
         anchors.bottom: parent.bottom
         anchors.right:  parent.right
         anchors.bottomMargin: 10
@@ -60,7 +66,7 @@ Item {
         width:  Math.min(Math.max(folderModel.count, 1), 5) * 88 + 24
         height: 104
 
-        radius: 24
+        radius: Services.DesktopTheme.rad(24)
         color:  Colors.surface_container
 
         // bottom shadow strip
@@ -143,7 +149,7 @@ Item {
 
                     width:  68
                     height: 68
-                    radius: 16
+                    radius: Services.DesktopTheme.rad(16)
                     clip:   true
 
                     // scale: unselected tiles shrink slightly so the selected one pops
@@ -185,7 +191,7 @@ Item {
                     anchors.bottom: parent.bottom
                     width:  cell.sel ? 16 : 4
                     height: 3
-                    radius: 2
+                    radius: Services.DesktopTheme.rad(2)
                     color:  Colors.primary
                     opacity: cell.sel ? 1.0 : cell.hov ? 0.4 : 0.0
                     Behavior on width   { NumberAnimation { duration: 220; easing.type: Easing.OutCubic } }

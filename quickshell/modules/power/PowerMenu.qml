@@ -1,4 +1,5 @@
 import QtQuick
+import qs.services as Services
 import QtQuick.Layouts
 import Quickshell.Io
 import qs.colors
@@ -57,7 +58,7 @@ Item {
             anchors.centerIn: circle
             width: circle.width + 24
             height: circle.height + 24
-            radius: width / 2
+            radius: Services.DesktopTheme.rad(width / 2)
             color: "transparent"
             border.width: 1
             border.color: Qt.rgba(
@@ -77,7 +78,7 @@ Item {
             anchors.horizontalCenter: parent.horizontalCenter
             width: 96
             height: 96
-            radius: 48
+            radius: Services.DesktopTheme.rad(48)
 
             color: Qt.rgba(
                 orb.glowColor.r, orb.glowColor.g, orb.glowColor.b,

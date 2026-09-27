@@ -64,7 +64,7 @@ Popout {
     Rectangle {
         anchors.fill: parent
         color: Colors.surface
-        radius: 14
+        radius: Services.DesktopTheme.rad(14)
         clip: true
 
         ColumnLayout {
@@ -91,7 +91,7 @@ Popout {
 
                 Rectangle {
                     visible: root.svc.count > 0
-                    radius: 9
+                    radius: Services.DesktopTheme.rad(9)
                     implicitHeight: 18
                     implicitWidth: countLabel.implicitWidth + 14
                     color: Colors.primary
@@ -162,7 +162,7 @@ Popout {
             Rectangle {
                 Layout.fillWidth: true
                 Layout.fillHeight: true
-                radius: 12
+                radius: Services.DesktopTheme.rad(12)
                 color: Colors.surface_container_low
                 clip: true
 
@@ -183,7 +183,7 @@ Popout {
                         readonly property bool checked: root.isSelected(row.modelData.name)
                         width: list.width - 12
                         implicitHeight: 46
-                        radius: 10
+                        radius: Services.DesktopTheme.rad(10)
                         color: row.checked ? Colors.withAlpha(Colors.primary, 0.12)
                              : rowMouse.containsMouse ? Colors.surface_container_high : "transparent"
 
@@ -206,7 +206,7 @@ Popout {
                                 Layout.alignment: Qt.AlignVCenter
                                 implicitWidth: 20
                                 implicitHeight: 20
-                                radius: 6
+                                radius: Services.DesktopTheme.rad(6)
                                 color: row.checked ? Colors.primary : "transparent"
                                 border.width: row.checked ? 0 : 1.5
                                 border.color: Colors.outline
@@ -235,7 +235,7 @@ Popout {
                                     }
                                     Rectangle {
                                         visible: row.modelData.aur
-                                        radius: 6
+                                        radius: Services.DesktopTheme.rad(6)
                                         implicitHeight: 15
                                         implicitWidth: aurTag.implicitWidth + 10
                                         color: Colors.tertiary_container

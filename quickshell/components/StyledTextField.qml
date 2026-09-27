@@ -1,6 +1,7 @@
 import QtQuick
 import QtQuick.Controls
 import qs.colors
+import qs.services as Services
 
 // TextField with the shell's standard background. The background knobs are
 // properties because call sites genuinely differ on radius/border; the text and
@@ -8,7 +9,7 @@ import qs.colors
 TextField {
     id: root
 
-    property real radius: 10
+    property real radius: Services.DesktopTheme.rad(10)
     property int borderWidth: 1
     property color backgroundColor: Colors.surface_container
     property color borderColor: Colors.outline_variant

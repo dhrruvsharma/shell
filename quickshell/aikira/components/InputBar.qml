@@ -1,4 +1,5 @@
 import QtQuick
+import qs.services as Services
 import qs.aikira
 import QtQuick.Layouts
 import qs.colors
@@ -27,7 +28,7 @@ Item {
             Rectangle {
                 Layout.fillWidth: true
                 height: 36
-                radius: 18
+                radius: Services.DesktopTheme.rad(18)
                 clip: true
                 color: Colors.surface_container_highest
                 border {

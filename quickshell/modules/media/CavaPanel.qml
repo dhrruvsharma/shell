@@ -1,4 +1,5 @@
 import QtQuick
+import qs.services as Services
 import Quickshell
 import qs.components
 import Quickshell.Io
@@ -24,7 +25,7 @@ PanelWindow {
 
     Card {
         anchors.fill: parent
-        radius: 18
+        radius: Services.DesktopTheme.rad(18)
 
 
 

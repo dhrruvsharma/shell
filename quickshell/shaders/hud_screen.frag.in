@@ -1,0 +1,40 @@
+#version 320 es
+// Screen grade for the HUD desktop theme, applied by Hyprland to the whole
+// output (decoration:screen_shader). services/DesktopTheme.qml fills in the
+// @PLACEHOLDERS@ from the wallpaper colours and writes the result to
+// ~/.cache/quickshell/desktop-theme.frag.
+//
+// Deliberately static: it never reads `time`, so Hyprland keeps its damage
+// tracking and an idle desktop still costs nothing.
+
+precision highp float;
+
+in vec2 v_texcoord;
+uniform sampler2D tex;
+out vec4 fragColor;
+
+const vec3 accent = vec3(@ACCENT@);
+const float strength = @STRENGTH@;
+const float scanlines = @SCANLINES@;
+
+void main() {
+    vec4 c = texture(tex, v_texcoord);
+    vec2 d = v_texcoord - 0.5;
+
+    // Vignette.
+    float r = length(d * vec2(1.0, 1.1));
+    c.rgb *= 1.0 - smoothstep(0.55, 0.95, r) * 0.16 * strength;
+
+    // Accent light creeping in from the screen edges, like a HUD frame.
+    float edge = max(abs(d.x), abs(d.y));
+    c.rgb += accent * smoothstep(0.455, 0.5, edge) * 0.07 * strength;
+
+    // Lift the deepest shadows towards the accent.
+    float lum = dot(c.rgb, vec3(0.2126, 0.7152, 0.0722));
+    c.rgb += accent * 0.03 * strength * (1.0 - smoothstep(0.0, 0.22, lum));
+
+    // Optional scanlines: every third pixel row slightly darker.
+    c.rgb *= 1.0 - scanlines * 0.07 * step(2.0, mod(gl_FragCoord.y, 3.0));
+
+    fragColor = vec4(clamp(c.rgb, 0.0, 1.0), c.a);
+}

@@ -1,4 +1,5 @@
 import QtQuick
+import qs.services as Services
 import QtQuick.Layouts
 import qs.colors
 import qs.components
@@ -14,7 +15,7 @@ Item {
 
     Rectangle {
         anchors { fill: parent; leftMargin: 8; rightMargin: 8 }
-        radius: 7
+        radius: Services.DesktopTheme.rad(7)
         color: selected
             ? Colors.secondary_container
             : (area.containsMouse ? Colors.surface_container : "transparent")

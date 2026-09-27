@@ -65,7 +65,7 @@ ColumnLayout {
 
                 Rectangle {
                     anchors.fill: parent
-                    radius: 8
+                    radius: Services.DesktopTheme.rad(8)
 
                     color: delegate.isDefault
                         ? Colors.withAlpha(Colors.primary_container, 0.85)

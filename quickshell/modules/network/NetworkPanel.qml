@@ -1,4 +1,5 @@
 import QtQuick
+import qs.services as Services
 import QtQuick.Layouts
 import QtQuick.Controls
 import Quickshell
@@ -49,12 +50,17 @@ Item {
 
     Card {
         id: panel
+
+        PanelDecor {
+            radius: panel.radius
+            title: "network"
+        }
         width: 384
         height: 620
         anchors.bottom: parent.bottom
         x: networkPanel.width
 
-        radius: 22
+        radius: Services.DesktopTheme.rad(22)
 
         layer.enabled: true
         layer.smooth: true
@@ -86,7 +92,7 @@ Item {
                     id: tabBar
                     Layout.fillWidth: true
                     Layout.preferredHeight: 48
-                    radius: 16
+                    radius: Services.DesktopTheme.rad(16)
                     color: Colors.surface_container_high
 
                     Rectangle {
@@ -95,7 +101,7 @@ Item {
                         height: tabBar.height - 8
                         y: 4
                         x: 4 + (networkPanel.currentTab === 0 ? 0 : width)
-                        radius: 12
+                        radius: Services.DesktopTheme.rad(12)
                         color: Colors.primary
                         Behavior on x { NumberAnimation { duration: 240; easing.type: Easing.OutCubic } }
                     }

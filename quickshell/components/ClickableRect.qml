@@ -1,4 +1,5 @@
 import QtQuick
+import qs.services as Services
 
 // A Rectangle that knows whether the pointer is over it. Replaces the
 // `Rectangle { ... MouseArea { id: ma; hoverEnabled: true } }` +
@@ -20,6 +21,15 @@ Rectangle {
     signal clicked(var mouse)
     signal entered
     signal exited
+
+    // A desktop theme squares these off (or, Astral, rounds them into
+    // capsules) while it's on, restoring the caller's radius when it's off.
+    Binding {
+        target: root
+        property: "radius"
+        value: Services.DesktopTheme.roundControls ? Math.min(root.height / 2, 22) : Services.DesktopTheme.controlRadius
+        when: Services.DesktopTheme.controlRadius >= 0 || Services.DesktopTheme.roundControls
+    }
 
     MouseArea {
         id: mouse

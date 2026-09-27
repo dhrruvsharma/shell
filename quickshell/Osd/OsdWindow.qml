@@ -27,7 +27,11 @@ Item {
 
     Card {
         anchors.fill: parent
-        radius: 20
+        radius: Services.DesktopTheme.rad(20)
+
+        PanelDecor {
+            radius: Services.DesktopTheme.rad(20)
+        }
         color: Colors.surface_container_high
         opacity: Services.Osd.visible ? 1.0 : 0.0
 
@@ -52,7 +56,7 @@ Item {
             Rectangle {
                 width: 52
                 height: 52
-                radius: 12
+                radius: Services.DesktopTheme.rad(12)
                 color: Colors.primary_container
                 anchors.verticalCenter: parent.verticalCenter
 
@@ -100,12 +104,12 @@ Item {
                 Rectangle {
                     width: parent.width
                     height: 8
-                    radius: 4
+                    radius: Services.DesktopTheme.rad(4)
                     color: Colors.surface_container_highest
 
                     Rectangle {
                         height: parent.height
-                        radius: 4
+                        radius: Services.DesktopTheme.rad(4)
                         width: parent.width * Math.min(Math.max(Services.Osd.value, 0), 100) / 100
                         color: Colors.primary
 

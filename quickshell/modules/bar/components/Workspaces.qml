@@ -34,11 +34,25 @@ Rectangle {
         changeWorkspace(activeWs + delta)
     }
 
+    // Desktop themes restyle the capsule and pips (look.shape); the HUD
+    // theme's is chamfered with square bars and diamond pips.
+    readonly property var look: Services.DesktopTheme.look
+    readonly property bool hud: look.shape === "chamfer"
+    readonly property bool squarePips: look.shape === "chamfer" || look.shape === "square"
+
     Layout.preferredHeight: 26
     Layout.preferredWidth: visibleCount * 26 + (visibleCount - 1) * 4 + 4
-    color: Colors.surface_container
-    radius: height / 2
+    color: hud ? "transparent" : Colors.surface_container
+    radius: Services.DesktopTheme.radius(look, height / 2, height)
+    border.width: hud ? 0 : look.border
+    border.color: Services.DesktopTheme.borderColor(look)
     clip: true
+
+    HudFrame {
+        visible: wsContainer.hud
+        cut: 7
+        fill: Colors.surface_container
+    }
 
     ListView {
         id: pager
@@ -95,7 +109,7 @@ Rectangle {
 
                 Rectangle {
                     height: 26
-                    radius: 14
+                    radius: Services.DesktopTheme.radius(wsContainer.look, 14, height)
                     opacity: 0.8
                     color: Colors.background
 
@@ -113,7 +127,7 @@ Rectangle {
                 x: localIndex * (26 + 4) + 2
                 width: 26
                 height: 26
-                radius: 13
+                radius: Services.DesktopTheme.radius(wsContainer.look, 13, height)
 
                 color: Colors.primary
 
@@ -141,7 +155,8 @@ Rectangle {
                             anchors.centerIn: parent
                             width: hasWindows ? 6 : 4
                             height: width
-                            radius: width / 2
+                            radius: wsContainer.squarePips ? 0 : width / 2
+                            rotation: wsContainer.hud ? 45 : 0
                             color: hasWindows ? Colors.primary : Colors.secondary
                         }
 

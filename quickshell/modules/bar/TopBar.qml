@@ -2,6 +2,7 @@ import QtQuick
 import qs.modules.bar.components
 import qs.services as Services
 import qs.colors
+import qs.components
 
 // Top bar with drag-rearrangeable "islands". Every draggable widget is an atom
 // living in an island (a group of 1+ atoms sharing a pill/tray). Islands live in
@@ -234,11 +235,23 @@ Item {
         anchors.verticalCenter: parent ? parent.verticalCenter : undefined
         implicitWidth: atomRow.implicitWidth + 2 * island.pad
         implicitHeight: topBar.islandHeight
-        radius: 16
-        color: island.grouped ? Colors.surface_container_high : "transparent"
-        border.width: island.isMergeTarget ? 2 : 0
-        border.color: Colors.primary
+        // Desktop themes restyle the group chrome; the HUD theme's is a
+        // chamfered frame drawn below the atoms instead.
+        readonly property var look: Services.DesktopTheme.look
+        readonly property bool hud: look.shape === "chamfer"
+        radius: Services.DesktopTheme.radius(island.look, 16, height)
+        color: island.grouped && !island.hud ? Colors.surface_container_high : "transparent"
+        border.width: island.hud ? 0 : island.isMergeTarget ? 2 : island.grouped ? island.look.border : 0
+        border.color: island.isMergeTarget ? Colors.primary : Services.DesktopTheme.borderColor(island.look)
         opacity: island.beingDragged ? 0.4 : 1
+
+        HudFrame {
+            visible: island.hud && (island.grouped || island.isMergeTarget)
+            fill: island.grouped ? Colors.surface_container_high : "transparent"
+            stroke: island.isMergeTarget ? Colors.primary : Colors.withAlpha(Colors.on_surface, 0.12)
+            strokeWidth: island.isMergeTarget ? 2 : 1
+            tick: island.grouped
+        }
 
         // Insertion caret shown just left of this island.
         Rectangle {

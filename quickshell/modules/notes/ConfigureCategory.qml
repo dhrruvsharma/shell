@@ -22,7 +22,7 @@ Dialog {
     parent: root
 
     background: Card {
-        radius: 28
+        radius: Services.DesktopTheme.rad(28)
         color: Colors.surface_container_lowest
 
         Rectangle {
@@ -36,7 +36,7 @@ Dialog {
 
     header: Rectangle {
         height: 64
-        radius: 28
+        radius: Services.DesktopTheme.rad(28)
         color: Colors.surface_container_lowest
 
         Rectangle {
@@ -45,7 +45,7 @@ Dialog {
             anchors.top: parent.top
             anchors.topMargin: 12
             anchors.horizontalCenter: parent.horizontalCenter
-            radius: 2
+            radius: Services.DesktopTheme.rad(2)
             color: Colors.outline_variant
             opacity: 0.3
         }
@@ -78,7 +78,7 @@ Dialog {
             placeholderText: "e.g., ani-cli $text"
             font.pixelSize: 14
             focus: true
-            radius: 14
+            radius: Services.DesktopTheme.rad(14)
             borderWidth: 2
             backgroundColor: Colors.surface_container_high
             focusBorderColor: Colors.primary
@@ -88,7 +88,7 @@ Dialog {
         Card {
             Layout.fillWidth: true
             Layout.preferredHeight: 50
-            radius: 12
+            radius: Services.DesktopTheme.rad(12)
 
             RowLayout {
                 anchors.fill: parent
@@ -111,7 +111,7 @@ Dialog {
                         implicitHeight: 24
                         x: keepOpenSwitch.leftPadding
                         y: parent.height / 2 - height / 2
-                        radius: 12
+                        radius: Services.DesktopTheme.rad(12)
                         color: keepOpenSwitch.checked
                             ? Colors.primary
                             : Colors.surface_container_highest
@@ -125,7 +125,7 @@ Dialog {
                             y: (parent.height - height) / 2
                             width: 20
                             height: 20
-                            radius: 10
+                            radius: Services.DesktopTheme.rad(10)
                             color: Colors.on_primary
                             border.color: keepOpenSwitch.checked
                                 ? Colors.primary
@@ -146,7 +146,7 @@ Dialog {
                 visible: parent.hovered
                 width: 300
                 background: Card {
-                    radius: 6
+                    radius: Services.DesktopTheme.rad(6)
                     color: Colors.surface_container_highest
                 }
             }
@@ -156,7 +156,7 @@ Dialog {
         Card {
             Layout.fillWidth: true
             Layout.preferredHeight: 48
-            radius: 10
+            radius: Services.DesktopTheme.rad(10)
             visible: commandInput.text.trim().length > 0
 
             ColumnLayout {
@@ -196,7 +196,7 @@ Dialog {
                 Layout.preferredHeight: 44
 
                 background: Card {
-                    radius: 12
+                    radius: Services.DesktopTheme.rad(12)
                     color: parent.hovered
                         ? Colors.surface_container_high
                         : "transparent"
@@ -222,7 +222,7 @@ Dialog {
                 Layout.preferredHeight: 44
 
                 background: Card {
-                    radius: 12
+                    radius: Services.DesktopTheme.rad(12)
                     color: parent.hovered
                         ? Colors.surface_container_high
                         : "transparent"
@@ -247,7 +247,7 @@ Dialog {
                 Layout.preferredHeight: 44
 
                 background: Rectangle {
-                    radius: 12
+                    radius: Services.DesktopTheme.rad(12)
                     color: parent.hovered
                         ? Qt.darker(Colors.primary_container, 1.2)
                         : Colors.primary_container

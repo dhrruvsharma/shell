@@ -1,4 +1,5 @@
 import QtQuick
+import qs.services as Services
 import qs.colors
 import qs.components
 
@@ -13,7 +14,7 @@ Item {
 
     Rectangle {
         anchors.fill: parent
-        radius: 8
+        radius: Services.DesktopTheme.rad(8)
         color: active
             ? Colors.primary_container
             : (area.containsMouse ? Colors.surface_container_high : "transparent")
@@ -43,7 +44,7 @@ Item {
         visible: area.containsMouse && root.tooltip.length > 0
         anchors { bottom: parent.top; horizontalCenter: parent.horizontalCenter; bottomMargin: 4 }
         width: tipText.implicitWidth + 12; height: 22
-        radius: 6
+        radius: Services.DesktopTheme.rad(6)
         color: Colors.surface_container_highest
         z: 99
 

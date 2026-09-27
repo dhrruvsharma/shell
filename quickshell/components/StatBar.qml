@@ -1,6 +1,7 @@
 import QtQuick
 import QtQuick.Layouts
 import qs.colors
+import qs.services as Services
 import qs.components
 
 ColumnLayout {
@@ -23,7 +24,7 @@ ColumnLayout {
         Rectangle {
             Layout.preferredWidth: 36
             Layout.preferredHeight: 36
-            radius: 8
+            radius: Services.DesktopTheme.rad(8)
             color: value > 80
                 ? Qt.rgba(239/255, 83/255, 80/255, 0.2)
                 : value > 60
@@ -68,13 +69,13 @@ ColumnLayout {
     Rectangle {
         Layout.fillWidth: true
         Layout.preferredHeight: 8
-        radius: 4
+        radius: Services.DesktopTheme.rad(4)
         color: Colors.surface_container_high
 
         Rectangle {
             width: Math.min(parent.width * (value/maxValue), parent.width)
             height: parent.height
-            radius: 4
+            radius: Services.DesktopTheme.rad(4)
 
             gradient: Gradient {
                 orientation: Gradient.Horizontal

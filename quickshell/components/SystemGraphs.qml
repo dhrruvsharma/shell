@@ -15,7 +15,7 @@ Item {
         Rectangle {
             width: 115
             height: 95
-            radius: 12
+            radius: Services.DesktopTheme.rad(12)
             color: Colors.surface_container_high
 
             SemiCircularGraph {
@@ -32,7 +32,7 @@ Item {
         Rectangle {
             width: 115
             height: 95
-            radius: 12
+            radius: Services.DesktopTheme.rad(12)
             color: Colors.surface_container_high
 
             SemiCircularGraph {
@@ -49,7 +49,7 @@ Item {
         Rectangle {
             width: 115
             height: 95
-            radius: 12
+            radius: Services.DesktopTheme.rad(12)
             color: Colors.surface_container_high
 
             SemiCircularGraph {

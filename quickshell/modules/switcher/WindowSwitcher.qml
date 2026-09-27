@@ -470,7 +470,7 @@ PanelWindow {
 
                             Rectangle {
                                 anchors.fill: parent
-                                radius: 10
+                                radius: Svc.DesktopTheme.rad(10)
                                 color: "transparent"
                                 border.width: 2
                                 border.color: Colors.primary
@@ -478,7 +478,7 @@ PanelWindow {
 
                                 Rectangle {
                                     anchors.fill: parent
-                                    radius: 10
+                                    radius: Svc.DesktopTheme.rad(10)
                                     color: Colors.primary
                                     opacity: 0.1
                                 }
@@ -539,7 +539,7 @@ PanelWindow {
                                 anchors.rightMargin: 6
                                 width:  wsNumText.implicitWidth + 12
                                 height: 20
-                                radius: 10
+                                radius: Svc.DesktopTheme.rad(10)
                                 color:  Qt.rgba(0, 0, 0, 0.55)
                                 border.width: 1
                                 border.color: Qt.rgba(1, 1, 1, 0.15)
@@ -638,7 +638,7 @@ PanelWindow {
                         y: dragState.ghostY
                         width:  dragState.ghostW
                         height: dragState.ghostH
-                        radius: 10
+                        radius: Svc.DesktopTheme.rad(10)
                         color:  Colors.withAlpha(Colors.primary, 0.18)
                         border.width: 2
                         border.color: Colors.primary

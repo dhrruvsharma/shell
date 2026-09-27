@@ -1,0 +1,40 @@
+#version 320 es
+// Screen grade for the Mainframe desktop theme, applied by Hyprland to the
+// whole output (decoration:screen_shader). services/DesktopTheme.qml fills in
+// the @PLACEHOLDERS@ from the wallpaper colours and writes the result to
+// ~/.cache/quickshell/desktop-theme.frag.
+//
+// Deliberately static: it never reads `time`, so Hyprland keeps its damage
+// tracking and an idle desktop still costs nothing.
+
+precision highp float;
+
+in vec2 v_texcoord;
+uniform sampler2D tex;
+out vec4 fragColor;
+
+const vec3 accent = vec3(@ACCENT@);
+const float strength = @STRENGTH@;
+const float strong = @STRONG@;
+
+void main() {
+    vec4 c = texture(tex, v_texcoord);
+    float lum = dot(c.rgb, vec3(0.2126, 0.7152, 0.0722));
+
+    // Phosphor: the shadows (and, when strong, the whole picture) lean
+    // towards a monochrome ramp in the accent colour.
+    vec3 phosphor = accent * (0.3 + 0.9 * lum);
+    float tint = 0.06 * strength * (1.0 - smoothstep(0.0, 0.35, lum)) + 0.12 * strong;
+    c.rgb = mix(c.rgb, phosphor, tint);
+
+    // Scanlines: every third pixel row slightly darker, every other when strong.
+    float row = strong > 0.5 ? step(1.0, mod(gl_FragCoord.y, 2.0)) : step(2.0, mod(gl_FragCoord.y, 3.0));
+    c.rgb *= 1.0 - (0.05 + 0.04 * strong) * row;
+
+    // Tube vignette.
+    vec2 d = v_texcoord - 0.5;
+    float r = length(d * vec2(1.0, 1.15));
+    c.rgb *= 1.0 - smoothstep(0.5, 0.95, r) * (0.12 + 0.16 * strong);
+
+    fragColor = vec4(clamp(c.rgb, 0.0, 1.0), c.a);
+}

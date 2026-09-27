@@ -1,6 +1,7 @@
 import QtQuick
 import QtQuick.Layouts
 import qs.colors
+import qs.services as Services
 import qs.components
 
 Rectangle {
@@ -14,7 +15,7 @@ Rectangle {
     Layout.fillWidth: true
     Layout.preferredHeight: 56
 
-    radius: 16
+    radius: Services.DesktopTheme.rad(16)
     border.width: 1
     border.color: Colors.outline_variant
 

@@ -182,4 +182,8 @@ Item {
             }
         }
     }
+
+    PanelDecor {
+        title: "novels"
+    }
 }

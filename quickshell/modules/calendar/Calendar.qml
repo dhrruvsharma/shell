@@ -64,10 +64,15 @@ Item {
     // ───────────────────────── Calendar card ─────────────────────────
     Card {
         id: calCard
+
+        PanelDecor {
+            radius: calCard.radius
+            title: "calendar"
+        }
         width: root.width
         y: 0
         height: col.height + 32
-        radius: 26
+        radius: Services.DesktopTheme.rad(26)
 
         Rectangle {
             anchors.fill: parent
@@ -95,7 +100,7 @@ Item {
                     id: prevHoverRect
                     Layout.preferredWidth: 34
                     Layout.preferredHeight: 34
-                    radius: 17
+                    radius: Services.DesktopTheme.rad(17)
                     color: prevHoverRect.hovered ? Colors.surface_container_highest : "transparent"
                     Behavior on color { ColorAnimation { duration: 150 } }
                     StyledText {
@@ -132,7 +137,7 @@ Item {
                     id: nextHoverRect
                     Layout.preferredWidth: 34
                     Layout.preferredHeight: 34
-                    radius: 17
+                    radius: Services.DesktopTheme.rad(17)
                     color: nextHoverRect.hovered ? Colors.surface_container_highest : "transparent"
                     Behavior on color { ColorAnimation { duration: 150 } }
                     StyledText {
@@ -197,7 +202,7 @@ Item {
                             anchors.centerIn: parent
                             width: 38
                             height: 38
-                            radius: 19
+                            radius: Services.DesktopTheme.rad(19)
                             color: cell.today
                                    ? Colors.primary
                                    : (cellMa.containsMouse && cell.valid
@@ -259,9 +264,13 @@ Item {
 
         Card {
             id: notesBg
+
+            PanelDecor {
+                radius: notesBg.radius
+            }
             width: parent.width
             height: notesCol.implicitHeight + 32
-            radius: 26
+            radius: Services.DesktopTheme.rad(26)
 
             Rectangle {
                 anchors.fill: parent
@@ -301,7 +310,7 @@ Item {
                         visible: Services.CalendarNotes.countFor(root.selectedKey) > 0
                         Layout.preferredHeight: 22
                         Layout.preferredWidth: Math.max(22, badge.contentWidth + 16)
-                        radius: 11
+                        radius: Services.DesktopTheme.rad(11)
                         color: Colors.primary_container
                         StyledText {
                             id: badge
@@ -317,7 +326,7 @@ Item {
                         id: closeRect
                         Layout.preferredWidth: 28
                         Layout.preferredHeight: 28
-                        radius: 14
+                        radius: Services.DesktopTheme.rad(14)
                         color: closeRect.hovered ? Colors.surface_container_highest : "transparent"
                         StyledText {
                             anchors.centerIn: parent
@@ -334,7 +343,7 @@ Item {
                 Rectangle {
                     Layout.fillWidth: true
                     Layout.preferredHeight: Math.min(Math.max(listCol.implicitHeight + 12, 44), 156)
-                    radius: 16
+                    radius: Services.DesktopTheme.rad(16)
                     color: Colors.surface_container_low
 
                     ScrollView {
@@ -366,7 +375,7 @@ Item {
                                 delegate: Rectangle {
                                     Layout.fillWidth: true
                                     Layout.preferredHeight: Math.max(34, noteTxt.implicitHeight + 16)
-                                    radius: 12
+                                    radius: Services.DesktopTheme.rad(12)
                                     color: Colors.surface_container_high
 
                                     RowLayout {
@@ -390,7 +399,7 @@ Item {
                                             Layout.preferredWidth: 24
                                             Layout.preferredHeight: 24
                                             Layout.alignment: Qt.AlignVCenter
-                                            radius: 12
+                                            radius: Services.DesktopTheme.rad(12)
                                             property bool recurring: modelData.repeat === "yearly"
                                             color: recurring ? Colors.primary_container
                                                   : (repBtn.hovered ? Colors.surface_container_highest : "transparent")
@@ -413,7 +422,7 @@ Item {
                                             Layout.preferredWidth: 24
                                             Layout.preferredHeight: 24
                                             Layout.alignment: Qt.AlignVCenter
-                                            radius: 12
+                                            radius: Services.DesktopTheme.rad(12)
                                             color: delRect.hovered ? Colors.error_container : "transparent"
                                             StyledText {
                                                 anchors.centerIn: parent
@@ -435,7 +444,7 @@ Item {
                 Rectangle {
                     Layout.fillWidth: true
                     Layout.preferredHeight: 42
-                    radius: 16
+                    radius: Services.DesktopTheme.rad(16)
                     color: Colors.surface_container_high
                     border.width: 1.5
                     border.color: noteInput.activeFocus ? Colors.primary
@@ -466,7 +475,7 @@ Item {
                             Layout.preferredWidth: 30
                             Layout.preferredHeight: 30
                             Layout.alignment: Qt.AlignVCenter
-                            radius: 15
+                            radius: Services.DesktopTheme.rad(15)
                             color: root.newNoteRecurring ? Colors.primary_container
                                   : (repeatToggle.hovered ? Colors.surface_container_highest : "transparent")
                             border.width: root.newNoteRecurring ? 0 : 1
@@ -489,7 +498,7 @@ Item {
                             Layout.preferredWidth: 30
                             Layout.preferredHeight: 30
                             Layout.alignment: Qt.AlignVCenter
-                            radius: 15
+                            radius: Services.DesktopTheme.rad(15)
                             color: noteInput.text.trim().length > 0
                                    ? Colors.primary
                                    : Colors.surface_container_highest

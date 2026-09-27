@@ -1,0 +1,44 @@
+#version 320 es
+// Screen grade for the Cave Abode desktop theme, applied by Hyprland to the
+// whole output (decoration:screen_shader). services/DesktopTheme.qml fills in
+// the @PLACEHOLDERS@ from the wallpaper colours and writes the result to
+// ~/.cache/quickshell/desktop-theme.frag.
+//
+// Deliberately static: it never reads `time` (the paper grain is a fixed
+// pattern), so Hyprland keeps its damage tracking and an idle desktop costs
+// nothing.
+
+precision highp float;
+
+in vec2 v_texcoord;
+uniform sampler2D tex;
+out vec4 fragColor;
+
+const vec3 accent2 = vec3(@ACCENT2@);
+const float strength = @STRENGTH@;
+const float strong = @STRONG@;
+
+float grain(vec2 p) {
+    return fract(52.9829189 * fract(dot(p, vec2(0.06711056, 0.00583715))));
+}
+
+void main() {
+    vec4 c = texture(tex, v_texcoord);
+    float lum = dot(c.rgb, vec3(0.2126, 0.7152, 0.0722));
+
+    // Ink and paper: colour fades towards a ramp from ink to warm paper,
+    // tinged with the wallpaper's tertiary colour.
+    vec3 ink = vec3(0.05, 0.055, 0.07);
+    vec3 paper = mix(vec3(0.93, 0.89, 0.8), accent2, 0.15);
+    c.rgb = mix(c.rgb, mix(ink, paper, lum), 0.12 * strength + 0.18 * strong);
+
+    // Paper grain when strong.
+    c.rgb += (grain(floor(gl_FragCoord.xy)) - 0.5) * 0.03 * strong;
+
+    // Ink gathering at the edges.
+    vec2 d = v_texcoord - 0.5;
+    float r = length(d * vec2(1.0, 1.15));
+    c.rgb *= 1.0 - smoothstep(0.45, 0.95, r) * 0.2 * strength;
+
+    fragColor = vec4(clamp(c.rgb, 0.0, 1.0), c.a);
+}

@@ -11,7 +11,6 @@ Singleton {
     id: root
 
     property string wallpaperDir: Quickshell.env("HOME") + "/Pictures/wallpapers"
-    property string wallpaperScript: Quickshell.env("HOME") + "/.local/bin/setwall"
     property string scheme: "material"
     property string theme: "dark"
 
@@ -149,18 +148,6 @@ Singleton {
     }
     // ── End Online ──────────────────────────────────────────────────────────
 
-    Process {
-        id: wallpaperSetter
-
-        onExited: (exitCode) => {
-            if (exitCode === 0) {
-                console.log("[ServiceWallpaper] Wallpaper set successfully")
-            } else {
-                console.error("[ServiceWallpaper] Failed to set wallpaper. Exit code:", exitCode)
-            }
-        }
-    }
-
     // ── Wallhaven processes ─────────────────────────────────────────────────
     Process {
         id: wallhavenFetcher
@@ -184,7 +171,7 @@ Singleton {
         onExited: (exitCode) => {
             if (exitCode === 0) {
                 console.log("[ServiceWallpaper] Download complete:", root._pendingDownloadPath)
-                wallpaperSetter.exec([wallpaperScript, root._pendingDownloadPath, root.scheme, root.theme])
+                WallpaperEngine.set(root._pendingDownloadPath)
             } else {
                 console.error("[ServiceWallpaper] Download failed for:", root._pendingDownloadPath)
             }

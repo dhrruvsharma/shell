@@ -1,0 +1,38 @@
+#version 320 es
+// Screen grade for the Astral desktop theme, applied by Hyprland to the whole
+// output (decoration:screen_shader). services/DesktopTheme.qml fills in the
+// @PLACEHOLDERS@ from the wallpaper colours and writes the result to
+// ~/.cache/quickshell/desktop-theme.frag.
+//
+// Deliberately static: it never reads `time`, so Hyprland keeps its damage
+// tracking and an idle desktop still costs nothing.
+
+precision highp float;
+
+in vec2 v_texcoord;
+uniform sampler2D tex;
+out vec4 fragColor;
+
+const vec3 accent = vec3(@ACCENT@);
+const vec3 accent2 = vec3(@ACCENT2@);
+const float strength = @STRENGTH@;
+
+void main() {
+    vec4 c = texture(tex, v_texcoord);
+    float lum = dot(c.rgb, vec3(0.2126, 0.7152, 0.0722));
+
+    // A little more colour.
+    c.rgb = mix(vec3(lum), c.rgb, 1.0 + 0.08 * strength);
+
+    // Deep-space shadows: the darkest tones take on a nebula blend of the two
+    // accents across the screen.
+    float shadow = 1.0 - smoothstep(0.0, 0.3, lum);
+    c.rgb += mix(accent, accent2, v_texcoord.x) * 0.035 * strength * shadow;
+
+    // Deep vignette.
+    vec2 d = v_texcoord - 0.5;
+    float r = length(d * vec2(1.0, 1.1));
+    c.rgb *= 1.0 - smoothstep(0.45, 0.95, r) * 0.2 * strength;
+
+    fragColor = vec4(clamp(c.rgb, 0.0, 1.0), c.a);
+}

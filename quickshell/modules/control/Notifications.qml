@@ -64,7 +64,7 @@ Item {
                 background: Card {
                     implicitWidth: 70
                     implicitHeight: 28
-                    radius: 14
+                    radius: Services.DesktopTheme.rad(14)
 
                     color: parent.pressed ?
                         Colors.withAlpha(Colors.primary, 0.15)
@@ -125,7 +125,7 @@ Item {
                 delegate: Card {
                     width: list.width - 16
                     height: contentColumn.implicitHeight + 20
-                    radius: 12
+                    radius: Services.DesktopTheme.rad(12)
 
                     color: Colors.surface_container_high
 
@@ -154,7 +154,7 @@ Item {
                         Rectangle {
                             width: 32
                             height: 32
-                            radius: 8
+                            radius: Services.DesktopTheme.rad(8)
                             color: "transparent"
                             clip: true
                             Layout.alignment: Qt.AlignTop

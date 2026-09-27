@@ -18,7 +18,7 @@ Dialog {
     parent: root
 
     background: Card {
-        radius: 28
+        radius: Services.DesktopTheme.rad(28)
         color: Colors.surface_container_lowest
 
         Rectangle {
@@ -32,7 +32,7 @@ Dialog {
 
     header: Rectangle {
         height: 64
-        radius: 28
+        radius: Services.DesktopTheme.rad(28)
         color: Colors.surface_container_lowest
 
         Rectangle {
@@ -41,7 +41,7 @@ Dialog {
             anchors.top: parent.top
             anchors.topMargin: 12
             anchors.horizontalCenter: parent.horizontalCenter
-            radius: 2
+            radius: Services.DesktopTheme.rad(2)
             color: Colors.outline_variant
             opacity: 0.3
         }
@@ -65,7 +65,7 @@ Dialog {
             placeholderText: "Enter category name..."
             font.pixelSize: 14
             focus: true
-            radius: 14
+            radius: Services.DesktopTheme.rad(14)
             borderWidth: 2
             backgroundColor: Colors.surface_container_high
             focusBorderColor: Colors.primary
@@ -89,7 +89,7 @@ Dialog {
                 Layout.preferredHeight: 48
 
                 background: Card {
-                    radius: 14
+                    radius: Services.DesktopTheme.rad(14)
                     color: parent.hovered
                         ? Colors.surface_container_high
                         : "transparent"
@@ -116,7 +116,7 @@ Dialog {
                 enabled: categoryInput.text.trim().length > 0
 
                 background: Rectangle {
-                    radius: 14
+                    radius: Services.DesktopTheme.rad(14)
                     color: parent.hovered && parent.enabled
                         ? Qt.darker(Colors.primary_container, 1.2)
                         : Colors.primary_container

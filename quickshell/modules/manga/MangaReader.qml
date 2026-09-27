@@ -194,4 +194,8 @@ Item {
             }
         }
     }
+
+    PanelDecor {
+        title: "manga"
+    }
 }

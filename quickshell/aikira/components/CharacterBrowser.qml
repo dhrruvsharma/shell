@@ -1,4 +1,5 @@
 import QtQuick
+import qs.services as Services
 import qs.aikira
 import QtQuick.Layouts
 import qs.colors
@@ -118,7 +119,7 @@ Item {
 
             Rectangle {
                 anchors { fill: parent; margins: 4 }
-                radius: 14
+                radius: Services.DesktopTheme.rad(14)
                 clip: true
                 color: isSelected
                     ? Colors.secondary_container

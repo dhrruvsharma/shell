@@ -2,6 +2,7 @@ pragma ComponentBehavior: Bound
 import QtQuick
 import QtQuick.Shapes
 import qs.colors
+import qs.services as Services
 
 Item {
     id: root
@@ -27,9 +28,35 @@ Item {
     readonly property real _clampedRH: Math.min(root._r, root._halfH)
     readonly property real _clampedRH3: Math.min(root._r, root._thirdH)
 
+    // Square desktop themes (HUD, Mainframe, Cave Abode) swap the bubble for
+    // a box in their style. Round themes keep the bubble.
+    readonly property bool themed: Services.DesktopTheme.controlRadius >= 0
+    // The bubble's body runs the full depth of the popout and is inset by
+    // the radius only at the ends of the edge(s) it's attached to (where the
+    // flares are); the box covers exactly that.
+    readonly property bool _insetLeft: [0, 4, 1, 3].includes(root.alignment)
+    readonly property bool _insetRight: [0, 4, 5, 7].includes(root.alignment)
+    readonly property bool _insetTop: [2, 6, 3, 5].includes(root.alignment)
+    readonly property bool _insetBottom: [2, 6, 1, 7].includes(root.alignment)
+
+    Rectangle {
+        visible: root.themed
+        x: root._insetLeft ? root.radius : 0
+        y: root._insetTop ? root.radius : 0
+        width: root.width - x - (root._insetRight ? root.radius : 0)
+        height: root.height - y - (root._insetBottom ? root.radius : 0)
+        radius: Services.DesktopTheme.panelRadius(root.radius)
+        color: root.color
+
+        PanelDecor {
+            radius: parent.radius
+        }
+    }
+
     Loader {
         anchors.fill: parent
         asynchronous: true
+        visible: !root.themed
 
         sourceComponent: {
             const shapes = [attachedTop, attachedTopRight, attachedRight, attachedBottomRight, attachedBottom, attachedBottomLeft, attachedLeft, attachedTopLeft];

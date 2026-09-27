@@ -1,4 +1,5 @@
 import QtQuick
+import qs.services as Services
 import qs.aikira
 import QtQuick.Layouts
 import qs.colors
@@ -21,7 +22,7 @@ Item {
 
     Rectangle {
         anchors.fill: parent
-        radius: 8
+        radius: Services.DesktopTheme.rad(8)
         color: Colors.surface_container_highest
         border { width: open ? 1 : 0; color: Colors.primary }
 
@@ -55,7 +56,7 @@ Item {
         visible: open
         anchors { top: parent.bottom; topMargin: 2; left: parent.left; right: parent.right }
         height: Math.min(((AppState.proxies ? AppState.proxies.length : 0) + 1) * 34, 200)
-        radius: 8
+        radius: Services.DesktopTheme.rad(8)
         color: Colors.surface_container_highest
         border { width: 1; color: Colors.outline_variant }
         z: 100
@@ -79,7 +80,7 @@ Item {
                 ClickableRect {
                     id: itemRect
                     anchors { fill: parent; leftMargin: 4; rightMargin: 4 }
-                    radius: 6
+                    radius: Services.DesktopTheme.rad(6)
                     color: root.selectedId === pdata.id
                         ? Colors.primary_container
                         : (itemRect.hovered ? Colors.surface_container_high : "transparent")

@@ -93,7 +93,7 @@ Rectangle {
                     id: workspaceThumbnail
                     anchors.fill: parent
                     color: Colors.surface_container
-                    radius: 10
+                    radius: Svc.DesktopTheme.rad(10)
                     border.width: cell.isFocused ? 3 : 1
                     border.color: cell.isFocused ? Colors.primary : Colors.outline
                     clip: true
@@ -163,7 +163,7 @@ Rectangle {
                             z: 1
 
                             color: "transparent"
-                            radius: 3
+                            radius: Svc.DesktopTheme.rad(3)
                             clip: true
 
                             // Hide the live thumbnail while it is being dragged;
@@ -180,7 +180,7 @@ Rectangle {
                             Rectangle {
                                 anchors.fill: parent
                                 color: "transparent"
-                                radius: 3
+                                radius: Svc.DesktopTheme.rad(3)
                                 border.width: dragArea.containsMouse ? 2 : 0
                                 border.color: Colors.primary
                             }
@@ -279,7 +279,7 @@ Rectangle {
         height: dragState.h
         z: 100
         color: "transparent"
-        radius: 3
+        radius: Svc.DesktopTheme.rad(3)
         clip: true
         opacity: 0.85
 
@@ -293,7 +293,7 @@ Rectangle {
         Rectangle {
             anchors.fill: parent
             color: "transparent"
-            radius: 3
+            radius: Svc.DesktopTheme.rad(3)
             border.width: 2
             border.color: Colors.primary
         }

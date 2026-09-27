@@ -149,10 +149,15 @@ Item {
 
     Rectangle {
         id: panel
+
+        PanelDecor {
+            radius: panel.radius
+            title: "notepad"
+        }
         anchors.centerIn: parent
         width: Math.max(560, Math.min(1040, parent.width * 0.72))
         height: Math.min(760, parent.height * 0.82)
-        radius: 30
+        radius: Services.DesktopTheme.rad(30)
         color: Colors.surface_container_lowest
         clip: true
         enabled: scrim.opacity > 0.01
@@ -222,7 +227,7 @@ Item {
                     Layout.preferredHeight: 24
                     Layout.preferredWidth: Math.max(24, cntText.contentWidth + 16)
                     Layout.alignment: Qt.AlignVCenter
-                    radius: 12
+                    radius: Services.DesktopTheme.rad(12)
                     color: Colors.primary_container
                     opacity: root.filteredNotes.length > 0 ? 1 : 0.4
                     Behavior on opacity { NumberAnimation { duration: 200 } }
@@ -244,7 +249,7 @@ Item {
                     Layout.preferredHeight: 34
                     Layout.preferredWidth: 106
                     Layout.alignment: Qt.AlignVCenter
-                    radius: 17
+                    radius: Services.DesktopTheme.rad(17)
                     color: addRect.hovered
                         ? Qt.darker(Colors.primary_container, 1.15)
                         : Colors.primary_container
@@ -288,7 +293,7 @@ Item {
                     Layout.preferredWidth: 32
                     Layout.preferredHeight: 32
                     Layout.alignment: Qt.AlignVCenter
-                    radius: 16
+                    radius: Services.DesktopTheme.rad(16)
                     color: closeRect.hovered ? Colors.surface_container_high : "transparent"
                     Behavior on color { ColorAnimation { duration: 120 } }
                     StyledText {
@@ -307,7 +312,7 @@ Item {
                 Layout.fillWidth: true
                 Layout.preferredHeight: 40
                 visible: root.layoutNotes.length > 0
-                radius: 14
+                radius: Services.DesktopTheme.rad(14)
                 color: Colors.surface_container
                 border.width: 1
                 border.color: searchField.activeFocus
@@ -356,7 +361,7 @@ Item {
                         Layout.preferredWidth: 22
                         Layout.preferredHeight: 22
                         Layout.alignment: Qt.AlignVCenter
-                        radius: 11
+                        radius: Services.DesktopTheme.rad(11)
                         visible: searchField.text.length > 0
                         color: clearRect.hovered ? Colors.surface_container_highest : "transparent"
                         StyledText {
@@ -375,7 +380,7 @@ Item {
             Card {
                 Layout.fillWidth: true
                 Layout.fillHeight: true
-                radius: 20
+                radius: Services.DesktopTheme.rad(20)
 
                 Flickable {
                     id: flick
@@ -421,7 +426,7 @@ Item {
                                         id: tile
                                         Layout.fillWidth: true
                                         Layout.preferredHeight: tileCol.implicitHeight + 26
-                                        radius: 14
+                                        radius: Services.DesktopTheme.rad(14)
                                         color: Colors.surface_container_high
 
                                         property var note: modelData
@@ -499,7 +504,7 @@ Item {
                                             anchors.rightMargin: 8
                                             width: 26
                                             height: 26
-                                            radius: 13
+                                            radius: Services.DesktopTheme.rad(13)
                                             opacity: (hh.hovered || bodyArea.activeFocus) ? 1 : 0
                                             color: delRect.hovered
                                                 ? Colors.error_container
@@ -541,7 +546,7 @@ Item {
                             Layout.alignment: Qt.AlignHCenter
                             Layout.preferredWidth: 76
                             Layout.preferredHeight: 76
-                            radius: 38
+                            radius: Services.DesktopTheme.rad(38)
                             color: Qt.rgba(root.accent.r, root.accent.g, root.accent.b, blankMa.containsMouse ? 0.22 : 0.12)
                             border.width: 2
                             border.color: Colors.primary

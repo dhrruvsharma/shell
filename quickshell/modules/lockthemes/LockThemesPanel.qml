@@ -7,14 +7,26 @@ import qs.components
 import qs.modules.lock
 import qs.services as Services
 
-// Lock screen theme picker. Each card shows a live, scaled-down render of the
-// theme itself. Click a card to make it the lock screen; with Shuffle on,
-// clicking adds or removes themes from the rotation and every lock picks one
-// of them at random. Preview runs a theme full screen (LockPreview.qml, never
-// a real lock); Lock now locks straight away.
+// Themes panel, two tabs.
 //
-// Keys: arrows move, Enter/Space choose, P preview, S shuffle, L lock now,
-// Esc close. `qs ipc call lockscreen toggle` (ALT+SHIFT+H).
+// Desktop: desktop themes (services/DesktopTheme.qml), a coordinated look for
+// the whole rice that still follows the wallpaper colours: pick one (or Off)
+// with a live preview, plus clock, screen effect and lock matching. See
+// DesktopThemesTab.qml.
+//
+// Widgets: desktop widgets on/off and their arrangement (WidgetsTab.qml).
+//
+// Lock screen: each card shows a live, scaled-down render of the theme itself.
+// Click a card to make it the lock screen; with Shuffle on, clicking adds or
+// removes themes from the rotation and every lock picks one of them at
+// random. Preview runs a theme full screen (LockPreview.qml, never a real
+// lock); Lock now locks straight away.
+//
+// Keys: Tab switches tabs, Esc closes. Lock screen tab: arrows move,
+// Enter/Space choose, P preview, S shuffle, L lock now. Desktop tab: ←→
+// choose, Enter use, W widgets. Widgets tab: ↑↓ choose, Enter toggle, R reset
+// positions.
+// `qs ipc call lockscreen toggle` (ALT+SHIFT+H), `qs ipc call themes desktop`.
 Item {
     id: root
 
@@ -22,6 +34,7 @@ Item {
     visible: false
 
     property int cursor: 0
+    property string tab: "lock"
     readonly property int columns: panel.width - 56 > 1000 ? 3 : 2
     readonly property var themes: Services.LockScreen.themes
     readonly property bool shuffle: Services.LockScreen.shuffle
@@ -43,6 +56,14 @@ Item {
         if (visible)
             close();
         else
+            open();
+    }
+
+    readonly property var tabs: ["desktop", "widgets", "lock"]
+
+    function openTab(which) {
+        tab = tabs.includes(which) ? which : "lock";
+        if (!visible)
             open();
     }
 
@@ -97,10 +118,15 @@ Item {
     Rectangle {
         id: panel
 
+        PanelDecor {
+            radius: panel.radius
+            title: "themes"
+        }
+
         anchors.centerIn: parent
         width: Math.min(1220, parent.width * 0.86)
         height: Math.min(900, parent.height * 0.9)
-        radius: 30
+        radius: Services.DesktopTheme.rad(30)
         color: Colors.surface_container_lowest
         border.width: 1
         border.color: Colors.withAlpha(Colors.outline_variant, 0.6)
@@ -118,6 +144,17 @@ Item {
                 const cols = root.columns;
                 if (event.key === Qt.Key_Escape) {
                     root.close();
+                } else if (event.key === Qt.Key_Tab || event.key === Qt.Key_Backtab) {
+                    const i = root.tabs.indexOf(root.tab) + (event.key === Qt.Key_Tab ? 1 : root.tabs.length - 1);
+                    root.tab = root.tabs[i % root.tabs.length];
+                } else if (root.tab === "desktop") {
+                    const desktopTab = desktopLoader.item as DesktopThemesTab;
+                    if (!desktopTab || !desktopTab.handleKey(event))
+                        return;
+                } else if (root.tab === "widgets") {
+                    const widgetsTab = widgetsLoader.item as WidgetsTab;
+                    if (!widgetsTab || !widgetsTab.handleKey(event))
+                        return;
                 } else if (event.key === Qt.Key_Right) {
                     root.cursor = (root.cursor + 1) % n;
                 } else if (event.key === Qt.Key_Left) {
@@ -168,12 +205,12 @@ Item {
                         anchors.verticalCenter: parent.verticalCenter
                         width: 44
                         height: 44
-                        radius: 14
+                        radius: Services.DesktopTheme.rad(14)
                         color: Colors.primary_container
 
                         Glyph {
                             anchors.centerIn: parent
-                            text: "lock"
+                            text: root.tab === "desktop" ? "desktop_windows" : root.tab === "widgets" ? "widgets" : "lock"
                             filled: true
                             font.pixelSize: 24
                             color: Colors.on_primary_container
@@ -185,17 +222,80 @@ Item {
                         spacing: 2
 
                         StyledText {
-                            text: "Lock Screen"
+                            text: "Themes"
                             font.pixelSize: 21
                             font.weight: Font.Bold
                         }
 
                         StyledText {
-                            text: root.shuffle
-                                ? "Shuffle: each lock picks one of the selected themes"
+                            text: root.tab === "desktop"
+                                ? (Services.DesktopTheme.enabled ? Services.DesktopTheme.themeFor(Services.DesktopTheme.theme).name + " is on across the desktop" : "One look for the whole rice, in your wallpaper's colours")
+                                : root.tab === "widgets" ? "Clock, music, system monitor and more on your desktop, dressed by the theme"
+                                : root.shuffle ? "Shuffle: each lock picks one of the selected themes"
                                 : "Pick the design used when you lock"
                             font.pixelSize: 13
                             color: Colors.on_surface_variant
+                        }
+                    }
+                }
+
+                // Desktop | Lock screen
+                Rectangle {
+                    anchors.centerIn: parent
+                    width: tabRow.implicitWidth + 8
+                    height: 40
+                    radius: Services.DesktopTheme.rad(20)
+                    color: Colors.surface_container
+
+                    Row {
+                        id: tabRow
+                        anchors.centerIn: parent
+                        spacing: 4
+
+                        Repeater {
+                            model: [
+                                { id: "desktop", label: "Desktop", icon: "desktop_windows" },
+                                { id: "widgets", label: "Widgets", icon: "widgets" },
+                                { id: "lock", label: "Lock screen", icon: "lock" }
+                            ]
+
+                            ClickableRect {
+                                id: tabChip
+                                required property var modelData
+                                readonly property bool current: root.tab === modelData.id
+                                width: tabChipRow.implicitWidth + 28
+                                height: 32
+                                radius: Services.DesktopTheme.rad(16)
+                                color: current ? Colors.primary : tabChip.hovered ? Colors.surface_container_high : "transparent"
+                                cursorShape: Qt.PointingHandCursor
+                                onClicked: root.tab = modelData.id
+
+                                Behavior on color {
+                                    ColorAnimation { duration: 140 }
+                                }
+
+                                Row {
+                                    id: tabChipRow
+                                    anchors.centerIn: parent
+                                    spacing: 6
+
+                                    Glyph {
+                                        anchors.verticalCenter: parent.verticalCenter
+                                        text: tabChip.modelData.icon
+                                        filled: tabChip.current
+                                        font.pixelSize: 17
+                                        color: tabChip.current ? Colors.on_primary : Colors.on_surface_variant
+                                    }
+
+                                    StyledText {
+                                        anchors.verticalCenter: parent.verticalCenter
+                                        text: tabChip.modelData.label
+                                        font.pixelSize: 13
+                                        font.weight: Font.DemiBold
+                                        color: tabChip.current ? Colors.on_primary : Colors.on_surface
+                                    }
+                                }
+                            }
                         }
                     }
                 }
@@ -208,10 +308,11 @@ Item {
                     // Shuffle switch
                     ClickableRect {
                         id: shuffleChip
+                        visible: root.tab === "lock"
                         anchors.verticalCenter: parent.verticalCenter
                         width: shuffleRow.implicitWidth + 28
                         height: 38
-                        radius: 19
+                        radius: Services.DesktopTheme.rad(19)
                         color: root.shuffle ? Colors.secondary_container
                             : shuffleChip.hovered ? Colors.surface_container_high : Colors.surface_container
                         cursorShape: Qt.PointingHandCursor
@@ -241,13 +342,13 @@ Item {
                                 anchors.verticalCenter: parent.verticalCenter
                                 width: 30
                                 height: 18
-                                radius: 9
+                                radius: Services.DesktopTheme.rad(9)
                                 color: root.shuffle ? Colors.primary : Colors.surface_container_highest
 
                                 Rectangle {
                                     width: 12
                                     height: 12
-                                    radius: 6
+                                    radius: Services.DesktopTheme.rad(6)
                                     y: 3
                                     x: root.shuffle ? 15 : 3
                                     color: root.shuffle ? Colors.on_primary : Colors.outline
@@ -262,10 +363,11 @@ Item {
 
                     ClickableRect {
                         id: lockNowChip
+                        visible: root.tab === "lock"
                         anchors.verticalCenter: parent.verticalCenter
                         width: lockRow.implicitWidth + 28
                         height: 38
-                        radius: 19
+                        radius: Services.DesktopTheme.rad(19)
                         color: lockNowChip.hovered ? Qt.lighter(Colors.primary, 1.08) : Colors.primary
                         cursorShape: Qt.PointingHandCursor
                         onClicked: root.lockNow()
@@ -298,7 +400,7 @@ Item {
                         anchors.verticalCenter: parent.verticalCenter
                         width: 38
                         height: 38
-                        radius: 19
+                        radius: Services.DesktopTheme.rad(19)
                         color: closeChip.hovered ? Colors.surface_container_high : "transparent"
                         cursorShape: Qt.PointingHandCursor
                         onClicked: root.close()
@@ -318,8 +420,29 @@ Item {
                 id: gridLoader
                 width: parent.width
                 height: parent.height - 52 - footer.height - 2 * parent.spacing
-                active: root.visible
+                visible: root.tab === "lock"
+                active: root.visible && root.tab === "lock"
                 sourceComponent: gridComponent
+            }
+
+            // ── Desktop themes ────────────────────────────────────────────────
+            Loader {
+                id: desktopLoader
+                width: parent.width
+                height: gridLoader.height
+                visible: root.tab === "desktop"
+                active: root.visible && root.tab === "desktop"
+                sourceComponent: desktopComponent
+            }
+
+            // ── Desktop widgets ───────────────────────────────────────────────
+            Loader {
+                id: widgetsLoader
+                width: parent.width
+                height: gridLoader.height
+                visible: root.tab === "widgets"
+                active: root.visible && root.tab === "widgets"
+                sourceComponent: WidgetsTab {}
             }
 
             // ── Footer: progression shared by every theme ─────────────────────
@@ -330,7 +453,7 @@ Item {
 
                 Rectangle {
                     anchors.fill: parent
-                    radius: 16
+                    radius: Services.DesktopTheme.rad(16)
                     color: Colors.surface_container
 
                     Row {
@@ -380,7 +503,9 @@ Item {
                         anchors.right: parent.right
                         anchors.rightMargin: 16
                         anchors.verticalCenter: parent.verticalCenter
-                        text: "←→ choose · Enter set · P preview · S shuffle · L lock"
+                        text: root.tab === "lock" ? "←→ choose · Enter set · P preview · S shuffle · L lock · Tab desktop"
+                            : root.tab === "widgets" ? "↑↓ choose · Enter toggle · R reset · drag to move · Tab lock screens"
+                            : "←→ choose · Enter use · W widgets · Tab widgets · Esc close"
                         font.pixelSize: 12
                         color: Colors.on_surface_variant
                     }
@@ -431,7 +556,7 @@ Item {
 
                             width: grid.cardW
                             height: thumb.height + info.implicitHeight + 34
-                            radius: 22
+                            radius: Services.DesktopTheme.rad(22)
                             color: cardArea.containsMouse || focused ? Colors.surface_container_high : Colors.surface_container
                             border.width: chosen ? 2 : 1
                             border.color: chosen ? Colors.primary
@@ -461,7 +586,7 @@ Item {
                                 Rectangle {
                                     id: thumbMask
                                     anchors.fill: parent
-                                    radius: 14
+                                    radius: Services.DesktopTheme.rad(14)
                                     visible: false
                                     layer.enabled: true
                                 }
@@ -494,7 +619,7 @@ Item {
                                     anchors.centerIn: parent
                                     width: previewRow.implicitWidth + 26
                                     height: 36
-                                    radius: 18
+                                    radius: Services.DesktopTheme.rad(18)
                                     visible: cardArea.containsMouse || previewChip.hovered
                                     color: previewChip.hovered ? Colors.primary : Colors.withAlpha(Colors.scrim, 0.62)
                                     cursorShape: Qt.PointingHandCursor
@@ -531,7 +656,7 @@ Item {
                                     visible: card.chosen
                                     width: badgeRow.implicitWidth + 18
                                     height: 26
-                                    radius: 13
+                                    radius: Services.DesktopTheme.rad(13)
                                     color: Colors.primary
 
                                     Row {
@@ -598,6 +723,14 @@ Item {
                     }
                 }
             }
+        }
+    }
+
+    Component {
+        id: desktopComponent
+
+        DesktopThemesTab {
+            onOpenWidgets: root.tab = "widgets"
         }
     }
 }

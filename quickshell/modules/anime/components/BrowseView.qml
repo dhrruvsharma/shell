@@ -164,7 +164,7 @@ Item {
                 Rectangle {
                     height: 28
                     width: modeRow.implicitWidth + 16
-                    radius: 14
+                    radius: DesktopTheme.rad(14)
                     color: Colors.surface_container
                     border.color: Colors.outline_variant; border.width: 1
 
@@ -183,7 +183,7 @@ Item {
 
                                 Rectangle {
                                     anchors { fill: parent; margins: 3 }
-                                    radius: 11
+                                    radius: DesktopTheme.rad(11)
                                     color: active ? Colors.primary : "transparent"
                                     Behavior on color { ColorAnimation { duration: 160 } }
                                 }

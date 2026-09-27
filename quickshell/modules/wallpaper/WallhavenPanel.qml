@@ -53,7 +53,7 @@ Rectangle {
                 Layout.fillWidth: true
                 Layout.preferredHeight: 50
                 clip: true
-                radius: 20
+                radius: DesktopTheme.rad(20)
                 color: Colors.surface_container
 
                 RowLayout {
@@ -87,7 +87,7 @@ Rectangle {
                     Rectangle {
                         Layout.preferredHeight: 35
                         Layout.preferredWidth: 220
-                        radius: 20
+                        radius: DesktopTheme.rad(20)
                         color: Colors.surface_container_highest
 
                         RowLayout {
@@ -135,7 +135,7 @@ Rectangle {
                     // Sorting group
                     Rectangle {
                         height: 28
-                        radius: 14
+                        radius: DesktopTheme.rad(14)
                         color: Colors.surface_container_highest
                         implicitWidth: _sortRow.implicitWidth + 6
 
@@ -152,7 +152,7 @@ Rectangle {
                                     readonly property string lbl: onlineConfigCol.sortOpts[index][0]
                                     property bool active: SettingsConfig.wallhavenSorting === val
                                     height: 24
-                                    radius: 12
+                                    radius: DesktopTheme.rad(12)
                                     implicitWidth: _sLbl.implicitWidth + 14
                                     color: active ? Colors.primary : "transparent"
                                     Behavior on color { ColorAnimation { duration: 150 } }
@@ -178,7 +178,7 @@ Rectangle {
                     // TopRange group (only when sorting=toplist)
                     Rectangle {
                         height: 28
-                        radius: 14
+                        radius: DesktopTheme.rad(14)
                         color: Colors.surface_container_highest
                         implicitWidth: _rangeRow.implicitWidth + 6
                         visible: SettingsConfig.wallhavenSorting === "toplist"
@@ -195,7 +195,7 @@ Rectangle {
                                     readonly property string val: onlineConfigCol.rangeOpts[index]
                                     property bool active: SettingsConfig.wallhavenTopRange === val
                                     height: 24
-                                    radius: 12
+                                    radius: DesktopTheme.rad(12)
                                     implicitWidth: _rLbl.implicitWidth + 14
                                     color: active ? Colors.primary : "transparent"
                                     Behavior on color { ColorAnimation { duration: 150 } }
@@ -221,7 +221,7 @@ Rectangle {
                     // Order group (↓ ↑)
                     Rectangle {
                         height: 28
-                        radius: 14
+                        radius: DesktopTheme.rad(14)
                         color: Colors.surface_container_highest
                         implicitWidth: _orderRow.implicitWidth + 6
 
@@ -237,7 +237,7 @@ Rectangle {
                                     property bool active: SettingsConfig.wallhavenOrder === modelData[1]
                                     height: 24
                                     width: 28
-                                    radius: 12
+                                    radius: DesktopTheme.rad(12)
                                     color: active ? Colors.primary : "transparent"
                                     Behavior on color { ColorAnimation { duration: 150 } }
 
@@ -261,7 +261,7 @@ Rectangle {
                     // Categories group
                     Rectangle {
                         height: 28
-                        radius: 14
+                        radius: DesktopTheme.rad(14)
                         color: Colors.surface_container_highest
                         implicitWidth: _catRow.implicitWidth + 6
 
@@ -276,7 +276,7 @@ Rectangle {
                                     required property var modelData
                                     property bool active: SettingsConfig.wallhavenCategories[modelData[1]] === "1"
                                     height: 24
-                                    radius: 12
+                                    radius: DesktopTheme.rad(12)
                                     implicitWidth: _catLbl.implicitWidth + 14
                                     color: active ? Colors.primary : "transparent"
                                     Behavior on color { ColorAnimation { duration: 150 } }
@@ -302,7 +302,7 @@ Rectangle {
                     // Purity group
                     Rectangle {
                         height: 28
-                        radius: 14
+                        radius: DesktopTheme.rad(14)
                         color: Colors.surface_container_highest
                         implicitWidth: _purRow.implicitWidth + 6
 
@@ -375,7 +375,7 @@ Rectangle {
                     z: 1
                     implicitWidth: _overlayRow.implicitWidth + 32
                     implicitHeight: _overlayRow.implicitHeight + 20
-                    radius: 14
+                    radius: DesktopTheme.rad(14)
                     color: Colors.surface_container
 
                     RowLayout {
@@ -426,7 +426,7 @@ Rectangle {
                         required property var modelData
                         width: grid.cellWidth
                         height: grid.cellHeight
-                        radius: 10
+                        radius: DesktopTheme.rad(10)
                         color: wallpaperItemImageContainer.hovered ? Colors.primary : "transparent"
 
                         Image {
@@ -449,7 +449,7 @@ Rectangle {
                                 maskSource: Rectangle {
                                     width: thumbnail.width
                                     height: thumbnail.height
-                                    radius: 10
+                                    radius: DesktopTheme.rad(10)
                                 }
                             }
                         }
@@ -472,7 +472,7 @@ Rectangle {
                         Rectangle {
                             anchors.fill: parent
                             anchors.margins: 5
-                            radius: 10
+                            radius: DesktopTheme.rad(10)
                             color: Colors.surface
                             opacity: 0.85
                             visible: Wallhaven.downloadingWallpaperId === wallpaperItemImageContainer.modelData.id

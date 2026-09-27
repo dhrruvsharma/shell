@@ -65,7 +65,7 @@ Item {
             Card {
                 Layout.fillWidth: true
                 Layout.preferredHeight: 56
-                radius: 20
+                radius: Services.DesktopTheme.rad(20)
                 opacity: 0.8
 
                 Rectangle {
@@ -108,7 +108,7 @@ Item {
                         }
 
                         background: Rectangle {
-                            radius: 18
+                            radius: Services.DesktopTheme.rad(18)
                             color: sortBtn.hovered
                                 ? Colors.surface_container_highest
                                 : "transparent"
@@ -123,7 +123,7 @@ Item {
                             delay: 300
                             visible: parent.hovered
                             background: Card {
-                                radius: 6
+                                radius: Services.DesktopTheme.rad(6)
                                 color: Colors.surface_container_highest
                             }
                         }
@@ -133,7 +133,7 @@ Item {
                         Layout.preferredHeight: 36
                         Layout.preferredWidth: Math.max(36, countText.contentWidth + 24)
                         Layout.alignment: Qt.AlignVCenter
-                        radius: 18
+                        radius: Services.DesktopTheme.rad(18)
                         color: Colors.primary_container
                         opacity: Services.Notes.getNotesForCategory(
                             Services.Notes.currentCategory).length > 0 ? 1 : 0.4
@@ -179,7 +179,7 @@ Item {
                         }
 
                         background: Rectangle {
-                            radius: 18
+                            radius: Services.DesktopTheme.rad(18)
                             color: addCategoryBtn.hovered
                                 ? Qt.darker(Colors.primary_container, 1.2)
                                 : Colors.primary_container
@@ -204,7 +204,7 @@ Item {
                             delay: 300
                             visible: parent.hovered
                             background: Card {
-                                radius: 6
+                                radius: Services.DesktopTheme.rad(6)
                                 color: Colors.surface_container_highest
                             }
                         }
@@ -248,7 +248,7 @@ Item {
                                     )
                                     height: 36
 
-                                    radius: 18
+                                    radius: Services.DesktopTheme.rad(18)
                                     color: categoryItem.isCurrent
                                         ? Colors.primary
                                         : mouseArea.containsMouse
@@ -308,7 +308,7 @@ Item {
                                             Layout.preferredWidth: 16
                                             Layout.preferredHeight: 16
                                             Layout.alignment: Qt.AlignVCenter
-                                            radius: 8
+                                            radius: Services.DesktopTheme.rad(8)
                                             color: Colors.primary
                                             opacity: 0.7
 
@@ -325,7 +325,7 @@ Item {
                                                 delay: 500
                                                 visible: parent.hovered ? true : false
                                                 background: Card {
-                                                    radius: 6
+                                                    radius: Services.DesktopTheme.rad(6)
                                                 }
                                             }
                                         }
@@ -336,7 +336,7 @@ Item {
                                             Layout.preferredWidth: 16
                                             Layout.preferredHeight: 16
                                             Layout.alignment: Qt.AlignVCenter
-                                            radius: 8
+                                            radius: Services.DesktopTheme.rad(8)
                                             color: Colors.secondary
                                             opacity: 0.7
 
@@ -352,7 +352,7 @@ Item {
                                                 delay: 500
                                                 visible: parent.hovered ? true : false
                                                 background: Card {
-                                                    radius: 6
+                                                    radius: Services.DesktopTheme.rad(6)
                                                 }
                                             }
                                         }
@@ -382,7 +382,7 @@ Item {
                                                 }
 
                                                 background: Rectangle {
-                                                    radius: 10
+                                                    radius: Services.DesktopTheme.rad(10)
                                                     color: parent.hovered
                                                         ? Qt.rgba(255, 255, 255, 0.2)
                                                         : "transparent"
@@ -400,7 +400,7 @@ Item {
                                                     delay: 500
                                                     visible: parent.hovered
                                                     background: Card {
-                                                        radius: 6
+                                                        radius: Services.DesktopTheme.rad(6)
                                                         color: Colors.surface_container_highest
                                                     }
                                                 }
@@ -425,7 +425,7 @@ Item {
                                                 }
 
                                                 background: Rectangle {
-                                                    radius: 10
+                                                    radius: Services.DesktopTheme.rad(10)
                                                     color: parent.hovered
                                                         ? Qt.rgba(255, 255, 255, 0.2)
                                                         : "transparent"
@@ -438,7 +438,7 @@ Item {
                                                     delay: 500
                                                     visible: parent.hovered
                                                     background: Card {
-                                                        radius: 6
+                                                        radius: Services.DesktopTheme.rad(6)
                                                         color: Colors.surface_container_highest
                                                     }
                                                 }
@@ -455,7 +455,7 @@ Item {
             Card {
                 Layout.fillWidth: true
                 Layout.fillHeight: true
-                radius: 20
+                radius: Services.DesktopTheme.rad(20)
 
                 Rectangle {
                     anchors.fill: parent
@@ -476,7 +476,7 @@ Item {
                         width: 8
                         contentItem: Rectangle {
                             implicitWidth: 6
-                            radius: 3
+                            radius: Services.DesktopTheme.rad(3)
                             color: Colors.outline_variant
                             opacity: notesVBar.pressed ? 0.9 : (notesVBar.hovered ? 0.7 : 0.35)
                             Behavior on opacity { NumberAnimation { duration: 150 } }
@@ -537,7 +537,7 @@ Item {
                                 property bool isEditing: false
                                 property var originalNote: modelData
 
-                                radius: 16
+                                radius: Services.DesktopTheme.rad(16)
                                 color: Colors.surface_container_high
 
                                 Rectangle {
@@ -614,7 +614,7 @@ Item {
                                                 font.pixelSize: 14
                                                 color: Colors.on_surface
                                                 background: Card {
-                                                    radius: 8
+                                                    radius: Services.DesktopTheme.rad(8)
                                                 }
 
                                                 onAccepted: card.saveEdit()
@@ -629,7 +629,7 @@ Item {
                                                 font.pixelSize: 13
                                                 color: Colors.on_surface_variant
                                                 background: Card {
-                                                    radius: 8
+                                                    radius: Services.DesktopTheme.rad(8)
                                                 }
 
                                                 onAccepted: card.saveEdit()
@@ -681,7 +681,7 @@ Item {
                                                     }
 
                                                     background: Rectangle {
-                                                        radius: 16
+                                                        radius: Services.DesktopTheme.rad(16)
                                                         color: parent.hovered && parent.enabled
                                                             ? Qt.darker(Colors.primary, 1.2)
                                                             : Colors.primary
@@ -775,7 +775,7 @@ Item {
                                             }
 
                                             background: Rectangle {
-                                                radius: 16
+                                                radius: Services.DesktopTheme.rad(16)
                                                 color: editBtn.hovered
                                                     ? Colors.surface_container_highest
                                                     : "transparent"
@@ -794,7 +794,7 @@ Item {
                                                 delay: 300
                                                 visible: parent.hovered
                                                 background: Card {
-                                                    radius: 6
+                                                    radius: Services.DesktopTheme.rad(6)
                                                     color: Colors.surface_container_highest
                                                 }
                                             }
@@ -821,7 +821,7 @@ Item {
                                             }
 
                                             background: Rectangle {
-                                                radius: 16
+                                                radius: Services.DesktopTheme.rad(16)
                                                 color: copyBtn.hovered
                                                     ? copyBtn.copied
                                                         ? Colors.primary_container
@@ -857,7 +857,7 @@ Item {
                                                 delay: 300
                                                 visible: parent.hovered
                                                 background: Card {
-                                                    radius: 6
+                                                    radius: Services.DesktopTheme.rad(6)
                                                     color: Colors.surface_container_highest
                                                 }
                                             }
@@ -878,7 +878,7 @@ Item {
                                             }
 
                                             background: Rectangle {
-                                                radius: 16
+                                                radius: Services.DesktopTheme.rad(16)
                                                 color: deleteBtn.hovered
                                                     ? Colors.error_container
                                                     : "transparent"
@@ -900,7 +900,7 @@ Item {
                                                 delay: 300
                                                 visible: parent.hovered
                                                 background: Card {
-                                                    radius: 6
+                                                    radius: Services.DesktopTheme.rad(6)
                                                     color: Colors.surface_container_highest
                                                 }
                                             }
@@ -937,7 +937,7 @@ Item {
             Rectangle {
                 Layout.fillWidth: true
                 Layout.preferredHeight: 100
-                radius: 20
+                radius: Services.DesktopTheme.rad(20)
                 color: Colors.surface_container_high
                 border.color: (mainInput.activeFocus || subtextInput.activeFocus)
                     ? Colors.primary
@@ -1072,7 +1072,7 @@ Item {
                             }
 
                             background: Rectangle {
-                                radius: 16
+                                radius: Services.DesktopTheme.rad(16)
                                 color: sendButton.hovered && sendButton.enabled
                                     ? Qt.darker(Colors.primary_container, 1.2)
                                     : Colors.primary_container

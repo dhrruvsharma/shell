@@ -55,6 +55,10 @@ Item {
 
     Rectangle {
         id: panel
+
+        PanelDecor {
+            title: "control centre"
+        }
         width: controlCenterWidth
         height: parent.height
         x: -width
