@@ -48,10 +48,10 @@ ShellRoot {
     WallpaperLayer {}
     NotificationToasts {}
     CalendarWindow {}
-    DesktopWidgetsLayer {}
-    WorkspaceDiscWindow {}
-    Expose {}
-    CavaWidget { id: cavaWidget }
+    // A full-screen, input-catching surface on the Bottom layer (from the
+    // original config). Declared before the desktop widgets and the
+    // visualizer: surfaces on one layer stack in creation order, and above
+    // them it swallowed every click meant for a widget.
     PanelWindow {
         focusable: true
         WlrLayershell.layer: WlrLayer.Bottom
@@ -65,6 +65,10 @@ ShellRoot {
             bottom: true
         }
     }
+    DesktopWidgetsLayer {}
+    WorkspaceDiscWindow {}
+    Expose {}
+    CavaWidget { id: cavaWidget }
     WindowSwitcher{}
     Visualizer {
         id: visBottom
@@ -115,9 +119,6 @@ ShellRoot {
                 right: parent.right
                 top: parent.top
             }
-        }
-        WallhavenWrapper{
-            id: wallhavenWrapper
         }
         Loader {
             id: networkPanelLoader
@@ -635,6 +636,10 @@ ShellRoot {
         }
         function set(path: string): void {
             Services.WallpaperEngine.set(path)
+        }
+        function wallhaven(): void {
+            wallpaper.visible = true
+            wallpaper.setMode("wallhaven")
         }
         function current(): string {
             return Services.WallpaperEngine.current

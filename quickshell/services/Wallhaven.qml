@@ -39,12 +39,8 @@ Singleton {
         function onWallhavenApiKeyChanged()      { root.fetchWallhaven(true) }
     }
 
-    Timer {
-        interval: 0
-        running: true
-        repeat: false
-        onTriggered: root.fetchWallhaven(true)
-    }
+    // No fetch at startup: the wallpaper picker asks when its Wallhaven tab
+    // is first opened.
 
     function buildWallhavenUrl(page) {
         const p = []

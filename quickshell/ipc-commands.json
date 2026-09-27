@@ -152,16 +152,16 @@
     "subtext": "Toggle Updates Panel"
   },
   {
-    "text": "qs ipc call wallhavenPanel toggle",
-    "subtext": "Toggle Wallhaven Panel · SUPER+SHIFT+W"
-  },
-  {
     "text": "qs ipc call wallpaper current",
     "subtext": "Current Wallpaper"
   },
   {
     "text": "qs ipc call wallpaper toggle",
     "subtext": "Toggle Wallpaper · SUPER+W"
+  },
+  {
+    "text": "qs ipc call wallpaper wallhaven",
+    "subtext": "Wallhaven Wallpaper"
   },
   {
     "text": "qs ipc call widgets reset",

@@ -1,528 +1,963 @@
+pragma ComponentBehavior: Bound
 import QtQuick
-import QtQuick.Layouts
+import QtQuick.Effects
+import QtQuick.Shapes
 import Qt.labs.folderlistmodel
-import QtQuick.Window
 import Quickshell
-import Quickshell.Io
 import qs.services
 import qs.colors
 import qs.components
+import qs.modules.lock
+import qs.settings
 
+// Wallpaper picker (SUPER+W, `qs ipc call wallpaper toggle|wallhaven`): a
+// large preview of the selected wallpaper over a dimmed desktop, and a
+// filmstrip of thumbnails under it, for three sources:
+//   Local       ~/Pictures/wallpapers
+//   Favourites  the hearted ones (services/WallpaperFavorites)
+//   Wallhaven   search results (services/Wallhaven), fetched on first visit
+//               and page by page as you reach the end; setting one downloads
+//               it into ~/Pictures/wallpapers first
+// Browsing crossfades the preview (Wallhaven: the thumbnail at once, full
+// resolution after a short pause). Enter, a click on the preview or a
+// double-click on a thumbnail sets it (services/WallpaperEngine, which plays
+// the desktop theme's transition). Follows the desktop theme like the other
+// panels.
+//
+// Keys: ←→ browse, Home/End, PgUp/PgDn, Enter set, F favourite, Tab next
+// source, / search (Wallhaven), Esc close.
 Rectangle {
     id: window
 
-    width: 1920
-    height: 400
-    color: "transparent"
-    anchors.fill: parent
-    focus: true
-    visible: false
-
     readonly property string srcDir: "file://" + Quickshell.env("HOME") + "/Pictures/wallpapers"
 
-    // Single-wallpaper stage size (one big card instead of a carousel)
-    readonly property int itemWidth: 880
-    readonly property int itemHeight: 520
-    readonly property real skewFactor: -0.35
-
-    // ── Favorites state ───────────────────────────────────────────────────
-    // Whether the stage is filtered to favorites only.
-    property bool favoritesOnly: false
-    // Flat list of every wallpaper: [{ fileName, fileUrl }], rebuilt from the folder.
+    // Source: "local", "favorites" or "wallhaven".
+    property string mode: "local"
+    readonly property var modes: ["local", "favorites", "wallhaven"]
+    readonly property bool favoritesOnly: mode === "favorites"
+    readonly property bool online: mode === "wallhaven"
     property var allWallpapers: []
-
-    // The list actually shown — all, or just favorites.
     readonly property var displayedWallpapers: {
-        const favs = WallpaperFavorites.favorites
-        if (!window.favoritesOnly)
-            return window.allWallpapers
-        let set = ({})
-        for (let i = 0; i < favs.length; i++)
-            set[favs[i]] = true
-        return window.allWallpapers.filter(w => set[w.fileName] === true)
+        if (online)
+            return Wallhaven.onlineWallpapers.map(w => ({ fileName: w.id, fileUrl: w.thumbUrl, fullUrl: w.fullUrl, resolution: w.resolution, item: w }));
+        if (!favoritesOnly)
+            return allWallpapers;
+        const favs = WallpaperFavorites.favorites;
+        return allWallpapers.filter(w => favs.indexOf(w.fileName) >= 0);
     }
+    // Waiting for a Wallhaven download to finish before closing.
+    property bool downloading: false
+
+    readonly property int count: displayedWallpapers.length
+    property int currentIndex: -1
+    readonly property var currentEntry: currentIndex >= 0 && currentIndex < count ? displayedWallpapers[currentIndex] : null
+    readonly property string currentName: currentEntry ? currentEntry.fileName : ""
+    readonly property string activeName: WallpaperEngine.current.split("/").pop()
+
+    // Opening/closing choreography, 0..1.
+    property real shown: 0
 
     function rebuildList() {
-        let arr = []
-        for (let i = 0; i < folderModel.count; i++) {
-            let url = folderModel.get(i, "fileUrl")
-            if (url === undefined)
-                url = folderModel.get(i, "fileURL")
-            arr.push({
-                fileName: folderModel.get(i, "fileName"),
-                fileUrl: url
-            })
-        }
-        window.allWallpapers = arr
+        const arr = [];
+        for (let i = 0; i < folderModel.count; i++)
+            arr.push({ fileName: folderModel.get(i, "fileName"), fileUrl: String(folderModel.get(i, "fileUrl")) });
+        allWallpapers = arr;
+        if (visible && currentIndex < 0)
+            selectActive();
     }
 
-    function currentFileName() {
-        const list = window.displayedWallpapers
-        if (view.currentIndex >= 0 && view.currentIndex < list.length)
-            return list[view.currentIndex].fileName
-        return ""
+    function selectActive() {
+        const i = displayedWallpapers.findIndex(w => w.fileName === activeName);
+        currentIndex = i >= 0 ? i : (count > 0 ? 0 : -1);
+    }
+
+    function step(d) {
+        if (count > 0)
+            currentIndex = Math.max(0, Math.min(count - 1, currentIndex + d));
     }
 
     function pickCurrent() {
-        const name = window.currentFileName()
-        if (!name)
-            return
-        WallpaperEngine.set(window.srcDir + "/" + name)
-        window.visible = false
-    }
-
-    function favoriteToggle(name) {
-        if (!name)
-            return
-        const wasFav = WallpaperFavorites.has(name)
-        WallpaperFavorites.toggle(name)
-        // If we just removed the focused item from the favorites view, keep the
-        // selection valid.
-        if (window.favoritesOnly && wasFav)
-            Qt.callLater(window.clampCurrentIndex)
-    }
-
-    function toggleCurrentFavorite() {
-        window.favoriteToggle(window.currentFileName())
-    }
-
-    function setFavoritesOnly(v) {
-        if (v === window.favoritesOnly)
-            return
-        window.favoritesOnly = v
-    }
-
-    function clampCurrentIndex() {
-        if (view.count <= 0) {
-            view.currentIndex = -1
-            return
+        if (!currentEntry || downloading)
+            return;
+        if (currentEntry.item) {
+            downloading = true;
+            Wallhaven.downloadAndSetWallpaper(currentEntry.item);
+            return;
         }
-        if (view.currentIndex >= view.count)
-            view.currentIndex = view.count - 1
-        else if (view.currentIndex < 0)
-            view.currentIndex = 0
+        WallpaperEngine.set(currentEntry.fileUrl);
+        close();
     }
 
-    // Switching between All / Favorites always starts from the first wallpaper.
-    function resetToStart() {
-        view.currentIndex = view.count > 0 ? 0 : -1
+    function setMode(m) {
+        mode = m;
+        if (m === "wallhaven" && Wallhaven.onlineWallpapers.length === 0 && !Wallhaven.isFetchingOnline)
+            Wallhaven.fetchWallhaven(true);
     }
 
-    onFavoritesOnlyChanged: Qt.callLater(window.resetToStart)
+    function close() {
+        openAnim.stop();
+        closeAnim.restart();
+    }
 
-    // Replay the assemble animation every time the panel is opened.
-    onVisibleChanged: if (visible) stage.replay()
+    function toggleFavorite(name) {
+        if (!name)
+            return;
+        const wasFav = WallpaperFavorites.has(name);
+        WallpaperFavorites.toggle(name);
+        if (favoritesOnly && wasFav)
+            Qt.callLater(() => currentIndex = Math.min(currentIndex, count - 1));
+    }
 
-    Shortcut { sequence: "Escape"; onActivated: window.visible = false }
+    anchors.fill: parent
+    color: "transparent"
+    visible: false
+    focus: true
 
-    // Non-visual data source. The stage reads window.displayedWallpapers built
-    // from this so it can be filtered down to favorites.
+    onVisibleChanged: {
+        if (!visible)
+            return;
+        mode = "local";
+        downloading = false;
+        selectActive();
+        strip.positionViewAtIndex(Math.max(0, currentIndex), ListView.Center);
+        keys.forceActiveFocus();
+        closeAnim.stop();
+        openAnim.restart();
+    }
+    onModeChanged: {
+        currentIndex = count > 0 ? 0 : -1;
+        if (mode === "local")
+            selectActive();
+        strip.positionViewAtIndex(Math.max(0, currentIndex), ListView.Center);
+    }
+    onCurrentEntryChanged: {
+        preview.show(currentEntry ? currentEntry.fileUrl : "");
+        if (currentEntry && currentEntry.fullUrl)
+            hiresTimer.restart();
+        // Next page of results as the end comes into view.
+        if (online && currentIndex >= count - 6)
+            Wallhaven.fetchNextPage();
+    }
+    // First results arriving while the Wallhaven tab is open.
+    onCountChanged: {
+        if (currentIndex < 0 && count > 0)
+            currentIndex = 0;
+    }
+
+    // Full resolution once the selection settles (the thumbnail shows at once).
+    Timer {
+        id: hiresTimer
+        interval: 550
+        onTriggered: {
+            if (window.currentEntry && window.currentEntry.fullUrl)
+                preview.show(window.currentEntry.fullUrl);
+        }
+    }
+
+    // Close once the chosen Wallhaven wallpaper has downloaded (and is set).
+    Connections {
+        target: Wallhaven
+
+        function onDownloadingWallpaperIdChanged() {
+            if (window.downloading && Wallhaven.downloadingWallpaperId === "") {
+                window.downloading = false;
+                window.close();
+            }
+        }
+    }
+
+    // One arc of a loading ring (see LoadRing in the preview).
+    component LoadArc: Shape {
+        id: arc
+        property color color
+        property real thickness: 3
+        property real start: -90
+        property real sweep: 360
+        anchors.fill: parent
+        preferredRendererType: Shape.CurveRenderer
+
+        ShapePath {
+            fillColor: "transparent"
+            strokeColor: arc.color
+            strokeWidth: arc.thickness
+            capStyle: ShapePath.RoundCap
+            PathAngleArc {
+                centerX: arc.width / 2
+                centerY: arc.height / 2
+                radiusX: arc.width / 2 - arc.thickness
+                radiusY: arc.height / 2 - arc.thickness
+                startAngle: arc.start
+                sweepAngle: arc.sweep
+            }
+        }
+    }
+
+    NumberAnimation {
+        id: openAnim
+        target: window
+        property: "shown"
+        to: 1
+        duration: 320
+        easing.type: Easing.OutCubic
+    }
+
+    NumberAnimation {
+        id: closeAnim
+        target: window
+        property: "shown"
+        to: 0
+        duration: 200
+        easing.type: Easing.InCubic
+        onFinished: window.visible = false
+    }
+
     FolderListModel {
         id: folderModel
         folder: window.srcDir
-        nameFilters: ["*.jpg", "*.jpeg", "*.png", "*.webp", "*.gif", "*.mp4", "*.mkv", "*.mov", "*.webm"]
+        nameFilters: ["*.jpg", "*.jpeg", "*.png", "*.webp", "*.gif"]
+        caseSensitive: false
         showDirs: false
         sortField: FolderListModel.Name
         onCountChanged: window.rebuildList()
     }
 
-    // A wallpaper sliced into vertical strips that fly together/apart.
-    // t drives the whole effect: 1 = staged off the top/bottom-right,
-    // 0 = assembled in place, -1 = scattered off the top/bottom-left.
-    component ShardImage: Item {
-        id: shard
+    // ── Scrim: the desktop, dimmed; click to close ───────────────────────────
+    Rectangle {
         anchors.fill: parent
+        color: Colors.scrim
+        opacity: 0.6 * window.shown
 
-        property url source
-        property real t: 1
-        visible: String(source).length > 0 && Math.abs(t) < 0.999
-
-        readonly property int stripCount: 24
-        readonly property real stripW: width / stripCount
-        readonly property real imgW: width + height * Math.abs(window.skewFactor) + 50
-        readonly property real travelX: window.width > 0 ? window.width : 1920
-        readonly property real travelY: (window.height > 0 ? window.height : 1080) * 0.9
-
-        function flyIn() { outAnim.stop(); inAnim.restart() }
-        function flyOut() { inAnim.stop(); outAnim.restart() }
-
-        NumberAnimation { id: inAnim; target: shard; property: "t"; to: 0; duration: 650; easing.type: Easing.OutCubic }
-        NumberAnimation { id: outAnim; target: shard; property: "t"; to: -1; duration: 480; easing.type: Easing.InCubic }
-
-        transform: Matrix4x4 {
-            property real s: window.skewFactor
-            matrix: Qt.matrix4x4(1, s, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1)
-        }
-
-        Repeater {
-            model: shard.stripCount
-            delegate: Item {
-                id: strip
-                required property int index
-                // Alternate strips travel via the top vs. the bottom.
-                readonly property int dir: index % 2 === 0 ? -1 : 1
-                // Deterministic per-strip scatter so the pieces move at
-                // different speeds instead of as one rigid block.
-                readonly property real spread: 0.85 + 0.45 * (((index * 7919) % 89) / 89)
-
-                x: index * shard.stripW + shard.t * strip.spread * shard.travelX
-                y: Math.abs(shard.t) * strip.dir * strip.spread * shard.travelY
-                width: Math.ceil(shard.stripW) + 1
-                height: shard.height
-                clip: true
-                opacity: 1 - 0.6 * Math.abs(shard.t)
-
-                Image {
-                    x: (shard.width - shard.imgW) / 2 - 35 - strip.index * shard.stripW
-                    y: 0
-                    width: shard.imgW
-                    height: shard.height
-
-                    fillMode: Image.PreserveAspectCrop
-                    source: shard.source
-                    sourceSize: Qt.size(Math.round(shard.imgW), Math.round(shard.height))
-                    asynchronous: true
-
-                    transform: Matrix4x4 {
-                        property real s: -window.skewFactor
-                        matrix: Qt.matrix4x4(1, s, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1)
-                    }
-                }
-            }
+        MouseArea {
+            anchors.fill: parent
+            onClicked: window.close()
+            onWheel: wheel => window.step(wheel.angleDelta.y > 0 ? -1 : 1)
         }
     }
 
-    FocusScope {
-        focus: parent.visible
+    Item {
+        id: keys
         anchors.fill: parent
+        focus: true
 
-        // ── Single-wallpaper view ──────────────────────────────────────────
-        // Only one wallpaper is on screen at a time. Navigating swaps between
-        // two ShardImage slots: the old one scatters off to the left, the new
-        // one assembles from the right.
+        Keys.onPressed: event => {
+            const k = event.key;
+            if (k === Qt.Key_Escape)
+                window.close();
+            else if (k === Qt.Key_Left || k === Qt.Key_Up)
+                window.step(-1);
+            else if (k === Qt.Key_Right || k === Qt.Key_Down)
+                window.step(1);
+            else if (k === Qt.Key_Home)
+                window.currentIndex = window.count > 0 ? 0 : -1;
+            else if (k === Qt.Key_End)
+                window.currentIndex = window.count - 1;
+            else if (k === Qt.Key_PageUp)
+                window.step(-8);
+            else if (k === Qt.Key_PageDown)
+                window.step(8);
+            else if (k === Qt.Key_Return || k === Qt.Key_Enter)
+                window.pickCurrent();
+            else if (k === Qt.Key_F && !window.online)
+                window.toggleFavorite(window.currentName);
+            else if (k === Qt.Key_Tab || k === Qt.Key_Backtab)
+                window.setMode(window.modes[(window.modes.indexOf(window.mode) + (k === Qt.Key_Tab ? 1 : 2)) % 3]);
+            else if (k === Qt.Key_Slash && window.online)
+                search.forceActiveFocus();
+            else
+                return;
+            event.accepted = true;
+        }
+    }
+
+    Column {
+        id: content
+        anchors.centerIn: parent
+        anchors.verticalCenterOffset: (1 - window.shown) * 30
+        width: Math.min(1180, window.width - 120)
+        spacing: 18
+        opacity: window.shown
+
+        // ── Header ─────────────────────────────────────────────────────────
         Item {
-            id: view
-            anchors.fill: parent
-            focus: true
+            width: parent.width
+            height: 40
 
-            property int currentIndex: -1
-            readonly property int count: window.displayedWallpapers.length
-            readonly property var currentEntry: (currentIndex >= 0 && currentIndex < count)
-                ? window.displayedWallpapers[currentIndex] : null
+            Row {
+                anchors.verticalCenter: parent.verticalCenter
+                spacing: 12
 
-            property bool initialFocusSet: false
-            onCountChanged: {
-                if (!initialFocusSet && count > 0) {
-                    var idx = parseInt(Quickshell.env("WALLPAPER_INDEX") || "0")
-                    if (count > idx) {
-                        currentIndex = idx
-                        initialFocusSet = true
-                    }
+                Glyph {
+                    anchors.verticalCenter: parent.verticalCenter
+                    text: "wallpaper"
+                    filled: true
+                    font.pixelSize: 26
+                    color: Colors.primary
+                }
+
+                StyledText {
+                    anchors.verticalCenter: parent.verticalCenter
+                    text: "Wallpapers"
+                    font.pixelSize: 22
+                    font.weight: Font.Bold
+                }
+
+                StyledText {
+                    anchors.verticalCenter: parent.verticalCenter
+                    text: window.count > 0 ? (window.currentIndex + 1) + " / " + window.count + (window.online && Wallhaven.hasMorePages ? "+" : "") : ""
+                    font.pixelSize: 13
+                    color: Colors.on_surface_variant
                 }
             }
 
-            onCurrentEntryChanged: stage.showEntry(currentEntry)
+            // All | Favourites
+            Rectangle {
+                anchors.right: parent.right
+                anchors.verticalCenter: parent.verticalCenter
+                width: tabs.implicitWidth + 8
+                height: 40
+                radius: DesktopTheme.rad(20)
+                color: Colors.surface_container
 
-            function step(d) {
-                if (count <= 0)
-                    return
-                currentIndex = Math.max(0, Math.min(count - 1, currentIndex + d))
-            }
+                Row {
+                    id: tabs
+                    anchors.centerIn: parent
+                    spacing: 4
 
-            Keys.onPressed: (event) => {
-                if (event.key === Qt.Key_Left || event.key === Qt.Key_Up) {
-                    view.step(-1)
-                    event.accepted = true
-                } else if (event.key === Qt.Key_Right || event.key === Qt.Key_Down) {
-                    view.step(1)
-                    event.accepted = true
-                } else if (event.key === Qt.Key_Return || event.key === Qt.Key_Enter) {
-                    window.pickCurrent()
-                    event.accepted = true
-                }
-            }
+                    Repeater {
+                        model: [
+                            { mode: "local", label: "Local", icon: "photo_library" },
+                            { mode: "favorites", label: "Favourites", icon: "favorite" },
+                            { mode: "wallhaven", label: "Wallhaven", icon: "travel_explore" }
+                        ]
 
-            Item {
-                id: stage
-                anchors.centerIn: parent
-                width: window.itemWidth
-                height: window.itemHeight
+                        ClickableRect {
+                            id: tab
+                            required property var modelData
+                            readonly property bool current: window.mode === modelData.mode
+                            width: tabRow.implicitWidth + 28
+                            height: 32
+                            radius: 16
+                            color: current ? Colors.primary : tab.hovered ? Colors.surface_container_high : "transparent"
+                            cursorShape: Qt.PointingHandCursor
+                            onClicked: window.setMode(modelData.mode)
 
-                property ShardImage front: slotA
-                property ShardImage back: slotB
+                            Row {
+                                id: tabRow
+                                anchors.centerIn: parent
+                                spacing: 6
 
-                function showEntry(entry) {
-                    if (!entry) {
-                        front.flyOut()
-                        return
-                    }
-                    if (String(front.source) === String(entry.fileUrl)) {
-                        // Same wallpaper but it was flown out (e.g. favorites
-                        // emptied and refilled) — bring it back.
-                        if (Math.abs(front.t) > 0.5)
-                            front.flyIn()
-                        return
-                    }
-                    const out = front
-                    front = back
-                    back = out
-                    front.source = entry.fileUrl
-                    front.t = 1
-                    out.flyOut()
-                    front.flyIn()
-                }
+                                Glyph {
+                                    anchors.verticalCenter: parent.verticalCenter
+                                    text: tab.modelData.icon
+                                    filled: tab.current
+                                    font.pixelSize: 17
+                                    color: tab.current ? Colors.on_primary : Colors.on_surface_variant
+                                }
 
-                function replay() {
-                    if (String(front.source).length > 0) {
-                        front.t = 1
-                        front.flyIn()
-                    }
-                }
-
-                // Dark parallelogram backing that stays put while the strips
-                // fly, so transitions read as happening "on a stage".
-                Rectangle {
-                    anchors.fill: parent
-                    color: "#B3000000"
-                    visible: view.currentEntry !== null || Math.abs(stage.front.t) < 0.999
-
-                    transform: Matrix4x4 {
-                        property real s: window.skewFactor
-                        matrix: Qt.matrix4x4(1, s, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1)
-                    }
-                }
-
-                ShardImage { id: slotA }
-                ShardImage { id: slotB }
-
-                MouseArea {
-                    anchors.fill: parent
-                    z: 15
-                    onClicked: window.pickCurrent()
-                    onWheel: (wheel) => {
-                        if (wheel.angleDelta.y > 0)
-                            view.step(-1)
-                        else
-                            view.step(1)
-                    }
-                }
-
-                // ── Overlays for the shown wallpaper ──────────────────────
-                // Upright (not skewed); fade out while the strips are flying.
-                Item {
-                    id: overlay
-                    anchors.fill: parent
-                    z: 20
-                    opacity: 1 - Math.abs(stage.front.t)
-                    visible: opacity > 0.01 && view.currentEntry !== null
-
-                    readonly property string shownName: view.currentEntry ? view.currentEntry.fileName : ""
-                    readonly property bool isVideo: !!overlay.shownName.toLowerCase().match(/\.(mp4|mkv|mov|webm)$/)
-                    readonly property bool isFav: {
-                        const favs = WallpaperFavorites.favorites
-                        for (let i = 0; i < favs.length; i++)
-                            if (favs[i] === overlay.shownName)
-                                return true
-                        return false
-                    }
-
-                    Rectangle {
-                        visible: overlay.isVideo
-                        anchors.top: parent.top
-                        anchors.right: parent.right
-                        anchors.margins: 14
-
-                        width: 32
-                        height: 32
-                        radius: 6
-                        color: "#60000000"
-
-                        Canvas {
-                            anchors.fill: parent
-                            anchors.margins: 8
-                            onPaint: {
-                                var ctx = getContext("2d");
-                                ctx.fillStyle = "#EEFFFFFF";
-                                ctx.beginPath();
-                                ctx.moveTo(4, 0);
-                                ctx.lineTo(14, 8);
-                                ctx.lineTo(4, 16);
-                                ctx.closePath();
-                                ctx.fill();
-                            }
-                        }
-                    }
-
-                    // Favorite toggle (top-left). Clicking it toggles the
-                    // favorite without selecting the wallpaper.
-                    ClickableRect {
-                        id: favBtn
-                        anchors.top: parent.top
-                        anchors.left: parent.left
-                        anchors.margins: 14
-
-                        width: 32
-                        height: 32
-                        radius: 16
-                        color: favBtn.hovered ? "#90000000" : "#60000000"
-
-                        onVisibleChanged: if (visible) heartCanvas.requestPaint()
-
-                        Canvas {
-                            id: heartCanvas
-                            anchors.fill: parent
-                            anchors.margins: 8
-                            property bool filled: overlay.isFav
-                            onFilledChanged: requestPaint()
-                            onPaint: {
-                                var ctx = getContext("2d");
-                                ctx.clearRect(0, 0, width, height);
-                                var w = width, h = height;
-                                ctx.beginPath();
-                                ctx.moveTo(w / 2, h * 0.86);
-                                ctx.bezierCurveTo(-w * 0.12, h * 0.42, w * 0.20, -h * 0.06, w / 2, h * 0.30);
-                                ctx.bezierCurveTo(w * 0.80, -h * 0.06, w * 1.12, h * 0.42, w / 2, h * 0.86);
-                                ctx.closePath();
-                                if (filled) {
-                                    ctx.fillStyle = "#FF5C7A";
-                                    ctx.fill();
-                                } else {
-                                    ctx.lineWidth = 2;
-                                    ctx.strokeStyle = "#EEFFFFFF";
-                                    ctx.stroke();
+                                StyledText {
+                                    anchors.verticalCenter: parent.verticalCenter
+                                    text: tab.modelData.label + (tab.modelData.mode === "favorites" ? " (" + WallpaperFavorites.favorites.length + ")" : "")
+                                    font.pixelSize: 13
+                                    font.weight: Font.DemiBold
+                                    color: tab.current ? Colors.on_primary : Colors.on_surface
                                 }
                             }
                         }
-
-                        cursorShape: Qt.PointingHandCursor
-                        onClicked: window.favoriteToggle(overlay.shownName)
                     }
                 }
             }
         }
 
-        Keys.onPressed: (event) => {
-            if (event.key === Qt.Key_F) {
-                window.toggleCurrentFavorite()
-                event.accepted = true
-                return
-            }
-            if (event.key === Qt.Key_Tab || event.key === Qt.Key_Backtab) {
-                window.setFavoritesOnly(!window.favoritesOnly)
-                event.accepted = true
-                return
-            }
-            if (event.key === Qt.Key_Left || event.key === Qt.Key_Right ||
-                event.key === Qt.Key_Up || event.key === Qt.Key_Down ||
-                event.key === Qt.Key_Return || event.key === Qt.Key_Enter) {
-                view.forceActiveFocus()
-                event.accepted = false
-            }
-        }
+        // ── Wallhaven search and filters ───────────────────────────────────
+        Flow {
+            id: filters
+            visible: window.online
+            width: parent.width
+            spacing: 8
 
-        // ── View switcher: All / Favorites ────────────────────────────────
-        // Sits just above the stage, and is skewed into parallelograms (with
-        // counter-skewed labels) to match the wallpaper card.
-        Row {
-            id: viewTabs
-            z: 100
-            anchors.horizontalCenter: parent.horizontalCenter
-            anchors.bottom: parent.verticalCenter
-            anchors.bottomMargin: window.itemHeight / 2 + 22
-            spacing: 16
+            component Chip: ClickableRect {
+                id: chip
+                property string label
+                property bool active
+                property color activeColor: Colors.secondary_container
+                property color activeText: Colors.on_secondary_container
+                width: chipText.implicitWidth + 22
+                height: 32
+                radius: 16
+                color: active ? activeColor : chip.hovered ? Colors.surface_container_high : Colors.surface_container
+                cursorShape: Qt.PointingHandCursor
+
+                StyledText {
+                    id: chipText
+                    anchors.centerIn: parent
+                    text: chip.label
+                    font.pixelSize: 12
+                    font.weight: Font.Medium
+                    color: chip.active ? chip.activeText : Colors.on_surface
+                }
+            }
+
+            component Gap: Item {
+                width: 6
+                height: 32
+            }
+
+            StyledTextField {
+                id: search
+                width: 240
+                height: 32
+                placeholderText: "Search Wallhaven  ( / )"
+                font.pixelSize: 13
+                leftPadding: 12
+                focusBorderColor: Colors.primary
+                text: Wallhaven.currentSearchText
+                onAccepted: {
+                    Wallhaven.updateSearch(text);
+                    keys.forceActiveFocus();
+                }
+                Keys.onEscapePressed: keys.forceActiveFocus()
+            }
+
+            Gap {}
 
             Repeater {
-                model: [
-                    { label: "All", fav: false },
-                    { label: "Favorites", fav: true }
-                ]
-                delegate: Item {
-                    id: tabPill
+                model: [["Recent", "date_added"], ["Hot", "toplist"], ["Views", "views"], ["Favs", "favorites"], ["Random", "random"], ["Relevant", "relevance"]]
+
+                Chip {
                     required property var modelData
-                    readonly property bool active: window.favoritesOnly === modelData.fav
-                    implicitHeight: 34
-                    implicitWidth: tabRow.implicitWidth + 40
+                    label: modelData[0]
+                    active: SettingsConfig.wallhavenSorting === modelData[1]
+                    onClicked: SettingsConfig.wallhavenSorting = modelData[1]
+                }
+            }
 
-                    // Skewed parallelogram background. The shear is centered on the
-                    // pill (the -s*H/2 term in the matrix translation) so the upright
-                    // label sitting at the centre stays centered inside the shape.
-                    Rectangle {
-                        anchors.fill: parent
-                        radius: 6
-                        color: tabPill.active ? Colors.primary : Colors.surface_container
-                        Behavior on color { ColorAnimation { duration: 150 } }
+            Repeater {
+                model: SettingsConfig.wallhavenSorting === "toplist" ? ["1d", "3d", "1w", "1M", "3M", "6M", "1y"] : []
 
-                        transform: Matrix4x4 {
-                            property real s: window.skewFactor
-                            matrix: Qt.matrix4x4(1, s, 0, -s * (tabPill.implicitHeight / 2),
-                                                 0, 1, 0, 0,
-                                                 0, 0, 1, 0,
-                                                 0, 0, 0, 1)
-                        }
+                Chip {
+                    required property string modelData
+                    label: modelData
+                    active: SettingsConfig.wallhavenTopRange === modelData
+                    onClicked: SettingsConfig.wallhavenTopRange = modelData
+                }
+            }
+
+            Chip {
+                label: SettingsConfig.wallhavenOrder === "desc" ? "↓" : "↑"
+                onClicked: SettingsConfig.wallhavenOrder = SettingsConfig.wallhavenOrder === "desc" ? "asc" : "desc"
+            }
+
+            Gap {}
+
+            Repeater {
+                model: [["General", 0], ["Anime", 1], ["People", 2]]
+
+                Chip {
+                    required property var modelData
+                    label: modelData[0]
+                    active: SettingsConfig.wallhavenCategories[modelData[1]] === "1"
+                    onClicked: {
+                        const c = SettingsConfig.wallhavenCategories.split("");
+                        c[modelData[1]] = c[modelData[1]] === "1" ? "0" : "1";
+                        if (c.includes("1"))
+                            SettingsConfig.wallhavenCategories = c.join("");
                     }
+                }
+            }
 
-                    // Upright, centered label (not skewed)
-                    Row {
-                        id: tabRow
-                        anchors.centerIn: parent
-                        spacing: 6
+            Gap {}
 
-                        StyledText {
-                            visible: tabPill.modelData.fav
-                            anchors.verticalCenter: parent.verticalCenter
-                            text: "♥"
-                            font.pixelSize: 14
-                            color: tabPill.active ? Colors.on_primary : "#FF5C7A"
-                        }
+            Repeater {
+                model: SettingsConfig.wallhavenApiKey.length > 0 ? [["SFW", 0], ["Sketchy", 1], ["NSFW", 2]] : [["SFW", 0], ["Sketchy", 1]]
 
-                        StyledText {
-                            anchors.verticalCenter: parent.verticalCenter
-                            text: tabPill.modelData.fav
-                                ? tabPill.modelData.label + " (" + WallpaperFavorites.favorites.length + ")"
-                                : tabPill.modelData.label
-                            font.pixelSize: 13
-                            font.weight: Font.Bold
-                            color: tabPill.active ? Colors.on_primary : Colors.on_surface
-                        }
-                    }
-
-                    MouseArea {
-                        anchors.fill: parent
-                        cursorShape: Qt.PointingHandCursor
-                        onClicked: window.setFavoritesOnly(tabPill.modelData.fav)
+                Chip {
+                    required property var modelData
+                    label: modelData[0]
+                    active: SettingsConfig.wallhavenPurity[modelData[1]] === "1"
+                    activeColor: modelData[1] === 2 ? Colors.error : Colors.secondary_container
+                    activeText: modelData[1] === 2 ? Colors.on_error : Colors.on_secondary_container
+                    onClicked: {
+                        const p = SettingsConfig.wallhavenPurity.split("");
+                        p[modelData[1]] = p[modelData[1]] === "1" ? "0" : "1";
+                        if (p.includes("1"))
+                            SettingsConfig.wallhavenPurity = p.join("");
                     }
                 }
             }
         }
 
-        // ── Empty favorites placeholder ───────────────────────────────────
+        // ── Preview ────────────────────────────────────────────────────────
         Rectangle {
-            z: 50
-            anchors.centerIn: parent
-            visible: window.favoritesOnly && window.displayedWallpapers.length === 0
-            implicitWidth: emptyRow.implicitWidth + 40
-            implicitHeight: emptyRow.implicitHeight + 28
-            radius: 18
-            color: Colors.surface_container
+            id: preview
 
-            Row {
-                id: emptyRow
-                anchors.centerIn: parent
-                spacing: 10
+            property Image front: imgA
+            readonly property Image back: front === imgA ? imgB : imgA
 
-                StyledText {
-                    anchors.verticalCenter: parent.verticalCenter
-                    text: "♥"
-                    font.pixelSize: 22
-                    color: "#FF5C7A"
+            function show(url) {
+                if (!url) {
+                    front.opacity = 0;
+                    return;
                 }
+                if (String(front.source) === url && front.status !== Image.Null)
+                    return;
+                back.source = url;
+                back.opacity = 0;
+                back.scale = 1.04;
+                back.z = 2;
+                front.z = 1;
+                if (back.status === Image.Ready)
+                    fadeIn.restart();
+            }
 
-                StyledText {
-                    anchors.verticalCenter: parent.verticalCenter
-                    text: "No favorites yet — focus a wallpaper and press F (or tap the heart)"
-                    font.pixelSize: 15
+            anchors.horizontalCenter: parent.horizontalCenter
+            width: parent.width
+            height: Math.min(width * 10 / 16, window.height - 360 - (window.online ? filters.height + content.spacing : 0))
+            radius: DesktopTheme.rad(26)
+            color: Colors.surface_container_lowest
+            clip: true
+            scale: 0.96 + 0.04 * window.shown
+
+            component PreviewImage: Image {
+                id: pimg
+                anchors.fill: parent
+                fillMode: Image.PreserveAspectCrop
+                sourceSize: Qt.size(preview.width * 1.25, preview.height * 1.25)
+                asynchronous: true
+                cache: false
+                smooth: true
+                opacity: 0
+                onStatusChanged: {
+                    if (status === Image.Ready && pimg === preview.back)
+                        fadeIn.restart();
                 }
             }
+
+            Rectangle {
+                id: previewMask
+                anchors.fill: parent
+                radius: preview.radius
+                visible: false
+                layer.enabled: true
+            }
+
+            Item {
+                anchors.fill: parent
+                layer.enabled: true
+                layer.effect: MultiEffect {
+                    maskEnabled: true
+                    maskSource: previewMask
+                    maskThresholdMin: 0.5
+                    maskSpreadAtMin: 1.0
+                }
+
+                PreviewImage { id: imgA }
+                PreviewImage { id: imgB }
+            }
+
+            ParallelAnimation {
+                id: fadeIn
+                NumberAnimation { target: preview.back; property: "opacity"; to: 1; duration: 260; easing.type: Easing.OutCubic }
+                NumberAnimation { target: preview.back; property: "scale"; to: 1; duration: 420; easing.type: Easing.OutCubic }
+                onFinished: {
+                    const old = preview.front;
+                    preview.front = preview.back;
+                    old.opacity = 0;
+                    old.source = "";
+                }
+            }
+
+            // ── Loading indicators ──────────────────────────────────────────
+            // What's loading: the incoming image. With nothing on screen yet
+            // (a Wallhaven thumbnail on its way) a card in the middle; with
+            // the thumbnail up and its full resolution downloading, a chip in
+            // the corner so the picture stays visible.
+            readonly property bool loading: back.status === Image.Loading
+            readonly property bool frontReady: front.status === Image.Ready && front.opacity > 0.5
+            readonly property real progress: back.progress
+
+            component LoadRing: Item {
+                id: ring
+                property real progress: 0
+                property real thickness: 3
+                readonly property bool indeterminate: progress <= 0.01
+
+                // Track.
+                LoadArc {
+                    thickness: ring.thickness
+                    color: Colors.withAlpha("white", 0.18)
+                }
+
+                // Real progress once the download reports it.
+                LoadArc {
+                    thickness: ring.thickness
+                    visible: !ring.indeterminate
+                    color: Colors.primary
+                    sweep: Math.max(8, ring.progress * 360)
+                }
+
+                // A spinning quarter until then.
+                LoadArc {
+                    id: spinner
+                    thickness: ring.thickness
+                    visible: ring.indeterminate
+                    color: Colors.primary
+                    sweep: 90
+
+                    RotationAnimator on rotation {
+                        from: 0
+                        to: 360
+                        duration: 900
+                        loops: Animation.Infinite
+                        running: spinner.visible && ring.visible
+                    }
+                }
+            }
+
+            Rectangle {
+                z: 4
+                anchors.centerIn: parent
+                visible: preview.loading && !preview.frontReady
+                width: loadCol.implicitWidth + 44
+                height: loadCol.implicitHeight + 36
+                radius: DesktopTheme.rad(18)
+                color: Colors.withAlpha("black", 0.45)
+
+                Column {
+                    id: loadCol
+                    anchors.centerIn: parent
+                    spacing: 12
+
+                    LoadRing {
+                        anchors.horizontalCenter: parent.horizontalCenter
+                        width: 46
+                        height: 46
+                        progress: preview.progress
+                    }
+
+                    StyledText {
+                        anchors.horizontalCenter: parent.horizontalCenter
+                        text: "Loading preview" + (preview.progress > 0.01 ? "  " + Math.round(preview.progress * 100) + "%" : "…")
+                        font.pixelSize: 13
+                        color: "white"
+                    }
+                }
+            }
+
+            Rectangle {
+                z: 4
+                anchors.top: parent.top
+                anchors.right: parent.right
+                anchors.margins: 16
+                visible: preview.loading && preview.frontReady
+                width: chipRow.implicitWidth + 22
+                height: 32
+                radius: DesktopTheme.rad(16)
+                color: Colors.withAlpha("black", 0.5)
+
+                Row {
+                    id: chipRow
+                    anchors.centerIn: parent
+                    spacing: 8
+
+                    LoadRing {
+                        anchors.verticalCenter: parent.verticalCenter
+                        width: 18
+                        height: 18
+                        thickness: 2.5
+                        progress: preview.progress
+                    }
+
+                    StyledText {
+                        anchors.verticalCenter: parent.verticalCenter
+                        text: "Full resolution" + (preview.progress > 0.01 ? "  " + Math.round(preview.progress * 100) + "%" : "…")
+                        font.pixelSize: 12
+                        color: "white"
+                    }
+                }
+            }
+
+            MouseArea {
+                anchors.fill: parent
+                z: 5
+                cursorShape: Qt.PointingHandCursor
+                onClicked: window.pickCurrent()
+                onWheel: wheel => window.step(wheel.angleDelta.y > 0 ? -1 : 1)
+            }
+
+            // Name, badges and actions along the bottom.
+            Rectangle {
+                z: 6
+                anchors.left: parent.left
+                anchors.right: parent.right
+                anchors.bottom: parent.bottom
+                height: 76
+                gradient: Gradient {
+                    GradientStop { position: 0; color: "transparent" }
+                    GradientStop { position: 1; color: Colors.withAlpha("black", 0.6) }
+                }
+
+                Row {
+                    anchors.left: parent.left
+                    anchors.leftMargin: 22
+                    anchors.bottom: parent.bottom
+                    anchors.bottomMargin: 16
+                    spacing: 10
+
+                    StyledText {
+                        anchors.verticalCenter: parent.verticalCenter
+                        text: window.online && window.currentEntry ? "wallhaven " + window.currentName + "  ·  " + window.currentEntry.resolution : window.currentName
+                        font.pixelSize: 15
+                        font.weight: Font.DemiBold
+                        color: "white"
+                    }
+
+                    Rectangle {
+                        anchors.verticalCenter: parent.verticalCenter
+                        visible: !window.online && window.currentName !== "" && window.currentName === window.activeName
+                        width: activeLabel.implicitWidth + 16
+                        height: 22
+                        radius: DesktopTheme.rad(11)
+                        color: Colors.primary
+
+                        StyledText {
+                            id: activeLabel
+                            anchors.centerIn: parent
+                            text: "Current"
+                            font.pixelSize: 11
+                            font.weight: Font.Bold
+                            color: Colors.on_primary
+                        }
+                    }
+                }
+
+                Row {
+                    anchors.right: parent.right
+                    anchors.rightMargin: 18
+                    anchors.bottom: parent.bottom
+                    anchors.bottomMargin: 12
+                    spacing: 8
+
+                    ClickableRect {
+                        id: favButton
+                        visible: !window.online
+                        readonly property bool fav: WallpaperFavorites.favorites.indexOf(window.currentName) >= 0
+                        width: 38
+                        height: 38
+                        radius: 19
+                        color: favButton.hovered ? Colors.withAlpha("black", 0.55) : Colors.withAlpha("black", 0.35)
+                        cursorShape: Qt.PointingHandCursor
+                        onClicked: window.toggleFavorite(window.currentName)
+
+                        Glyph {
+                            anchors.centerIn: parent
+                            text: "favorite"
+                            filled: favButton.fav
+                            font.pixelSize: 20
+                            color: favButton.fav ? "#ff5c7a" : "white"
+                        }
+                    }
+
+                    ClickableRect {
+                        id: setButton
+                        width: setRow.implicitWidth + 30
+                        height: 38
+                        radius: 19
+                        color: setButton.hovered ? Qt.lighter(Colors.primary, 1.08) : Colors.primary
+                        cursorShape: Qt.PointingHandCursor
+                        onClicked: window.pickCurrent()
+
+                        Row {
+                            id: setRow
+                            anchors.centerIn: parent
+                            spacing: 8
+
+                            Glyph {
+                                anchors.verticalCenter: parent.verticalCenter
+                                text: window.online ? "download" : "check"
+                                font.pixelSize: 18
+                                color: Colors.on_primary
+                            }
+
+                            StyledText {
+                                anchors.verticalCenter: parent.verticalCenter
+                                text: window.downloading ? "Downloading…" : window.online ? "Download & set" : "Set wallpaper"
+                                font.pixelSize: 13
+                                font.weight: Font.DemiBold
+                                color: Colors.on_primary
+                            }
+                        }
+                    }
+                }
+            }
+
+            // Nothing to show (no favourites yet).
+            Column {
+                anchors.centerIn: parent
+                visible: window.count === 0 || (window.online && Wallhaven.onlineError.length > 0 && window.count === 0)
+                spacing: 10
+
+                Glyph {
+                    anchors.horizontalCenter: parent.horizontalCenter
+                    text: window.online ? (Wallhaven.onlineError ? "cloud_off" : "travel_explore") : window.favoritesOnly ? "heart_plus" : "hide_image"
+                    font.pixelSize: 48
+                    color: Colors.on_surface_variant
+                }
+
+                StyledText {
+                    anchors.horizontalCenter: parent.horizontalCenter
+                    text: window.online ? (Wallhaven.onlineError || (Wallhaven.isFetchingOnline ? "Searching Wallhaven…" : "No results"))
+                        : window.favoritesOnly ? "No favourites yet: press F on a wallpaper you like" : "No wallpapers in ~/Pictures/wallpapers"
+                    font.pixelSize: 15
+                    color: Colors.on_surface_variant
+                }
+            }
+
+            PanelDecor {
+                radius: preview.radius
+                title: "wallpapers"
+            }
+        }
+
+        // ── Filmstrip ──────────────────────────────────────────────────────
+        ListView {
+            id: strip
+
+            readonly property real thumbW: 176
+            readonly property real thumbH: 110
+
+            width: parent.width
+            height: thumbH + 14
+            orientation: ListView.Horizontal
+            spacing: 12
+            clip: true
+            model: window.displayedWallpapers
+            currentIndex: window.currentIndex
+            highlightRangeMode: ListView.ApplyRange
+            preferredHighlightBegin: width / 2 - thumbW / 2
+            preferredHighlightEnd: width / 2 + thumbW / 2
+            highlightMoveDuration: 260
+            cacheBuffer: 1200
+            boundsBehavior: Flickable.StopAtBounds
+            anchors.horizontalCenter: parent.horizontalCenter
+
+            delegate: Item {
+                id: thumb
+
+                required property var modelData
+                required property int index
+                readonly property bool selected: index === window.currentIndex
+
+                width: strip.thumbW
+                height: strip.height
+
+                Rectangle {
+                    id: frame
+                    anchors.horizontalCenter: parent.horizontalCenter
+                    anchors.verticalCenter: parent.verticalCenter
+                    width: strip.thumbW
+                    height: strip.thumbH
+                    radius: DesktopTheme.rad(14)
+                    color: Colors.surface_container
+                    scale: thumb.selected ? 1.0 : thumbArea.containsMouse ? 0.96 : 0.92
+                    opacity: thumb.selected ? 1 : thumbArea.containsMouse ? 0.9 : 0.62
+                    // Round the thumbnail itself (a radius doesn't clip children).
+                    layer.enabled: radius > 0
+                    layer.effect: MultiEffect {
+                        maskEnabled: true
+                        maskSource: thumbMask
+                        maskThresholdMin: 0.5
+                        maskSpreadAtMin: 1.0
+                    }
+
+                    Rectangle {
+                        id: thumbMask
+                        anchors.fill: parent
+                        radius: frame.radius
+                        visible: false
+                        layer.enabled: true
+                    }
+
+                    Behavior on scale {
+                        NumberAnimation { duration: 180; easing.type: Easing.OutCubic }
+                    }
+
+                    Behavior on opacity {
+                        NumberAnimation { duration: 180 }
+                    }
+
+                    Image {
+                        anchors.fill: parent
+                        source: thumb.modelData.fileUrl
+                        fillMode: Image.PreserveAspectCrop
+                        sourceSize: Qt.size(strip.thumbW * 1.5, strip.thumbH * 1.5)
+                        asynchronous: true
+                        smooth: true
+                    }
+
+                    // The wallpaper on screen now.
+                    Rectangle {
+                        visible: thumb.modelData.fileName === window.activeName
+                        anchors.left: parent.left
+                        anchors.bottom: parent.bottom
+                        anchors.margins: 7
+                        width: 9
+                        height: 9
+                        radius: DesktopTheme.rad(4.5)
+                        color: Colors.primary
+                        border.width: 1.5
+                        border.color: "white"
+                    }
+
+                    Glyph {
+                        visible: WallpaperFavorites.favorites.indexOf(thumb.modelData.fileName) >= 0
+                        anchors.right: parent.right
+                        anchors.top: parent.top
+                        anchors.margins: 6
+                        text: "favorite"
+                        filled: true
+                        font.pixelSize: 15
+                        color: "#ff5c7a"
+                    }
+                }
+
+                // Selection ring (outside the layered frame so it isn't clipped).
+                Rectangle {
+                    anchors.fill: frame
+                    anchors.margins: -4
+                    visible: thumb.selected
+                    radius: frame.radius > 0 ? frame.radius + 4 : 0
+                    color: "transparent"
+                    border.width: 2.5
+                    border.color: Colors.primary
+                }
+
+                MouseArea {
+                    id: thumbArea
+                    anchors.fill: parent
+                    hoverEnabled: true
+                    cursorShape: Qt.PointingHandCursor
+                    onClicked: window.currentIndex = thumb.index
+                    onDoubleClicked: {
+                        window.currentIndex = thumb.index;
+                        window.pickCurrent();
+                    }
+                }
+            }
+
+            // Wheel scrolls the selection, not just the strip.
+            MouseArea {
+                anchors.fill: parent
+                acceptedButtons: Qt.NoButton
+                onWheel: wheel => window.step(wheel.angleDelta.y > 0 || wheel.angleDelta.x > 0 ? -1 : 1)
+            }
+        }
+
+        StyledText {
+            anchors.horizontalCenter: parent.horizontalCenter
+            text: window.online ? "←→ browse · Enter or click to download & set · / search · Tab local · Esc close"
+                : "←→ browse · Enter or click to set · double-click a thumbnail · F favourite · Tab next source · Esc close"
+            font.pixelSize: 12
+            color: Colors.withAlpha(Colors.on_surface, 0.7)
         }
     }
 }
