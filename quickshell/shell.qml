@@ -37,9 +37,12 @@ import qs.modules.desktopwidgets
 ShellRoot {
     id: root
 
-    // This instance owns the compositor side of desktop themes (the lock
-    // screen instance only reads the choice).
-    Component.onCompleted: Services.DesktopTheme.manage = true
+    // This instance owns the compositor side of desktop themes and writes
+    // Firefox's stylesheets (the lock screen instance only reads the choice).
+    Component.onCompleted: {
+        Services.DesktopTheme.manage = true
+        Services.FirefoxTheme.manage = true
+    }
 
     // The wallpaper, with the desktop theme's layer over it.
     WallpaperLayer {}

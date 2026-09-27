@@ -61,6 +61,14 @@ Scope {
                 anim.start();
             }
 
+            // The part of a cropped image's texture that's on screen, as
+            // (offset x, offset y, width, height) in texture UV.
+            function cropRect(img) {
+                const sx = img.paintedWidth > 0 ? Math.min(1, img.width / img.paintedWidth) : 1;
+                const sy = img.paintedHeight > 0 ? Math.min(1, img.height / img.paintedHeight) : 1;
+                return Qt.vector4d((1 - sx) / 2, (1 - sy) / 2, sx, sy);
+            }
+
             function finish() {
                 const old = front;
                 front = back;
@@ -127,6 +135,8 @@ Scope {
                 property real mode: win.mode
                 property real aspect: width / Math.max(1, height)
                 property color edgeColor: Colors.primary
+                property vector4d fromRect: win.cropRect(win.front)
+                property vector4d toRect: win.cropRect(win.back)
 
                 fragmentShader: Qt.resolvedUrl("../../shaders/wallpaper_transition.frag.qsb")
             }

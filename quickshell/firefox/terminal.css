@@ -1,0 +1,33 @@
+/* Mainframe: square, Iosevka, a console border on the address bar and
+ * selected tab, faint scanlines across the toolbars. */
+:root:root {
+  --tab-border-radius: 0px !important;
+  --toolbarbutton-border-radius: 0px !important;
+  --border-radius-small: 0px !important;
+  --border-radius-medium: 0px !important;
+  --border-radius-large: 0px !important;
+  --arrowpanel-border-radius: 0px !important;
+}
+
+#navigator-toolbox, #sidebar-main, menupopup, panel, .urlbarView {
+  font-family: "Iosevka Nerd Font", monospace !important;
+}
+
+#navigator-toolbox, #sidebar-main {
+  background-image: repeating-linear-gradient(transparent 0 2px, rgba(0, 0, 0, 0.14) 2px 3px) !important;
+}
+
+#urlbar .urlbar-background {
+  border-radius: 0 !important;
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--qs-accent) 50%, transparent) !important;
+}
+
+.tab-background:is([selected], [multiselected]) {
+  border-radius: 0 !important;
+  box-shadow: inset 0 0 0 1px var(--qs-accent) !important;
+}
+
+.tab-label::before {
+  content: "> ";
+  color: var(--qs-accent);
+}

@@ -1,0 +1,68 @@
+/* Firefox UI in the rice's colours. Written into the profile as the start of
+ * chrome/quickshell-theme.css by services/FirefoxTheme.qml, followed by the
+ * active desktop theme's <id>.css. Colours come from chrome/quickshell-colors.css
+ * (matugen, from the wallpaper). `:root:root` outranks the profile's own
+ * userChrome.css and the installed Firefox theme. */
+
+:root:root {
+  --qs-accent: var(--qs-primary);
+  --qs-on-accent: var(--qs-on-primary);
+
+  --lwt-accent-color: var(--qs-bg) !important;
+  --lwt-accent-color-inactive: var(--qs-bg) !important;
+  --lwt-text-color: var(--qs-fg) !important;
+  --lwt-tab-line-color: var(--qs-accent) !important;
+  --toolbar-bgcolor: var(--qs-surface-low) !important;
+  --toolbar-color: var(--qs-fg) !important;
+  --toolbar-field-background-color: var(--qs-surface-high) !important;
+  --toolbar-field-color: var(--qs-fg) !important;
+  --toolbar-field-border-color: transparent !important;
+  --toolbar-field-focus-background-color: var(--qs-surface-highest) !important;
+  --toolbar-field-focus-color: var(--qs-fg) !important;
+  --toolbar-field-focus-border-color: var(--qs-accent) !important;
+  --toolbarbutton-icon-fill: var(--qs-fg) !important;
+  --toolbarbutton-icon-fill-attention: var(--qs-accent) !important;
+  --toolbarbutton-hover-background: color-mix(in srgb, var(--qs-fg) 10%, transparent) !important;
+  --toolbarbutton-active-background: color-mix(in srgb, var(--qs-fg) 16%, transparent) !important;
+  --tab-selected-bgcolor: var(--qs-surface-high) !important;
+  --tab-selected-textcolor: var(--qs-fg) !important;
+  --tab-hover-background-color: color-mix(in srgb, var(--qs-fg) 8%, transparent) !important;
+  --tab-attention-icon-color: var(--qs-accent) !important;
+  --tab-loading-fill: var(--qs-accent) !important;
+  --focus-outline-color: var(--qs-accent) !important;
+  --color-accent-primary: var(--qs-accent) !important;
+  --color-accent-primary-hover: color-mix(in srgb, var(--qs-accent) 85%, white) !important;
+  --button-text-color-primary: var(--qs-on-accent) !important;
+  --arrowpanel-background: var(--qs-surface) !important;
+  --arrowpanel-color: var(--qs-fg) !important;
+  --arrowpanel-border-color: var(--qs-outline-variant) !important;
+  --panel-separator-color: var(--qs-outline-variant) !important;
+  --urlbarView-highlight-background: var(--qs-primary-container) !important;
+  --urlbarView-highlight-color: var(--qs-on-primary-container) !important;
+  --urlbarView-separator-color: var(--qs-outline-variant) !important;
+  --urlbar-box-bgcolor: var(--qs-surface-highest) !important;
+  --urlbar-box-text-color: var(--qs-fg-dim) !important;
+  --sidebar-background-color: var(--qs-bg) !important;
+  --sidebar-text-color: var(--qs-fg) !important;
+  --sidebar-border-color: var(--qs-outline-variant) !important;
+  --chrome-content-separator-color: var(--qs-outline-variant) !important;
+}
+
+#navigator-toolbox,
+#sidebar-main,
+#sidebar-box {
+  background-color: var(--qs-bg) !important;
+}
+
+#urlbar[focused] > .urlbar-background {
+  outline-color: var(--qs-accent) !important;
+}
+
+* {
+  scrollbar-color: var(--qs-outline-variant) var(--qs-bg) !important;
+}
+
+::selection {
+  background-color: var(--qs-primary-container) !important;
+  color: var(--qs-on-primary-container) !important;
+}

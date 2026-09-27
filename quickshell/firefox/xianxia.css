@@ -1,0 +1,23 @@
+/* Cave Abode: serif type, the tertiary colour as the accent, seal-cut corners
+ * and a double border on the address bar and selected tab. */
+:root:root {
+  --qs-accent: var(--qs-tertiary);
+  --qs-on-accent: var(--qs-on-tertiary);
+  --tab-border-radius: 3px !important;
+  --toolbarbutton-border-radius: 3px !important;
+  --border-radius-small: 3px !important;
+  --border-radius-medium: 3px !important;
+  --border-radius-large: 3px !important;
+}
+
+#navigator-toolbox, #sidebar-main, menupopup, panel, .urlbarView {
+  font-family: "Noto Serif", "Noto Serif CJK SC", serif !important;
+}
+
+#urlbar .urlbar-background,
+.tab-background:is([selected], [multiselected]) {
+  border-radius: 3px !important;
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--qs-accent) 60%, transparent),
+              inset 0 0 0 4px var(--qs-surface-high),
+              inset 0 0 0 5px color-mix(in srgb, var(--qs-accent) 25%, transparent) !important;
+}

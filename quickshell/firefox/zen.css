@@ -1,0 +1,21 @@
+/* Still: soft corners, light type, no borders anywhere. */
+:root:root {
+  --tab-border-radius: 10px !important;
+  --toolbar-field-focus-border-color: transparent !important;
+}
+
+#navigator-toolbox, #sidebar-main, menupopup, panel, .urlbarView {
+  font-family: "Adwaita Sans", sans-serif !important;
+  font-weight: 300 !important;
+}
+
+#urlbar .urlbar-background {
+  border-radius: 12px !important;
+  box-shadow: none !important;
+  outline: none !important;
+}
+
+.tab-background {
+  box-shadow: none !important;
+  outline: none !important;
+}

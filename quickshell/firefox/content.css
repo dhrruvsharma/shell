@@ -1,0 +1,32 @@
+/* Firefox's own pages (new tab, settings, add-ons...) in the rice's colours.
+ * Written into the profile as chrome/quickshell-content.css by
+ * services/FirefoxTheme.qml; colours from chrome/quickshell-colors.css. */
+
+@-moz-document url-prefix(about:) {
+  :root:root {
+    --newtab-background-color: var(--qs-bg) !important;
+    --newtab-background-color-secondary: var(--qs-surface) !important;
+    --newtab-text-primary-color: var(--qs-fg) !important;
+    --in-content-page-background: var(--qs-bg) !important;
+    --in-content-background-color: var(--qs-bg) !important;
+    --in-content-page-color: var(--qs-fg) !important;
+    --in-content-text-color: var(--qs-fg) !important;
+    --in-content-box-background: var(--qs-surface) !important;
+    --in-content-box-background-odd: var(--qs-surface-low) !important;
+    --in-content-box-border-color: var(--qs-outline-variant) !important;
+    --in-content-table-background: var(--qs-surface) !important;
+    --in-content-button-background: var(--qs-surface-high) !important;
+    --in-content-button-background-hover: var(--qs-surface-highest) !important;
+    --in-content-primary-button-background: var(--qs-primary) !important;
+    --in-content-primary-button-text-color: var(--qs-on-primary) !important;
+    --in-content-primary-button-background-hover: color-mix(in srgb, var(--qs-primary) 85%, white) !important;
+    --card-background-color: var(--qs-surface) !important;
+    --color-accent-primary: var(--qs-primary) !important;
+    --link-color: var(--qs-primary) !important;
+    --background-color-box: var(--qs-surface) !important;
+    --background-color-canvas: var(--qs-bg) !important;
+    --text-color: var(--qs-fg) !important;
+    --border-color: var(--qs-outline-variant) !important;
+    scrollbar-color: var(--qs-outline-variant) var(--qs-bg) !important;
+  }
+}

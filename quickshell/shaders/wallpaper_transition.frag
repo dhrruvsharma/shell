@@ -19,6 +19,11 @@ layout(std140, binding = 0) uniform buf {
     float mode;
     float aspect;      // width / height
     vec4 edgeColor;    // opaque accent for rims and scan lines
+    // Visible part of each texture (offset.xy, size.zw in texture UV): the
+    // images are loaded to cover the screen and cropped, so sampling the
+    // whole texture would squash the picture during the transition.
+    vec4 fromRect;
+    vec4 toRect;
 } ubuf;
 
 layout(binding = 1) uniform sampler2D fromTex;
@@ -58,8 +63,8 @@ void main() {
     if (mode == 3)
         toUv = (uv - 0.5) * (1.0 - 0.12 * (1.0 - p)) + 0.5;
 
-    vec4 a = texture(fromTex, uv);
-    vec4 b = texture(toTex, toUv);
+    vec4 a = texture(fromTex, ubuf.fromRect.xy + uv * ubuf.fromRect.zw);
+    vec4 b = texture(toTex, ubuf.toRect.xy + toUv * ubuf.toRect.zw);
     vec3 edge = vec3(0.0);
     float m;
 
