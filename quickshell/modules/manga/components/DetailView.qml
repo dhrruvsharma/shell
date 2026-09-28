@@ -423,25 +423,10 @@ Item {
             Rectangle { anchors.fill: parent; color: Colors.background }
 
             // Loading overlay
-            Rectangle {
-                anchors.fill: parent; color: Colors.background
-                visible: Manga.isFetchingDetail; z: 5
-
-                Column {
-                    anchors.centerIn: parent; spacing: 14
-
-                    Spinner {
-                        width: 28
-                        anchors.horizontalCenter: parent.horizontalCenter
-                    }
-                    StyledText {
-                        anchors.horizontalCenter: parent.horizontalCenter
-                        text: "fetching chapters"
-                        color: Colors.on_surface_variant
-                        font.family: detailView.fontBody
-                        font.pixelSize: 11; font.letterSpacing: 2; opacity: 0.7
-                    }
-                }
+            SkeletonList {
+                anchors.fill: parent; z: 5
+                active: Manga.isFetchingDetail
+                rowHeight: 58
             }
 
             ListView {

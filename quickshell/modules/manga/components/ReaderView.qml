@@ -110,30 +110,16 @@ Item {
     }
 
     // ── Fetching pages overlay ───────────────────────────────────────────────
-    Rectangle {
+    LoadingState {
         anchors.fill: parent
-        color: "#08080a"
-        visible: Manga.isFetchingPages
         z: 8
-
-        Column {
-            anchors.centerIn: parent
-            spacing: 16
-
-            Spinner {
-                width: 40
-                anchors.horizontalCenter: parent.horizontalCenter
-                border.width: 2.5
-            }
-            StyledText {
-                anchors.horizontalCenter: parent.horizontalCenter
-                text: "loading pages"
-                color: Qt.rgba(1, 1, 1, 0.4)
-                font.family: readerView.fontBody
-                font.pixelSize: 11
-                font.letterSpacing: 2.5
-            }
-        }
+        active: Manga.isFetchingPages
+        color: "#08080a"
+        textColor: "white"
+        spinnerSize: 40
+        label: "loading pages"
+        detail: Manga.currentManga ? Manga.currentManga.title : ""
+        bodyFont: readerView.fontBody
     }
 
     // ── Pages error overlay ──────────────────────────────────────────────────
@@ -206,30 +192,58 @@ Item {
                 opacity: status === Image.Ready ? 1 : 0
                 Behavior on opacity { NumberAnimation { duration: 350 } }
 
-                // Loading placeholder
-                Rectangle {
-                    anchors.fill: parent
-                    color: "#111115"
-                    visible: pageImg.status !== Image.Ready
+            }
 
-                    Column {
-                        anchors.centerIn: parent
-                        spacing: 10
+            // Loading placeholder. Beside the page, not inside it: the page
+            // sits at opacity 0 until it's ready, which would hide a child.
+            Rectangle {
+                anchors.fill: parent
+                z: -1
+                color: "#111115"
+                visible: pageImg.status !== Image.Ready
 
-                        Spinner {
-                            width: 18
-                            anchors.horizontalCenter: parent.horizontalCenter
-                            border.color: Qt.rgba(1, 1, 1, 0.2)
-                            border.width: 1.5
-                            duration: 1200
-                        }
-                        StyledText {
-                            anchors.horizontalCenter: parent.horizontalCenter
-                            text: "p. " + (modelData.index + 1)
-                            color: Qt.rgba(1, 1, 1, 0.2)
-                            font.pixelSize: 10
-                            font.family: readerView.fontBody
-                            font.letterSpacing: 1.5
+                Column {
+                    anchors.centerIn: parent
+                    spacing: 12
+
+                    Spinner {
+                        anchors.horizontalCenter: parent.horizontalCenter
+                        visible: pageImg.status !== Image.Error
+                        width: 22
+                        border.width: 2
+                        border.color: Qt.rgba(1, 1, 1, 0.08)
+                        arcColor: Qt.rgba(1, 1, 1, 0.45)
+                        duration: 1200
+                    }
+                    StyledText {
+                        anchors.horizontalCenter: parent.horizontalCenter
+                        visible: pageImg.status === Image.Error
+                        text: "⊘"
+                        font.pixelSize: 22
+                        color: Qt.rgba(1, 1, 1, 0.3)
+                    }
+                    StyledText {
+                        anchors.horizontalCenter: parent.horizontalCenter
+                        text: "p. " + (modelData.index + 1)
+                            + (pageImg.status === Image.Error ? "  ·  failed to load" : "")
+                        color: Qt.rgba(1, 1, 1, 0.3)
+                        font.pixelSize: 10
+                        font.family: readerView.fontBody
+                        font.letterSpacing: 1.5
+                    }
+
+                    // Download progress, once the image reports any
+                    Rectangle {
+                        anchors.horizontalCenter: parent.horizontalCenter
+                        visible: pageImg.status === Image.Loading && pageImg.progress > 0
+                        width: 96; height: 2; radius: 1
+                        color: Qt.rgba(1, 1, 1, 0.08)
+
+                        Rectangle {
+                            width: parent.width * pageImg.progress
+                            height: parent.height; radius: 1
+                            color: Colors.primary
+                            Behavior on width { NumberAnimation { duration: 160 } }
                         }
                     }
                 }

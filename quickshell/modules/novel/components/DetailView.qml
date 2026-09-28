@@ -315,6 +315,19 @@ Item {
                     font.letterSpacing: 1; color: Colors.on_surface_variant; opacity: 0.75
                 }
 
+                // The site stopped answering partway through the list
+                Text {
+                    visible: Novel.currentNovel !== null && Novel.currentNovel.partial
+                    text: "· list incomplete — tap to load the rest"
+                    font.family: detailView.fontBody; font.pixelSize: 10
+                    color: Colors.tertiary
+                    MouseArea {
+                        anchors.fill: parent
+                        cursorShape: Qt.PointingHandCursor
+                        onClicked: Novel.retryDetail()
+                    }
+                }
+
                 Item { Layout.fillWidth: true }
 
                 Rectangle {
@@ -506,21 +519,51 @@ Item {
             Rectangle { anchors.fill: parent; color: Colors.background }
 
             // Loading overlay
+            SkeletonList {
+                anchors.fill: parent; z: 5
+                active: Novel.isFetchingDetail
+                rowHeight: 62
+                subtitle: false
+            }
+
+            // Error state (the backend or the site refused the novel)
             Rectangle {
-                anchors.fill: parent; color: Colors.background
-                visible: Novel.isFetchingDetail; z: 5
+                anchors.fill: parent; z: 4
+                color: Colors.background
+                visible: Novel.detailError.length > 0 && !Novel.isFetchingDetail
 
                 Column {
-                    anchors.centerIn: parent; spacing: 14
-                    Spinner {
-                        width: 28
+                    anchors.centerIn: parent; spacing: 12
+
+                    Text {
                         anchors.horizontalCenter: parent.horizontalCenter
+                        text: "⚠"; font.pixelSize: 30; color: Colors.error; opacity: 0.8
                     }
-                    StyledText {
+                    Text {
                         anchors.horizontalCenter: parent.horizontalCenter
-                        text: "fetching chapters"
-                        color: Colors.on_surface_variant; font.family: detailView.fontBody
-                        font.pixelSize: 11; font.letterSpacing: 2; opacity: 0.7
+                        width: 280; horizontalAlignment: Text.AlignHCenter
+                        text: "Couldn't load this novel\n" + Novel.detailError
+                        color: Colors.on_surface_variant
+                        font.family: detailView.fontBody; font.pixelSize: 12
+                        wrapMode: Text.Wrap; lineHeight: 1.4
+                    }
+                    Rectangle {
+                        anchors.horizontalCenter: parent.horizontalCenter
+                        width: retryLabel.implicitWidth + 32; height: 32
+                        radius: DesktopTheme.rad(16)
+                        color: retryArea.containsMouse ? Colors.primary : Colors.primary_container
+                        Behavior on color { ColorAnimation { duration: 130 } }
+
+                        Text {
+                            id: retryLabel; anchors.centerIn: parent
+                            text: "Retry"
+                            font.family: detailView.fontBody; font.pixelSize: 12; font.bold: true
+                            color: retryArea.containsMouse ? Colors.on_primary : Colors.on_primary_container
+                        }
+                        MouseArea {
+                            id: retryArea; anchors.fill: parent; hoverEnabled: true
+                            onClicked: Novel.retryDetail()
+                        }
                     }
                 }
             }

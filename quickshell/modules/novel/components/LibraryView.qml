@@ -32,14 +32,13 @@ Item {
         }
 
 
-        Item {
+        SkeletonGrid {
             Layout.fillWidth: true; Layout.fillHeight: true
             visible: !Novel.libraryLoaded
-
-            Spinner {
-                width: 28
-                anchors.centerIn: parent
-            }
+            active: !Novel.libraryLoaded
+            padding: 8
+            ratio: 1.72
+            footerHeight: 30
         }
 
         GridView {

@@ -78,14 +78,13 @@ Item {
         }
 
         // ── Loading ───────────────────────────────────────────────────────────
-        Item {
+        SkeletonGrid {
             Layout.fillWidth: true; Layout.fillHeight: true
             visible: !Anime.libraryLoaded
-
-            Spinner {
-                width: 28
-                anchors.centerIn: parent
-            }
+            active: !Anime.libraryLoaded
+            padding: 8
+            ratio: 1.78
+            footerHeight: 28
         }
 
         // ── Library grid ──────────────────────────────────────────────────────

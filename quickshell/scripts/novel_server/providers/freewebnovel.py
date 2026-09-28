@@ -11,11 +11,14 @@ Implemented:
 """
 
 import json
+import os
+import random
 import re
+import threading
 from urllib.parse import quote, urlparse
 
 from .base import NovelProvider
-from .utils import fetch, fetch_bytes, cached, clean_text, AJAX_HEADERS
+from .utils import fetch, fetch_bytes, cached, cache_invalidate, clean_text, AJAX_HEADERS
 
 BASE = "https://freewebnovel.com"
 
@@ -24,6 +27,45 @@ TTL_LATEST = 120
 TTL_SEARCH = 600
 TTL_INFO   = 1800
 TTL_CHAP   = 86400
+
+# Chapter lists are kept on disk between runs: fetching one is a paced request
+# per 200 chapters (see utils.PAGE_INTERVAL), so a 3000-chapter novel takes
+# ~15 s cold. With the list on disk, reopening it only fetches the pages that
+# can hold new chapters.
+CHAPTER_CACHE_DIR = os.path.expanduser("~/.cache/quickshell-novel/chapters")
+_list_locks: dict = {}
+_list_locks_lock  = threading.Lock()
+
+
+def _list_lock(novel_id: str) -> threading.Lock:
+    # One fetch per novel at a time: a second open of the same novel waits
+    # for the first and reuses its result instead of doubling the requests.
+    with _list_locks_lock:
+        return _list_locks.setdefault(novel_id, threading.Lock())
+
+
+def _list_path(novel_id: str) -> str:
+    return os.path.join(CHAPTER_CACHE_DIR, novel_id.replace("/", "_") + ".json")
+
+
+def _load_list(novel_id: str) -> list:
+    try:
+        with open(_list_path(novel_id)) as f:
+            data = json.load(f)
+        return data if isinstance(data, list) else []
+    except (OSError, ValueError):
+        return []
+
+
+def _save_list(novel_id: str, chapters: list):
+    try:
+        os.makedirs(CHAPTER_CACHE_DIR, exist_ok=True)
+        tmp = _list_path(novel_id) + ".tmp"
+        with open(tmp, "w") as f:
+            json.dump(chapters, f)
+        os.replace(tmp, _list_path(novel_id))
+    except OSError as e:
+        print(f"[freewebnovel] couldn't save chapter list for {novel_id}: {e}")
 
 
 class FreeWebNovelProvider(NovelProvider):
@@ -48,7 +90,12 @@ class FreeWebNovelProvider(NovelProvider):
         return cached(key, TTL_SEARCH, lambda: self._search(query, genre, status, page))
 
     def info(self, novel_id: str) -> dict:
-        return cached(self._key("info", novel_id), TTL_INFO, lambda: self._info(novel_id))
+        key  = self._key("info", novel_id)
+        data = cached(key, TTL_INFO, lambda: self._info(novel_id))
+        # A list cut short by the site isn't kept, so the next open resumes it.
+        if data.get("partial"):
+            cache_invalidate(key)
+        return data
 
     def chapter(self, chapter_id: str) -> dict:
         return cached(self._key("chapter", chapter_id), TTL_CHAP, lambda: self._chapter(chapter_id))
@@ -154,30 +201,120 @@ class FreeWebNovelProvider(NovelProvider):
             })
         return out
 
-    # Walk the ajax chapter endpoint across all pages. The server fixes the
-    # page size (~200) no matter what pageSize we send, and reports the real
-    # page count via totalPage, so we just request pages 1..totalPage.
-    def _fetch_ajax_chapters(self, novel_id: str) -> list:
-        out        = []
-        page       = 1
-        total_page = 1
-        while page <= total_page:
-            url = f"{BASE}/{novel_id}?ajax=chapters&page={page}&pageSize=1000"
-            try:
-                data = json.loads(fetch(url, extra_headers=AJAX_HEADERS))
-            except (ValueError, TypeError):
-                break
+    # The whole list in one request: the endpoint behind the chapter <select>
+    # in the reader (the approach LNReader's plugin uses). It takes the
+    # novel's numeric article id from the novel page and answers with every
+    # chapter as <option value="/novel/<slug>/chapter-N">CH.N: Title</option>
+    # in a JSON {"html": …} envelope. `cid` is the chapter the reader is on;
+    # any number within the list does. Returns None when the page doesn't
+    # carry the ids or the reply isn't the expected shape, so the caller can
+    # fall back to the paged walk.
+    def _chapterlist_api(self, novel_id: str, html: str) -> list | None:
+        aid_m   = re.search(r'data-article-id="(\d+)"', html) \
+               or re.search(r'data-novel-id="(\d+)"', html) \
+               or re.search(r'articleId:\s*(\d+)', html)
+        total_m = re.search(r'data-total-chapters="(\d+)"', html)
+        if not aid_m:
+            return None
+        total = int(total_m.group(1)) if total_m else 0
+        slug  = novel_id.split("/")[-1]
 
-            out.extend(self._parse_chapter_anchors(novel_id, data.get("html", "")))
+        body = fetch(
+            f"{BASE}/api/chapterlist.php",
+            extra_headers={**AJAX_HEADERS, "Referer": f"{BASE}/{novel_id}"},
+            form={"aid": aid_m.group(1), "acode": slug,
+                  "cid": str(random.randrange(max(total, 1)))},
+        )
+        try:
+            data = json.loads(body)
+            if isinstance(data, dict):
+                body = data.get("html", "")
+        except ValueError:
+            pass                 # a bare HTML fragment is fine too
 
-            tp = data.get("totalPage")
-            if isinstance(tp, int) and tp > total_page:
-                total_page = tp
+        out = []
+        for m in re.finditer(
+            r'<option[^>]+value="/?novel/[^/"]+/([^"]+)"[^>]*>([\s\S]*?)</option>', body
+        ):
+            ch_slug  = m.group(1)
+            # "CH.12: Title" → "Chapter 12: Title", matching the other lists
+            label    = re.sub(r'^CH\.\s*', "Chapter ", clean_text(m.group(2)))
+            num_m    = re.search(r'chapter-([\d.]+)', ch_slug) \
+                    or re.search(r'[Cc]hapter[\s-]*([\d.]+)', label)
+            out.append({
+                "id":      f"{novel_id}/{ch_slug}",
+                "title":   label,
+                "chapter": num_m.group(1) if num_m else label,
+            })
 
-            page += 1
-            if page > 100:        # hard safety cap
-                break
+        if not out or (total and len(out) < total * 0.9):
+            print(f"[freewebnovel] chapterlist.php gave {len(out)}/{total} "
+                  f"for {novel_id}; falling back to paging")
+            return None
         return out
+
+    # One page of the ajax chapter endpoint → (chapters, page_info). The page
+    # size is capped server-side (200 as of 2026-09; the web page itself asks
+    # for 40) whatever pageSize we send; the reply says what it used.
+    def _ajax_page(self, novel_id: str, page: int) -> tuple[list, dict]:
+        url  = f"{BASE}/{novel_id}?ajax=chapters&page={page}&pageSize=200"
+        data = json.loads(fetch(url, extra_headers=AJAX_HEADERS))
+        if not isinstance(data, dict) or data.get("code", 200) != 200:
+            raise ValueError(f"unexpected chapter-list reply for page {page}")
+        return self._parse_chapter_anchors(novel_id, data.get("html", "")), data
+
+    # The full chapter list, oldest first → (chapters, partial).
+    #
+    # chapterlist.php first (one request). If that's unavailable: page 1
+    # always comes fresh: it carries totalChapters/totalPage, so it
+    # tells us whether the list on disk is complete. Pages are walked in
+    # order from the first one the saved list doesn't fully cover, so what's
+    # saved is always an unbroken run from chapter 1. If the site still
+    # refuses a page after utils.fetch's retries, the walk stops and what we
+    # have is returned as a partial list (saved, so the next open resumes).
+    def _fetch_chapter_list(self, novel_id: str, inline: list,
+                            html: str = "") -> tuple[list, bool]:
+        with _list_lock(novel_id):
+            # One request for the whole list when the site allows it…
+            try:
+                full = self._chapterlist_api(novel_id, html)
+            except Exception as e:
+                print(f"[freewebnovel] chapterlist.php failed for {novel_id}: {e}")
+                full = None
+            if full:
+                chapters = self._dedupe_sort_chapters(full + inline)
+                _save_list(novel_id, chapters)
+                return chapters, False
+
+            # …else page through the ajax listing, resuming from disk.
+            known = _load_list(novel_id)
+            first, meta = self._ajax_page(novel_id, 1)
+
+            page_size  = int(meta.get("pageSize") or 200)
+            total_page = int(meta.get("totalPage") or 1)
+            total      = int(meta.get("totalChapters") or 0)
+
+            chapters = self._dedupe_sort_chapters(known + inline + first)
+            if total and len(chapters) >= total:
+                if len(known) < len(chapters):
+                    _save_list(novel_id, chapters)
+                return chapters, False
+
+            partial = False
+            start   = max(2, len(chapters) // page_size + 1)
+            for page in range(start, min(total_page, 200) + 1):
+                try:
+                    more, _ = self._ajax_page(novel_id, page)
+                except Exception as e:
+                    print(f"[freewebnovel] chapter list for {novel_id} stopped at "
+                          f"page {page}/{total_page}: {e}")
+                    partial = True
+                    break
+                chapters.extend(more)
+
+            chapters = self._dedupe_sort_chapters(chapters)
+            _save_list(novel_id, chapters)
+            return chapters, partial
 
     # Merge chapter records, dropping duplicate slugs and ordering by the
     # numeric part of the routable slug (falling back to discovery order).
@@ -236,19 +373,22 @@ class FreeWebNovelProvider(NovelProvider):
             description = "\n\n".join(clean_text(p) for p in paras if clean_text(p))
 
         # Chapter list.
-        # The novel page only embeds the first page of chapters in
-        # <ul id="idData">. The full list is paginated behind the ajax
-        # endpoint, which caps each page at a server-fixed size (~200)
-        # regardless of the pageSize we request. We seed from the inline
-        # list, then walk every ajax page, dedupe by href slug, and sort.
-        chapters = []
-
+        # The novel page only embeds the first 40 chapters in
+        # <ul id="idData">; the rest come from chapterlist.php or, failing
+        # that, the paginated ajax endpoint (see _fetch_chapter_list).
+        inline = []
         chlist_m = re.search(r'<ul[^>]+id="idData"[^>]*>([\s\S]*?)</ul>', html)
         if chlist_m:
-            chapters.extend(self._parse_chapter_anchors(novel_id, chlist_m.group(1)))
+            inline = self._parse_chapter_anchors(novel_id, chlist_m.group(1))
 
-        chapters.extend(self._fetch_ajax_chapters(novel_id))
-        chapters = self._dedupe_sort_chapters(chapters)
+        try:
+            chapters, partial = self._fetch_chapter_list(novel_id, inline, html)
+        except Exception as e:
+            # Even page 1 failed: show what the novel page itself listed
+            # (plus anything saved) rather than failing the whole detail view.
+            print(f"[freewebnovel] chapter list for {novel_id} unavailable: {e}")
+            chapters = self._dedupe_sort_chapters(_load_list(novel_id) + inline)
+            partial  = True
 
         raw_cover = cover_m.group(1) if cover_m else ""
         return {
@@ -260,6 +400,7 @@ class FreeWebNovelProvider(NovelProvider):
             "image":       self._proxy(raw_cover) if raw_cover else "",
             "genres":      genres,
             "chapters":    chapters,   # oldest-first, as returned by the page
+            "partial":     partial,    # the site cut the list short
         }
 
     # ── Chapter content ───────────────────────────────────────────────────

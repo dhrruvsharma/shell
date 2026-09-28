@@ -1,11 +1,41 @@
 {
-    "affection": 97,
+    "affection": 104,
     "chatty": 2,
     "fur": "natural",
     "lastFed": 1790594163092,
     "lastGreeting": "2026-09-28",
     "name": "Mochi",
     "recent": [
+        {
+            "icon": "auto_stories",
+            "image": "",
+            "key": "ipc:qs ipc call novelReader toggle",
+            "subtitle": "Shell",
+            "terminal": false,
+            "title": "Toggle Novel Reader",
+            "type": "cmd",
+            "value": "qs ipc call novelReader toggle"
+        },
+        {
+            "icon": "content_paste",
+            "image": "",
+            "key": "trick:t-clip",
+            "subtitle": "Trick · qs ipc call clipboardManager changeVisible",
+            "terminal": false,
+            "title": "Clipboard",
+            "type": "cmd",
+            "value": "qs ipc call clipboardManager changeVisible"
+        },
+        {
+            "icon": "menu_book",
+            "image": "",
+            "key": "ipc:qs ipc call mangaReader toggle",
+            "subtitle": "Shell",
+            "terminal": false,
+            "title": "Toggle Manga Reader",
+            "type": "cmd",
+            "value": "qs ipc call mangaReader toggle"
+        },
         {
             "icon": "widgets",
             "image": "",
@@ -27,16 +57,6 @@
             "value": "/usr/bin/slack --gtk-version=3 -s"
         },
         {
-            "icon": "content_paste",
-            "image": "",
-            "key": "trick:t-clip",
-            "subtitle": "Trick · qs ipc call clipboardManager changeVisible",
-            "terminal": false,
-            "title": "Clipboard",
-            "type": "cmd",
-            "value": "qs ipc call clipboardManager changeVisible"
-        },
-        {
             "icon": "language",
             "image": "",
             "key": "trick:t-browser",
@@ -45,26 +65,6 @@
             "title": "Browser",
             "type": "cmd",
             "value": "firefox"
-        },
-        {
-            "icon": "movie",
-            "image": "",
-            "key": "ipc:qs ipc call animePlayer toggle",
-            "subtitle": "Shell",
-            "terminal": false,
-            "title": "Toggle Anime Player",
-            "type": "cmd",
-            "value": "qs ipc call animePlayer toggle"
-        },
-        {
-            "icon": "menu_book",
-            "image": "",
-            "key": "ipc:qs ipc call mangaReader toggle",
-            "subtitle": "Shell",
-            "terminal": false,
-            "title": "Toggle Manga Reader",
-            "type": "cmd",
-            "value": "qs ipc call mangaReader toggle"
         }
     ],
     "reminders": [

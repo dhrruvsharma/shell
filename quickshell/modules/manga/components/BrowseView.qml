@@ -1,6 +1,7 @@
 import QtQuick
 import QtQuick.Controls
 import QtQuick.Layouts
+import Quickshell
 import qs.colors
 import qs.services
 import qs.components
@@ -253,32 +254,20 @@ Item {
             Layout.fillWidth: true
             Layout.fillHeight: true
 
-            // Loading state
-            Rectangle {
+            // Loading state: ghost cards where the first page will land
+            SkeletonGrid {
                 anchors.fill: parent
-                color: Colors.background
-                visible: Manga.isFetchingManga && Manga.mangaList.length === 0
                 z: 10
+                active: Manga.isFetchingManga && Manga.mangaList.length === 0
+                cellWidth: (width - 30) / 4
+                ratio: 1.58
+            }
 
-                Column {
-                    anchors.centerIn: parent
-                    spacing: 16
-
-                    Spinner {
-                        width: 36
-                        anchors.horizontalCenter: parent.horizontalCenter
-                        border.width: 2.5
-                    }
-                    StyledText {
-                        anchors.horizontalCenter: parent.horizontalCenter
-                        text: "loading"
-                        color: Colors.on_surface_variant
-                        font.family: browseView.fontBody
-                        font.pixelSize: 11
-                        font.letterSpacing: 2.5
-                        opacity: 0.7
-                    }
-                }
+            // More pages on the way
+            LoadingBar {
+                anchors { top: parent.top; left: parent.left; right: parent.right }
+                z: 11
+                active: Manga.isFetchingManga && Manga.mangaList.length > 0
             }
 
             // Error state
@@ -320,7 +309,9 @@ Item {
                 cellHeight: cellWidth * 1.58
                 clip: true
                 boundsBehavior: Flickable.StopAtBounds
-                model: Manga.mangaList
+                // A ScriptModel diffs each new array against the last, so appending a
+                // page inserts rows instead of resetting the view (and its scroll).
+                model: ScriptModel { values: Manga.mangaList }
 
                 ScrollBar.vertical: StyledScrollBar {
                 }
@@ -341,6 +332,11 @@ Item {
                         color: Colors.surface_container
                         clip: true
 
+                        CoverPlaceholder {
+                            anchors.fill: coverImg
+                            status: coverImg.status
+                        }
+
                         // Cover image
                         Image {
                             id: coverImg
@@ -352,20 +348,6 @@ Item {
                             cache: true
                             opacity: status === Image.Ready ? 1 : 0
                             Behavior on opacity { NumberAnimation { duration: 300 } }
-
-                            // Placeholder shimmer
-                            Rectangle {
-                                anchors.fill: parent
-                                color: Colors.surface_container_high
-                                visible: coverImg.status !== Image.Ready
-                                StyledText {
-                                    anchors.centerIn: parent
-                                    text: "◫"
-                                    font.pixelSize: 32
-                                    color: Colors.outline
-                                    opacity: 0.25
-                                }
-                            }
 
                             // Type badge
                             Rectangle {

@@ -150,21 +150,26 @@ Item {
         }
     }
 
+    // Loading: a ghost page in the reader's own measure and type size
     Rectangle {
-        anchors.fill: parent; color: "#1a1714"; visible: Novel.isFetchingChapter; z: 8
-        Column {
-            anchors.centerIn: parent; spacing: 16
-            Spinner {
-                width: 40
-                anchors.horizontalCenter: parent.horizontalCenter
-                border.width: 2.5
-            }
-            Text {
-                anchors.horizontalCenter: parent.horizontalCenter
-                text: "loading chapter"; color: Qt.rgba(1,1,1,0.35)
-                font.family: readerView.fontBody; font.pixelSize: 11; font.letterSpacing: 2.5
-            }
+        anchors.fill: parent; color: "#1a1714"; z: 8
+        opacity: Novel.isFetchingChapter ? 1 : 0
+        visible: opacity > 0
+        Behavior on opacity { NumberAnimation { duration: 280; easing.type: Easing.OutCubic } }
+
+        SkeletonText {
+            anchors.fill: parent
+            active: Novel.isFetchingChapter
+            fontSize: readerView.fontSize
+            lineHeight: readerView.lineHeight
+            topInset: readerView.headerVisible ? 56 : 2
         }
+    }
+
+    LoadingBar {
+        anchors { top: readerHeader.bottom; left: parent.left; right: parent.right }
+        z: 10
+        active: Novel.isFetchingChapter
     }
 
     Rectangle {

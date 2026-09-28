@@ -196,46 +196,21 @@ Item {
         Item {
             Layout.fillWidth: true; Layout.fillHeight: true
 
-            Rectangle {
-                anchors.fill: parent; color: Colors.background
-                visible: Anime.isFetchingDetail; z: 5
-
-                Column {
-                    anchors.centerIn: parent; spacing: 14
-
-                    Spinner {
-                        width: 28
-                        anchors.horizontalCenter: parent.horizontalCenter
-                    }
-                    StyledText {
-                        anchors.horizontalCenter: parent.horizontalCenter
-                        text: "fetching episodes"
-                        color: Colors.on_surface_variant
-                        font.family: detailView.fontBody
-                        font.pixelSize: 11; font.letterSpacing: 2; opacity: 0.7
-                    }
-                }
+            SkeletonList {
+                anchors.fill: parent; z: 5
+                active: Anime.isFetchingDetail
+                rowHeight: 52
+                subtitle: false
+                dividerInset: 64
             }
 
-            Rectangle {
-                anchors.fill: parent; color: Colors.withAlpha(Colors.background, 0.88)
-                visible: Anime.isFetchingLinks; z: 6
-
-                Column {
-                    anchors.centerIn: parent; spacing: 14
-
-                    Spinner {
-                        width: 28
-                        anchors.horizontalCenter: parent.horizontalCenter
-                    }
-                    StyledText {
-                        anchors.horizontalCenter: parent.horizontalCenter
-                        text: "fetching stream"
-                        color: Colors.on_surface_variant
-                        font.family: detailView.fontBody
-                        font.pixelSize: 11; font.letterSpacing: 2; opacity: 0.7
-                    }
-                }
+            LoadingState {
+                anchors.fill: parent; z: 6
+                active: Anime.isFetchingLinks
+                color: Colors.withAlpha(Colors.background, 0.88)
+                label: "fetching stream"
+                detail: Anime.currentEpisode ? "Episode " + Anime.currentEpisode : ""
+                bodyFont: detailView.fontBody
             }
 
             // Links error toast

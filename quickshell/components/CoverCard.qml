@@ -23,6 +23,13 @@ ClickableRect {
     color: Colors.surface_container
     clip: true
 
+    // Beside the cover, not inside it: the cover sits at opacity 0 until it's
+    // ready, which would hide a child placeholder too.
+    CoverPlaceholder {
+        anchors.fill: cover
+        status: cover.status
+    }
+
     Image {
         id: cover
         anchors { top: parent.top; left: parent.left; right: parent.right }
@@ -33,20 +40,6 @@ ClickableRect {
         cache: true
         opacity: status === Image.Ready ? 1 : 0
         Behavior on opacity { NumberAnimation { duration: 300 } }
-
-        Rectangle {
-            anchors.fill: parent
-            color: Colors.surface_container_high
-            visible: cover.status !== Image.Ready
-
-            StyledText {
-                anchors.centerIn: parent
-                text: "◫"
-                font.pixelSize: 32
-                color: Colors.outline
-                opacity: 0.25
-            }
-        }
 
         Rectangle {
             anchors { bottom: parent.bottom; left: parent.left; right: parent.right }

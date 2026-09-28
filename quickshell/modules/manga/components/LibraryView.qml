@@ -36,19 +36,14 @@ Item {
         }
 
         // ── Loading (first open before file is read) ──────────────────────────
-        Item {
+        SkeletonGrid {
             Layout.fillWidth: true
             Layout.fillHeight: true
             visible: !Manga.libraryLoaded
-
-            Column {
-                anchors.centerIn: parent
-                spacing: 16
-                Spinner {
-                    width: 28
-                    anchors.horizontalCenter: parent.horizontalCenter
-                }
-            }
+            active: !Manga.libraryLoaded
+            padding: 8
+            ratio: 1.72
+            footerHeight: 30
         }
 
         GridView {

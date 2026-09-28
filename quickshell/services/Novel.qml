@@ -24,6 +24,8 @@ Singleton {
     property var currentNovel: null
     property bool isFetchingDetail: false
     property string detailError: ""
+    // The last novel asked for, so a failed detail fetch can be retried.
+    property string _detailId: ""
 
     // ── Chapter text ─────────────────────────────────────────────────────────
     property var currentChapter: null
@@ -350,6 +352,7 @@ Singleton {
     function fetchNovelDetail(novelId) {
         if (isFetchingDetail) return
         isFetchingDetail = true
+        _detailId = novelId
         currentNovel = null
         detailError = ""
         const url = root.apiUrl + "/info?id=" + encodeURIComponent(novelId)
@@ -371,6 +374,8 @@ Singleton {
                 author:      data.author      || "",
                 coverUrl:    data.image       || "",
                 genres:      data.genres      || [],
+                // The site cut the chapter list short; reopening resumes it.
+                partial:     data.partial     || false,
                 chapters:    (data.chapters || []).map(function(ch) {
                     return {
                         id:      ch.id      || "",
@@ -461,6 +466,10 @@ Singleton {
         currentChapter = null
         currentChapterId = ""
         chapterError = ""
+    }
+
+    function retryDetail() {
+        if (_detailId.length > 0) fetchNovelDetail(_detailId)
     }
 
     function clearDetail() {
