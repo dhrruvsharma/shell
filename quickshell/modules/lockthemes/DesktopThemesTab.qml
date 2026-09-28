@@ -14,7 +14,8 @@ import qs.services as Services
 // layer and your desktop widgets over your wallpaper, with mock windows and
 // bar), and set the shared options: screen effect, matching lock screen.
 //
-// Keys (forwarded by the panel): ←→ choose, Enter use (or turn off), W widgets.
+// Keys (forwarded by the panel): ←→↑↓ choose, Enter use (or turn off), W
+// widgets.
 Item {
     id: desk
 
@@ -39,6 +40,10 @@ Item {
             sel = (sel + 1) % n;
         else if (event.key === Qt.Key_Left)
             sel = (sel + n - 1) % n;
+        else if (event.key === Qt.Key_Down)
+            sel = Math.min(n - 1, sel + strip.columns);
+        else if (event.key === Qt.Key_Up)
+            sel = Math.max(0, sel - strip.columns);
         else if (event.key === Qt.Key_Return || event.key === Qt.Key_Enter || event.key === Qt.Key_Space)
             use();
         else if (event.key === Qt.Key_W)
@@ -48,10 +53,11 @@ Item {
         return true;
     }
 
-    // ── Theme strip ───────────────────────────────────────────────────────────
-    Row {
+    // ── Theme strip: two rows of cards ────────────────────────────────────────
+    Grid {
         id: strip
         width: parent.width
+        columns: Math.ceil(desk.entries.length / 2)
         spacing: 10
 
         Repeater {
@@ -64,9 +70,12 @@ Item {
                 required property int index
                 readonly property bool selected: desk.sel === index
                 readonly property bool active: (modelData ? modelData.id : "") === (desk.dt.enabled ? desk.dt.theme : "")
+                // Too narrow for the icon beside the text (many themes): stack
+                // them, and drop the tagline's trailing "desktop".
+                readonly property bool compact: width < 170
 
-                width: (strip.width - strip.spacing * (desk.entries.length - 1)) / desk.entries.length
-                height: 72
+                width: (strip.width - strip.spacing * (strip.columns - 1)) / strip.columns
+                height: 62
                 radius: Services.DesktopTheme.rad(18)
                 color: active ? Colors.primary_container : card.hovered || selected ? Colors.surface_container_high : Colors.surface_container
                 border.width: selected ? 2 : 0
@@ -80,34 +89,32 @@ Item {
 
                 Glyph {
                     id: cardIcon
-                    x: 16
-                    anchors.verticalCenter: parent.verticalCenter
+                    x: card.compact ? 14 : 16
+                    y: card.compact ? 8 : (card.height - height) / 2
                     text: card.modelData ? card.modelData.icon : "do_not_disturb_on"
                     filled: card.active
-                    font.pixelSize: 24
+                    font.pixelSize: card.compact ? 20 : 24
                     color: card.active ? Colors.on_primary_container : card.selected ? Colors.primary : Colors.on_surface_variant
                 }
 
                 Column {
-                    anchors.left: cardIcon.right
-                    anchors.leftMargin: 12
-                    anchors.right: parent.right
-                    anchors.rightMargin: 12
-                    anchors.verticalCenter: parent.verticalCenter
-                    spacing: 2
+                    x: card.compact ? 14 : cardIcon.x + cardIcon.width + 12
+                    y: card.compact ? 30 : (card.height - height) / 2
+                    width: card.width - x - (card.compact ? 10 : 12)
+                    spacing: card.compact ? 0 : 2
 
                     StyledText {
                         width: parent.width
                         text: card.modelData ? card.modelData.name : "Off"
                         elide: Text.ElideRight
-                        font.pixelSize: 15
+                        font.pixelSize: card.compact ? 14 : 15
                         font.weight: Font.DemiBold
                         color: card.active ? Colors.on_primary_container : Colors.on_surface
                     }
 
                     StyledText {
                         width: parent.width
-                        text: card.active ? "In use" : card.modelData ? card.modelData.tagline : "Your normal rice"
+                        text: card.active ? "In use" : card.modelData ? (card.compact ? card.modelData.tagline.replace(/ desktop$/, "") : card.modelData.tagline) : "Your normal rice"
                         elide: Text.ElideRight
                         font.pixelSize: 11
                         color: card.active ? Colors.withAlpha(Colors.on_primary_container, 0.8) : Colors.on_surface_variant
@@ -124,7 +131,7 @@ Item {
         readonly property real s: width / 1920
         readonly property var look: desk.dt.lookFor(desk.selId)
         readonly property var hypr: desk.info ? desk.info.hypr : null
-        readonly property color glow: hypr ? (hypr.glow ? Colors[hypr.glow] : "black") : "transparent"
+        readonly property color glow: hypr ? (hypr.glow ? desk.dt.roleColor(hypr.glow, desk.selId) : "black") : "transparent"
         readonly property real rounding: (hypr ? hypr.rounding : 35) * s * 1.4
 
         anchors.top: strip.bottom
@@ -156,6 +163,7 @@ Item {
             }
 
             Image {
+                id: mockWall
                 anchors.fill: parent
                 source: "file://" + Quickshell.env("HOME") + "/.cache/current_wallpaper"
                 sourceSize: Qt.size(Math.max(1, width), Math.max(1, height))
@@ -164,14 +172,25 @@ Item {
                 cache: false
             }
 
+            // The wallpaper as drawn, for a layer that reworks it.
+            ShaderEffectSource {
+                id: mockWallTexture
+                width: mockWall.width
+                height: mockWall.height
+                visible: false
+                sourceItem: mockLayer.usesWallpaper ? mockWall : null
+            }
+
             // The theme's real desktop layer, drawn at full size and scaled.
             ThemeLayer {
+                id: mockLayer
                 width: 1920
                 height: 1200
                 scale: mock.s
                 transformOrigin: Item.TopLeft
                 pxScale: mock.s
                 themeId: desk.selId
+                wallpaper: mockWallTexture
             }
 
             WidgetPreview {
@@ -183,10 +202,14 @@ Item {
             component MockWindow: Rectangle {
                 id: mockWin
                 property bool focused: false
+                // Themes that colour window borders show them here.
+                readonly property var themedBorder: mock.hypr ? mock.hypr.border : undefined
                 radius: mock.rounding
                 color: Colors.withAlpha(Colors.surface_container, 0.9)
                 border.width: 1
-                border.color: Colors.withAlpha(Colors.outline, focused ? 0.5 : 0.3)
+                border.color: themedBorder
+                    ? desk.dt.roleColor(focused ? themedBorder.active[0] : themedBorder.inactive, desk.selId)
+                    : Colors.withAlpha(Colors.outline, focused ? 0.5 : 0.3)
 
                 Column {
                     x: parent.width * 0.07
@@ -201,8 +224,8 @@ Item {
                             required property int index
                             width: mockWin.width * 0.8 * modelData
                             height: Math.max(2, mockWin.height * 0.028)
-                            radius: mock.look.shape === "round" || mock.look.shape === "pill" ? height / 2 : 0
-                            color: index === 0 && mockWin.focused ? Colors.primary : Colors.withAlpha(Colors.on_surface, 0.28)
+                            radius: ["round", "pill", "pebble"].includes(mock.look.shape) ? height / 2 : 0
+                            color: index === 0 && mockWin.focused ? desk.dt.accentOf(desk.selId) : Colors.withAlpha(Colors.on_surface, 0.28)
                         }
                     }
                 }
@@ -233,11 +256,12 @@ Item {
                 layer.effect: MultiEffect {
                     shadowEnabled: true
                     shadowColor: mock.glow
-                    shadowBlur: 1.0
+                    // Hard, offset shadows (Broadsheet) as well as glows.
+                    shadowBlur: mock.hypr && mock.hypr.sharp ? 0 : 1.0
                     blurMax: 32
-                    shadowOpacity: mock.hypr && mock.hypr.glow ? 0.75 : 0.45
-                    shadowHorizontalOffset: 0
-                    shadowVerticalOffset: 0
+                    shadowOpacity: mock.hypr && mock.hypr.glow ? 0.75 : mock.hypr && mock.hypr.sharp ? 0.6 : 0.45
+                    shadowHorizontalOffset: mock.hypr && mock.hypr.offset ? mock.hypr.offset[0] * mock.s * 1.4 : 0
+                    shadowVerticalOffset: mock.hypr && mock.hypr.offset ? mock.hypr.offset[1] * mock.s * 1.4 : 0
                 }
             }
 
@@ -254,13 +278,65 @@ Item {
                     fill: Colors.surface_container
                 }
 
+                NeonFrame {
+                    visible: mock.look.shape === "neon"
+                    cut: 5
+                    fill: Colors.surface_container
+                    glow: 0
+                }
+
+                DecoFrame {
+                    visible: mock.look.shape === "deco"
+                    cut: 3
+                    fill: Colors.surface_container
+                    stroke: desk.dt.borderColor(mock.look, desk.selId)
+                }
+
+                CuspFrame {
+                    visible: mock.look.shape === "cusp"
+                    cut: 4
+                    fill: Colors.surface_container
+                    stroke: desk.dt.borderColor(mock.look, desk.selId)
+                }
+
                 Rectangle {
                     anchors.fill: parent
-                    visible: mock.look.shape !== "chamfer"
+                    visible: !["chamfer", "neon", "deco", "cusp"].includes(mock.look.shape)
                     radius: desk.dt.radius(mock.look, 10, height)
+                    topLeftRadius: desk.dt.corner(mock.look, radius, 0)
+                    topRightRadius: desk.dt.corner(mock.look, radius, 1)
+                    bottomRightRadius: desk.dt.corner(mock.look, radius, 2)
+                    bottomLeftRadius: desk.dt.corner(mock.look, radius, 3)
                     color: Colors.surface_container
-                    border.width: mock.look.border
-                    border.color: desk.dt.borderColor(mock.look)
+                    border.width: mock.look.shape === "print" ? 0 : mock.look.border
+                    border.color: desk.dt.borderColor(mock.look, desk.selId)
+                }
+
+                // Broadsheet's rules, Wasteland's rivets.
+                Rectangle {
+                    visible: mock.look.shape === "print"
+                    width: parent.width
+                    height: 1
+                    color: desk.dt.borderColor(mock.look, desk.selId)
+                }
+
+                Rectangle {
+                    visible: mock.look.shape === "print"
+                    y: parent.height - height
+                    width: parent.width
+                    height: 2
+                    color: desk.dt.borderColor(mock.look, desk.selId)
+                }
+
+                Repeater {
+                    model: mock.look.shape === "plate" ? 2 : 0
+
+                    Rivet {
+                        required property int index
+                        size: 3
+                        x: index === 0 ? 2 : tag.width - width - 2
+                        y: (tag.height - height) / 2
+                    }
                 }
 
                 Text {
@@ -271,6 +347,7 @@ Item {
                     font.pixelSize: 10
                     font.weight: mock.look.weight
                     font.letterSpacing: mock.look.letterSpacing
+                    font.capitalization: mock.look.caps === "small" ? Font.SmallCaps : mock.look.caps ? Font.AllUppercase : Font.MixedCase
                     color: Colors.on_surface
                 }
             }
@@ -286,7 +363,7 @@ Item {
                 spacing: 6
 
                 MockTag {
-                    readonly property string pip: mock.look.shape === "chamfer" ? "◆" : mock.look.shape === "square" ? "■" : "●"
+                    readonly property string pip: ({ chamfer: "◆", square: "■", neon: "▮", deco: "◆", cusp: "✦", print: "▪", plate: "✕" })[mock.look.shape] ?? "●"
                     label: pip + " 2 " + pip + " " + pip + " " + pip
                 }
 

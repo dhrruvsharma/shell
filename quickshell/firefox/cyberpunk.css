@@ -1,0 +1,50 @@
+/* Neon Noir: square and dark, in the theme's two neons (the wallpaper's
+ * accents at full saturation); cut corners on the address bar and selected
+ * tab, a lit underline, and a glow when focused. */
+:root:root {
+  --qs-accent: var(--qs-theme-accent);
+  --qs-on-accent: #07080c;
+  --lwt-accent-color: color-mix(in srgb, var(--qs-bg) 65%, black) !important;
+  --lwt-accent-color-inactive: color-mix(in srgb, var(--qs-bg) 65%, black) !important;
+  --toolbar-bgcolor: color-mix(in srgb, var(--qs-surface-low) 70%, black) !important;
+  --tab-attention-icon-color: var(--qs-theme-accent2) !important;
+  --tab-loading-fill: var(--qs-theme-accent2) !important;
+  --tab-border-radius: 0px !important;
+  --toolbarbutton-border-radius: 0px !important;
+  --border-radius-small: 0px !important;
+  --border-radius-medium: 0px !important;
+  --border-radius-large: 0px !important;
+  --arrowpanel-border-radius: 0px !important;
+}
+
+#navigator-toolbox, #sidebar-main, menupopup, panel, .urlbarView {
+  font-family: "Rubik", sans-serif !important;
+}
+
+#navigator-toolbox {
+  border-bottom: 1px solid color-mix(in srgb, var(--qs-theme-accent) 55%, transparent) !important;
+}
+
+#urlbar .urlbar-background,
+.tab-background:is([selected], [multiselected]) {
+  border-radius: 0 !important;
+  clip-path: polygon(0 0, calc(100% - 9px) 0, 100% 9px, 100% 100%, 0 100%) !important;
+}
+
+#urlbar .urlbar-background {
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--qs-theme-accent) 50%, transparent) !important;
+}
+
+#urlbar[focused] .urlbar-background {
+  box-shadow: inset 0 0 0 1px var(--qs-theme-accent),
+              inset 0 0 14px color-mix(in srgb, var(--qs-theme-accent) 30%, transparent) !important;
+}
+
+.tab-background:is([selected], [multiselected]) {
+  box-shadow: inset 0 -2px 0 var(--qs-theme-accent),
+              inset 0 -10px 10px -8px color-mix(in srgb, var(--qs-theme-accent) 55%, transparent) !important;
+}
+
+.tabbrowser-tab:hover > .tab-stack > .tab-background:not([selected]) {
+  box-shadow: inset 0 -1px 0 var(--qs-theme-accent2) !important;
+}

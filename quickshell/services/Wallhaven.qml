@@ -17,6 +17,15 @@ Singleton {
     property string currentSearchText: ""
     property string _pendingDownloadPath: ""
     property string downloadingWallpaperId: ""
+    // 0..1 while a download runs (from curl's progress bar).
+    property real downloadProgress: 0
+    property string downloadError: ""
+
+    // Where a result is (or would be) saved.
+    function savePathFor(wallpaper) {
+        const ext = wallpaper.fullUrl.split('.').pop().split('?')[0] || "jpg"
+        return root.wallpaperDir + "/" + wallpaper.id + "." + ext
+    }
 
     // ── Online / Wallhaven ──────────────────────────────────────────────────
     property list<var> onlineWallpapers: []
@@ -131,14 +140,18 @@ Singleton {
             console.warn("[ServiceWallpaper] Download already in progress")
             return
         }
-        const ext = wallpaper.fullUrl.split('.').pop().split('?')[0] || "jpg"
-        const savePath = root.wallpaperDir + "/" + wallpaper.id + "." + ext
+        const savePath = savePathFor(wallpaper)
         _pendingDownloadPath = savePath
         downloadingWallpaperId = wallpaper.id
+        downloadProgress = 0
+        downloadError = ""
         console.log("[ServiceWallpaper] Downloading wallpaper", wallpaper.id, "->", savePath)
+        // Into a .part file (which the local list ignores) renamed when done,
+        // so a half-written image never shows up as a wallpaper.
         wallhavenDownloader.command = [
             "bash", "-c",
-            "mkdir -p '" + root.wallpaperDir + "' && curl -sL '" + wallpaper.fullUrl + "' -o '" + savePath + "'"
+            "mkdir -p \"$1\" && curl -L --fail --progress-bar \"$2\" -o \"$3.part\" && mv \"$3.part\" \"$3\" || { rm -f \"$3.part\"; exit 1; }",
+            "bash", root.wallpaperDir, wallpaper.fullUrl, savePath
         ]
         wallhavenDownloader.running = true
     }
@@ -164,11 +177,22 @@ Singleton {
 
     Process {
         id: wallhavenDownloader
+        // curl's progress bar redraws "###   42.3%" with carriage returns.
+        stderr: SplitParser {
+            splitMarker: "\r"
+            onRead: data => {
+                const m = data.match(/([0-9]+(?:\.[0-9]+)?)%/)
+                if (m)
+                    root.downloadProgress = Math.min(1, parseFloat(m[1]) / 100)
+            }
+        }
         onExited: (exitCode) => {
             if (exitCode === 0) {
                 console.log("[ServiceWallpaper] Download complete:", root._pendingDownloadPath)
+                root.downloadProgress = 1
                 WallpaperEngine.set(root._pendingDownloadPath)
             } else {
+                root.downloadError = "Download failed (curl exit " + exitCode + ")"
                 console.error("[ServiceWallpaper] Download failed for:", root._pendingDownloadPath)
             }
             root._pendingDownloadPath = ""

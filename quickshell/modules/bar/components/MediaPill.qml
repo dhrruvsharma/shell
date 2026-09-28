@@ -24,20 +24,78 @@ Item {
         anchors.fill: parent
 
         // Desktop themes restyle the capsule; the HUD theme's is a chamfered
-        // frame.
+        // frame, Neon Noir's a cut-corner one, Art Deco's steps in at the
+        // corners, Cathedral's is cusped, Broadsheet's ruled and
+        // Wasteland's riveted.
         readonly property var look: DesktopTheme.look
         readonly property bool hud: look.shape === "chamfer"
+        readonly property bool neon: look.shape === "neon"
+        readonly property bool deco: look.shape === "deco"
+        readonly property bool cusp: look.shape === "cusp"
+        readonly property bool framed: hud || neon || deco || cusp
         radius: DesktopTheme.radius(look, height / 2, height)
-        border.width: hud ? 0 : look.border
+        topLeftRadius: DesktopTheme.corner(look, radius, 0)
+        topRightRadius: DesktopTheme.corner(look, radius, 1)
+        bottomRightRadius: DesktopTheme.corner(look, radius, 2)
+        bottomLeftRadius: DesktopTheme.corner(look, radius, 3)
+        border.width: framed || look.shape === "print" ? 0 : look.border
         border.color: DesktopTheme.borderColor(look)
         height: 32
-        color: hud ? "transparent" : Colors.background
+        color: framed ? "transparent" : Colors.background
 
         clip: true
 
         HudFrame {
             visible: pill.hud
             fill: Colors.background
+        }
+
+        NeonFrame {
+            visible: pill.neon
+            cut: 9
+            fill: Colors.background
+            glow: 0.5
+        }
+
+        DecoFrame {
+            visible: pill.deco
+            cut: 4
+            steps: 2
+            fill: Colors.background
+            stroke: DesktopTheme.borderColor(pill.look)
+        }
+
+        CuspFrame {
+            visible: pill.cusp
+            cut: 8
+            fill: Colors.background
+            stroke: DesktopTheme.borderColor(pill.look)
+        }
+
+        Rectangle {
+            visible: pill.look.shape === "print"
+            width: parent.width
+            height: 2
+            color: DesktopTheme.borderColor(pill.look)
+        }
+
+        Rectangle {
+            visible: pill.look.shape === "print"
+            y: parent.height - 1
+            width: parent.width
+            height: 1
+            color: DesktopTheme.borderColor(pill.look)
+        }
+
+        Repeater {
+            model: pill.look.shape === "plate" ? 2 : 0
+
+            Rivet {
+                required property int index
+                size: 5
+                x: index === 0 ? 3 : pill.width - width - 3
+                y: (pill.height - height) / 2
+            }
         }
 
         implicitWidth: row.implicitWidth + 20

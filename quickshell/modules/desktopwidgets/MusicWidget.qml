@@ -38,10 +38,11 @@ WidgetFrame {
                 width: parent.width
                 text: root.has ? root.media.title : WidgetStyle.word("musicIdle", root.themeId)
                 elide: Text.ElideRight
-                font.family: root.st.font
-                font.pixelSize: 15
-                font.weight: root.st.frame === "bare" ? Font.Normal : Font.DemiBold
-                color: Colors.on_surface
+                // Broadsheet runs it as a headline.
+                font.family: root.st.frame === "clipping" ? root.st.display : root.st.font
+                font.pixelSize: root.st.frame === "clipping" ? 17 : 15
+                font.weight: root.st.frame === "bare" || root.st.frame === "washi" ? Font.Normal : root.st.frame === "clipping" ? Font.Black : Font.DemiBold
+                color: root.ink
             }
 
             Text {
@@ -51,8 +52,8 @@ WidgetFrame {
                 elide: Text.ElideRight
                 font.family: root.st.font
                 font.pixelSize: 12
-                font.italic: root.st.frame === "scroll"
-                color: Colors.withAlpha(Colors.on_surface, 0.7)
+                font.italic: ["scroll", "lancet", "clipping"].includes(root.st.frame)
+                color: Colors.withAlpha(root.ink, 0.7)
             }
 
             Item {
@@ -76,7 +77,7 @@ WidgetFrame {
                     text: root.has ? root.time(root.media.position) + " / " + root.time(root.media.length) : "--:--"
                     font.family: root.st.mono
                     font.pixelSize: 11
-                    color: Colors.withAlpha(Colors.on_surface, 0.6)
+                    color: Colors.withAlpha(root.ink, 0.6)
                 }
 
                 Row {
@@ -106,8 +107,8 @@ WidgetFrame {
                             Rectangle {
                                 anchors.fill: parent
                                 visible: button.main && root.st.frame !== "console" && root.st.frame !== "bare"
-                                radius: root.st.frame === "chamfer" ? 0 : root.st.frame === "scroll" ? 4 : height / 2
-                                color: Colors.withAlpha(Colors[root.st.accentRole], button.containsMouse ? 0.35 : 0.2)
+                                radius: ({ chamfer: 0, neon: 0, gilt: 0, clipping: 0, scroll: 4, lancet: 4, scrap: 2 })[root.st.frame] ?? height / 2
+                                color: Colors.withAlpha(root.accent, button.containsMouse ? 0.35 : 0.2)
                             }
 
                             Glyph {
@@ -116,7 +117,7 @@ WidgetFrame {
                                 text: button.modelData.icon
                                 filled: true
                                 font.pixelSize: button.main ? 22 : 20
-                                color: button.containsMouse || button.main ? Colors[root.st.accentRole] : Colors.withAlpha(Colors.on_surface, 0.75)
+                                color: button.containsMouse || button.main ? root.accent : Colors.withAlpha(root.ink, 0.75)
                             }
 
                             Text {
@@ -126,7 +127,7 @@ WidgetFrame {
                                 text: "[" + button.modelData.word + "]"
                                 font.family: root.st.mono
                                 font.pixelSize: 13
-                                color: button.containsMouse ? Colors.on_surface : Colors[root.st.accentRole]
+                                color: button.containsMouse ? root.ink : root.accent
                             }
                         }
                     }

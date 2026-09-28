@@ -8,11 +8,11 @@ import qs.colors
 
 // Desktop themes: one coordinated look across the rice, still coloured by
 // the wallpaper. A theme touches three layers:
-//   - Hyprland: corner rounding, a glow on the focused window, and an
-//     optional static screen shader (shaders/<id>_screen.frag.in, baked with
-//     the current colours). Applied at runtime with `hyprctl eval`; switching
-//     themes or turning them off runs `hyprctl reload` first, which restores
-//     the config exactly.
+//   - Hyprland: corner rounding, a glow on the focused window, optional
+//     window borders, and an optional static screen shader
+//     (shaders/<id>_screen.frag.in, baked with the current colours). Applied
+//     at runtime with `hyprctl eval`; switching themes or turning them off
+//     runs `hyprctl reload` first, which restores the config exactly.
 //   - the desktop: a static layer drawn over the wallpaper
 //     (modules/desktoptheme, one <Name>Layer.qml per theme); desktop widgets
 //     restyle themselves too (modules/desktopwidgets/WidgetStyle)
@@ -24,11 +24,21 @@ import qs.colors
 Singleton {
     id: root
 
-    // hypr: rounding, shadow range/render_power, `glow` (a Colors role with a
-    //       hex alpha) or a fixed `shadow` colour, inactive shadow colour, and
-    //       an optional dim for unfocused windows.
-    // bar:  shape (round | chamfer | square | pill | soft | seal), font,
-    //       weight, size delta, letter spacing, hairline border.
+    // hypr: rounding, shadow range/render_power, `glow` (a colour role with a
+    //       hex alpha) or a fixed `shadow` colour, inactive shadow colour, an
+    //       optional dim for unfocused windows, optional hard-edged (`sharp`)
+    //       and `offset` [x, y] shadows, and optional window borders
+    //       (`border`: active roles as a gradient, inactive role + hex alpha).
+    // bar:  shape (round | chamfer | square | pill | soft | seal | neon |
+    //       pebble | deco | cusp | print | plate), font, weight, size delta,
+    //       letter spacing, `caps` (true: capitals, "small": small capitals),
+    //       hairline border; `uiFont` sets panel text when the bar font is
+    //       too decorative for it.
+    // tone: how the theme colours the wallpaper's accents (see accentOf):
+    //       "" as they are, "neon", "muted", "gilt", "jewel", "print" or
+    //       "dusty".
+    // A colour role is a Colors name, or "accent" / "accent2" for the
+    // theme's toned accents.
     readonly property var themes: [
         {
             id: "hud",
@@ -129,6 +139,132 @@ Singleton {
                 { icon: "water", text: "Mist and ink over the wallpaper" },
                 { icon: "hourglass_top", text: "Hanging-scroll clock: shichen, date and cultivation realm" }
             ]
+        },
+        {
+            id: "cyberpunk",
+            name: "Neon Noir",
+            tagline: "Cyberpunk city desktop",
+            icon: "location_city",
+            lockTheme: "cyberpunk",
+            tone: "neon",
+            description: "A rain-slick city at night: your wallpaper's colours pushed to glowing neon, windows edged in a neon duotone, cut-corner tags on the bar, rain and a katakana sign over the wallpaper, your street cred, and a glitching neon-sign clock.",
+            hypr: { rounding: 0, range: 26, power: 2, glow: "accent", glowAlpha: "80", inactive: "000000aa", dim: 0.12, border: { active: ["accent", "accent2"], angle: 135, inactive: "background", inactiveAlpha: "cc" } },
+            bar: { shape: "neon", font: "Fragile Bombers", uiFont: "Rubik", weight: Font.Normal, sizeDelta: 2, letterSpacing: 0.6, border: 1, borderRole: "accent", borderAlpha: 0.7 },
+            effects: {
+                subtle: "Neon split-toning (your second neon in the shadows), a noir vignette and a hint of chromatic aberration at the screen edges.",
+                strong: "Deeper split-toning, stronger aberration and a fine neon film grain."
+            },
+            changes: [
+                { icon: "crop_square", text: "Square windows edged in a neon duotone; the rest sink into the dark" },
+                { icon: "sell", text: "Cut-corner neon tags with condensed type on the bar" },
+                { icon: "grain", text: "Rain, city haze and a katakana neon sign over the wallpaper" },
+                { icon: "schedule", text: "A glitching neon-sign clock" }
+            ]
+        },
+        {
+            id: "wabisabi",
+            name: "Wabi-sabi",
+            tagline: "Traditional Japanese desktop",
+            icon: "brush",
+            lockTheme: "wabisabi",
+            tone: "muted",
+            description: "The beauty of the imperfect and the passing: your wallpaper's colours as muted Edo tones, washi paper and a seam of kintsugi gold over the wallpaper, pebble-shaped tags in Mincho type, and an ensō clock that keeps the old calendar and its 72 micro-seasons.",
+            hypr: { rounding: 10, range: 30, power: 3, shadow: "140c0655", inactive: "0000002e", dim: 0.05, border: { active: ["accent"], inactive: "outline_variant", inactiveAlpha: "66" } },
+            bar: { shape: "pebble", font: "Noto Serif CJK JP", weight: Font.Normal, sizeDelta: -1, letterSpacing: 0.3, border: 1, borderRole: "accent", borderAlpha: 0.35 },
+            effects: {
+                subtle: "Softly faded, warmer colour with a fine paper grain and gently aged edges.",
+                strong: "An old woodblock print: faded colour, warm paper and heavier grain."
+            },
+            changes: [
+                { icon: "rounded_corner", text: "Softly rounded windows with quiet, earthy borders" },
+                { icon: "text_fields", text: "Pebble-shaped tags in Mincho type: no two corners alike" },
+                { icon: "texture", text: "Washi paper and a kintsugi seam over the wallpaper" },
+                { icon: "schedule", text: "Ensō clock with the old calendar and the micro-season" }
+            ]
+        },
+        {
+            id: "artdeco",
+            name: "Art Deco",
+            tagline: "Jazz Age skyline desktop",
+            icon: "apartment",
+            lockTheme: "artdeco",
+            tone: "gilt",
+            description: "The machine age in black lacquer and gold: your wallpaper's colour set as a jewel in gilt, windows framed in a gold hairline, stepped-corner tags in spaced capitals, a sunburst and a stepped gilt frame over the wallpaper, the floor you've risen to, and an elevator-dial clock.",
+            hypr: { rounding: 0, range: 26, power: 3, glow: "accent", glowAlpha: "3a", inactive: "00000077", border: { active: ["accent"], inactive: "background", inactiveAlpha: "dd" } },
+            bar: { shape: "deco", font: "Josefin Sans", weight: Font.DemiBold, sizeDelta: -3, letterSpacing: 1.2, caps: true, border: 1, borderRole: "accent", borderAlpha: 0.8 },
+            effects: {
+                subtle: "A gilded grade: deeper blacks, a gold sheen in the highlights and a soft vignette.",
+                strong: "A black-and-gold poster print: colour drained towards lacquer and gilt, with a fine grain."
+            },
+            changes: [
+                { icon: "crop_square", text: "Square windows framed in a gold hairline" },
+                { icon: "stairs", text: "Stepped-corner gilt tags in spaced capitals on the bar" },
+                { icon: "wb_twilight", text: "A sunburst and a stepped gilt frame over the wallpaper" },
+                { icon: "elevator", text: "Elevator-dial clock; your level is the floor you've risen to" }
+            ]
+        },
+        {
+            id: "gothic",
+            name: "Cathedral",
+            tagline: "Gothic stained-glass desktop",
+            icon: "church",
+            lockTheme: "gothic",
+            tone: "jewel",
+            description: "A cathedral at vespers: your wallpaper's colours as stained glass, shafts of coloured light and drifting dust over the wallpaper, windows leaded in two jewel tones, cusped blackletter tags on the bar, and a rose-window clock that keeps the canonical hours.",
+            hypr: { rounding: 3, range: 30, power: 3, glow: "accent", glowAlpha: "50", inactive: "000000aa", dim: 0.1, border: { active: ["accent", "accent2"], angle: 45, inactive: "surface_container_highest", inactiveAlpha: "bb" } },
+            bar: { shape: "cusp", font: "Grenze Gotisch", uiFont: "Alegreya", weight: Font.Medium, sizeDelta: 0, letterSpacing: 0.3, border: 1, borderRole: "accent", borderAlpha: 0.55 },
+            effects: {
+                subtle: "Candlelight and stone: warm highlights, cool shadows and a deeper vignette.",
+                strong: "The nave at dusk: darker, with the windows' coloured light pooling in the midtones."
+            },
+            changes: [
+                { icon: "crop_square", text: "Near-square windows leaded in two jewel tones" },
+                { icon: "text_fields", text: "Cusped tags with blackletter type on the bar" },
+                { icon: "flare", text: "Shafts of stained-glass light and dust over the wallpaper" },
+                { icon: "church", text: "Rose-window clock with the canonical hours and the church year" }
+            ]
+        },
+        {
+            id: "newspaper",
+            name: "Broadsheet",
+            tagline: "Newsprint desktop",
+            icon: "newspaper",
+            lockTheme: "newspaper",
+            tone: "print",
+            description: "The morning paper: your wallpaper printed in halftone on newsprint, windows cut out like clippings with hard offset shadows, ruled small-caps tags on the bar, desktop widgets as clippings, and a front-page clock that knows which edition is on the street.",
+            hypr: { rounding: 0, range: 2, power: 1, sharp: true, offset: [7, 7], shadow: "000000a0", inactive: "00000070", border: { active: ["accent2"], inactive: "outline", inactiveAlpha: "aa" } },
+            bar: { shape: "print", font: "Old Standard TT", weight: Font.Bold, sizeDelta: -2, letterSpacing: 0.6, caps: "small", border: 1, borderRole: "accent2", borderAlpha: 0.85 },
+            effects: {
+                subtle: "Newsprint: softened colour, a grey paper tone in the highlights and a fine paper grain.",
+                strong: "Yesterday's paper: black-and-white newsprint with inky shadows and a heavier grain."
+            },
+            changes: [
+                { icon: "crop_square", text: "Square windows cut out like clippings, with hard offset shadows" },
+                { icon: "view_week", text: "Ruled small-caps tags in Old Standard on the bar" },
+                { icon: "texture", text: "Your wallpaper printed in halftone on newsprint" },
+                { icon: "schedule", text: "Front-page clock with the dateline and the edition" }
+            ]
+        },
+        {
+            id: "wasteland",
+            name: "Wasteland",
+            tagline: "Post-apocalyptic desktop",
+            icon: "skull",
+            lockTheme: "wasteland",
+            tone: "dusty",
+            description: "After the fall: your wallpaper's colours as weathered paint under a sky of dust, riveted scrap-metal tags stencilled on the bar, rust, grit and hazard tape over the wallpaper, widgets bolted to salvaged plates, and a survival clock that counts the days without incident.",
+            hypr: { rounding: 1, range: 18, power: 3, shadow: "0c070399", inactive: "00000066", dim: 0.06, border: { active: ["accent2", "accent"], angle: 135, inactive: "surface_container_high", inactiveAlpha: "cc" } },
+            bar: { shape: "plate", font: "Big Shoulders Stencil", uiFont: "Barlow Semi Condensed", weight: Font.Bold, sizeDelta: 0, letterSpacing: 1.1, caps: true, border: 1, borderRole: "accent", borderAlpha: 0.55 },
+            effects: {
+                subtle: "Dust in the air: a bleached, warm grade with amber highlights and fine grit.",
+                strong: "A dust storm: harsh bleach-bypass contrast, a rust-orange cast and heavy grit."
+            },
+            changes: [
+                { icon: "crop_square", text: "Rough square windows edged from hazard amber to rust" },
+                { icon: "hardware", text: "Riveted scrap-metal tags stencilled on the bar" },
+                { icon: "warning", text: "Dust, rust and hazard tape over the wallpaper" },
+                { icon: "schedule", text: "Survival clock: the day, and the days without incident" }
+            ]
         }
     ]
 
@@ -158,16 +294,28 @@ Singleton {
         return has(id) ? themeFor(id).bar : plainLook;
     }
 
+    // Shapes drawn square (their corners, if any, are cut by masks and
+    // frames: HudMask, NeonMask, DecoMask, CuspMask).
+    readonly property var squareShapes: ["chamfer", "square", "neon", "deco", "cusp", "print"]
+
     // Corner radius for a bar shape, given the plain design's radius.
     function radius(lk, normal, h) {
         switch (lk.shape) {
         case "chamfer":
         case "square":
+        case "neon":
+        case "deco":
+        case "cusp":
+        case "print":
             return 0;
+        case "plate":
+            return Math.min(normal, 2);
         case "seal":
             return Math.min(normal, 3);
         case "soft":
             return Math.min(normal, 9);
+        case "pebble":
+            return Math.min(normal, h * 0.42);
         case "pill":
             return h / 2;
         default:
@@ -175,19 +323,31 @@ Singleton {
         }
     }
 
+    // Wabi-sabi's pebbles: each corner of a shape rounded differently, like
+    // a river stone. Factors on the radius, clockwise from top left.
+    readonly property var pebbleCorners: [1, 0.5, 1.15, 0.65]
+
+    // One corner (0 top left, 1 top right, 2 bottom right, 3 bottom left) of
+    // a shape whose radius is `r` under the look `lk`.
+    function corner(lk, r, i) {
+        return lk.shape === "pebble" ? r * pebbleCorners[i] : r;
+    }
+
     // Corner radius for a panel's outer surface, given its plain radius:
-    // square for HUD and Mainframe, a slight round for Cave Abode, unchanged
-    // for the round themes.
+    // square for HUD, Mainframe, Neon Noir, Art Deco, Cathedral and
+    // Broadsheet, a slight round for Cave Abode and Wasteland, unchanged for
+    // the round themes.
     function panelRadius(normal) {
         const sh = look.shape;
-        return sh === "chamfer" || sh === "square" ? 0 : sh === "seal" ? Math.min(normal, 4) : normal;
+        return squareShapes.includes(sh) ? 0 : sh === "seal" || sh === "plate" ? Math.min(normal, sh === "seal" ? 4 : 3) : normal;
     }
 
     // Corner radius the theme imposes on controls inside panels (buttons,
     // cards, chips, fields), or -1 to leave them as designed.
-    readonly property real controlRadius: look.shape === "chamfer" || look.shape === "square" ? 0 : look.shape === "seal" ? 3 : -1
+    readonly property real controlRadius: squareShapes.includes(look.shape) ? 0 : look.shape === "seal" ? 3 : look.shape === "plate" ? 2 : -1
 
     // Astral rounds controls into capsules instead; Still drops card borders.
+    // (Wabi-sabi's cards turn into pebbles through corner().)
     readonly property bool roundControls: look.shape === "pill"
     readonly property bool borderless: look.shape === "soft"
 
@@ -197,10 +357,127 @@ Singleton {
     }
 
     // Font for text that doesn't choose its own ("" = the default).
-    readonly property string font: look.font
+    readonly property string font: look.uiFont ?? look.font
 
-    function borderColor(lk) {
-        return lk.border ? Colors.withAlpha(Colors[lk.borderRole ?? "primary"], lk.borderAlpha ?? 0.4) : "transparent";
+    // The hairline of a look; `id` is the theme it belongs to when that
+    // isn't the active one (a preview).
+    function borderColor(lk, id) {
+        return lk.border ? Colors.withAlpha(roleColor(lk.borderRole ?? "primary", id), lk.borderAlpha ?? 0.4) : "transparent";
+    }
+
+    // ── Palette ──────────────────────────────────────────────────────────────
+    // Every theme takes its accents from the wallpaper (Colors.primary and
+    // .tertiary). A theme's `tone` changes how it wears them:
+    //   neon:  full saturation, lit like a tube, and always a duotone: if the
+    //          two hues are too close, the second swings round the wheel.
+    //   muted: drained to the dusty greys and browns of Edo dyeing (its "48
+    //          browns and 100 greys"), keeping each hue.
+    //   gilt:  Art Deco's gold leaf (a breath of the wallpaper in it), with
+    //          the wallpaper's colour as a deep jewel tone beside it.
+    //   jewel: stained glass: rich, deep and saturated; the second pane
+    //          swings round the wheel when the two hues are too close.
+    //   print: a newspaper's spot colour, and the ink it's printed with
+    //          (whichever of ink or newsprint stands out on the scheme).
+    //   dusty: weathered paint gone chalky under dust, and hazard amber.
+    // accent/accent2 are the active theme's; accentOf/accent2Of any theme's
+    // (previews show themes that aren't on).
+    readonly property color accent: accentOf(adapter.theme)
+    readonly property color accent2: accent2Of(adapter.theme)
+
+    function toneOf(id) {
+        return has(id) ? (themeFor(id).tone ?? "") : "";
+    }
+
+    function accentOf(id) {
+        switch (toneOf(id)) {
+        case "neon":
+            return _neon(_hue(Colors.primary, 0.86));
+        case "muted":
+            return _muted(Colors.primary);
+        case "gilt":
+            return Qt.tint(Qt.hsla(0.118, 0.62, _dark ? 0.62 : 0.4, 1), Colors.withAlpha(Colors.primary, 0.08));
+        case "jewel":
+            return _jewel(_hue(Colors.primary, 0.62));
+        case "print":
+            return Qt.hsla(_hue(Colors.primary, 0), 0.66, _dark ? 0.62 : 0.42, 1);
+        case "dusty":
+            return _weathered(Colors.primary);
+        default:
+            return Qt.color(Colors.primary);
+        }
+    }
+
+    function accent2Of(id) {
+        switch (toneOf(id)) {
+        case "neon": {
+            const a = _hue(Colors.primary, 0.86);
+            const b = _hue(Colors.tertiary, 0.52);
+            return _neon(_hueGap(a, b) < 0.2 ? (a + 0.42) % 1 : b);
+        }
+        case "muted":
+            return _muted(Colors.tertiary);
+        case "gilt": {
+            // A jewel beside the gold: never gold itself.
+            const golden = h => h > 0.06 && h < 0.18;
+            const p = _hue(Colors.primary, -1);
+            const t = _hue(Colors.tertiary, -1);
+            const h = p >= 0 && !golden(p) ? p : t >= 0 && !golden(t) ? t : 0.47;
+            return Qt.hsla(h, 0.58, _dark ? 0.5 : 0.34, 1);
+        }
+        case "jewel": {
+            const g = _hue(Colors.primary, 0.62);
+            const b = _hue(Colors.tertiary, 0.95);
+            return _jewel(_hueGap(g, b) < 0.12 ? (g + 0.36) % 1 : b);
+        }
+        case "print":
+            return _dark ? Qt.color("#ece6d6") : Qt.color("#1c1b19");
+        case "dusty":
+            return Qt.tint(Qt.hsla(0.118, 0.82, _dark ? 0.56 : 0.42, 1), Colors.withAlpha(Colors.tertiary, 0.1));
+        default:
+            return Qt.color(Colors.tertiary);
+        }
+    }
+
+    // A colour role: a Colors name, or a theme's toned "accent" / "accent2".
+    function roleColor(role, id) {
+        const themeId = id ?? adapter.theme;
+        return role === "accent" ? accentOf(themeId) : role === "accent2" ? accent2Of(themeId) : Qt.color(Colors[role]);
+    }
+
+    readonly property bool _dark: Qt.color(Colors.background).hslLightness < 0.5
+
+    // Hue of `c` (0..1), or `fallback` when it's a grey.
+    function _hue(c, fallback) {
+        const q = Qt.color(c);
+        return q.hslHue < 0 || q.hslSaturation < 0.06 ? fallback : q.hslHue;
+    }
+
+    function _neon(h) {
+        return Qt.hsla(h, 1, _dark ? 0.62 : 0.42, 1);
+    }
+
+    function _muted(c) {
+        const q = Qt.color(c);
+        const m = Qt.hsla(_hue(c, 0.08), Math.min(0.32, 0.08 + q.hslSaturation * 0.24), _dark ? 0.66 : 0.4, 1);
+        // A touch of warmth, like dye on undyed cloth.
+        return Qt.tint(m, Qt.rgba(0.62, 0.47, 0.33, 0.14));
+    }
+
+    // Distance between two hues round the wheel (0..0.5).
+    function _hueGap(a, b) {
+        const d = Math.abs(a - b);
+        return Math.min(d, 1 - d);
+    }
+
+    function _jewel(h) {
+        return Qt.hsla(h, 0.74, _dark ? 0.6 : 0.42, 1);
+    }
+
+    function _weathered(c) {
+        const q = Qt.color(c);
+        const m = Qt.hsla(_hue(c, 0.07), Math.min(0.42, 0.14 + q.hslSaturation * 0.3), _dark ? 0.58 : 0.4, 1);
+        // Sun-bleached and dusted: a warm, chalky cast.
+        return Qt.tint(m, Qt.rgba(0.75, 0.52, 0.28, 0.22));
     }
 
     function setTheme(id) {
@@ -252,12 +529,29 @@ Singleton {
 
     function _lua(t, shader) {
         const h = t.hypr;
-        const color = h.glow ? _hex(Colors[h.glow]) + h.glowAlpha : h.shadow;
-        let deco = "rounding = " + h.rounding + ", shadow = { enabled = true, range = " + h.range
-            + ", render_power = " + h.power + ", color = \"rgba(" + color + ")\", color_inactive = \"rgba(" + h.inactive + ")\" }";
+        const color = h.glow ? _hex(roleColor(h.glow, t.id)) + h.glowAlpha : h.shadow;
+        let shadow = "enabled = true, range = " + h.range + ", render_power = " + h.power
+            + ", color = \"rgba(" + color + ")\", color_inactive = \"rgba(" + h.inactive + ")\"";
+        if (h.sharp)
+            shadow += ", sharp = true";
+        if (h.offset)
+            shadow += ", offset = \"" + h.offset[0] + " " + h.offset[1] + "\"";
+        let deco = "rounding = " + h.rounding + ", shadow = { " + shadow + " }";
         if (h.dim)
             deco += ", dim_inactive = true, dim_strength = " + h.dim;
-        return "hl.config({ decoration = { " + deco + ", screen_shader = \"" + shader + "\" } })";
+        let lua = "hl.config({ decoration = { " + deco + ", screen_shader = \"" + shader + "\" }";
+        if (h.border) {
+            // Gradients as hyprland.lua writes them (two stops, even for one colour).
+            const gradient = (roles, alpha) => {
+                const stops = roles.map(r => "\"rgba(" + _hex(roleColor(r, t.id)) + alpha + ")\"");
+                if (stops.length === 1)
+                    stops.push(stops[0]);
+                return "{ colors = { " + stops.join(", ") + " }, angle = " + (h.border.angle ?? 45) + " }";
+            };
+            lua += ", general = { col = { active_border = " + gradient(h.border.active, "ff")
+                + ", inactive_border = " + gradient([h.border.inactive], h.border.inactiveAlpha ?? "ff") + " } }";
+        }
+        return lua + " })";
     }
 
     function _apply() {
@@ -270,8 +564,8 @@ Singleton {
             if (_templateId === id) {
                 const strong = effect === "strong";
                 const text = template.text()
-                    .split("@ACCENT@").join(_vec3(Colors.primary))
-                    .split("@ACCENT2@").join(_vec3(Colors.tertiary))
+                    .split("@ACCENT@").join(_vec3(accentOf(id)))
+                    .split("@ACCENT2@").join(_vec3(accent2Of(id)))
                     .split("@STRENGTH@").join(strong ? "1.8" : "1.0")
                     .split("@STRONG@").join(strong ? "1.0" : "0.0")
                     .split("@SCANLINES@").join(strong ? "1.0" : "0.0");

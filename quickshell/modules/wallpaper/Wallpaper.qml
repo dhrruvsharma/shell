@@ -45,8 +45,31 @@ Rectangle {
         const favs = WallpaperFavorites.favorites;
         return allWallpapers.filter(w => favs.indexOf(w.fileName) >= 0);
     }
-    // Waiting for a Wallhaven download to finish before closing.
-    property bool downloading: false
+    // Local file names, for "already saved" checks on Wallhaven results.
+    readonly property var localNames: {
+        const set = {};
+        for (const w of allWallpapers)
+            set[w.fileName] = true;
+        return set;
+    }
+    // The picker keeps its source, search and position between openings;
+    // only the very first opening jumps to the wallpaper on screen.
+    property bool opened: false
+    // The last Wallhaven result a download was started for (for "retry").
+    property string lastDownload: ""
+
+    // File name a Wallhaven result is saved under ("" for local entries).
+    function savedName(entry) {
+        return entry && entry.item ? Wallhaven.savePathFor(entry.item).split("/").pop() : "";
+    }
+
+    function isSaved(entry) {
+        return !!entry && (!entry.item || localNames[savedName(entry)] === true);
+    }
+
+    function isActive(entry) {
+        return !!entry && activeName === (entry.item ? savedName(entry) : entry.fileName);
+    }
 
     readonly property int count: displayedWallpapers.length
     property int currentIndex: -1
@@ -76,16 +99,20 @@ Rectangle {
             currentIndex = Math.max(0, Math.min(count - 1, currentIndex + d));
     }
 
+    // Sets the selection and stays open, so browsing can go on. A Wallhaven
+    // result is downloaded first (once; a saved one is set from disk).
     function pickCurrent() {
-        if (!currentEntry || downloading)
+        const e = currentEntry;
+        if (!e || isActive(e))
             return;
-        if (currentEntry.item) {
-            downloading = true;
-            Wallhaven.downloadAndSetWallpaper(currentEntry.item);
-            return;
+        if (!e.item) {
+            WallpaperEngine.set(e.fileUrl);
+        } else if (isSaved(e)) {
+            WallpaperEngine.set(Wallhaven.savePathFor(e.item));
+        } else if (Wallhaven.downloadingWallpaperId === "") {
+            lastDownload = e.fileName;
+            Wallhaven.downloadAndSetWallpaper(e.item);
         }
-        WallpaperEngine.set(currentEntry.fileUrl);
-        close();
     }
 
     function setMode(m) {
@@ -116,9 +143,14 @@ Rectangle {
     onVisibleChanged: {
         if (!visible)
             return;
-        mode = "local";
-        downloading = false;
-        selectActive();
+        if (!opened || currentIndex < 0 || currentIndex >= count) {
+            opened = true;
+            if (mode === "local")
+                selectActive();
+            else
+                currentIndex = count > 0 ? 0 : -1;
+        }
+        preview.show(currentEntry ? (currentEntry.fullUrl || currentEntry.fileUrl) : "", true);
         strip.positionViewAtIndex(Math.max(0, currentIndex), ListView.Center);
         keys.forceActiveFocus();
         closeAnim.stop();
@@ -150,21 +182,10 @@ Rectangle {
         interval: 550
         onTriggered: {
             if (window.currentEntry && window.currentEntry.fullUrl)
-                preview.show(window.currentEntry.fullUrl);
+                preview.show(window.currentEntry.fullUrl, true);
         }
     }
 
-    // Close once the chosen Wallhaven wallpaper has downloaded (and is set).
-    Connections {
-        target: Wallhaven
-
-        function onDownloadingWallpaperIdChanged() {
-            if (window.downloading && Wallhaven.downloadingWallpaperId === "") {
-                window.downloading = false;
-                window.close();
-            }
-        }
-    }
 
     // One arc of a loading ring (see LoadRing in the preview).
     component LoadArc: Shape {
@@ -490,23 +511,65 @@ Rectangle {
         Rectangle {
             id: preview
 
+            // Two images take turns: the one on screen (`front`) and the one
+            // loading or fading in over it (`back`). Only the latest request
+            // (`wanted`) is ever faded in; a fade in progress is finished
+            // before the next load starts, so a fading image is never swapped
+            // out from under its animation (which left the preview black).
             property Image front: imgA
             readonly property Image back: front === imgA ? imgB : imgA
+            // The image the running fade is animating.
+            property Image fading: null
+            property string wanted: ""
+            property bool failed: false
+            // The latest request is a full-resolution upgrade of what's shown.
+            property bool upgrading: false
 
-            function show(url) {
+            // `upgrade`: the same wallpaper at a higher resolution, so no zoom.
+            function show(url, upgrade) {
+                wanted = url || "";
+                failed = false;
+                upgrading = !!upgrade;
+                if (fadeIn.running) {
+                    fadeIn.stop();
+                    settle();
+                }
                 if (!url) {
+                    back.source = "";
                     front.opacity = 0;
                     return;
                 }
-                if (String(front.source) === url && front.status !== Image.Null)
+                if (String(front.source) === url && front.status === Image.Ready)
                     return;
-                back.source = url;
                 back.opacity = 0;
-                back.scale = 1.04;
+                back.scale = upgrade ? 1 : 1.04;
                 back.z = 2;
                 front.z = 1;
+                back.source = url;
                 if (back.status === Image.Ready)
-                    fadeIn.restart();
+                    reveal();
+            }
+
+            function reveal() {
+                if (String(back.source) !== wanted || fadeIn.running)
+                    return;
+                fading = back;
+                fadeIn.restart();
+            }
+
+            // End state of a fade: the faded-in image becomes the front.
+            function settle() {
+                if (!fading)
+                    return;
+                fading.opacity = 1;
+                fading.scale = 1;
+                if (fading !== front) {
+                    const old = front;
+                    front = fading;
+                    old.opacity = 0;
+                    old.source = "";
+                }
+                fading = null;
             }
 
             anchors.horizontalCenter: parent.horizontalCenter
@@ -527,8 +590,12 @@ Rectangle {
                 smooth: true
                 opacity: 0
                 onStatusChanged: {
-                    if (status === Image.Ready && pimg === preview.back)
-                        fadeIn.restart();
+                    if (pimg !== preview.back || String(source) !== preview.wanted)
+                        return;
+                    if (status === Image.Ready)
+                        preview.reveal();
+                    else if (status === Image.Error)
+                        preview.failed = true;
                 }
             }
 
@@ -556,14 +623,9 @@ Rectangle {
 
             ParallelAnimation {
                 id: fadeIn
-                NumberAnimation { target: preview.back; property: "opacity"; to: 1; duration: 260; easing.type: Easing.OutCubic }
-                NumberAnimation { target: preview.back; property: "scale"; to: 1; duration: 420; easing.type: Easing.OutCubic }
-                onFinished: {
-                    const old = preview.front;
-                    preview.front = preview.back;
-                    old.opacity = 0;
-                    old.source = "";
-                }
+                NumberAnimation { target: preview.fading; property: "opacity"; to: 1; duration: 260; easing.type: Easing.OutCubic }
+                NumberAnimation { target: preview.fading; property: "scale"; to: 1; duration: 420; easing.type: Easing.OutCubic }
+                onFinished: preview.settle()
             }
 
             // ── Loading indicators ──────────────────────────────────────────
@@ -616,7 +678,7 @@ Rectangle {
             Rectangle {
                 z: 4
                 anchors.centerIn: parent
-                visible: preview.loading && !preview.frontReady
+                visible: (preview.loading || preview.failed) && !preview.upgrading
                 width: loadCol.implicitWidth + 44
                 height: loadCol.implicitHeight + 36
                 radius: DesktopTheme.rad(18)
@@ -629,6 +691,7 @@ Rectangle {
 
                     LoadRing {
                         anchors.horizontalCenter: parent.horizontalCenter
+                        visible: !preview.failed
                         width: 46
                         height: 46
                         progress: preview.progress
@@ -636,7 +699,7 @@ Rectangle {
 
                     StyledText {
                         anchors.horizontalCenter: parent.horizontalCenter
-                        text: "Loading preview" + (preview.progress > 0.01 ? "  " + Math.round(preview.progress * 100) + "%" : "…")
+                        text: preview.failed ? "Couldn't load this image" : "Loading preview" + (preview.progress > 0.01 ? "  " + Math.round(preview.progress * 100) + "%" : "…")
                         font.pixelSize: 13
                         color: "white"
                     }
@@ -648,7 +711,7 @@ Rectangle {
                 anchors.top: parent.top
                 anchors.right: parent.right
                 anchors.margins: 16
-                visible: preview.loading && preview.frontReady
+                visible: preview.loading && preview.upgrading
                 width: chipRow.implicitWidth + 22
                 height: 32
                 radius: DesktopTheme.rad(16)
@@ -713,7 +776,7 @@ Rectangle {
 
                     Rectangle {
                         anchors.verticalCenter: parent.verticalCenter
-                        visible: !window.online && window.currentName !== "" && window.currentName === window.activeName
+                        visible: window.isActive(window.currentEntry)
                         width: activeLabel.implicitWidth + 16
                         height: 22
                         radius: DesktopTheme.rad(11)
@@ -759,12 +822,37 @@ Rectangle {
 
                     ClickableRect {
                         id: setButton
+
+                        readonly property var entry: window.currentEntry
+                        readonly property bool active: window.isActive(entry)
+                        readonly property bool mine: !!entry && !!entry.item && Wallhaven.downloadingWallpaperId === entry.fileName
+                        readonly property bool busy: Wallhaven.downloadingWallpaperId !== "" && !mine
+                        readonly property bool saved: window.isSaved(entry)
+                        readonly property bool failed: !!entry && !!entry.item && window.lastDownload === entry.fileName
+                            && Wallhaven.downloadError !== "" && Wallhaven.downloadingWallpaperId === ""
+                        readonly property bool idle: !active && !mine && !busy
+
                         width: setRow.implicitWidth + 30
                         height: 38
                         radius: 19
-                        color: setButton.hovered ? Qt.lighter(Colors.primary, 1.08) : Colors.primary
-                        cursorShape: Qt.PointingHandCursor
+                        clip: true
+                        color: active ? Colors.withAlpha("black", 0.45)
+                            : mine || busy ? Colors.withAlpha(Colors.primary, 0.35)
+                            : setButton.hovered ? Qt.lighter(Colors.primary, 1.08) : Colors.primary
+                        cursorShape: idle ? Qt.PointingHandCursor : Qt.ArrowCursor
                         onClicked: window.pickCurrent()
+
+                        // Download progress fills the button.
+                        Rectangle {
+                            visible: setButton.mine
+                            width: parent.width * Wallhaven.downloadProgress
+                            height: parent.height
+                            color: Colors.primary
+
+                            Behavior on width {
+                                NumberAnimation { duration: 200 }
+                            }
+                        }
 
                         Row {
                             id: setRow
@@ -773,17 +861,23 @@ Rectangle {
 
                             Glyph {
                                 anchors.verticalCenter: parent.verticalCenter
-                                text: window.online ? "download" : "check"
+                                text: setButton.active ? "check_circle" : setButton.mine || setButton.busy ? "downloading"
+                                    : setButton.failed ? "refresh" : setButton.saved ? "check" : "download"
+                                filled: setButton.active
                                 font.pixelSize: 18
-                                color: Colors.on_primary
+                                color: setButton.active ? Colors.primary : Colors.on_primary
                             }
 
                             StyledText {
                                 anchors.verticalCenter: parent.verticalCenter
-                                text: window.downloading ? "Downloading…" : window.online ? "Download & set" : "Set wallpaper"
+                                text: setButton.active ? "Current wallpaper"
+                                    : setButton.mine ? "Downloading " + Math.round(Wallhaven.downloadProgress * 100) + "%"
+                                    : setButton.busy ? "Another download running…"
+                                    : setButton.failed ? "Download failed · retry"
+                                    : setButton.saved ? "Set wallpaper" : "Download & set"
                                 font.pixelSize: 13
                                 font.weight: Font.DemiBold
-                                color: Colors.on_primary
+                                color: setButton.active ? "white" : Colors.on_primary
                             }
                         }
                     }
@@ -894,9 +988,38 @@ Rectangle {
                         smooth: true
                     }
 
+                    // Wallhaven results already in ~/Pictures/wallpapers.
+                    Rectangle {
+                        visible: !!thumb.modelData.item && window.isSaved(thumb.modelData)
+                        anchors.right: parent.right
+                        anchors.bottom: parent.bottom
+                        anchors.margins: 6
+                        width: 20
+                        height: 20
+                        radius: DesktopTheme.rad(10)
+                        color: Colors.withAlpha("black", 0.55)
+
+                        Glyph {
+                            anchors.centerIn: parent
+                            text: "download_done"
+                            font.pixelSize: 14
+                            color: "white"
+                        }
+                    }
+
+                    // Downloading this one: a bar along the bottom.
+                    Rectangle {
+                        visible: !!thumb.modelData.item && Wallhaven.downloadingWallpaperId === thumb.modelData.fileName
+                        anchors.left: parent.left
+                        anchors.bottom: parent.bottom
+                        width: parent.width * Wallhaven.downloadProgress
+                        height: 4
+                        color: Colors.primary
+                    }
+
                     // The wallpaper on screen now.
                     Rectangle {
-                        visible: thumb.modelData.fileName === window.activeName
+                        visible: window.isActive(thumb.modelData)
                         anchors.left: parent.left
                         anchors.bottom: parent.bottom
                         anchors.margins: 7
@@ -954,7 +1077,7 @@ Rectangle {
 
         StyledText {
             anchors.horizontalCenter: parent.horizontalCenter
-            text: window.online ? "←→ browse · Enter or click to download & set · / search · Tab local · Esc close"
+            text: window.online ? "←→ browse · Enter to download & set (keep browsing while it downloads) · / search · Tab local · Esc close"
                 : "←→ browse · Enter or click to set · double-click a thumbnail · F favourite · Tab next source · Esc close"
             font.pixelSize: 12
             color: Colors.withAlpha(Colors.on_surface, 0.7)

@@ -36,6 +36,29 @@ PACMAN_PKGS=(
 AUR_PKGS=(ttf-material-symbols-variable-git)
 EXTRA_PKGS=(ollama github-cli)
 
+# Type for the Art Deco, Cathedral, Broadsheet and Wasteland desktop themes
+# (Google Fonts, OFL/Apache), fetched into ~/.local/share/fonts when missing.
+THEME_FONTS=(
+    ofl/limelight/Limelight-Regular.ttf
+    ofl/poiretone/PoiretOne-Regular.ttf
+    "ofl/josefinsans/JosefinSans[wght].ttf"
+    "ofl/josefinsans/JosefinSans-Italic[wght].ttf"
+    ofl/unifrakturmaguntia/UnifrakturMaguntia-Book.ttf
+    "ofl/grenzegotisch/GrenzeGotisch[wght].ttf"
+    "ofl/cinzel/Cinzel[wght].ttf"
+    "ofl/alegreya/Alegreya[wght].ttf"
+    "ofl/alegreya/Alegreya-Italic[wght].ttf"
+    "ofl/playfairdisplay/PlayfairDisplay[wght].ttf"
+    "ofl/playfairdisplay/PlayfairDisplay-Italic[wght].ttf"
+    ofl/oldstandardtt/OldStandard-{Regular,Bold,Italic}.ttf
+    ofl/anton/Anton-Regular.ttf
+    ofl/stardosstencil/StardosStencil-{Regular,Bold}.ttf
+    "ofl/bigshouldersstencil/BigShouldersStencil[opsz,wght].ttf"
+    ofl/barlowcondensed/BarlowCondensed-{Regular,Medium,SemiBold,Bold}.ttf
+    ofl/barlowsemicondensed/BarlowSemiCondensed-{Regular,Medium,SemiBold,Bold,Italic}.ttf
+    apache/specialelite/SpecialElite-Regular.ttf
+)
+
 # venv path : pip packages (paths are hardcoded in services/{Anime,Manga,Novel}.qml)
 VENVS=(
     "$HOME/ani-env:flask requests"
@@ -90,6 +113,28 @@ install_packages() {
     else
         warn "no AUR helper (paru/yay) found; install manually: ${AUR_PKGS[*]}"
     fi
+}
+
+install_theme_fonts() {
+    local dir="$HOME/.local/share/fonts/quickshell-themes"
+    local base=https://raw.githubusercontent.com/google/fonts/main
+    local f name url fetched=0
+    mkdir -p "$dir"
+    for f in "${THEME_FONTS[@]}"; do
+        name=${f##*/}
+        [[ -s $dir/$name ]] && continue
+        url=${f//\[/%5B}
+        url=${url//\]/%5D}
+        info "Fetching font $name"
+        if curl -fsSL -o "$dir/$name" "$base/$url"; then
+            fetched=1
+        else
+            rm -f "$dir/$name"
+            warn "couldn't fetch $name; the desktop themes that use it fall back to other type"
+        fi
+    done
+    ((fetched)) && fc-cache -f "$dir" >/dev/null
+    return 0
 }
 
 install_config() {
@@ -241,6 +286,7 @@ EOF
 confirm "Proceed?" || exit 1
 
 ((DEPS)) && install_packages
+((DEPS)) && install_theme_fonts
 install_config
 install_helpers
 ((HYPR)) && install_hypr

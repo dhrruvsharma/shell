@@ -42,7 +42,9 @@ Singleton {
             "on-primary": Colors.on_primary, "primary-container": Colors.primary_container,
             "on-primary-container": Colors.on_primary_container, "tertiary": Colors.tertiary,
             "on-tertiary": Colors.on_tertiary, "outline": Colors.outline, "outline-variant": Colors.outline_variant,
-            "error": Colors.error
+            "error": Colors.error,
+            // The desktop theme's accents as it tones them (neon, muted...).
+            "theme-accent": DesktopTheme.accent, "theme-accent2": DesktopTheme.accent2
         };
         let css = "/* Wallpaper colours for Firefox, written by Quickshell (services/FirefoxTheme.qml). */\n:root {\n";
         for (const k in roles)

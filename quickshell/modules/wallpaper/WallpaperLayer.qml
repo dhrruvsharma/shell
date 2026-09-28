@@ -12,7 +12,9 @@ import qs.services as Services
 //
 // Two images take turns: the new wallpaper loads into the hidden one, the
 // theme's transition (shaders/wallpaper_transition.frag) runs from the shown
-// one to it, then they swap. Idle, it is just an image.
+// one to it, then they swap. Idle, it is just an image. A theme layer that
+// reworks the wallpaper itself (Broadsheet's halftone) gets a texture of
+// all this, transitions included, which exists only while it's wanted.
 Scope {
     Variants {
         model: Quickshell.screens
@@ -23,7 +25,7 @@ Scope {
             required property ShellScreen modelData
 
             // Transition per desktop theme (see the shader).
-            readonly property var modes: ({ "": 0, hud: 1, terminal: 2, cosmos: 3, zen: 4, xianxia: 5 })
+            readonly property var modes: ({ "": 0, hud: 1, terminal: 2, cosmos: 3, zen: 4, xianxia: 5, cyberpunk: 6, wabisabi: 7, artdeco: 8, gothic: 9, newspaper: 10, wasteland: 11 })
             readonly property int mode: modes[Services.DesktopTheme.enabled ? Services.DesktopTheme.theme : ""] ?? 0
 
             property Image front: imgA
@@ -57,7 +59,7 @@ Scope {
             function start() {
                 waiting = false;
                 progress = 0;
-                anim.duration = mode === 4 ? 1500 : mode === 1 ? 1300 : 1100;
+                anim.duration = ({ 1: 1300, 4: 1500, 6: 950, 7: 1400, 8: 1400, 9: 1500, 10: 1600, 11: 1500 })[mode] ?? 1100;
                 anim.start();
             }
 
@@ -114,31 +116,46 @@ Scope {
                 }
             }
 
-            Wall {
-                id: imgA
-                z: win.front === imgA ? 1 : 0
-            }
-
-            Wall {
-                id: imgB
-                z: win.front === imgB ? 1 : 0
-            }
-
-            ShaderEffect {
+            // The wallpaper as drawn: both images and the transition.
+            Item {
+                id: stack
                 anchors.fill: parent
-                z: 2
-                visible: anim.running
 
-                property var fromTex: win.front
-                property var toTex: win.back
-                property real progress: win.progress
-                property real mode: win.mode
-                property real aspect: width / Math.max(1, height)
-                property color edgeColor: Colors.primary
-                property vector4d fromRect: win.cropRect(win.front)
-                property vector4d toRect: win.cropRect(win.back)
+                Wall {
+                    id: imgA
+                    z: win.front === imgA ? 1 : 0
+                }
 
-                fragmentShader: Qt.resolvedUrl("../../shaders/wallpaper_transition.frag.qsb")
+                Wall {
+                    id: imgB
+                    z: win.front === imgB ? 1 : 0
+                }
+
+                ShaderEffect {
+                    anchors.fill: parent
+                    z: 2
+                    visible: anim.running
+
+                    property var fromTex: win.front
+                    property var toTex: win.back
+                    property real progress: win.progress
+                    property real mode: win.mode
+                    property real aspect: width / Math.max(1, height)
+                    property color edgeColor: Services.DesktopTheme.accent
+                    property vector4d fromRect: win.cropRect(win.front)
+                    property vector4d toRect: win.cropRect(win.back)
+
+                    fragmentShader: Qt.resolvedUrl("../../shaders/wallpaper_transition.frag.qsb")
+                }
+            }
+
+            // Only when the theme layer reworks the wallpaper.
+            ShaderEffectSource {
+                id: stackTexture
+                width: win.width
+                height: win.height
+                visible: false
+                sourceItem: (themeLoader.item as ThemeLayer)?.usesWallpaper ? stack : null
             }
 
             NumberAnimation {
@@ -152,10 +169,13 @@ Scope {
             }
 
             Loader {
+                id: themeLoader
                 anchors.fill: parent
                 z: 3
                 active: Services.DesktopTheme.enabled
-                sourceComponent: ThemeLayer {}
+                sourceComponent: ThemeLayer {
+                    wallpaper: stackTexture
+                }
             }
         }
     }

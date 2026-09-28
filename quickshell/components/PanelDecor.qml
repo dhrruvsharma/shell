@@ -1,5 +1,6 @@
 pragma ComponentBehavior: Bound
 import QtQuick
+import QtQuick.Shapes
 import qs.colors
 import qs.services as Services
 
@@ -8,28 +9,39 @@ import qs.services as Services
 // it never takes input. HUD: accent hairline and corner brackets. Mainframe:
 // console border, faint scanlines and a title tab. Astral: hairline with a
 // glow along the top. Still: nothing. Cave Abode: double border and a seal.
+// Neon Noir: neon hairline, a duotone rail along the top, corner tabs and a
+// title tag. Wabi-sabi: a quiet hairline and kintsugi seams running in from
+// the rim (short enough to stay in the margins). Art Deco: a double gold
+// rule stepped in at the corners and a sunburst at the head. Cathedral: a
+// cusped jewel line lined with lead, and a quatrefoil. Broadsheet: a heavy
+// and a thin rule under the head, the title as a section flag. Wasteland:
+// rivets, a length of hazard tape and the title on masking tape.
 Item {
     id: decor
 
     property real radius: 0
-    // Mainframe's tab; empty for none.
+    // Mainframe's tab and Neon Noir's tag; empty for none.
     property string title: ""
     property string seal: "印"
 
     readonly property string shape: Services.DesktopTheme.look.shape
-    readonly property color accent: shape === "seal" ? Colors.tertiary : Colors.primary
+    readonly property color accent: shape === "seal" ? Colors.tertiary : Services.DesktopTheme.accent
+    readonly property color accent2: Services.DesktopTheme.accent2
+    readonly property color gold: "#c29a48"
 
     anchors.fill: parent
     visible: Services.DesktopTheme.enabled && shape !== "soft"
     z: 1000
 
-    // Hairline border (all but Still).
+    // Hairline border (all but Still; Art Deco and Cathedral draw their own).
     Rectangle {
         anchors.fill: parent
+        visible: decor.shape !== "deco" && decor.shape !== "cusp"
         radius: decor.radius
         color: "transparent"
         border.width: 1
-        border.color: Colors.withAlpha(decor.accent, decor.shape === "square" ? 0.5 : decor.shape === "seal" ? 0.55 : 0.32)
+        border.color: decor.shape === "print" ? Colors.withAlpha(decor.accent2, 0.45)
+            : Colors.withAlpha(decor.accent, decor.shape === "square" ? 0.5 : decor.shape === "seal" ? 0.55 : decor.shape === "neon" ? 0.6 : decor.shape === "pebble" ? 0.28 : decor.shape === "plate" ? 0.45 : 0.32)
     }
 
     // HUD: corner brackets.
@@ -141,6 +153,295 @@ Item {
             font.pixelSize: 11
             font.weight: Font.Bold
             color: Colors.on_tertiary
+        }
+    }
+
+    // Neon Noir: a rail of light along the top, one neon fading into the
+    // other, solid tabs at two corners, and the title on a hanging tag.
+    Item {
+        anchors.fill: parent
+        visible: decor.shape === "neon"
+
+        Rectangle {
+            width: parent.width
+            height: 2
+            gradient: Gradient {
+                orientation: Gradient.Horizontal
+                GradientStop { position: 0; color: decor.accent }
+                GradientStop { position: 0.55; color: Colors.withAlpha(decor.accent, 0.25) }
+                GradientStop { position: 1; color: decor.accent2 }
+            }
+        }
+
+        Rectangle {
+            x: 14
+            y: 2
+            width: 28
+            height: 3
+            color: decor.accent
+        }
+
+        Rectangle {
+            x: parent.width - 5
+            y: parent.height - 34
+            width: 3
+            height: 26
+            color: decor.accent2
+        }
+
+        Rectangle {
+            visible: decor.title.length > 0
+            x: parent.width - width - 22
+            y: 2
+            width: tagText.implicitWidth + 16
+            height: 17
+            color: decor.accent
+
+            Text {
+                id: tagText
+                anchors.centerIn: parent
+                text: "// " + decor.title.toUpperCase()
+                font.family: "Fragile Bombers"
+                font.pixelSize: 13
+                font.letterSpacing: 1
+                color: "#07080c"
+            }
+        }
+    }
+
+    // Wabi-sabi: cracks mended with gold, short enough to stay in the
+    // panel's margin.
+    Shape {
+        anchors.fill: parent
+        visible: decor.shape === "pebble"
+        preferredRendererType: Shape.CurveRenderer
+
+        component Seam: ShapePath {
+            fillColor: "transparent"
+            strokeColor: Colors.withAlpha(decor.gold, 0.9)
+            strokeWidth: 1.5
+            capStyle: ShapePath.RoundCap
+            joinStyle: ShapePath.RoundJoin
+        }
+
+        Seam {
+            startX: decor.width * 0.72
+            startY: 0
+            PathLine { x: decor.width * 0.72 + 4; y: 5 }
+            PathLine { x: decor.width * 0.72 + 2; y: 9 }
+            PathLine { x: decor.width * 0.72 + 9; y: 13 }
+            PathLine { x: decor.width * 0.72 + 8; y: 17 }
+        }
+
+        Seam {
+            startX: decor.width * 0.72 + 4
+            startY: 5
+            PathLine { x: decor.width * 0.72 + 12; y: 6 }
+            PathLine { x: decor.width * 0.72 + 15; y: 10 }
+        }
+
+        Seam {
+            startX: 0
+            startY: decor.height * 0.62
+            PathLine { x: 5; y: decor.height * 0.62 + 3 }
+            PathLine { x: 8; y: decor.height * 0.62 + 1 }
+            PathLine { x: 13; y: decor.height * 0.62 + 5 }
+        }
+
+    }
+
+    // Art Deco: a double gold rule stepped in at the corners, and a sunburst
+    // fanning down from the middle of the top edge.
+    DecoFrame {
+        visible: decor.shape === "deco"
+        cut: 6
+        steps: 2
+        fill: "transparent"
+        stroke: Colors.withAlpha(decor.accent, 0.75)
+        gap: 5
+        innerStroke: Colors.withAlpha(decor.accent, 0.3)
+    }
+
+    Shape {
+        visible: decor.shape === "deco"
+        x: (decor.width - width) / 2
+        y: 0.5
+        width: 46
+        height: 17
+        preferredRendererType: Shape.CurveRenderer
+
+        ShapePath {
+            fillColor: "transparent"
+            strokeColor: Colors.withAlpha(decor.accent, 0.75)
+            strokeWidth: 1
+            capStyle: ShapePath.FlatCap
+
+            PathMultiline {
+                paths: {
+                    const out = [];
+                    for (let i = 0; i < 11; i++) {
+                        const a = (15 + i * 15) * Math.PI / 180;
+                        const r1 = i % 2 === 0 ? 16 : 11;
+                        out.push([Qt.point(23 + Math.cos(a) * 7.5, Math.sin(a) * 7.5), Qt.point(23 + Math.cos(a) * r1, Math.sin(a) * r1)]);
+                    }
+                    return out;
+                }
+            }
+        }
+
+        ShapePath {
+            fillColor: decor.accent
+            strokeColor: "transparent"
+
+            PathAngleArc {
+                centerX: 23
+                centerY: 0
+                radiusX: 5.5
+                radiusY: 5.5
+                startAngle: 0
+                sweepAngle: 180
+            }
+        }
+    }
+
+    // Cathedral: a cusped line in the theme's glass, lined with lead, and a
+    // quatrefoil at the head.
+    CuspFrame {
+        visible: decor.shape === "cusp"
+        cut: 12
+        fill: "transparent"
+        stroke: Colors.withAlpha(decor.accent, 0.6)
+        gap: 4
+        innerStroke: Colors.withAlpha(decor.accent2, 0.35)
+    }
+
+    Shape {
+        visible: decor.shape === "cusp"
+        x: (decor.width - width) / 2
+        y: 4
+        width: 16
+        height: 16
+        preferredRendererType: Shape.CurveRenderer
+
+        component Foil: PathAngleArc {
+            radiusX: 3.6
+            radiusY: 3.6
+            startAngle: 0
+            sweepAngle: 360
+        }
+
+        ShapePath {
+            fillColor: Colors.withAlpha(decor.accent2, 0.25)
+            strokeColor: Colors.withAlpha(decor.accent, 0.85)
+            strokeWidth: 1
+
+            PathMove { x: 11.6; y: 4 }
+            Foil { centerX: 8; centerY: 4 }
+            PathMove { x: 15.6; y: 8 }
+            Foil { centerX: 12; centerY: 8 }
+            PathMove { x: 11.6; y: 12 }
+            Foil { centerX: 8; centerY: 12 }
+            PathMove { x: 7.6; y: 8 }
+            Foil { centerX: 4; centerY: 8 }
+        }
+    }
+
+    // Broadsheet: a heavy rule and a thin one under the head, like a
+    // masthead, a thin one at the foot, and the title as a section flag.
+    Item {
+        anchors.fill: parent
+        visible: decor.shape === "print"
+
+        Rectangle {
+            x: 12
+            y: 8
+            width: parent.width - 24
+            height: 3
+            color: Colors.withAlpha(decor.accent2, 0.8)
+        }
+
+        Rectangle {
+            x: 12
+            y: 13
+            width: parent.width - 24
+            height: 1
+            color: Colors.withAlpha(decor.accent2, 0.6)
+        }
+
+        Rectangle {
+            x: 12
+            y: parent.height - 9
+            width: parent.width - 24
+            height: 1
+            color: Colors.withAlpha(decor.accent2, 0.45)
+        }
+
+        Rectangle {
+            visible: decor.title.length > 0
+            anchors.horizontalCenter: parent.horizontalCenter
+            y: 3
+            width: flagText.implicitWidth + 16
+            height: 15
+            color: decor.accent2
+
+            Text {
+                id: flagText
+                anchors.centerIn: parent
+                text: decor.title
+                font.family: "Old Standard TT"
+                font.pixelSize: 11
+                font.weight: Font.Bold
+                font.capitalization: Font.SmallCaps
+                font.letterSpacing: 1
+                color: Colors.surface_container_lowest
+            }
+        }
+    }
+
+    // Wasteland: bolted at the corners, a length of hazard tape along the
+    // top and the title on a strip of masking tape.
+    Item {
+        anchors.fill: parent
+        visible: decor.shape === "plate"
+
+        Repeater {
+            model: 4
+
+            Rivet {
+                required property int index
+                size: 6
+                x: index % 2 === 0 ? 6 : decor.width - width - 6
+                y: index < 2 ? 6 : decor.height - height - 6
+            }
+        }
+
+        HazardStripes {
+            x: 26
+            width: Math.min(150, parent.width * 0.26)
+            height: 5
+            stripe: 5
+            colorA: decor.accent2
+            opacity: 0.9
+        }
+
+        Rectangle {
+            visible: decor.title.length > 0
+            x: parent.width - width - 34
+            y: 4
+            rotation: -2
+            width: tapeText.implicitWidth + 16
+            height: 17
+            color: "#d6c6a0"
+            opacity: 0.93
+
+            Text {
+                id: tapeText
+                anchors.centerIn: parent
+                text: decor.title.toUpperCase()
+                font.family: "Special Elite"
+                font.pixelSize: 11
+                color: "#2a241c"
+            }
         }
     }
 }

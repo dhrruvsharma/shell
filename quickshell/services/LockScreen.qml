@@ -62,6 +62,60 @@ Singleton {
             source: Qt.resolvedUrl("../modules/lock/themes/zen/ZenSurface.qml"),
             introMs: 900, outroMs: 520, rewardBaseMs: 280, rewardLevelUpMs: 0, rewardAchievementMs: 0,
             ambient: false
+        },
+        {
+            id: "cyberpunk",
+            name: "Black ICE",
+            tagline: "Cyberpunk · 攻性防壁",
+            description: "Your deck behind black ICE in a rain-slick neon city. The desktop glitches out, your passcode is a breach, wrong ones raise the trace, and getting in pays street cred.",
+            source: Qt.resolvedUrl("../modules/lock/themes/cyberpunk/CyberpunkSurface.qml"),
+            introMs: 1250, outroMs: 950, rewardBaseMs: 1350, rewardLevelUpMs: 900, rewardAchievementMs: 450,
+            ambient: true
+        },
+        {
+            id: "wabisabi",
+            name: "Ensō",
+            tagline: "Wabi-sabi · 円相",
+            description: "The desktop yellows into old washi paper. Each keystroke moves the brush around an ensō; mistakes crack it, and coming home mends the cracks with gold.",
+            source: Qt.resolvedUrl("../modules/lock/themes/wabisabi/WabisabiSurface.qml"),
+            introMs: 1500, outroMs: 1100, rewardBaseMs: 1350, rewardLevelUpMs: 850, rewardAchievementMs: 400,
+            ambient: true
+        },
+        {
+            id: "artdeco",
+            name: "Express Elevator",
+            tagline: "Art Deco · Going up",
+            description: "A 1920s skyscraper's lift: gold-and-lacquer doors engraved with your wallpaper slide shut. Each keystroke takes you up a floor; a wrong floor drops you to the lobby, and the right one rings the bell for the penthouse.",
+            source: Qt.resolvedUrl("../modules/lock/themes/artdeco/ArtdecoSurface.qml"),
+            introMs: 1400, outroMs: 1100, rewardBaseMs: 1500, rewardLevelUpMs: 800, rewardAchievementMs: 400,
+            ambient: false
+        },
+        {
+            id: "gothic",
+            name: "Rose Window",
+            tagline: "Cathedral · Fenestra rosea",
+            description: "The desktop turns to leaded glass and falls away into a candlelit nave. Each keystroke lights a pane of a rose window glazed in your wallpaper's colours; a wrong one cracks the glass and snuffs a candle, and coming home floods it with light.",
+            source: Qt.resolvedUrl("../modules/lock/themes/gothic/GothicSurface.qml"),
+            introMs: 1450, outroMs: 1150, rewardBaseMs: 1500, rewardLevelUpMs: 850, rewardAchievementMs: 400,
+            ambient: true
+        },
+        {
+            id: "newspaper",
+            name: "Extra! Extra!",
+            tagline: "Broadsheet · Stop the press",
+            description: "Your desktop becomes the front-page photograph of your own paper. The passcode fills today's crossword, wrong ones print corrections, too many halt the presses, and getting in spins an EXTRA edition onto the screen.",
+            source: Qt.resolvedUrl("../modules/lock/themes/newspaper/NewspaperSurface.qml"),
+            introMs: 1300, outroMs: 1150, rewardBaseMs: 1600, rewardLevelUpMs: 800, rewardAchievementMs: 400,
+            ambient: false
+        },
+        {
+            id: "wasteland",
+            name: "Blast Door",
+            tagline: "Wasteland · Bunker 7",
+            description: "A rusted blast shutter slams down over the desktop in a cloud of dust. Each keystroke lights a code lamp; wrong codes rattle the door and push the Geiger counter up, and the right one rolls the shutter back up.",
+            source: Qt.resolvedUrl("../modules/lock/themes/wasteland/WastelandSurface.qml"),
+            introMs: 1250, outroMs: 1100, rewardBaseMs: 1450, rewardLevelUpMs: 850, rewardAchievementMs: 400,
+            ambient: false
         }
     ]
 

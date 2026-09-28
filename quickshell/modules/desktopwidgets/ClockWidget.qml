@@ -20,7 +20,7 @@ Item {
 
     Loader {
         id: face
-        sourceComponent: ({ hud: hud, terminal: terminal, cosmos: cosmos, zen: zen, xianxia: xianxia })[root.themeId] ?? plain
+        sourceComponent: ({ hud: hud, terminal: terminal, cosmos: cosmos, zen: zen, xianxia: xianxia, cyberpunk: neon, wabisabi: wabi, artdeco: deco, gothic: gothic, newspaper: broadsheet, wasteland: wasteland })[root.themeId] ?? plain
     }
 
     Component {
@@ -46,6 +46,36 @@ Item {
     Component {
         id: xianxia
         XianxiaClock { now: clock.date }
+    }
+
+    Component {
+        id: neon
+        NeonClock { now: clock.date }
+    }
+
+    Component {
+        id: wabi
+        WabiClock { now: clock.date }
+    }
+
+    Component {
+        id: deco
+        DecoClock { now: clock.date }
+    }
+
+    Component {
+        id: gothic
+        GothicClock { now: clock.date }
+    }
+
+    Component {
+        id: broadsheet
+        BroadsheetClock { now: clock.date }
+    }
+
+    Component {
+        id: wasteland
+        WastelandClock { now: clock.date }
     }
 
     Component {

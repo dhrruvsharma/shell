@@ -34,17 +34,25 @@ Rectangle {
         changeWorkspace(activeWs + delta)
     }
 
-    // Desktop themes restyle the capsule and pips (look.shape); the HUD
-    // theme's is chamfered with square bars and diamond pips.
+    // Desktop themes restyle the capsule and pips (look.shape): the HUD
+    // theme's is chamfered with square bars and diamond pips, Neon Noir's
+    // has a cut corner and bars for pips, Wabi-sabi's is a pebble with
+    // uneven dots and empty rings.
     readonly property var look: Services.DesktopTheme.look
     readonly property bool hud: look.shape === "chamfer"
+    readonly property bool neon: look.shape === "neon"
+    readonly property bool pebble: look.shape === "pebble"
     readonly property bool squarePips: look.shape === "chamfer" || look.shape === "square"
 
     Layout.preferredHeight: 26
     Layout.preferredWidth: visibleCount * 26 + (visibleCount - 1) * 4 + 4
-    color: hud ? "transparent" : Colors.surface_container
+    color: hud || neon ? "transparent" : Colors.surface_container
     radius: Services.DesktopTheme.radius(look, height / 2, height)
-    border.width: hud ? 0 : look.border
+    topLeftRadius: Services.DesktopTheme.corner(look, radius, 0)
+    topRightRadius: Services.DesktopTheme.corner(look, radius, 1)
+    bottomRightRadius: Services.DesktopTheme.corner(look, radius, 2)
+    bottomLeftRadius: Services.DesktopTheme.corner(look, radius, 3)
+    border.width: hud || neon ? 0 : look.border
     border.color: Services.DesktopTheme.borderColor(look)
     clip: true
 
@@ -52,6 +60,13 @@ Rectangle {
         visible: wsContainer.hud
         cut: 7
         fill: Colors.surface_container
+    }
+
+    NeonFrame {
+        visible: wsContainer.neon
+        cut: 7
+        fill: Colors.surface_container
+        glow: 0.4
     }
 
     ListView {
@@ -110,6 +125,10 @@ Rectangle {
                 Rectangle {
                     height: 26
                     radius: Services.DesktopTheme.radius(wsContainer.look, 14, height)
+                    topLeftRadius: Services.DesktopTheme.corner(wsContainer.look, radius, 0)
+                    topRightRadius: Services.DesktopTheme.corner(wsContainer.look, radius, 1)
+                    bottomRightRadius: Services.DesktopTheme.corner(wsContainer.look, radius, 2)
+                    bottomLeftRadius: Services.DesktopTheme.corner(wsContainer.look, radius, 3)
                     opacity: 0.8
                     color: Colors.background
 
@@ -128,8 +147,12 @@ Rectangle {
                 width: 26
                 height: 26
                 radius: Services.DesktopTheme.radius(wsContainer.look, 13, height)
+                topLeftRadius: Services.DesktopTheme.corner(wsContainer.look, radius, 0)
+                topRightRadius: Services.DesktopTheme.corner(wsContainer.look, radius, 1)
+                bottomRightRadius: Services.DesktopTheme.corner(wsContainer.look, radius, 2)
+                bottomLeftRadius: Services.DesktopTheme.corner(wsContainer.look, radius, 3)
 
-                color: Colors.primary
+                color: Services.DesktopTheme.accent
 
                 Behavior on x { NumberAnimation { duration: 350; easing.type: Easing.OutSine } }
             }
@@ -153,11 +176,15 @@ Rectangle {
                         Rectangle {
                             visible: !isActive
                             anchors.centerIn: parent
-                            width: hasWindows ? 6 : 4
-                            height: width
-                            radius: wsContainer.squarePips ? 0 : width / 2
+                            width: wsContainer.neon ? 3 : (hasWindows ? 6 : 4) + (wsContainer.pebble ? [0, 1, -1, 2, 0][index % 5] : 0)
+                            height: wsContainer.neon ? (hasWindows ? 12 : 6) : width
+                            radius: wsContainer.squarePips || wsContainer.neon ? 0 : width / 2
                             rotation: wsContainer.hud ? 45 : 0
-                            color: hasWindows ? Colors.primary : Colors.secondary
+                            color: wsContainer.pebble && !hasWindows ? "transparent"
+                                : wsContainer.neon && !hasWindows ? Colors.withAlpha(Colors.on_surface, 0.35)
+                                : hasWindows ? Services.DesktopTheme.accent : Colors.secondary
+                            border.width: wsContainer.pebble && !hasWindows ? 1 : 0
+                            border.color: Colors.secondary
                         }
 
                         StyledText {

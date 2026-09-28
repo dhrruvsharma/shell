@@ -17,12 +17,13 @@ WidgetFrame {
         width: 360
         text: Services.DesktopWidgets.joke || "…"
         wrapMode: Text.WordWrap
-        font.family: root.st.font
+        // Wasteland's is scrawled on the wall with a typewriter's letters.
+        font.family: root.st.frame === "scrap" ? "Special Elite" : root.st.font
         font.pixelSize: root.st.frame === "bare" ? 16 : 14
-        font.italic: root.st.frame === "scroll" || root.st.frame === "bare"
+        font.italic: ["scroll", "bare", "lancet", "clipping"].includes(root.st.frame)
         font.weight: root.st.frame === "bare" ? Font.Light : Font.Normal
         lineHeight: 1.15
-        color: Colors.on_surface
+        color: root.ink
     }
 
     MouseArea {
@@ -37,7 +38,7 @@ WidgetFrame {
             anchors.verticalCenter: parent.verticalCenter
             text: "autorenew"
             font.pixelSize: 17
-            color: parent.containsMouse ? Colors[root.st.accentRole] : Colors.withAlpha(Colors.on_surface, 0.45)
+            color: parent.containsMouse ? root.accent : Colors.withAlpha(root.ink, 0.45)
         }
     }
 }

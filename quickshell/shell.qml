@@ -33,6 +33,7 @@ import qs.modules.updates
 import qs.modules.lockthemes
 import qs.modules.desktoptheme
 import qs.modules.desktopwidgets
+import qs.modules.pet
 
 ShellRoot {
     id: root
@@ -403,6 +404,11 @@ ShellRoot {
             id: topBar
         }
     }
+
+    // The bar pet's hub and speech bubble (the pet itself lives in TopBar).
+    // Both are windows only while they're showing.
+    PetHub {}
+    PetBubble {}
 
     Connections {
         target: mediaPanelLoader.item
@@ -825,4 +831,41 @@ ShellRoot {
         }
     }
 
+    IpcHandler {
+        target: "pet"
+        function toggle(): void {
+            Services.Pet.toggleHub()
+        }
+        function open(): void {
+            if (!Services.Pet.hubOpen)
+                Services.Pet.toggleHub()
+        }
+        function close(): void {
+            Services.Pet.hubOpen = false
+        }
+        function say(text: string): void {
+            Services.Pet.say(text)
+        }
+        function pat(): void {
+            Services.Pet.pat()
+        }
+        function feed(): void {
+            Services.Pet.feed()
+        }
+        function play(): void {
+            Services.Pet.play()
+        }
+        function nap(): void {
+            Services.Pet.nap()
+        }
+        function wake(): void {
+            Services.Pet.act("wake")
+        }
+        function show(): void {
+            Services.Pet.setShown(true)
+        }
+        function hide(): void {
+            Services.Pet.setShown(false)
+        }
+    }
 }

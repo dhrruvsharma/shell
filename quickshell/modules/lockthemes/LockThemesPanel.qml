@@ -24,7 +24,7 @@ import qs.services as Services
 //
 // Keys: Tab switches tabs, Esc closes. Lock screen tab: arrows move,
 // Enter/Space choose, P preview, S shuffle, L lock now. Desktop tab: ←→
-// choose, Enter use, W widgets. Widgets tab: ↑↓ choose, Enter toggle, R reset
+// ↑↓ choose, Enter use, W widgets. Widgets tab: ↑↓ choose, Enter toggle, R reset
 // positions.
 // `qs ipc call lockscreen toggle` (ALT+SHIFT+H), `qs ipc call themes desktop`.
 Item {
@@ -505,7 +505,7 @@ Item {
                         anchors.verticalCenter: parent.verticalCenter
                         text: root.tab === "lock" ? "←→ choose · Enter set · P preview · S shuffle · L lock · Tab desktop"
                             : root.tab === "widgets" ? "↑↓ choose · Enter toggle · R reset · drag to move · Tab lock screens"
-                            : "←→ choose · Enter use · W widgets · Tab widgets · Esc close"
+                            : "←→↑↓ choose · Enter use · W widgets · Tab widgets · Esc close"
                         font.pixelSize: 12
                         color: Colors.on_surface_variant
                     }

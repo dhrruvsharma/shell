@@ -1,0 +1,47 @@
+#version 320 es
+// Screen grade for the Cathedral desktop theme, applied by Hyprland to the
+// whole output (decoration:screen_shader). services/DesktopTheme.qml fills in
+// the @PLACEHOLDERS@ from the theme's glass and writes the result to
+// ~/.cache/quickshell/desktop-theme.frag.
+//
+// Deliberately static: it never reads `time` (the grain is a fixed pattern),
+// so Hyprland keeps its damage tracking and an idle desktop costs nothing.
+
+precision highp float;
+
+in vec2 v_texcoord;
+uniform sampler2D tex;
+out vec4 fragColor;
+
+const vec3 glassA = vec3(@ACCENT@);
+const vec3 glassB = vec3(@ACCENT2@);
+const float strength = @STRENGTH@;
+const float strong = @STRONG@;
+
+float grain(vec2 p) {
+    return fract(52.9829189 * fract(dot(p, vec2(0.06711056, 0.00583715))));
+}
+
+void main() {
+    vec4 c = texture(tex, v_texcoord);
+    float lum = dot(c.rgb, vec3(0.2126, 0.7152, 0.0722));
+
+    // Candlelight in the highlights, cool stone in the shadows.
+    c.rgb = mix(c.rgb, c.rgb * vec3(1.06, 0.97, 0.84), smoothstep(0.45, 1.0, lum) * 0.35 * strength);
+    c.rgb = mix(c.rgb, c.rgb * vec3(0.9, 0.95, 1.06), (1.0 - smoothstep(0.0, 0.4, lum)) * 0.4 * strength);
+
+    // Strong: the nave at dusk, darker, the windows' light pooling in the
+    // midtones (one glass) and the shadows (the other).
+    c.rgb = pow(c.rgb, vec3(1.0 + 0.18 * strong));
+    float mid = 1.0 - abs(lum - 0.5) * 2.0;
+    c.rgb = mix(c.rgb, c.rgb * (0.7 + 0.5 * glassA), mid * 0.12 * strong);
+    c.rgb += glassB * (1.0 - smoothstep(0.0, 0.3, lum)) * 0.035 * strong;
+
+    // The aisles' shadow.
+    vec2 d = v_texcoord - 0.5;
+    float r = length(d * vec2(1.0, 1.15));
+    c.rgb *= 1.0 - smoothstep(0.42, 0.95, r) * (0.2 * strength + 0.1 * strong);
+    c.rgb += (grain(floor(gl_FragCoord.xy)) - 0.5) * 0.025 * strong;
+
+    fragColor = vec4(clamp(c.rgb, 0.0, 1.0), c.a);
+}

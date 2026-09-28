@@ -1,0 +1,34 @@
+/* Wabi-sabi: Mincho type, the wallpaper's accents in muted Edo tones,
+ * surfaces warmed like washi, pebble corners with no two alike, and a
+ * thread of kintsugi gold under the selected tab. */
+:root:root {
+  --qs-accent: var(--qs-theme-accent);
+  --qs-on-accent: #1d1a16;
+  --lwt-accent-color: color-mix(in srgb, var(--qs-bg) 92%, #b08a5a) !important;
+  --lwt-accent-color-inactive: color-mix(in srgb, var(--qs-bg) 92%, #b08a5a) !important;
+  --toolbar-bgcolor: color-mix(in srgb, var(--qs-surface-low) 90%, #c9a878) !important;
+  --toolbar-field-background-color: color-mix(in srgb, var(--qs-surface-high) 90%, #c9a878) !important;
+  --tab-border-radius: 10px 5px 11px 6px !important;
+  --toolbarbutton-border-radius: 9px 5px 10px 6px !important;
+  --border-radius-small: 5px !important;
+  --border-radius-medium: 9px !important;
+  --border-radius-large: 12px !important;
+}
+
+#navigator-toolbox, #sidebar-main, menupopup, panel, .urlbarView {
+  font-family: "Noto Serif CJK JP", "Noto Serif", serif !important;
+}
+
+#urlbar .urlbar-background {
+  border-radius: 12px 6px 14px 8px !important;
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--qs-theme-accent) 35%, transparent) !important;
+}
+
+#urlbar[focused] .urlbar-background {
+  box-shadow: inset 0 0 0 1px var(--qs-theme-accent) !important;
+}
+
+.tab-background:is([selected], [multiselected]) {
+  border-radius: 10px 5px 11px 6px !important;
+  box-shadow: inset 0 -1.5px 0 #c29a48 !important;
+}

@@ -120,6 +120,46 @@
     "subtext": "Toggle Ollama Chat"
   },
   {
+    "text": "qs ipc call pet close",
+    "subtext": "Close Pet"
+  },
+  {
+    "text": "qs ipc call pet feed",
+    "subtext": "Feed Pet"
+  },
+  {
+    "text": "qs ipc call pet hide",
+    "subtext": "Hide Pet"
+  },
+  {
+    "text": "qs ipc call pet nap",
+    "subtext": "Nap Pet"
+  },
+  {
+    "text": "qs ipc call pet open",
+    "subtext": "Open Pet"
+  },
+  {
+    "text": "qs ipc call pet pat",
+    "subtext": "Pat Pet"
+  },
+  {
+    "text": "qs ipc call pet play",
+    "subtext": "Play Pet"
+  },
+  {
+    "text": "qs ipc call pet show",
+    "subtext": "Show Pet"
+  },
+  {
+    "text": "qs ipc call pet toggle",
+    "subtext": "Toggle Pet · SUPER+space"
+  },
+  {
+    "text": "qs ipc call pet wake",
+    "subtext": "Wake Pet"
+  },
+  {
     "text": "qs ipc call powerMenu toggle",
     "subtext": "Toggle Power Menu · SUPER+P"
   },

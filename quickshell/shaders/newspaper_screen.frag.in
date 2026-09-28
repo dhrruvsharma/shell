@@ -1,0 +1,56 @@
+#version 320 es
+// Screen grade for the Broadsheet desktop theme, applied by Hyprland to the
+// whole output (decoration:screen_shader). services/DesktopTheme.qml fills in
+// the @PLACEHOLDERS@ and writes the result to
+// ~/.cache/quickshell/desktop-theme.frag.
+//
+// Deliberately static: it never reads `time` (grain and paper are fixed
+// patterns), so Hyprland keeps its damage tracking and an idle desktop costs
+// nothing.
+
+precision highp float;
+
+in vec2 v_texcoord;
+uniform sampler2D tex;
+out vec4 fragColor;
+
+const float strength = @STRENGTH@;
+const float strong = @STRONG@;
+
+float grain(vec2 p) {
+    return fract(52.9829189 * fract(dot(p, vec2(0.06711056, 0.00583715))));
+}
+
+float hash(vec2 p) {
+    return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453);
+}
+
+float noise(vec2 p) {
+    vec2 i = floor(p);
+    vec2 f = fract(p);
+    vec2 u = f * f * (3.0 - 2.0 * f);
+    return mix(mix(hash(i), hash(i + vec2(1.0, 0.0)), u.x),
+               mix(hash(i + vec2(0.0, 1.0)), hash(i + vec2(1.0, 1.0)), u.x), u.y);
+}
+
+void main() {
+    vec4 c = texture(tex, v_texcoord);
+    float lum = dot(c.rgb, vec3(0.2126, 0.7152, 0.0722));
+    vec3 paper = vec3(0.925, 0.905, 0.855);
+    vec3 ink = vec3(0.106, 0.102, 0.09);
+
+    // Newsprint: softened colour, grey-cream paper in the highlights.
+    c.rgb = mix(c.rgb, vec3(lum), 0.28 * strength);
+    c.rgb = mix(c.rgb, c.rgb * paper, smoothstep(0.4, 1.0, lum) * 0.5 * strength);
+
+    // Strong: yesterday's paper, black ink on newsprint with the shadows
+    // crushed a little, as cheap ink does.
+    float t = smoothstep(0.06, 0.94, lum);
+    c.rgb = mix(c.rgb, mix(ink, paper, t), 0.85 * strong);
+
+    // The paper: an uneven tone and a grain.
+    c.rgb *= 1.0 - (noise(gl_FragCoord.xy / 70.0) - 0.5) * (0.02 + 0.03 * strong);
+    c.rgb += (grain(floor(gl_FragCoord.xy)) - 0.5) * (0.02 + 0.025 * strong);
+
+    fragColor = vec4(clamp(c.rgb, 0.0, 1.0), c.a);
+}

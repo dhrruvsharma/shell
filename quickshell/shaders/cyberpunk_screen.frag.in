@@ -1,0 +1,57 @@
+#version 320 es
+// Screen grade for the Neon Noir desktop theme, applied by Hyprland to the
+// whole output (decoration:screen_shader). services/DesktopTheme.qml fills in
+// the @PLACEHOLDERS@ from the theme's two neons and writes the result to
+// ~/.cache/quickshell/desktop-theme.frag.
+//
+// Deliberately static: it never reads `time` (the grain is a fixed pattern),
+// so Hyprland keeps its damage tracking and an idle desktop costs nothing.
+
+precision highp float;
+
+in vec2 v_texcoord;
+uniform sampler2D tex;
+out vec4 fragColor;
+
+const vec3 accent = vec3(@ACCENT@);
+const vec3 accent2 = vec3(@ACCENT2@);
+const float strength = @STRENGTH@;
+const float strong = @STRONG@;
+
+// Interleaved gradient noise: a stable per-pixel pattern.
+float grain(vec2 p) {
+    return fract(52.9829189 * fract(dot(p, vec2(0.06711056, 0.00583715))));
+}
+
+void main() {
+    vec2 d = v_texcoord - 0.5;
+    float r = length(d * vec2(1.0, 1.1));
+
+    // Chromatic aberration towards the edges only: red and blue part along
+    // the radius (a pixel or so in the corners), the middle stays sharp.
+    vec4 c = texture(tex, v_texcoord);
+    float ca = smoothstep(0.34, 0.8, r) * (0.0006 + 0.0009 * strong);
+    if (ca > 0.0) {
+        vec2 dir = d / max(length(d), 0.0001);
+        c.r = texture(tex, v_texcoord + dir * ca).r;
+        c.b = texture(tex, v_texcoord - dir * ca).b;
+    }
+
+    // Noir bite: a touch more contrast.
+    c.rgb = clamp((c.rgb - 0.5) * (1.0 + 0.05 * strength) + 0.5, 0.0, 1.0);
+
+    // Neon split-toning: the second neon pools in the shadows, the first
+    // tints the highlights.
+    float lum = dot(c.rgb, vec3(0.2126, 0.7152, 0.0722));
+    c.rgb += accent2 * (1.0 - smoothstep(0.0, 0.38, lum)) * 0.045 * strength;
+    c.rgb = mix(c.rgb, c.rgb * (0.6 + 0.5 * accent), smoothstep(0.55, 1.0, lum) * 0.06 * strength);
+
+    // Noir vignette.
+    c.rgb *= 1.0 - smoothstep(0.45, 0.95, r) * 0.2 * strength;
+
+    // Neon grain when strong, leaning to one neon or the other per pixel.
+    float g = grain(floor(gl_FragCoord.xy)) - 0.5;
+    c.rgb += mix(accent2, accent, step(0.0, g)) * abs(g) * 0.06 * strong;
+
+    fragColor = vec4(clamp(c.rgb, 0.0, 1.0), c.a);
+}

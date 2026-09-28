@@ -1,0 +1,42 @@
+/* Cathedral: Alegreya type, the wallpaper's colours as stained glass (the
+ * theme's jewel tones), the address bar and selected tab cusped at the
+ * corners, and the selected tab leaded underneath in both glasses. */
+:root:root {
+  --qs-accent: var(--qs-theme-accent);
+  --qs-on-accent: #0e0c0a;
+  --lwt-accent-color: color-mix(in srgb, var(--qs-bg) 82%, #0e0c0a) !important;
+  --lwt-accent-color-inactive: color-mix(in srgb, var(--qs-bg) 82%, #0e0c0a) !important;
+  --tab-border-radius: 0px !important;
+  --toolbarbutton-border-radius: 0px !important;
+  --border-radius-small: 0px !important;
+  --border-radius-medium: 0px !important;
+  --border-radius-large: 0px !important;
+}
+
+#navigator-toolbox, #sidebar-main, menupopup, panel, .urlbarView {
+  font-family: "Alegreya", "Grenze Gotisch", serif !important;
+}
+
+#urlbar .urlbar-background,
+.tab-background:is([selected], [multiselected]) {
+  border-radius: 0 !important;
+  mask: radial-gradient(circle 7px at 0 0, #0000 98%, #000) top left,
+        radial-gradient(circle 7px at 100% 0, #0000 98%, #000) top right,
+        radial-gradient(circle 7px at 0 100%, #0000 98%, #000) bottom left,
+        radial-gradient(circle 7px at 100% 100%, #0000 98%, #000) bottom right !important;
+  mask-size: 51% 51% !important;
+  mask-repeat: no-repeat !important;
+}
+
+#urlbar .urlbar-background {
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--qs-theme-accent) 45%, transparent) !important;
+}
+
+#urlbar[focused] .urlbar-background {
+  box-shadow: inset 0 0 0 1px var(--qs-theme-accent),
+              inset 0 0 12px color-mix(in srgb, var(--qs-theme-accent) 20%, transparent) !important;
+}
+
+.tab-background:is([selected], [multiselected]) {
+  box-shadow: inset 0 -2px 0 var(--qs-theme-accent), inset 0 -4px 0 var(--qs-theme-accent2) !important;
+}

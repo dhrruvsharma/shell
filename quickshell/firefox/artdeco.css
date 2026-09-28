@@ -1,0 +1,49 @@
+/* Art Deco: Josefin Sans, tab titles in spaced capitals, black lacquer and
+ * gold leaf (the theme's gilt accent); corners stepped in on the address
+ * bar and the selected tab, and a gold double rule under the toolbar. */
+:root:root {
+  --qs-accent: var(--qs-theme-accent);
+  --qs-on-accent: #0d0b08;
+  --lwt-accent-color: color-mix(in srgb, var(--qs-bg) 70%, #0d0b08) !important;
+  --lwt-accent-color-inactive: color-mix(in srgb, var(--qs-bg) 70%, #0d0b08) !important;
+  --toolbar-bgcolor: color-mix(in srgb, var(--qs-surface-low) 75%, #0d0b08) !important;
+  --tab-border-radius: 0px !important;
+  --toolbarbutton-border-radius: 0px !important;
+  --border-radius-small: 0px !important;
+  --border-radius-medium: 0px !important;
+  --border-radius-large: 0px !important;
+  --arrowpanel-border-radius: 0px !important;
+}
+
+#navigator-toolbox, #sidebar-main, menupopup, panel, .urlbarView {
+  font-family: "Josefin Sans", sans-serif !important;
+}
+
+.tab-label {
+  text-transform: uppercase !important;
+  letter-spacing: 0.08em !important;
+}
+
+#navigator-toolbox {
+  border-bottom: 3px double color-mix(in srgb, var(--qs-theme-accent) 70%, transparent) !important;
+}
+
+#urlbar .urlbar-background,
+.tab-background:is([selected], [multiselected]) {
+  border-radius: 0 !important;
+  clip-path: polygon(5px 0, calc(100% - 5px) 0, calc(100% - 5px) 5px, 100% 5px,
+                     100% calc(100% - 5px), calc(100% - 5px) calc(100% - 5px), calc(100% - 5px) 100%,
+                     5px 100%, 5px calc(100% - 5px), 0 calc(100% - 5px), 0 5px, 5px 5px) !important;
+}
+
+#urlbar .urlbar-background {
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--qs-theme-accent) 55%, transparent) !important;
+}
+
+#urlbar[focused] .urlbar-background {
+  box-shadow: inset 0 0 0 1px var(--qs-theme-accent) !important;
+}
+
+.tab-background:is([selected], [multiselected]) {
+  box-shadow: inset 0 -1px 0 var(--qs-theme-accent), inset 0 -4px 0 -2px color-mix(in srgb, var(--qs-theme-accent) 45%, transparent) !important;
+}

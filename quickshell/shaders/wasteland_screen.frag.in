@@ -1,0 +1,49 @@
+#version 320 es
+// Screen grade for the Wasteland desktop theme, applied by Hyprland to the
+// whole output (decoration:screen_shader). services/DesktopTheme.qml fills in
+// the @PLACEHOLDERS@ from the theme's hazard amber and writes the result to
+// ~/.cache/quickshell/desktop-theme.frag.
+//
+// Deliberately static: it never reads `time` (the grit is a fixed pattern),
+// so Hyprland keeps its damage tracking and an idle desktop costs nothing.
+
+precision highp float;
+
+in vec2 v_texcoord;
+uniform sampler2D tex;
+out vec4 fragColor;
+
+const vec3 hazard = vec3(@ACCENT2@);
+const float strength = @STRENGTH@;
+const float strong = @STRONG@;
+
+float grain(vec2 p) {
+    return fract(52.9829189 * fract(dot(p, vec2(0.06711056, 0.00583715))));
+}
+
+void main() {
+    vec4 c = texture(tex, v_texcoord);
+    float lum = dot(c.rgb, vec3(0.2126, 0.7152, 0.0722));
+
+    // Bleach bypass: the picture overlaid with its own greys, so colour
+    // drains and contrast bites.
+    vec3 g = vec3(lum);
+    vec3 over = mix(2.0 * c.rgb * g, 1.0 - 2.0 * (1.0 - c.rgb) * (1.0 - g), step(0.5, g));
+    c.rgb = mix(c.rgb, over, 0.3 * strength + 0.25 * strong);
+    c.rgb = mix(c.rgb, g, 0.1 * strength + 0.12 * strong);
+
+    // Dust in the light: amber highlights, brown instead of black.
+    c.rgb = mix(c.rgb, c.rgb * (0.6 + 0.45 * hazard), smoothstep(0.5, 1.0, lum) * 0.12 * strength);
+    c.rgb += vec3(0.045, 0.03, 0.015) * (1.0 - smoothstep(0.0, 0.35, lum)) * strength;
+
+    // Strong: a rust-orange cast over everything.
+    c.rgb *= mix(vec3(1.0), vec3(1.06, 0.93, 0.78), strong * 0.8);
+
+    // Grit, and the edges darkened.
+    vec2 d = v_texcoord - 0.5;
+    float r = length(d * vec2(1.0, 1.12));
+    c.rgb *= 1.0 - smoothstep(0.45, 0.95, r) * (0.14 * strength + 0.1 * strong);
+    c.rgb += (grain(floor(gl_FragCoord.xy)) - 0.5) * (0.022 + 0.03 * strong);
+
+    fragColor = vec4(clamp(c.rgb, 0.0, 1.0), c.a);
+}

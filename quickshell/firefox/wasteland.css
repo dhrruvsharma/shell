@@ -1,0 +1,45 @@
+/* Wasteland: Barlow Semi Condensed, tab titles in capitals, hazard amber as
+ * the accent, surfaces rusted a little, corners barely softened, and a
+ * strip of hazard tape under the selected tab. */
+:root:root {
+  --qs-accent: var(--qs-theme-accent2);
+  --qs-on-accent: #16120e;
+  --lwt-accent-color: color-mix(in srgb, var(--qs-bg) 82%, #3a2412) !important;
+  --lwt-accent-color-inactive: color-mix(in srgb, var(--qs-bg) 82%, #3a2412) !important;
+  --toolbar-bgcolor: color-mix(in srgb, var(--qs-surface-low) 86%, #3a2412) !important;
+  --tab-border-radius: 2px !important;
+  --toolbarbutton-border-radius: 2px !important;
+  --border-radius-small: 2px !important;
+  --border-radius-medium: 2px !important;
+  --border-radius-large: 3px !important;
+}
+
+#navigator-toolbox, #sidebar-main, menupopup, panel, .urlbarView {
+  font-family: "Barlow Semi Condensed", "Barlow Condensed", sans-serif !important;
+}
+
+.tab-label {
+  text-transform: uppercase !important;
+  letter-spacing: 0.04em !important;
+}
+
+#navigator-toolbox {
+  border-bottom: 1px solid color-mix(in srgb, #8d4b29 70%, transparent) !important;
+}
+
+#urlbar .urlbar-background {
+  border-radius: 2px !important;
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--qs-theme-accent) 50%, transparent) !important;
+}
+
+#urlbar[focused] .urlbar-background {
+  box-shadow: inset 0 0 0 1px var(--qs-theme-accent2) !important;
+}
+
+.tab-background:is([selected], [multiselected]) {
+  border-radius: 2px !important;
+  background-image: repeating-linear-gradient(-45deg, var(--qs-theme-accent2) 0 6px, #16120e 6px 12px) !important;
+  background-size: 100% 3px !important;
+  background-position: bottom !important;
+  background-repeat: no-repeat !important;
+}

@@ -1,0 +1,49 @@
+#version 320 es
+// Screen grade for the Art Deco desktop theme, applied by Hyprland to the
+// whole output (decoration:screen_shader). services/DesktopTheme.qml fills in
+// the @PLACEHOLDERS@ from the theme's gold and jewel and writes the result to
+// ~/.cache/quickshell/desktop-theme.frag.
+//
+// Deliberately static: it never reads `time` (the grain is a fixed pattern),
+// so Hyprland keeps its damage tracking and an idle desktop costs nothing.
+
+precision highp float;
+
+in vec2 v_texcoord;
+uniform sampler2D tex;
+out vec4 fragColor;
+
+const vec3 gold = vec3(@ACCENT@);
+const float strength = @STRENGTH@;
+const float strong = @STRONG@;
+
+float grain(vec2 p) {
+    return fract(52.9829189 * fract(dot(p, vec2(0.06711056, 0.00583715))));
+}
+
+void main() {
+    vec4 c = texture(tex, v_texcoord);
+    float lum = dot(c.rgb, vec3(0.2126, 0.7152, 0.0722));
+
+    // Lacquer: a gentle S-curve deepens the blacks.
+    vec3 s = c.rgb * c.rgb * (3.0 - 2.0 * c.rgb);
+    c.rgb = mix(c.rgb, s, 0.22 * strength);
+
+    // Gilt: a gold sheen in the highlights.
+    c.rgb = mix(c.rgb, c.rgb * (0.55 + 0.6 * gold), smoothstep(0.55, 1.0, lum) * 0.12 * strength);
+
+    // Strong: a black-and-gold poster, colour drained towards a ramp from
+    // lacquer through gold to ivory.
+    vec3 lacquer = vec3(0.05, 0.04, 0.03);
+    vec3 ivory = vec3(0.96, 0.92, 0.82);
+    vec3 ramp = lum < 0.55 ? mix(lacquer, gold * 0.85, lum / 0.55) : mix(gold * 0.85, ivory, (lum - 0.55) / 0.45);
+    c.rgb = mix(c.rgb, ramp, 0.5 * strong);
+
+    // A soft vignette, and a fine grain when strong.
+    vec2 d = v_texcoord - 0.5;
+    float r = length(d * vec2(1.0, 1.1));
+    c.rgb *= 1.0 - smoothstep(0.5, 0.95, r) * 0.18 * strength;
+    c.rgb += (grain(floor(gl_FragCoord.xy)) - 0.5) * 0.025 * strong;
+
+    fragColor = vec4(clamp(c.rgb, 0.0, 1.0), c.a);
+}

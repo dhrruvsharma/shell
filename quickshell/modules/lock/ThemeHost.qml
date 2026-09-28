@@ -9,8 +9,14 @@ import qs.services as Services
 // make the scanner visit the folders; nothing from them is used here. (URL
 // loading stays, so a broken theme falls back instead of breaking the lock.)
 import qs.modules.lock.themes.arcade as ArcadeTheme
+import qs.modules.lock.themes.artdeco as ArtdecoTheme
 import qs.modules.lock.themes.cosmos as CosmosTheme
+import qs.modules.lock.themes.cyberpunk as CyberpunkTheme
+import qs.modules.lock.themes.gothic as GothicTheme
+import qs.modules.lock.themes.newspaper as NewspaperTheme
 import qs.modules.lock.themes.terminal as TerminalTheme
+import qs.modules.lock.themes.wabisabi as WabisabiTheme
+import qs.modules.lock.themes.wasteland as WastelandTheme
 import qs.modules.lock.themes.xianxia as XianxiaTheme
 import qs.modules.lock.themes.zen as ZenTheme
 

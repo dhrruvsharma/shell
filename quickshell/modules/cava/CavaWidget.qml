@@ -39,7 +39,7 @@ Scope {
 
     function resolveAccent(a) {
         if (!a || a.length === 0)
-            return Colors[root.themeStyle.accentRole];
+            return WidgetStyle.accent(root.themeId);
         if (a.charAt(0) === "@")
             return root.roleColor(a.substring(1));
         return a;
@@ -200,14 +200,16 @@ Scope {
                 }
             }
 
-            // The desktop theme's frame behind the spectrum.
+            // The desktop theme's frame behind the spectrum (a lancet's
+            // pointed head sits above the box, so the bars stay inside it).
             WidgetFrame {
                 id: cavaFrame
-                visible: ["chamfer", "console", "glass", "scroll"].includes(root.themeStyle.frame)
+                readonly property real head: root.themeStyle.frame === "lancet" ? archRise : 0
+                visible: ["chamfer", "console", "glass", "scroll", "neon", "washi", "gilt", "lancet", "clipping", "scrap"].includes(root.themeStyle.frame)
                 x: Services.CavaWidget.posX - 12
-                y: Services.CavaWidget.posY - 12 - cavaFrame.tabRoom
+                y: Services.CavaWidget.posY - 12 - cavaFrame.tabRoom - head
                 width: Services.CavaWidget.boxWidth + 24
-                height: Services.CavaWidget.boxHeight + 24 + cavaFrame.tabRoom
+                height: Services.CavaWidget.boxHeight + 24 + cavaFrame.tabRoom + head
                 rotation: Services.CavaWidget.rotation
                 themeId: root.themeId
                 title: root.themeStyle.frame === "console" ? "~ $ cava" : ""

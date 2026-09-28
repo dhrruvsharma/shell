@@ -28,8 +28,8 @@ Item {
     readonly property real _clampedRH: Math.min(root._r, root._halfH)
     readonly property real _clampedRH3: Math.min(root._r, root._thirdH)
 
-    // Square desktop themes (HUD, Mainframe, Cave Abode) swap the bubble for
-    // a box in their style. Round themes keep the bubble.
+    // Square desktop themes (HUD, Mainframe, Cave Abode, Neon Noir) swap the
+    // bubble for a box in their style. Round themes keep the bubble.
     readonly property bool themed: Services.DesktopTheme.controlRadius >= 0
     // The bubble's body runs the full depth of the popout and is inset by
     // the radius only at the ends of the edge(s) it's attached to (where the

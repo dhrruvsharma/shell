@@ -102,7 +102,7 @@ Item {
                     anchors.bottom: parent.bottom
                     width: (cava.width - 23 * 3) / 24
                     height: cava.height * (0.2 + 0.75 * Math.abs(Math.sin(index * 0.9) * Math.cos(index * 0.37)))
-                    color: Colors.withAlpha(Colors.primary, 0.8)
+                    color: Colors.withAlpha(WidgetStyle.accent(root.themeId), 0.8)
                 }
             }
         }

@@ -7,6 +7,19 @@
 //              from a slight zoom (Astral)
 //   4 fade   - a slow crossfade (Still)
 //   5 ink    - the new image bleeds in along fbm ink edges (Cave Abode)
+//   6 glitch - blocks of the new image cut in at random moments, torn
+//              sideways and split into red and blue as they switch (Neon Noir)
+//   7 fusuma - the old image slides away left like a painted sliding door,
+//              wooden stile and round pull included (Wabi-sabi)
+//   8 fan    - the new image fans open ray by ray from the middle of the
+//              bottom edge, gold along the rays' edges (Art Deco)
+//   9 glass  - leaded panes turn over one at a time, each flashing with
+//              coloured light, the lead showing while it happens (Cathedral)
+//  10 press  - six columns set top to bottom one after another, each
+//              front a band of growing halftone dots, rules between them
+//              (Broadsheet)
+//  11 dust   - a dust storm blows through from the left: the old picture
+//              is lost in it, the new one clears behind (Wasteland)
 // Only drawn while a transition runs; the wallpaper is a plain Image otherwise.
 
 layout(location = 0) in vec2 qt_TexCoord0;
@@ -66,6 +79,8 @@ void main() {
     vec4 a = texture(fromTex, ubuf.fromRect.xy + uv * ubuf.fromRect.zw);
     vec4 b = texture(toTex, ubuf.toRect.xy + toUv * ubuf.toRect.zw);
     vec3 edge = vec3(0.0);
+    // A veil laid over the result (rgb, amount): Wasteland's dust.
+    vec4 veil = vec4(0.0);
     float m;
 
     if (mode == 1) {
@@ -97,10 +112,119 @@ void main() {
         m = smoothstep(n - 0.06, n + 0.02, front);
         float band = smoothstep(n - 0.14, n - 0.04, front) * (1.0 - m);
         a.rgb *= 1.0 - band * 0.85;
+    } else if (mode == 6) {
+        vec2 block = vec2(floor(uv.x * 7.0), floor(uv.y * 28.0));
+        float at = 0.06 + 0.78 * hash(block * vec2(0.37, 1.0));
+        float spike = exp(-abs(p - at) * 22.0) * step(p, 0.999);
+        float tear = (hash(vec2(block.y, 7.0)) - 0.5) * 0.14 * spike;
+        vec2 suv = vec2(fract(uv.x + tear), uv.y);
+        float split = 0.014 * spike;
+        a = texture(fromTex, ubuf.fromRect.xy + suv * ubuf.fromRect.zw);
+        b = texture(toTex, ubuf.toRect.xy + suv * ubuf.toRect.zw);
+        b.r = texture(toTex, ubuf.toRect.xy + vec2(fract(suv.x + split), suv.y) * ubuf.toRect.zw).r;
+        b.b = texture(toTex, ubuf.toRect.xy + vec2(fract(suv.x - split), suv.y) * ubuf.toRect.zw).b;
+        m = step(at, p);
+        edge = ubuf.edgeColor.rgb * spike * 0.3 * step(0.55, hash(block + 3.0));
+    } else if (mode == 7) {
+        // The door's right edge, from just off the right of the screen to
+        // just off the left.
+        float door = 1.012 - p * 1.06;
+        float px = 1.0 / 1080.0;
+        m = step(door, uv.x);
+        vec2 suv = vec2(uv.x + (1.012 - door), uv.y);
+        a = texture(fromTex, ubuf.fromRect.xy + clamp(suv, 0.0, 1.0) * ubuf.fromRect.zw);
+        // The door's shadow on what it uncovers.
+        b.rgb *= 1.0 - (1.0 - smoothstep(0.0, 0.05, uv.x - door)) * m * 0.4;
+        // Lacquered wooden stile along its edge, with a highlight.
+        float x = (door - uv.x) * ubuf.aspect;
+        float stile = step(0.0, x) * step(x, 12.0 * px);
+        vec3 wood = mix(vec3(0.16, 0.1, 0.07), vec3(0.34, 0.22, 0.14), smoothstep(12.0 * px, 3.0 * px, x));
+        a.rgb = mix(a.rgb, wood, stile);
+        // Round recessed pull (hikite) near the edge, halfway down, with a
+        // gilt rim.
+        float d = length(vec2(x - 34.0 * px, (uv.y - 0.5)));
+        a.rgb = mix(a.rgb, vec3(0.08, 0.06, 0.05), smoothstep(13.0 * px, 11.0 * px, d));
+        a.rgb = mix(a.rgb, vec3(0.78, 0.62, 0.32), smoothstep(2.0 * px, 0.0, abs(d - 13.0 * px)));
+    } else if (mode == 8) {
+        // Rays from just below the middle of the bottom edge; every other
+        // ray a beat behind, the outer ones last, each opening from its
+        // centre line.
+        vec2 d = (uv - vec2(0.5, 1.02)) * vec2(ubuf.aspect, 1.0);
+        float ang = atan(d.x, -d.y);
+        float n = 18.0;
+        float slot = (ang / 3.14159265 + 0.5) * n;
+        float ray = floor(slot);
+        float f = abs(fract(slot) - 0.5) * 2.0;
+        float delay = mod(ray, 2.0) * 0.16 + abs(ray + 0.5 - n * 0.5) / n * 0.3;
+        float t = clamp((p * 1.55 - delay) / 0.95, 0.0, 1.0);
+        float open = step(f, t);
+        m = max(open, step(0.999, p));
+        float rimW = 0.02 + 0.5 / max(1.0, length(d) * 900.0 / n);
+        float rim = open * (1.0 - step(f, t - rimW)) * step(t, 0.999) * step(0.001, t);
+        edge = ubuf.edgeColor.rgb * rim * 0.95;
+    } else if (mode == 9) {
+        // Voronoi panes, each turning over at its own moment.
+        vec2 g = uv * vec2(ubuf.aspect, 1.0) * 7.0;
+        vec2 cell = floor(g);
+        vec2 f = fract(g);
+        float d1 = 8.0;
+        float d2 = 8.0;
+        vec2 best = vec2(0.0);
+        for (int j = -1; j <= 1; j++) {
+            for (int i = -1; i <= 1; i++) {
+                vec2 o = vec2(float(i), float(j));
+                vec2 pt = o + vec2(hash(cell + o), hash(cell + o + 17.0)) * 0.9 + 0.05;
+                float dd = length(pt - f);
+                if (dd < d1) {
+                    d2 = d1;
+                    d1 = dd;
+                    best = cell + o;
+                } else if (dd < d2) {
+                    d2 = dd;
+                }
+            }
+        }
+        float at = 0.08 + 0.78 * hash(best * 1.37 + 3.0);
+        m = smoothstep(at - 0.035, at + 0.035, p);
+        float flash = exp(-abs(p - at) * 13.0) * step(p, 0.999);
+        vec3 tint = mix(ubuf.edgeColor.rgb, vec3(1.0, 0.78, 0.36), step(0.5, hash(best + 9.0)));
+        edge = tint * flash * 0.4;
+        float lead = smoothstep(0.07, 0.025, d2 - d1) * sin(p * 3.14159265);
+        a.rgb *= 1.0 - lead * 0.85;
+        b.rgb *= 1.0 - lead * 0.85;
+        edge *= 1.0 - lead;
+    } else if (mode == 10) {
+        // Six columns, set one after another from the left.
+        float cols = 6.0;
+        float col = floor(uv.x * cols);
+        float t = clamp((p - col / cols * 0.6) / 0.4, 0.0, 1.0);
+        float front = t * 1.12;
+        float band = 0.09;
+        // Behind the front the page is printed; in the band the dots grow.
+        vec2 q = gl_FragCoord.xy / 7.0;
+        float dotR = length(fract(q) - 0.5);
+        float grown = clamp((front - uv.y) / band, 0.0, 1.0);
+        m = uv.y < front - band ? 1.0 : uv.y > front ? 0.0 : step(dotR, grown * 0.72);
+        m = max(m, step(0.999, p));
+        // Column rules while the page is being set.
+        float gutter = abs(fract(uv.x * cols + 0.5) - 0.5) / cols * ubuf.aspect;
+        float rule = smoothstep(0.0012, 0.0, gutter) * sin(p * 3.14159265);
+        a.rgb *= 1.0 - rule * 0.7;
+        b.rgb *= 1.0 - rule * 0.7;
+    } else if (mode == 11) {
+        // The storm front, ragged and churning.
+        float n = fbm(uv * vec2(3.0 * ubuf.aspect, 3.0) + vec2(-p * 1.6, p * 0.3));
+        float front = p * 1.7 - 0.35;
+        float x = uv.x + (n - 0.5) * 0.4;
+        m = smoothstep(front + 0.04, front - 0.16, x);
+        float dust = exp(-pow((x - front) / 0.2, 2.0)) * step(p, 0.999);
+        veil = vec4(vec3(0.76, 0.6, 0.42) * (0.75 + 0.4 * n), dust * 0.9);
     } else {
         float r = p * maxR * 1.05;
         m = smoothstep(r, r - 0.04, length(c));
     }
 
-    fragColor = vec4(mix(a.rgb, b.rgb, m) + edge, 1.0) * ubuf.qt_Opacity;
+    vec3 col = mix(a.rgb, b.rgb, m) + edge;
+    col = mix(col, veil.rgb, veil.a);
+    fragColor = vec4(col, 1.0) * ubuf.qt_Opacity;
 }

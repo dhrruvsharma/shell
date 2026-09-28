@@ -8,8 +8,10 @@ import qs.services as Services
 // preview in the Themes panel (`still`, `pxScale`). Every layer takes the
 // same properties: boot (0..1, its switch-on choreography), now (a minute
 // clock) and pxScale (screen pixels per layer pixel, so shader detail and
-// hairlines stay visible in a small preview). Clocks and the rest are desktop
-// widgets (modules/desktopwidgets).
+// hairlines stay visible in a small preview). A layer that reworks the
+// wallpaper itself (Broadsheet prints it in halftone; `usesWallpaper`) also
+// takes `wallpaper`: a texture provider of what's under the layer, the same
+// size. Clocks and the rest are desktop widgets (modules/desktopwidgets).
 Item {
     id: root
 
@@ -17,13 +19,21 @@ Item {
     property bool still: false
     property real pxScale: 1
     property real boot: still ? 1 : 0
+    property Item wallpaper: null
+    readonly property bool usesWallpaper: themeId === "newspaper"
 
     readonly property var components: ({
         hud: hudLayer,
         terminal: terminalLayer,
         cosmos: cosmosLayer,
         zen: zenLayer,
-        xianxia: xianxiaLayer
+        xianxia: xianxiaLayer,
+        cyberpunk: neonLayer,
+        wabisabi: wabiLayer,
+        artdeco: decoLayer,
+        gothic: gothicLayer,
+        newspaper: broadsheetLayer,
+        wasteland: wastelandLayer
     })
 
     onThemeIdChanged: replay()
@@ -94,6 +104,61 @@ Item {
     Component {
         id: xianxiaLayer
         XianxiaLayer {
+            boot: root.boot
+            now: clock.date
+            pxScale: root.pxScale
+        }
+    }
+
+    Component {
+        id: neonLayer
+        NeonLayer {
+            boot: root.boot
+            now: clock.date
+            pxScale: root.pxScale
+        }
+    }
+
+    Component {
+        id: wabiLayer
+        WabiLayer {
+            boot: root.boot
+            now: clock.date
+            pxScale: root.pxScale
+        }
+    }
+
+    Component {
+        id: decoLayer
+        DecoLayer {
+            boot: root.boot
+            now: clock.date
+            pxScale: root.pxScale
+        }
+    }
+
+    Component {
+        id: gothicLayer
+        GothicLayer {
+            boot: root.boot
+            now: clock.date
+            pxScale: root.pxScale
+        }
+    }
+
+    Component {
+        id: broadsheetLayer
+        BroadsheetLayer {
+            boot: root.boot
+            now: clock.date
+            pxScale: root.pxScale
+            wallpaper: root.wallpaper
+        }
+    }
+
+    Component {
+        id: wastelandLayer
+        WastelandLayer {
             boot: root.boot
             now: clock.date
             pxScale: root.pxScale

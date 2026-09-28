@@ -1,5 +1,6 @@
 import QtQuick
 import qs.modules.bar.components
+import qs.modules.pet
 import qs.services as Services
 import qs.colors
 import qs.components
@@ -8,6 +9,7 @@ import qs.components
 // living in an island (a group of 1+ atoms sharing a pill/tray). Islands live in
 // two ordered regions, left and right, driven by the BarLayout service. The
 // center media pill and the right-edge system tray are fixed and never move.
+// The pet (modules/pet) lives in the free stretches between them.
 Item {
     id: topBar
 
@@ -235,14 +237,23 @@ Item {
         anchors.verticalCenter: parent ? parent.verticalCenter : undefined
         implicitWidth: atomRow.implicitWidth + 2 * island.pad
         implicitHeight: topBar.islandHeight
-        // Desktop themes restyle the group chrome; the HUD theme's is a
-        // chamfered frame drawn below the atoms instead.
+        // Desktop themes restyle the group chrome; the HUD, Neon Noir, Art
+        // Deco and Cathedral themes' is a cut-corner frame drawn below the
+        // atoms instead, Broadsheet rules it and Wasteland rivets it.
         readonly property var look: Services.DesktopTheme.look
         readonly property bool hud: look.shape === "chamfer"
+        readonly property bool neon: look.shape === "neon"
+        readonly property bool deco: look.shape === "deco"
+        readonly property bool cusp: look.shape === "cusp"
+        readonly property bool framed: hud || neon || deco || cusp
         radius: Services.DesktopTheme.radius(island.look, 16, height)
-        color: island.grouped && !island.hud ? Colors.surface_container_high : "transparent"
-        border.width: island.hud ? 0 : island.isMergeTarget ? 2 : island.grouped ? island.look.border : 0
-        border.color: island.isMergeTarget ? Colors.primary : Services.DesktopTheme.borderColor(island.look)
+        topLeftRadius: Services.DesktopTheme.corner(island.look, radius, 0)
+        topRightRadius: Services.DesktopTheme.corner(island.look, radius, 1)
+        bottomRightRadius: Services.DesktopTheme.corner(island.look, radius, 2)
+        bottomLeftRadius: Services.DesktopTheme.corner(island.look, radius, 3)
+        color: island.grouped && !island.framed ? Colors.surface_container_high : "transparent"
+        border.width: island.framed ? 0 : island.isMergeTarget ? 2 : island.grouped && island.look.shape !== "print" ? island.look.border : 0
+        border.color: island.isMergeTarget ? Services.DesktopTheme.accent : Services.DesktopTheme.borderColor(island.look)
         opacity: island.beingDragged ? 0.4 : 1
 
         HudFrame {
@@ -253,13 +264,64 @@ Item {
             tick: island.grouped
         }
 
+        NeonFrame {
+            visible: island.neon && (island.grouped || island.isMergeTarget)
+            cut: 10
+            fill: island.grouped ? Colors.surface_container_high : "transparent"
+            stroke: island.isMergeTarget ? Services.DesktopTheme.accent2Of("cyberpunk") : Services.DesktopTheme.accentOf("cyberpunk")
+            strokeWidth: island.isMergeTarget ? 2 : 1
+            glow: island.grouped ? 0.5 : 0
+        }
+
+        DecoFrame {
+            visible: island.deco && (island.grouped || island.isMergeTarget)
+            cut: 4
+            steps: 2
+            fill: island.grouped ? Colors.surface_container_high : "transparent"
+            stroke: island.isMergeTarget ? Services.DesktopTheme.accent2Of("artdeco") : Services.DesktopTheme.borderColor(island.look)
+            strokeWidth: island.isMergeTarget ? 2 : 1
+        }
+
+        CuspFrame {
+            visible: island.cusp && (island.grouped || island.isMergeTarget)
+            cut: 8
+            fill: island.grouped ? Colors.surface_container_high : "transparent"
+            stroke: island.isMergeTarget ? Services.DesktopTheme.accent2Of("gothic") : Services.DesktopTheme.borderColor(island.look)
+            strokeWidth: island.isMergeTarget ? 2 : 1
+        }
+
+        // Broadsheet: the group boxed between a heavy and a thin rule.
+        Repeater {
+            model: island.look.shape === "print" && island.grouped ? [{ y: 0, h: 2 }, { y: island.height - 1, h: 1 }] : []
+
+            Rectangle {
+                required property var modelData
+                y: modelData.y
+                width: island.width
+                height: modelData.h
+                color: Services.DesktopTheme.borderColor(island.look)
+            }
+        }
+
+        // Wasteland: a plate bolted at the corners.
+        Repeater {
+            model: island.look.shape === "plate" && island.grouped ? 4 : 0
+
+            Rivet {
+                required property int index
+                size: 3
+                x: index % 2 === 0 ? 2 : island.width - width - 2
+                y: index < 2 ? 2 : island.height - height - 2
+            }
+        }
+
         // Insertion caret shown just left of this island.
         Rectangle {
             visible: island.isBeforeTarget
             width: 3
             radius: 1.5
             height: 22
-            color: Colors.primary
+            color: Services.DesktopTheme.accent
             anchors.right: parent.left
             anchors.rightMargin: 3
             anchors.verticalCenter: parent.verticalCenter
@@ -319,6 +381,19 @@ Item {
     Item {
         anchors.fill: parent
 
+        // Declared first, so it passes behind the islands as it crosses.
+        BarPet {
+            anchors.fill: parent
+            gaps: {
+                const pad = 8;
+                const l = leftRow.x + leftRow.width + pad;
+                const r = rightRow.x - pad;
+                if (!mediaPill.visible)
+                    return [[l, r]];
+                return [[l, mediaPill.x - pad], [mediaPill.x + mediaPill.width + pad, r]];
+            }
+        }
+
         Row {
             id: leftRow
             anchors.left: parent.left
@@ -350,6 +425,7 @@ Item {
         }
 
         MediaPill {
+            id: mediaPill
             anchors.centerIn: parent
         }
 

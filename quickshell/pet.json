@@ -1,0 +1,139 @@
+{
+    "affection": 22,
+    "chatty": 2,
+    "fur": "natural",
+    "lastFed": 1790532641226,
+    "lastGreeting": "2026-09-28",
+    "name": "Mochi",
+    "recent": [
+        {
+            "icon": "lock",
+            "image": "",
+            "key": "trick:t-lock",
+            "subtitle": "Trick · qs ipc call lockscreen lock",
+            "terminal": false,
+            "title": "Lock",
+            "type": "cmd",
+            "value": "qs ipc call lockscreen lock"
+        },
+        {
+            "icon": "folder",
+            "image": "",
+            "key": "trick:t-files",
+            "subtitle": "Trick · thunar",
+            "terminal": false,
+            "title": "Files",
+            "type": "cmd",
+            "value": "thunar"
+        },
+        {
+            "icon": "wallpaper",
+            "image": "",
+            "key": "trick:t-wall",
+            "subtitle": "Trick · qs ipc call wallpaper toggle",
+            "terminal": false,
+            "title": "Wallpapers",
+            "type": "cmd",
+            "value": "qs ipc call wallpaper toggle"
+        },
+        {
+            "icon": "apps",
+            "image": "file:///usr/share/icons/Papirus/16x16/apps/firefox.svg",
+            "key": "app:Firefox",
+            "subtitle": "App · Fast and private browser",
+            "terminal": false,
+            "title": "Firefox",
+            "type": "app",
+            "value": "/usr/lib/firefox/firefox"
+        },
+        {
+            "icon": "palette",
+            "image": "",
+            "key": "trick:t-themes",
+            "subtitle": "Trick · qs ipc call themes desktop",
+            "terminal": false,
+            "title": "Themes",
+            "type": "cmd",
+            "value": "qs ipc call themes desktop"
+        },
+        {
+            "icon": "tune",
+            "image": "",
+            "key": "trick:t-control",
+            "subtitle": "Trick · qs ipc call controlCenter changeVisible",
+            "terminal": false,
+            "title": "Control",
+            "type": "cmd",
+            "value": "qs ipc call controlCenter changeVisible"
+        }
+    ],
+    "reminders": [
+    ],
+    "roam": "bar",
+    "seeded": true,
+    "shown": true,
+    "sleepAtNight": false,
+    "species": "fox",
+    "tricks": [
+        {
+            "cmd": "kitty",
+            "icon": "terminal",
+            "id": "t-terminal",
+            "name": "Terminal"
+        },
+        {
+            "cmd": "thunar",
+            "icon": "folder",
+            "id": "t-files",
+            "name": "Files"
+        },
+        {
+            "cmd": "firefox",
+            "icon": "language",
+            "id": "t-browser",
+            "name": "Browser"
+        },
+        {
+            "cmd": "grimblast copy area",
+            "icon": "screenshot_region",
+            "id": "t-shot",
+            "name": "Screenshot"
+        },
+        {
+            "cmd": "qs ipc call wallpaper toggle",
+            "icon": "wallpaper",
+            "id": "t-wall",
+            "name": "Wallpapers"
+        },
+        {
+            "cmd": "qs ipc call controlCenter changeVisible",
+            "icon": "tune",
+            "id": "t-control",
+            "name": "Control"
+        },
+        {
+            "cmd": "qs ipc call clipboardManager changeVisible",
+            "icon": "content_paste",
+            "id": "t-clip",
+            "name": "Clipboard"
+        },
+        {
+            "cmd": "qs ipc call notepad toggle",
+            "icon": "sticky_note_2",
+            "id": "t-notes",
+            "name": "Notepad"
+        },
+        {
+            "cmd": "qs ipc call themes desktop",
+            "icon": "palette",
+            "id": "t-themes",
+            "name": "Themes"
+        },
+        {
+            "cmd": "qs ipc call lockscreen lock",
+            "icon": "lock",
+            "id": "t-lock",
+            "name": "Lock"
+        }
+    ]
+}

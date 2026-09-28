@@ -1,0 +1,40 @@
+/* Broadsheet: Old Standard type, tab titles in small capitals, square and
+ * ruled like a page: a double rule under the toolbar, a heavy one over the
+ * selected tab, the address bar boxed in ink; the paper's spot colour (the
+ * wallpaper's) as the accent. */
+:root:root {
+  --qs-accent: var(--qs-theme-accent);
+  --tab-border-radius: 0px !important;
+  --toolbarbutton-border-radius: 0px !important;
+  --border-radius-small: 0px !important;
+  --border-radius-medium: 0px !important;
+  --border-radius-large: 0px !important;
+  --arrowpanel-border-radius: 0px !important;
+}
+
+#navigator-toolbox, #sidebar-main, menupopup, panel, .urlbarView {
+  font-family: "Old Standard TT", "Playfair Display", serif !important;
+}
+
+.tab-label {
+  font-variant-caps: small-caps !important;
+  letter-spacing: 0.03em !important;
+}
+
+#navigator-toolbox {
+  border-bottom: 4px double var(--qs-theme-accent2) !important;
+}
+
+#urlbar .urlbar-background {
+  border-radius: 0 !important;
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--qs-theme-accent2) 60%, transparent) !important;
+}
+
+#urlbar[focused] .urlbar-background {
+  box-shadow: inset 0 0 0 1px var(--qs-theme-accent2), inset 0 -2px 0 var(--qs-theme-accent) !important;
+}
+
+.tab-background:is([selected], [multiselected]) {
+  border-radius: 0 !important;
+  box-shadow: inset 0 3px 0 var(--qs-theme-accent2) !important;
+}

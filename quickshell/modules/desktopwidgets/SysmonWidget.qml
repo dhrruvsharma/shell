@@ -47,10 +47,12 @@ WidgetFrame {
                 Text {
                     id: name
                     text: WidgetStyle.label(WidgetStyle.word(row.modelData.key, root.themeId), root.st)
-                    font.family: root.st.cjk ?? (root.st.frame === "chamfer" ? root.st.mono : root.st.font)
-                    font.pixelSize: 12
+                    font.family: root.st.ui ?? root.st.cjk ?? (root.st.frame === "chamfer" ? root.st.mono : root.st.font)
+                    font.pixelSize: ({ neon: 15, scrap: 14, lancet: 14, clipping: 13 })[root.st.frame] ?? 12
+                    font.weight: root.st.frame === "clipping" ? Font.Bold : Font.Normal
                     font.letterSpacing: root.st.labelCase === "upper" ? 2 : 0.3
-                    color: Colors.withAlpha(Colors.on_surface, 0.78)
+                    font.capitalization: WidgetStyle.caps(root.st)
+                    color: Colors.withAlpha(root.ink, 0.78)
                 }
 
                 Text {
@@ -59,7 +61,7 @@ WidgetFrame {
                     font.family: root.st.frame === "glass" ? root.st.display : root.st.mono
                     font.pixelSize: 12
                     font.weight: Font.Medium
-                    color: Colors.on_surface
+                    color: root.ink
                 }
             }
 
@@ -95,13 +97,13 @@ WidgetFrame {
                 else
                     ctx.lineTo(x, y);
             }
-            ctx.strokeStyle = Colors[root.st.accentRole];
-            ctx.lineWidth = root.st.frame === "chamfer" ? 1.5 : 2;
+            ctx.strokeStyle = root.accent;
+            ctx.lineWidth = root.st.frame === "chamfer" || root.st.frame === "neon" ? 1.5 : 2;
             ctx.stroke();
             ctx.lineTo(width, height);
             ctx.lineTo(x0, height);
             ctx.closePath();
-            ctx.fillStyle = Colors.withAlpha(Colors[root.st.accentRole], 0.15);
+            ctx.fillStyle = Colors.withAlpha(root.accent, 0.15);
             ctx.fill();
         }
 
@@ -119,7 +121,7 @@ WidgetFrame {
         text: "cpu " + root.history.map(v => "▁▂▃▄▅▆▇█".charAt(Math.min(7, Math.floor(v / 12.5)))).join("")
         font.family: root.st.mono
         font.pixelSize: 13
-        color: Colors[root.st.accentRole]
+        color: root.accent
     }
 
     Text {
@@ -127,6 +129,7 @@ WidgetFrame {
         font.family: root.st.mono
         font.pixelSize: 11
         font.letterSpacing: root.st.labelCase === "upper" ? 1.5 : 0
-        color: Colors.withAlpha(Colors.on_surface, 0.6)
+        font.capitalization: WidgetStyle.caps(root.st)
+        color: Colors.withAlpha(root.ink, 0.6)
     }
 }
