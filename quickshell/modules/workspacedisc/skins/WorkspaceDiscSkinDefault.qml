@@ -1,3 +1,13 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
+//
+// Derived from zesis-shell's widgets/workspaceindicator/disc/skins/WorkspaceDiscSkinDefault.qml.
+// Copyright (C) 2026 Squirrel Modeller (zesis-shell)
+//   https://github.com/zesis-shell/zesis
+// Modifications copyright (C) 2026 dhrruvsharma.
+//
+// Licensed under the GNU General Public License, version 3 or (at your
+// option) any later version. See LICENSE in the repository root.
+
 import QtQuick
 import qs.services
 import qs.colors

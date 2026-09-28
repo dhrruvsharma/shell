@@ -1,11 +1,21 @@
 {
-    "affection": 42,
+    "affection": 74,
     "chatty": 2,
     "fur": "natural",
-    "lastFed": 1790569272594,
+    "lastFed": 1790582418848,
     "lastGreeting": "2026-09-28",
     "name": "Mochi",
     "recent": [
+        {
+            "icon": "apps",
+            "image": "file:///usr/share/icons/Papirus/16x16/apps/slack.svg",
+            "key": "app:Slack",
+            "subtitle": "App · Slack Desktop",
+            "terminal": false,
+            "title": "Slack",
+            "type": "app",
+            "value": "/usr/bin/slack --gtk-version=3 -s"
+        },
         {
             "icon": "content_paste",
             "image": "",
@@ -55,16 +65,6 @@
             "title": "Toggle Novel Reader",
             "type": "cmd",
             "value": "qs ipc call novelReader toggle"
-        },
-        {
-            "icon": "wallpaper",
-            "image": "",
-            "key": "trick:t-wall",
-            "subtitle": "Trick · qs ipc call wallpaper toggle",
-            "terminal": false,
-            "title": "Wallpapers",
-            "type": "cmd",
-            "value": "qs ipc call wallpaper toggle"
         }
     ],
     "reminders": [
