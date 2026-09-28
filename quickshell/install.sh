@@ -29,7 +29,7 @@ PACMAN_PKGS=(
     hyprland qt6-5compat qt6-imageformats
     pipewire wireplumber libpulse networkmanager bluez bluez-utils
     brightnessctl playerctl cava cliphist wl-clipboard grim slurp wf-recorder
-    matugen libnotify pacman-contrib jq curl lm_sensors python mpv kitty
+    matugen libnotify pacman-contrib jq curl lm_sensors python python-gobject mpv kitty
     ttf-jetbrains-mono-nerd ttf-iosevka-nerd ttf-nerd-fonts-symbols
     noto-fonts noto-fonts-emoji
 )

@@ -51,7 +51,7 @@ cd ~/dotfiles/quickshell
 
 The installer:
 
-1. Installs the packages with `pacman` (Quickshell, Qt6 extras, PipeWire, NetworkManager, BlueZ, `cava`, `cliphist`, `grim`/`slurp`, `matugen`, Nerd Fonts, …) plus `ttf-material-symbols-variable-git` from the AUR via `paru`/`yay`
+1. Installs the packages with `pacman` (Quickshell, Qt6 extras, PipeWire, NetworkManager, BlueZ + `python-gobject` for the pairing agent, `cava`, `cliphist`, `grim`/`slurp`, `matugen`, Nerd Fonts, …) plus `ttf-material-symbols-variable-git` from the AUR via `paru`/`yay`
 2. Fetches the Google Fonts used by the Art Deco, Gothic, Newspaper and Wasteland themes into `~/.local/share/fonts/quickshell-themes`
 3. Symlinks the config to `~/.config/quickshell` (an existing one is backed up to `quickshell.bak-<timestamp>`)
 4. Creates the data directories (`~/Pictures/wallpapers`, `~/Pictures/Screenshots`, `~/Videos/recordings`, …), links `setwall` into `~/.local/bin`, and registers the matugen template
@@ -149,7 +149,13 @@ Hyprland-aware window switcher with live thumbnails (`WindowThumbnail.qml`) and 
 
 `modules/network/NetworkPanel.qml`
 
-Two-tab panel (Wi-Fi · Bluetooth). Wi-Fi tab (`WifiPanel.qml`) lists available networks; Bluetooth tab (`BluetoothPanel.qml`) lists paired devices.
+Two-tab panel (Wi-Fi · Bluetooth). Wi-Fi tab (`WifiPanel.qml`) lists available networks; Bluetooth tab (`BluetoothPanel.qml`) lists paired and nearby devices and does its own pairing, no blueman needed:
+
+- Click a device to pair it (which also trusts and connects it), connect it or disconnect it. Hover a paired device for **trust** (the shield: whether it may connect by itself) and **remove**.
+- PIN, passkey and "does it show this code?" questions appear as a card at the top of the tab (`BluetoothPrompt.qml`), as do untrusted devices asking to connect (Deny / Allow / Always allow). The panel opens itself when one comes in.
+- The eye icon makes this computer discoverable, so a phone can pair from its side.
+
+Quickshell registers no BlueZ pairing agent, and without one bluetoothd refuses PIN/passkey pairing and turns away untrusted devices. `scripts/bluetooth_agent.py` is that agent: `services/Bluetooth.qml` runs it and talks to it in JSON lines (the protocol is in the script's docstring). It needs `python-gobject`; without it pairing falls back to Quickshell's own, which only handles devices that need no code.
 
 **IPC:**
 ```bash

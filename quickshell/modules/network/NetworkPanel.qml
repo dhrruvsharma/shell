@@ -144,6 +144,15 @@ Item {
                                             : Colors.on_surface_variant
                                         Behavior on color { ColorAnimation { duration: 150 } }
                                     }
+                                    // bluetoothd is waiting on an answer in the other tab
+                                    Rectangle {
+                                        visible: index === 1 && !tabDelegate.selected
+                                            && Services.Bluetooth.request !== null
+                                        Layout.preferredWidth: 7
+                                        Layout.preferredHeight: 7
+                                        radius: 3.5
+                                        color: Colors.primary
+                                    }
                                 }
 
                                 MouseArea {

@@ -488,7 +488,8 @@ ShellRoot {
     Timer {
         id: closeNetworkTimer
         interval: 600
-        onTriggered: networkPanelLoader.active = false
+        // unless it was opened again in the meantime
+        onTriggered: if (!networkPanelLoader.item?.opened) networkPanelLoader.active = false
     }
 
     Connections {
@@ -497,6 +498,21 @@ ShellRoot {
             if (networkPanelLoader.item && !networkPanelLoader.item.opened) {
                 closeNetworkTimer.start()
             }
+        }
+    }
+
+    // bluetoothd wants an answer (a pairing code, a device asking to
+    // connect): bring up the Bluetooth tab, where the question is.
+    Connections {
+        target: Services.Bluetooth
+        function onRequestArrived() {
+            if (!networkPanelLoader.active)
+                networkPanelLoader.active = true
+            const panel = networkPanelLoader.item
+            if (!panel)
+                return
+            panel.currentTab = 1
+            panel.opened = true
         }
     }
 

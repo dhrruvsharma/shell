@@ -1,11 +1,21 @@
 {
-    "affection": 74,
+    "affection": 97,
     "chatty": 2,
     "fur": "natural",
-    "lastFed": 1790582418848,
+    "lastFed": 1790594163092,
     "lastGreeting": "2026-09-28",
     "name": "Mochi",
     "recent": [
+        {
+            "icon": "widgets",
+            "image": "",
+            "key": "ipc:qs ipc call widgets toggle",
+            "subtitle": "Shell · ALT+SHIFT+W",
+            "terminal": false,
+            "title": "Toggle Widgets",
+            "type": "cmd",
+            "value": "qs ipc call widgets toggle"
+        },
         {
             "icon": "apps",
             "image": "file:///usr/share/icons/Papirus/16x16/apps/slack.svg",
@@ -55,16 +65,6 @@
             "title": "Toggle Manga Reader",
             "type": "cmd",
             "value": "qs ipc call mangaReader toggle"
-        },
-        {
-            "icon": "auto_stories",
-            "image": "",
-            "key": "ipc:qs ipc call novelReader toggle",
-            "subtitle": "Shell",
-            "terminal": false,
-            "title": "Toggle Novel Reader",
-            "type": "cmd",
-            "value": "qs ipc call novelReader toggle"
         }
     ],
     "reminders": [

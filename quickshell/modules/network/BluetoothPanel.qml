@@ -1,8 +1,7 @@
 import QtQuick
 import QtQuick.Layouts
 import QtQuick.Controls
-import Quickshell.Io
-import Quickshell
+import Quickshell.Bluetooth
 import qs.services as Services
 import qs.colors
 import qs.components
@@ -10,21 +9,21 @@ import qs.components
 Item {
     id: btRoot
 
-    readonly property bool adapterPresent: Services.Bluetooth.defaultAdapter !== null
-    readonly property bool bluetoothEnabled: Services.Bluetooth.defaultAdapter?.enabled ?? false
+    readonly property var adapter: Services.Bluetooth.defaultAdapter
+    readonly property bool adapterPresent: adapter !== null
+    readonly property bool bluetoothEnabled: adapter?.enabled ?? false
     readonly property var activeDevice: Services.Bluetooth.activeDevice
     readonly property color accent: Colors.primary
-    property bool scanning: false
 
-    Timer {
-        id: scanStopTimer
-        interval: 10000
-        onTriggered: {
-            btRoot.scanning = false
-            if (Services.Bluetooth.defaultAdapter)
-                Services.Bluetooth.defaultAdapter.discovering = false
-        }
-    }
+    // Nameless devices (beacons, other people's gadgets) can't be told
+    // apart, so only named ones show until they're paired.
+    readonly property var shownDevices: Services.Bluetooth.devices
+        .filter(d => d.paired || d.connected || d.deviceName !== "")
+        .sort((a, b) => {
+            if (a.connected !== b.connected) return a.connected ? -1 : 1
+            if (a.paired !== b.paired) return a.paired ? -1 : 1
+            return (a.name || "").localeCompare(b.name || "")
+        })
 
     ColumnLayout {
         anchors.fill: parent
@@ -109,11 +108,20 @@ Item {
                         cursorShape: Qt.PointingHandCursor
                         onClicked: {
                             if (!btRoot.adapterPresent) return
-                            Services.Bluetooth.defaultAdapter.enabled =
-                                !Services.Bluetooth.defaultAdapter.enabled
+                            btRoot.adapter.enabled = !btRoot.adapter.enabled
                         }
                     }
                 }
+            }
+        }
+
+        // ── what bluetoothd is asking (a code, a device wanting in) ──
+        Loader {
+            Layout.fillWidth: true
+            active: Services.Bluetooth.request !== null
+            visible: active
+            sourceComponent: BluetoothPrompt {
+                request: Services.Bluetooth.request
             }
         }
 
@@ -121,16 +129,35 @@ Item {
         RowLayout {
             Layout.fillWidth: true
             Layout.topMargin: 2
-            spacing: 8
+            spacing: 4
             visible: btRoot.bluetoothEnabled
 
             StyledText {
                 Layout.fillWidth: true
-                text: btRoot.scanning ? "Scanning for devices…" : "Devices"
+                elide: Text.ElideRight
+                text: Services.Bluetooth.scanning ? "Scanning for devices…"
+                    : btRoot.adapter?.discoverable ? "Visible as " + (btRoot.adapter.name || "this computer")
+                    : "Devices"
                 font.pixelSize: 13
                 font.weight: Font.DemiBold
                 font.letterSpacing: 0.3
                 color: Colors.on_surface_variant
+            }
+
+            // discoverable: lets a phone find this computer and pair from there
+            ClickableRect {
+                id: visibleRect
+                Layout.preferredWidth: 30; Layout.preferredHeight: 30
+                radius: Services.DesktopTheme.rad(15)
+                color: visibleRect.hovered ? Colors.surface_container_highest : "transparent"
+                MaterialIcon {
+                    anchors.centerIn: parent
+                    text: btRoot.adapter?.discoverable ? "󰈈" : "󰈉"
+                    font.pixelSize: 16
+                    color: btRoot.adapter?.discoverable ? Colors.primary : Colors.on_surface_variant
+                }
+                cursorShape: Qt.PointingHandCursor
+                onClicked: btRoot.adapter.discoverable = !btRoot.adapter.discoverable
             }
 
             ClickableRect {
@@ -142,19 +169,14 @@ Item {
                     anchors.centerIn: parent
                     text: "󰑐"
                     font.pixelSize: 16
-                    color: btRoot.scanning ? Colors.primary : Colors.on_surface_variant
+                    color: Services.Bluetooth.scanning ? Colors.primary : Colors.on_surface_variant
                     RotationAnimator on rotation {
                         from: 0; to: 360; duration: 900; loops: Animation.Infinite
-                        running: btRoot.scanning
+                        running: Services.Bluetooth.scanning
                     }
                 }
                 cursorShape: Qt.PointingHandCursor
-                onClicked: {
-                        if (!btRoot.bluetoothEnabled) return
-                        Services.Bluetooth.defaultAdapter.discovering = true
-                        btRoot.scanning = true
-                        scanStopTimer.restart()
-                    }
+                onClicked: Services.Bluetooth.scan()
             }
         }
 
@@ -171,7 +193,7 @@ Item {
                 anchors.centerIn: parent
                 width: parent.width - 40
                 spacing: 6
-                visible: Services.Bluetooth.devices.length === 0
+                visible: !btRoot.bluetoothEnabled || btRoot.shownDevices.length === 0
 
                 MaterialIcon {
                     Layout.alignment: Qt.AlignHCenter
@@ -183,8 +205,9 @@ Item {
                 StyledText {
                     Layout.alignment: Qt.AlignHCenter
                     text: !btRoot.adapterPresent ? "No Bluetooth adapter"
-                        : btRoot.bluetoothEnabled ? "No devices found"
-                        : "Bluetooth is off"
+                        : !btRoot.bluetoothEnabled ? "Bluetooth is off"
+                        : Services.Bluetooth.scanning ? "Looking for devices…"
+                        : "No devices found"
                     color: Colors.on_surface_variant
                     font.pixelSize: 13
                 }
@@ -202,19 +225,22 @@ Item {
                     spacing: 6
 
                     Repeater {
-                        model: Services.Bluetooth.devices
-                            .filter(d => true)
-                            .sort((a, b) => {
-                                if (a.connected !== b.connected) return a.connected ? -1 : 1
-                                if (a.paired !== b.paired) return a.paired ? -1 : 1
-                                return (a.name || "").localeCompare(b.name || "")
-                            })
+                        model: btRoot.shownDevices
 
                         delegate: Rectangle {
                             id: dev
                             Layout.fillWidth: true
                             Layout.preferredHeight: 60
                             radius: Services.DesktopTheme.rad(12)
+
+                            readonly property string path: modelData.dbusPath
+                            readonly property string busy: Services.Bluetooth.busy[path] ?? ""
+                            readonly property bool pairing: busy === "pairing" || modelData.pairing
+                            readonly property bool connecting: busy === "connecting"
+                                || modelData.state === BluetoothDeviceState.Connecting
+                            readonly property bool working: pairing || connecting
+                                || modelData.state === BluetoothDeviceState.Disconnecting
+                            readonly property string error: Services.Bluetooth.errors[path]?.text ?? ""
 
                             color: modelData.connected
                                 ? Qt.rgba(btRoot.accent.r, btRoot.accent.g, btRoot.accent.b, 0.14)
@@ -228,15 +254,15 @@ Item {
                                 id: devMa
                                 anchors.fill: parent
                                 hoverEnabled: true
-                                cursorShape: Qt.PointingHandCursor
+                                cursorShape: dev.working ? Qt.ArrowCursor : Qt.PointingHandCursor
                                 onClicked: {
-                                    if (!btRoot.bluetoothEnabled) return
-                                    if (modelData.connected) {
+                                    if (!btRoot.bluetoothEnabled || dev.working) return
+                                    if (modelData.connected)
                                         modelData.disconnect()
-                                    } else {
-                                        if (!modelData.paired) modelData.pair()
-                                        modelData.connect()
-                                    }
+                                    else if (modelData.paired)
+                                        Services.Bluetooth.connectDevice(modelData)
+                                    else
+                                        Services.Bluetooth.pair(modelData)
                                 }
                             }
 
@@ -249,16 +275,28 @@ Item {
                                 Rectangle {
                                     Layout.preferredWidth: 38; Layout.preferredHeight: 38
                                     radius: Services.DesktopTheme.rad(19)
-                                    color: modelData.connected
+                                    color: modelData.connected || dev.working
                                         ? Qt.rgba(btRoot.accent.r, btRoot.accent.g, btRoot.accent.b, 0.18)
                                         : Colors.surface_container_highest
                                     MaterialIcon {
                                         anchors.centerIn: parent
-                                        text: "󰂯"
+                                        visible: !dev.working
+                                        text: Services.Bluetooth.glyphFor(modelData)
                                         font.pixelSize: 20
                                         color: modelData.connected
                                             ? Colors.primary
                                             : Colors.on_surface_variant
+                                    }
+                                    MaterialIcon {
+                                        anchors.centerIn: parent
+                                        visible: dev.working
+                                        text: "󰑐"
+                                        font.pixelSize: 20
+                                        color: Colors.primary
+                                        RotationAnimator on rotation {
+                                            from: 0; to: 360; duration: 900; loops: Animation.Infinite
+                                            running: dev.working
+                                        }
                                     }
                                 }
 
@@ -275,24 +313,84 @@ Item {
                                     }
 
                                     StyledText {
+                                        Layout.fillWidth: true
+                                        elide: Text.ElideRight
                                         text: {
-                                            var base = modelData.connected ? "Connected"
-                                                : modelData.paired ? "Paired"
-                                                : "Available"
-                                            if (modelData.connected && !!modelData.batteryAvailable)
-                                                base += " · " + Math.round((modelData.battery ?? 0) * 100) + "%"
-                                            return base
+                                            if (dev.pairing) return "Pairing…"
+                                            if (dev.connecting) return "Connecting…"
+                                            if (dev.working) return "Disconnecting…"
+                                            if (dev.error) return dev.error
+                                            // the buttons explain themselves while hovered
+                                            if (trustRect.hovered)
+                                                return modelData.trusted ? "Trusted · click to revoke" : "Trust: let it connect by itself"
+                                            if (unpairRect.hovered) return "Remove this device"
+                                            if (modelData.connected) {
+                                                let text = "Connected"
+                                                if (modelData.batteryAvailable)
+                                                    text += " · " + Math.round((modelData.battery ?? 0) * 100) + "%"
+                                                return text
+                                            }
+                                            if (modelData.paired) {
+                                                if (devMa.containsMouse) return "Click to connect"
+                                                return modelData.trusted ? "Paired" : "Paired · not trusted"
+                                            }
+                                            return devMa.containsMouse ? "Click to pair" : "Not paired"
                                         }
                                         font.pixelSize: 11
-                                        color: modelData.connected ? Colors.primary
-                                                                   : Colors.on_surface_variant
+                                        color: dev.error && !dev.working ? Colors.error
+                                            : modelData.connected || dev.working ? Colors.primary
+                                            : Colors.on_surface_variant
                                     }
+                                }
+
+                                // stop a pairing in progress
+                                ClickableRect {
+                                    id: cancelRect
+                                    visible: dev.pairing
+                                    Layout.preferredWidth: 30; Layout.preferredHeight: 30
+                                    radius: Services.DesktopTheme.rad(15)
+                                    color: cancelRect.hovered ? Colors.surface_container_highest : "transparent"
+
+                                    MaterialIcon {
+                                        anchors.centerIn: parent
+                                        text: "󰅖"
+                                        font.pixelSize: 15
+                                        color: Colors.on_surface_variant
+                                    }
+                                    cursorShape: Qt.PointingHandCursor
+                                    onClicked: mouse => {
+                                            mouse.accepted = true
+                                            Services.Bluetooth.cancelPairing(modelData)
+                                        }
+                                }
+
+                                // trust: may it connect by itself, without asking
+                                ClickableRect {
+                                    id: trustRect
+                                    visible: modelData.paired && !dev.working
+                                    Layout.preferredWidth: 30; Layout.preferredHeight: 30
+                                    radius: Services.DesktopTheme.rad(15)
+                                    opacity: (trustRect.hovered || devMa.containsMouse) ? 1 : 0
+                                    color: trustRect.hovered ? Colors.surface_container_highest : "transparent"
+                                    Behavior on opacity { NumberAnimation { duration: 120 } }
+
+                                    MaterialIcon {
+                                        anchors.centerIn: parent
+                                        text: modelData.trusted ? "󰕥" : "󰒙"
+                                        font.pixelSize: 15
+                                        color: modelData.trusted ? Colors.primary : Colors.on_surface_variant
+                                    }
+                                    cursorShape: Qt.PointingHandCursor
+                                    onClicked: mouse => {
+                                            mouse.accepted = true
+                                            modelData.trusted = !modelData.trusted
+                                        }
                                 }
 
                                 // unpair (paired devices)
                                 ClickableRect {
                                     id: unpairRect
-                                    visible: modelData.paired
+                                    visible: modelData.paired && !dev.working
                                     Layout.preferredWidth: 30; Layout.preferredHeight: 30
                                     radius: Services.DesktopTheme.rad(15)
                                     opacity: (unpairRect.hovered || devMa.containsMouse) ? 1 : 0
