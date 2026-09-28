@@ -1,30 +1,60 @@
 {
-    "affection": 22,
+    "affection": 42,
     "chatty": 2,
     "fur": "natural",
-    "lastFed": 1790532641226,
+    "lastFed": 1790569272594,
     "lastGreeting": "2026-09-28",
     "name": "Mochi",
     "recent": [
         {
-            "icon": "lock",
+            "icon": "content_paste",
             "image": "",
-            "key": "trick:t-lock",
-            "subtitle": "Trick · qs ipc call lockscreen lock",
+            "key": "trick:t-clip",
+            "subtitle": "Trick · qs ipc call clipboardManager changeVisible",
             "terminal": false,
-            "title": "Lock",
+            "title": "Clipboard",
             "type": "cmd",
-            "value": "qs ipc call lockscreen lock"
+            "value": "qs ipc call clipboardManager changeVisible"
         },
         {
-            "icon": "folder",
+            "icon": "language",
             "image": "",
-            "key": "trick:t-files",
-            "subtitle": "Trick · thunar",
+            "key": "trick:t-browser",
+            "subtitle": "Trick · firefox",
             "terminal": false,
-            "title": "Files",
+            "title": "Browser",
             "type": "cmd",
-            "value": "thunar"
+            "value": "firefox"
+        },
+        {
+            "icon": "movie",
+            "image": "",
+            "key": "ipc:qs ipc call animePlayer toggle",
+            "subtitle": "Shell",
+            "terminal": false,
+            "title": "Toggle Anime Player",
+            "type": "cmd",
+            "value": "qs ipc call animePlayer toggle"
+        },
+        {
+            "icon": "menu_book",
+            "image": "",
+            "key": "ipc:qs ipc call mangaReader toggle",
+            "subtitle": "Shell",
+            "terminal": false,
+            "title": "Toggle Manga Reader",
+            "type": "cmd",
+            "value": "qs ipc call mangaReader toggle"
+        },
+        {
+            "icon": "auto_stories",
+            "image": "",
+            "key": "ipc:qs ipc call novelReader toggle",
+            "subtitle": "Shell",
+            "terminal": false,
+            "title": "Toggle Novel Reader",
+            "type": "cmd",
+            "value": "qs ipc call novelReader toggle"
         },
         {
             "icon": "wallpaper",
@@ -35,36 +65,6 @@
             "title": "Wallpapers",
             "type": "cmd",
             "value": "qs ipc call wallpaper toggle"
-        },
-        {
-            "icon": "apps",
-            "image": "file:///usr/share/icons/Papirus/16x16/apps/firefox.svg",
-            "key": "app:Firefox",
-            "subtitle": "App · Fast and private browser",
-            "terminal": false,
-            "title": "Firefox",
-            "type": "app",
-            "value": "/usr/lib/firefox/firefox"
-        },
-        {
-            "icon": "palette",
-            "image": "",
-            "key": "trick:t-themes",
-            "subtitle": "Trick · qs ipc call themes desktop",
-            "terminal": false,
-            "title": "Themes",
-            "type": "cmd",
-            "value": "qs ipc call themes desktop"
-        },
-        {
-            "icon": "tune",
-            "image": "",
-            "key": "trick:t-control",
-            "subtitle": "Trick · qs ipc call controlCenter changeVisible",
-            "terminal": false,
-            "title": "Control",
-            "type": "cmd",
-            "value": "qs ipc call controlCenter changeVisible"
         }
     ],
     "reminders": [

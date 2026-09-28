@@ -196,7 +196,8 @@ install_hypr() {
     local src dst="$CONFIG_HOME/hypr"
     src=$(realpath -m "$SRC_DIR/../hypr/quickshell.lua")
     if [[ ! -f $src ]]; then
-        warn "no hypr/quickshell.lua next to $SRC_DIR; skipping Hyprland setup"
+        warn "the dotfiles repo is missing its hypr/quickshell.lua template ($src);"
+        warn "skipping Hyprland setup"
         return
     fi
     if [[ $src == "$(realpath -m "$dst/quickshell.lua")" ]]; then

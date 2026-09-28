@@ -6,35 +6,83 @@ A feature-complete [Quickshell](https://quickshell.outfoxxed.me/) desktop shell 
 
 ## Table of Contents
 
-1. [Architecture](#architecture)
-2. [Top Bar](#top-bar)
-3. [Control Center](#control-center)
-4. [Panels & Overlays](#panels--overlays)
+1. [Installation](#installation)
+2. [Architecture](#architecture)
+3. [Top Bar](#top-bar)
+4. [Control Center](#control-center)
+5. [Panels & Overlays](#panels--overlays)
    - [Launcher](#launcher)
    - [Window Switcher](#window-switcher)
    - [Network Panel](#network-panel)
    - [Media Panel & CAVA](#media-panel--cava)
    - [Calendar](#calendar)
    - [OSD](#osd)
-5. [Notes Drawer](#notes-drawer)
-6. [Clipboard Manager](#clipboard-manager)
-7. [Power Menu](#power-menu)
-8. [GitHub Contributions](#github-contributions)
-9. [Wallpaper](#wallpaper)
-   - [Local Picker](#local-picker)
-   - [Wallhaven Browser](#wallhaven-browser)
-10. [Media Features](#media-features)
+6. [Notes Drawer](#notes-drawer)
+7. [Clipboard Manager](#clipboard-manager)
+8. [Power Menu](#power-menu)
+9. [GitHub Contributions](#github-contributions)
+10. [Wallpaper](#wallpaper)
+    - [Local Picker](#local-picker)
+    - [Wallhaven Browser](#wallhaven-browser)
+11. [Media Features](#media-features)
     - [Anime](#anime)
     - [Manga](#manga)
     - [Novel](#novel)
     - [Spotify Lyrics](#spotify-lyrics)
-11. [AI Chat](#ai-chat)
+12. [AI Chat](#ai-chat)
     - [Aikira (Character Chat)](#aikira-character-chat)
     - [Ollama Chat](#ollama-chat)
-12. [Theming & Colors](#theming--colors)
-13. [Settings](#settings)
-14. [IPC Reference](#ipc-reference)
-15. [Hardcoded Paths](#hardcoded-paths)
+13. [Theming & Colors](#theming--colors)
+14. [Settings](#settings)
+15. [IPC Reference](#ipc-reference)
+16. [Hardcoded Paths](#hardcoded-paths)
+
+---
+
+## Installation
+
+Targets **Arch Linux + Hyprland (0.56+, Lua config)**. The repo holds the whole dotfiles tree; the shell lives in `quickshell/`, and the installer also reads `hypr/quickshell.lua` next to it.
+
+```bash
+git clone https://github.com/dhrruvsharma/shell.git ~/dotfiles
+cd ~/dotfiles/quickshell
+./install.sh
+```
+
+The installer:
+
+1. Installs the packages with `pacman` (Quickshell, Qt6 extras, PipeWire, NetworkManager, BlueZ, `cava`, `cliphist`, `grim`/`slurp`, `matugen`, Nerd Fonts, …) plus `ttf-material-symbols-variable-git` from the AUR via `paru`/`yay`
+2. Fetches the Google Fonts used by the Art Deco, Gothic, Newspaper and Wasteland themes into `~/.local/share/fonts/quickshell-themes`
+3. Symlinks the config to `~/.config/quickshell` (an existing one is backed up to `quickshell.bak-<timestamp>`)
+4. Creates the data directories (`~/Pictures/wallpapers`, `~/Pictures/Screenshots`, `~/Videos/recordings`, …), links `setwall` into `~/.local/bin`, and registers the matugen template
+5. Copies `hypr/quickshell.lua` (keybinds, blur, animations, scale) into `~/.config/hypr` and adds `require("quickshell")` to your `hyprland.lua` — after asking
+6. Generates the notes drawer's IPC command list and asks for a GitHub username for the contributions widget
+
+Run it as your normal user, not root; it calls `sudo` itself.
+
+| Flag | Effect |
+|---|---|
+| `--copy` | Copy the config instead of symlinking it |
+| `--no-deps` | Skip package and font installation |
+| `--extras` | Also install `ollama` and `github-cli`, and create the Python venvs for Anime/Manga/Novel |
+| `--no-hypr` | Leave `~/.config/hypr` untouched |
+| `--github USER` | GitHub user for the contributions widget (blank disables it) |
+| `-y`, `--yes` | Don't prompt for confirmation |
+
+### After installing
+
+1. Autostart the shell and clipboard history from your Hyprland config:
+   ```lua
+   hl.on("hyprland.start", function()
+       hl.exec_cmd("wl-paste --watch cliphist store")
+       hl.exec_cmd("qs")
+   end)
+   ```
+   Then log into Hyprland, or run `hyprctl reload`.
+2. Put a wallpaper in `~/Pictures/wallpapers` and run `setwall <file>` — it sets the wallpaper and generates the colour scheme with matugen.
+3. Panels are sized for monitor scale `1`; the installer warns if a monitor uses another scale.
+4. Change the GitHub widget's user later with `qs ipc call github setUser <name>` (an empty string disables it).
+5. Anime, Manga, Novel, Aikira and Spotify Lyrics need their backends set up — see [Media Features](#media-features) and [AI Chat](#ai-chat), or run the installer with `--extras` for the venvs.
 
 ---
 
