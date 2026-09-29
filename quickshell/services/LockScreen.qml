@@ -116,6 +116,24 @@ Singleton {
             source: Qt.resolvedUrl("../modules/lock/themes/wasteland/WastelandSurface.qml"),
             introMs: 1250, outroMs: 1100, rewardBaseMs: 1450, rewardLevelUpMs: 850, rewardAchievementMs: 400,
             ambient: false
+        },
+        {
+            id: "observatory",
+            name: "Astrolabe",
+            tagline: "Observatory · Stellae fixae",
+            description: "Night falls on the desktop and the dome opens on tonight's sky. An astrolabe set for your latitude turns with the stars: each keystroke sights one on the rete, a wrong one clouds the sky and brings an eclipse closer, and the right one clears the heavens.",
+            source: Qt.resolvedUrl("../modules/lock/themes/observatory/ObservatorySurface.qml"),
+            introMs: 1550, outroMs: 1200, rewardBaseMs: 1450, rewardLevelUpMs: 850, rewardAchievementMs: 400,
+            ambient: false
+        },
+        {
+            id: "abyss",
+            name: "Bathysphere",
+            tagline: "Abyss · Half a mile down",
+            description: "The desktop floods and sinks into the deep, and you're watching the dark through a bathysphere's porthole. Each keystroke pings the sonar and wakes a light in the water; wrong ones spring a leak and cost you air, and the right one blows the ballast and brings you back up.",
+            source: Qt.resolvedUrl("../modules/lock/themes/abyss/AbyssSurface.qml"),
+            introMs: 1450, outroMs: 1250, rewardBaseMs: 1450, rewardLevelUpMs: 850, rewardAchievementMs: 400,
+            ambient: true
         }
     ]
 

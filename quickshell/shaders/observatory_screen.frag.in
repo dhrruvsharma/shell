@@ -1,0 +1,58 @@
+#version 320 es
+// Screen grade for the Observatory desktop theme, applied by Hyprland to the
+// whole output (decoration:screen_shader). services/DesktopTheme.qml fills in
+// the @PLACEHOLDERS@ from the theme's brass and enamel and writes the result
+// to ~/.cache/quickshell/desktop-theme.frag.
+//
+// Deliberately static: it never reads `time` (the hatching is a fixed
+// pattern), so Hyprland keeps its damage tracking and an idle desktop costs
+// nothing.
+
+precision highp float;
+
+in vec2 v_texcoord;
+uniform sampler2D tex;
+out vec4 fragColor;
+
+const vec3 brass = vec3(@ACCENT@);
+const vec3 enamel = vec3(@ACCENT2@);
+const float strength = @STRENGTH@;
+const float strong = @STRONG@;
+
+float grain(vec2 p) {
+    return fract(52.9829189 * fract(dot(p, vec2(0.06711056, 0.00583715))));
+}
+
+void main() {
+    vec4 c = texture(tex, v_texcoord);
+    float lum = dot(c.rgb, vec3(0.2126, 0.7152, 0.0722));
+
+    // Nightfall under the dome: the shadows cool towards the sky's enamel,
+    // the highlights warm as if by lamplight.
+    vec3 night = enamel / max(max(enamel.r, max(enamel.g, enamel.b)), 0.2);
+    float shade = 1.0 - smoothstep(0.0, 0.45, lum);
+    float high = smoothstep(0.5, 1.0, lum);
+    c.rgb = mix(c.rgb, c.rgb * (0.72 + 0.34 * night), shade * 0.3 * strength);
+    c.rgb = mix(c.rgb, c.rgb * vec3(1.07, 0.99, 0.86), high * 0.28 * strength);
+
+    // Strong: an old copperplate: the colour faded towards ink and warm
+    // paper, and a fine engraver's hatching in the shadows, crossed in the
+    // deepest of them.
+    vec3 ink = vec3(0.1, 0.1, 0.13);
+    vec3 paper = mix(vec3(0.93, 0.88, 0.76), brass, 0.12);
+    vec3 plate = mix(ink, paper, smoothstep(0.02, 0.95, lum));
+    c.rgb = mix(c.rgb, plate, 0.42 * strong);
+    vec2 fc = floor(gl_FragCoord.xy);
+    float hatchA = step(1.5, mod(fc.x + fc.y, 4.0));
+    float hatchB = step(1.5, mod(fc.x - fc.y, 4.0));
+    float hatch = hatchA * (1.0 - smoothstep(0.15, 0.4, lum)) + hatchB * (1.0 - smoothstep(0.05, 0.2, lum));
+    c.rgb *= 1.0 - hatch * 0.1 * strong;
+
+    // The dome's shadow round the edges, and a little grain.
+    vec2 d = v_texcoord - 0.5;
+    float r = length(d * vec2(1.0, 1.1));
+    c.rgb *= 1.0 - smoothstep(0.42, 0.95, r) * (0.16 * strength + 0.08 * strong);
+    c.rgb += (grain(fc) - 0.5) * (0.01 + 0.02 * strong);
+
+    fragColor = vec4(clamp(c.rgb, 0.0, 1.0), c.a);
+}

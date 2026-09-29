@@ -12,8 +12,9 @@ import qs.services as Services
 // outline, Wabi-sabi's pebbles round each corner differently, Art Deco's
 // step in at the corners under a gold line (DecoMask), Cathedral's are
 // cusped (CuspMask), Broadsheet's are ruled above and below like a
-// newspaper deck, and Wasteland's are riveted plates. Widget colours are
-// kept either way.
+// newspaper deck, Wasteland's are riveted plates, Observatory's are
+// graduated along the foot like an instrument's scale, and Abyss's are
+// backlit keys with a light strip. Widget colours are kept either way.
 //
 // `maxWidth` (0 = unbounded) turns on the truncating behaviour — clip + elide —
 // that only the pills with variable-length labels used.
@@ -165,6 +166,46 @@ Rectangle {
             size: 5
             x: index === 0 ? 3 : root.width - width - 3
             y: (root.height - height) / 2
+        }
+    }
+
+    // Observatory: graduated along the foot.
+    ScaleTicks {
+        visible: root.look.shape === "scale"
+        x: 5
+        y: root.height - height - 1
+        width: root.width - 10
+        height: 4
+        up: true
+        step: 4
+        major: 5
+        minorLength: 1.5
+        majorLength: 3.5
+        color: Services.DesktopTheme.borderColor(root.look)
+        opacity: 0.8
+    }
+
+    // Abyss: a strip of light along the foot, as under a backlit key.
+    Item {
+        visible: root.look.shape === "lume"
+        x: root.radius
+        y: root.height - 5
+        width: root.width - 2 * root.radius
+        height: 4
+
+        Rectangle {
+            anchors.fill: parent
+            anchors.margins: -1
+            radius: 3
+            color: Colors.withAlpha(Services.DesktopTheme.accent2, 0.16)
+        }
+
+        Rectangle {
+            anchors.centerIn: parent
+            width: parent.width
+            height: 2
+            radius: 1
+            color: Colors.withAlpha(Services.DesktopTheme.accent2, 0.85)
         }
     }
 

@@ -52,7 +52,7 @@ cd ~/dotfiles/quickshell
 The installer:
 
 1. Installs the packages with `pacman` (Quickshell, Qt6 extras, PipeWire, NetworkManager, BlueZ + `python-gobject` for the pairing agent, `cava`, `cliphist`, `grim`/`slurp`, `matugen`, Nerd Fonts, …) plus `ttf-material-symbols-variable-git` from the AUR via `paru`/`yay`
-2. Fetches the Google Fonts used by the Art Deco, Gothic, Newspaper and Wasteland themes into `~/.local/share/fonts/quickshell-themes`
+2. Fetches the Google Fonts used by the Art Deco, Gothic, Newspaper, Wasteland, Observatory and Abyss themes into `~/.local/share/fonts/quickshell-themes`
 3. Symlinks the config to `~/.config/quickshell` (an existing one is backed up to `quickshell.bak-<timestamp>`)
 4. Creates the data directories (`~/Pictures/wallpapers`, `~/Pictures/Screenshots`, `~/Videos/recordings`, …), links `setwall` into `~/.local/bin`, and registers the matugen template
 5. Copies `hypr/quickshell.lua` (keybinds, blur, animations, scale) into `~/.config/hypr` and adds `require("quickshell")` to your `hyprland.lua` — after asking

@@ -30,13 +30,13 @@ Singleton {
     //       and `offset` [x, y] shadows, and optional window borders
     //       (`border`: active roles as a gradient, inactive role + hex alpha).
     // bar:  shape (round | chamfer | square | pill | soft | seal | neon |
-    //       pebble | deco | cusp | print | plate), font, weight, size delta,
-    //       letter spacing, `caps` (true: capitals, "small": small capitals),
-    //       hairline border; `uiFont` sets panel text when the bar font is
-    //       too decorative for it.
+    //       pebble | deco | cusp | print | plate | scale | lume), font,
+    //       weight, size delta, letter spacing, `caps` (true: capitals,
+    //       "small": small capitals), hairline border; `uiFont` sets panel
+    //       text when the bar font is too decorative for it.
     // tone: how the theme colours the wallpaper's accents (see accentOf):
-    //       "" as they are, "neon", "muted", "gilt", "jewel", "print" or
-    //       "dusty".
+    //       "" as they are, "neon", "muted", "gilt", "jewel", "print",
+    //       "dusty", "brass" or "lume".
     // A colour role is a Colors name, or "accent" / "accent2" for the
     // theme's toned accents.
     readonly property var themes: [
@@ -265,6 +265,48 @@ Singleton {
                 { icon: "warning", text: "Dust, rust and hazard tape over the wallpaper" },
                 { icon: "schedule", text: "Survival clock: the day, and the days without incident" }
             ]
+        },
+        {
+            id: "observatory",
+            name: "Observatory",
+            tagline: "Ancient observatory desktop",
+            icon: "explore",
+            lockTheme: "observatory",
+            tone: "brass",
+            description: "A night at the old observatory: engraved brass with your wallpaper's colour as the enamel of the sky, the real sky over the wallpaper as a copperplate star chart facing the meridian (the stars where they stand right now, with the Moon and the planets among them), graduated tags in Fell type on the bar, and an astrolabe clock whose rete turns with the stars.",
+            hypr: { rounding: 8, range: 26, power: 3, glow: "accent", glowAlpha: "3c", inactive: "00000077", dim: 0.07, border: { active: ["accent", "accent2"], angle: 90, inactive: "surface_container_high", inactiveAlpha: "cc" } },
+            bar: { shape: "scale", font: "IM FELL English SC", uiFont: "EB Garamond", weight: Font.Normal, sizeDelta: 0, letterSpacing: 0.5, border: 1, borderRole: "accent", borderAlpha: 0.6 },
+            effects: {
+                subtle: "Nightfall under the dome: cool, blue shadows, warm lamplight in the highlights and a soft vignette.",
+                strong: "An old copperplate plate: colour faded to ink and warm paper, with a fine engraver's hatching in the shadows."
+            },
+            changes: [
+                { icon: "rounded_corner", text: "Softly rounded windows edged from brass to the sky's enamel" },
+                { icon: "straighten", text: "Graduated brass tags in Fell type on the bar" },
+                { icon: "stars", text: "The real sky over the wallpaper, engraved like an old star chart" },
+                { icon: "explore", text: "Astrolabe clock: the rete turns with the stars" }
+            ]
+        },
+        {
+            id: "abyss",
+            name: "Abyss",
+            tagline: "Deep-sea submarine desktop",
+            icon: "scuba_diving",
+            lockTheme: "abyss",
+            tone: "lume",
+            description: "The deep, as deep as the hour: your wallpaper sunk under water, sunlit at noon and down in the trenches by midnight, with caustics, marine snow and bioluminescence in its colours; backlit instrument tags on the bar and a dive-watch clock.",
+            hypr: { rounding: 14, range: 30, power: 3, glow: "accent", glowAlpha: "50", inactive: "00060c88", dim: 0.1, border: { active: ["accent2", "accent"], angle: 270, inactive: "surface_container_high", inactiveAlpha: "aa" } },
+            bar: { shape: "lume", font: "B612", weight: Font.Bold, sizeDelta: -2, letterSpacing: 0.8, caps: true, border: 1, borderRole: "accent2", borderAlpha: 0.45 },
+            effects: {
+                subtle: "Under water: the reds soaked up by the sea, cool blue-green shadows and a dark rim like a porthole's.",
+                strong: "The deep: colour drained to blue and green, a hazy veil of water and a heavier porthole rim."
+            },
+            changes: [
+                { icon: "rounded_corner", text: "Rounded windows lit by a bioluminescent glow" },
+                { icon: "radar", text: "Backlit instrument tags with a light strip on the bar" },
+                { icon: "water", text: "Your wallpaper under water: caustics, depth haze and marine snow" },
+                { icon: "scuba_diving", text: "Dive-watch clock with the zone of the ocean for the hour" }
+            ]
         }
     ]
 
@@ -312,6 +354,10 @@ Singleton {
             return Math.min(normal, 2);
         case "seal":
             return Math.min(normal, 3);
+        case "scale":
+            return Math.min(normal, 4);
+        case "lume":
+            return Math.min(normal, 8);
         case "soft":
             return Math.min(normal, 9);
         case "pebble":
@@ -335,16 +381,17 @@ Singleton {
 
     // Corner radius for a panel's outer surface, given its plain radius:
     // square for HUD, Mainframe, Neon Noir, Art Deco, Cathedral and
-    // Broadsheet, a slight round for Cave Abode and Wasteland, unchanged for
-    // the round themes.
+    // Broadsheet, a slight round for Cave Abode and Wasteland, an
+    // instrument plate's for Observatory, unchanged for the round themes.
     function panelRadius(normal) {
         const sh = look.shape;
-        return squareShapes.includes(sh) ? 0 : sh === "seal" || sh === "plate" ? Math.min(normal, sh === "seal" ? 4 : 3) : normal;
+        return squareShapes.includes(sh) ? 0 : sh === "seal" || sh === "plate" ? Math.min(normal, sh === "seal" ? 4 : 3)
+            : sh === "scale" ? Math.min(normal, 10) : normal;
     }
 
     // Corner radius the theme imposes on controls inside panels (buttons,
     // cards, chips, fields), or -1 to leave them as designed.
-    readonly property real controlRadius: squareShapes.includes(look.shape) ? 0 : look.shape === "seal" ? 3 : look.shape === "plate" ? 2 : -1
+    readonly property real controlRadius: squareShapes.includes(look.shape) ? 0 : look.shape === "seal" ? 3 : look.shape === "plate" ? 2 : look.shape === "scale" ? 4 : -1
 
     // Astral rounds controls into capsules instead; Still drops card borders.
     // (Wabi-sabi's cards turn into pebbles through corner().)
@@ -379,6 +426,12 @@ Singleton {
     //   print: a newspaper's spot colour, and the ink it's printed with
     //          (whichever of ink or newsprint stands out on the scheme).
     //   dusty: weathered paint gone chalky under dust, and hazard amber.
+    //   brass: an instrument maker's aged brass (a breath of the wallpaper
+    //          in it), with the wallpaper's colour as the enamel of the sky
+    //          beside it (never golden: that would read as more brass).
+    //   lume:  the wallpaper's colour as a creature's glow in the deep (drawn
+    //          a little towards the sea's blue-green), and the pale sea-glow
+    //          of a dive watch's lume beside it.
     // accent/accent2 are the active theme's; accentOf/accent2Of any theme's
     // (previews show themes that aren't on).
     readonly property color accent: accentOf(adapter.theme)
@@ -402,6 +455,10 @@ Singleton {
             return Qt.hsla(_hue(Colors.primary, 0), 0.66, _dark ? 0.62 : 0.42, 1);
         case "dusty":
             return _weathered(Colors.primary);
+        case "brass":
+            return Qt.tint(Qt.hsla(0.108, 0.5, _dark ? 0.6 : 0.36, 1), Colors.withAlpha(Colors.primary, 0.1));
+        case "lume":
+            return _biolum(_toSea(_hue(Colors.primary, 0.52)));
         default:
             return Qt.color(Colors.primary);
         }
@@ -433,6 +490,16 @@ Singleton {
             return _dark ? Qt.color("#ece6d6") : Qt.color("#1c1b19");
         case "dusty":
             return Qt.tint(Qt.hsla(0.118, 0.82, _dark ? 0.56 : 0.42, 1), Colors.withAlpha(Colors.tertiary, 0.1));
+        case "brass": {
+            // The sky's enamel beside the brass: never golden itself.
+            const golden = h => h > 0.05 && h < 0.2;
+            const p = _hue(Colors.primary, -1);
+            const t = _hue(Colors.tertiary, -1);
+            const h = p >= 0 && !golden(p) ? p : t >= 0 && !golden(t) ? t : 0.62;
+            return Qt.hsla(h, 0.46, _dark ? 0.58 : 0.34, 1);
+        }
+        case "lume":
+            return Qt.tint(Qt.hsla(0.46, 0.7, _dark ? 0.7 : 0.34, 1), Colors.withAlpha(Colors.tertiary, 0.08));
         default:
             return Qt.color(Colors.tertiary);
         }
@@ -478,6 +545,22 @@ Singleton {
         const m = Qt.hsla(_hue(c, 0.07), Math.min(0.42, 0.14 + q.hslSaturation * 0.3), _dark ? 0.58 : 0.4, 1);
         // Sun-bleached and dusted: a warm, chalky cast.
         return Qt.tint(m, Qt.rgba(0.75, 0.52, 0.28, 0.22));
+    }
+
+    // A hue drawn a third of the way towards the sea's blue-green (0.5), the
+    // colour light keeps longest under water. Hues across the wheel from it
+    // (the reds a few deep-sea fish glow in) are left alone.
+    function _toSea(h) {
+        let d = 0.5 - h;
+        if (d > 0.5)
+            d -= 1;
+        if (d < -0.5)
+            d += 1;
+        return Math.abs(d) > 0.34 ? h : (h + d * 0.33 + 1) % 1;
+    }
+
+    function _biolum(h) {
+        return Qt.hsla(h, 0.8, _dark ? 0.66 : 0.38, 1);
     }
 
     function setTheme(id) {

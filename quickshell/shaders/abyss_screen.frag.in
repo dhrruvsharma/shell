@@ -1,0 +1,44 @@
+#version 320 es
+// Screen grade for the Abyss desktop theme, applied by Hyprland to the whole
+// output (decoration:screen_shader). services/DesktopTheme.qml fills in the
+// @PLACEHOLDERS@ from the theme's bioluminescence and lume and writes the
+// result to ~/.cache/quickshell/desktop-theme.frag.
+//
+// Deliberately static: it never reads `time`, so Hyprland keeps its damage
+// tracking and an idle desktop costs nothing.
+
+precision highp float;
+
+in vec2 v_texcoord;
+uniform sampler2D tex;
+out vec4 fragColor;
+
+const vec3 glow = vec3(@ACCENT@);
+const vec3 lume = vec3(@ACCENT2@);
+const float strength = @STRENGTH@;
+const float strong = @STRONG@;
+
+void main() {
+    vec4 c = texture(tex, v_texcoord);
+    float lum = dot(c.rgb, vec3(0.2126, 0.7152, 0.0722));
+
+    // Under water: red is the first light the sea takes, then some green.
+    vec3 through = exp(-vec3(0.2, 0.05, 0.015) * (0.6 * strength + 1.6 * strong));
+    c.rgb *= through;
+    // Cool, blue-green shadows, a breath of the lume's colour in the dark.
+    float shade = 1.0 - smoothstep(0.0, 0.4, lum);
+    c.rgb = mix(c.rgb, c.rgb * vec3(0.78, 1.0, 1.08), shade * 0.35 * strength);
+    c.rgb += lume * shade * 0.012 * strength;
+
+    // Strong: a veil of water over everything, the contrast softened.
+    vec3 water = vec3(0.03, 0.16, 0.2);
+    c.rgb = mix(c.rgb, water + c.rgb * 0.85, 0.16 * strong);
+    c.rgb = mix(c.rgb, vec3(dot(c.rgb, vec3(0.3, 0.59, 0.11))) * vec3(0.8, 1.0, 1.05), 0.18 * strong);
+
+    // The rim, as round a porthole: round, not following the screen.
+    vec2 d = (v_texcoord - 0.5) * vec2(1.6, 1.0);
+    float r = length(d);
+    c.rgb *= 1.0 - smoothstep(0.55, 1.05, r) * (0.2 * strength + 0.12 * strong);
+
+    fragColor = vec4(clamp(c.rgb, 0.0, 1.0), c.a);
+}

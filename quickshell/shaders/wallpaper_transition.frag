@@ -20,6 +20,12 @@
 //              (Broadsheet)
 //  11 dust   - a dust storm blows through from the left: the old picture
 //              is lost in it, the new one clears behind (Wasteland)
+//  12 rule   - an astrolabe's rule sweeps round from noon, the new picture
+//              behind its edge, a graduated limb showing as it turns
+//              (Observatory)
+//  13 tide   - the tide comes in: the new picture rises from the bottom
+//              under a rippling waterline, swimming as it settles, bubbles
+//              on the way (Abyss)
 // Only drawn while a transition runs; the wallpaper is a plain Image otherwise.
 
 layout(location = 0) in vec2 qt_TexCoord0;
@@ -219,6 +225,35 @@ void main() {
         m = smoothstep(front + 0.04, front - 0.16, x);
         float dust = exp(-pow((x - front) / 0.2, 2.0)) * step(p, 0.999);
         veil = vec4(vec3(0.76, 0.6, 0.42) * (0.75 + 0.4 * n), dust * 0.9);
+    } else if (mode == 12) {
+        // Clockwise from twelve o'clock, round the middle of the screen.
+        const float TAU = 6.2831853;
+        float a = mod(atan(c.x, -c.y), TAU);
+        float front = p * TAU * 1.04;
+        float d = length(c);
+        m = max(1.0 - smoothstep(front - 0.008, front + 0.008, a), step(0.999, p));
+        // The rule's edge, bright; the limb's degrees while it turns.
+        float running = step(0.001, p) * step(p, 0.999);
+        float ruleLine = exp(-abs(a - front) * max(d, 0.02) * 420.0) * running;
+        float limb = exp(-abs(d - 0.45) * 700.0) + exp(-abs(d - 0.47) * 900.0) * 0.6;
+        float ticks = step(0.82, fract(a / TAU * 72.0)) * step(abs(d - 0.435), 0.012);
+        float bold = step(0.9, fract(a / TAU * 12.0 + 0.05)) * step(abs(d - 0.43), 0.02);
+        float scale = (limb * 0.5 + max(ticks * 0.4, bold * 0.6)) * sin(p * 3.14159265);
+        edge = ubuf.edgeColor.rgb * (ruleLine * 1.1 + scale);
+    } else if (mode == 13) {
+        float level = 1.08 - p * 1.16;
+        float surf = level + 0.014 * sin(uv.x * 19.0 + p * 14.0) + 0.007 * sin(uv.x * 47.0 - p * 23.0);
+        m = max(smoothstep(surf - 0.002, surf + 0.002, uv.y), step(0.999, p));
+        // Under the surface the new picture swims as it settles.
+        vec2 ruv = uv + vec2(sin(uv.y * 40.0 + p * 20.0), cos(uv.x * 30.0 + p * 15.0)) * 0.004 * (1.0 - p);
+        b = texture(toTex, ubuf.toRect.xy + clamp(ruv, 0.0, 1.0) * ubuf.toRect.zw);
+        float below = step(surf, uv.y);
+        b.rgb *= 1.0 - 0.28 * exp(-(uv.y - surf) * 16.0) * below * (1.0 - p);
+        float line = exp(-abs(uv.y - surf) * 260.0) * step(p, 0.999);
+        // Bubbles just under the waterline.
+        vec2 g = vec2(uv.x * ubuf.aspect, uv.y) * 38.0 + vec2(0.0, p * 10.0);
+        float bub = step(0.9, hash(floor(g))) * smoothstep(0.3, 0.18, length(fract(g) - 0.5)) * smoothstep(0.16, 0.0, uv.y - surf) * below;
+        edge = mix(ubuf.edgeColor.rgb, vec3(0.9, 1.0, 1.0), 0.5) * (line * 0.85 + bub * 0.3);
     } else {
         float r = p * maxR * 1.05;
         m = smoothstep(r, r - 0.04, length(c));

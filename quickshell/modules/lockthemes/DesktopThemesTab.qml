@@ -224,7 +224,7 @@ Item {
                             required property int index
                             width: mockWin.width * 0.8 * modelData
                             height: Math.max(2, mockWin.height * 0.028)
-                            radius: ["round", "pill", "pebble"].includes(mock.look.shape) ? height / 2 : 0
+                            radius: ["round", "pill", "pebble", "lume"].includes(mock.look.shape) ? height / 2 : 0
                             color: index === 0 && mockWin.focused ? desk.dt.accentOf(desk.selId) : Colors.withAlpha(Colors.on_surface, 0.28)
                         }
                     }
@@ -339,6 +339,31 @@ Item {
                     }
                 }
 
+                // Observatory's graduated foot, Abyss's light strip.
+                ScaleTicks {
+                    visible: mock.look.shape === "scale"
+                    x: 4
+                    y: tag.height - height - 1
+                    width: tag.width - 8
+                    height: 3
+                    up: true
+                    step: 3
+                    major: 5
+                    minorLength: 1
+                    majorLength: 2.5
+                    color: desk.dt.borderColor(mock.look, desk.selId)
+                }
+
+                Rectangle {
+                    visible: mock.look.shape === "lume"
+                    x: 6
+                    y: tag.height - 3
+                    width: tag.width - 12
+                    height: 1.5
+                    radius: 1
+                    color: desk.dt.accent2Of(desk.selId)
+                }
+
                 Text {
                     id: tagText
                     anchors.centerIn: parent
@@ -363,7 +388,7 @@ Item {
                 spacing: 6
 
                 MockTag {
-                    readonly property string pip: ({ chamfer: "◆", square: "■", neon: "▮", deco: "◆", cusp: "✦", print: "▪", plate: "✕" })[mock.look.shape] ?? "●"
+                    readonly property string pip: ({ chamfer: "◆", square: "■", neon: "▮", deco: "◆", cusp: "✦", print: "▪", plate: "✕", scale: "☉", lume: "◉" })[mock.look.shape] ?? "●"
                     label: pip + " 2 " + pip + " " + pip + " " + pip
                 }
 

@@ -552,6 +552,69 @@ Canvas {
             ctx.restore();
             break;
         }
+        case "observatory": {
+            // A stargazer's hat: a tall cone of night blue, a brass band and
+            // two stars on it, worn at an angle.
+            ctx.save();
+            ctx.translate(h.cx + 1.5, h.cy - r * 0.84);
+            ctx.rotate(0.16);
+            ctx.beginPath();
+            ctx.moveTo(-6.8, 0);
+            ctx.quadraticCurveTo(-2.5, -8, 1.5, -16.5);
+            ctx.quadraticCurveTo(2.5, -7, 6.8, 0);
+            ctx.closePath();
+            ink(ctx, "#1f2748", "#0e1224", 1);
+            ctx.beginPath();
+            ctx.roundedRect(-8.6, -1.2, 17.2, 2.8, 1.2, 1.2);
+            ink(ctx, "#1f2748", "#0e1224", 0.9);
+            ctx.beginPath();
+            ctx.rect(-6, -3.4, 12, 1.7);
+            ink(ctx, acc, null);
+            const star = (x, y, s) => {
+                ctx.beginPath();
+                ctx.moveTo(x, y - s);
+                ctx.lineTo(x + s * 0.3, y - s * 0.3);
+                ctx.lineTo(x + s, y);
+                ctx.lineTo(x + s * 0.3, y + s * 0.3);
+                ctx.lineTo(x, y + s);
+                ctx.lineTo(x - s * 0.3, y + s * 0.3);
+                ctx.lineTo(x - s, y);
+                ctx.lineTo(x - s * 0.3, y - s * 0.3);
+                ctx.closePath();
+                ink(ctx, "#ffd98a", null);
+            };
+            star(-1.2, -7.5, 1.9);
+            star(1.6, -11.8, 1.3);
+            ctx.restore();
+            break;
+        }
+        case "abyss": {
+            // A snorkel mask over the eyes, its strap round the head and the
+            // snorkel up behind.
+            const y = h.cy + r * 0.02;
+            ctx.beginPath();
+            ctx.moveTo(h.cx - r * 1.0, y - 1.4);
+            ctx.quadraticCurveTo(h.cx, y - 3.2, h.cx + r * 1.0, y - 1.6);
+            ink(ctx, null, "#17262d", 2);
+            ctx.beginPath();
+            ctx.moveTo(h.cx - r * 0.84, y + 2.5);
+            ctx.lineTo(h.cx - r * 0.98, y - r * 0.9);
+            ctx.quadraticCurveTo(h.cx - r * 1.0, y - r * 1.25, h.cx - r * 0.72, y - r * 1.28);
+            ink(ctx, null, "#17262d", 3.2);
+            ctx.beginPath();
+            ctx.moveTo(h.cx - r * 0.84, y + 2.5);
+            ctx.lineTo(h.cx - r * 0.98, y - r * 0.9);
+            ctx.quadraticCurveTo(h.cx - r * 1.0, y - r * 1.25, h.cx - r * 0.72, y - r * 1.28);
+            ink(ctx, null, fig.accent2, 1.6);
+            ctx.beginPath();
+            ctx.roundedRect(h.cx - r * 0.66, y - 3.6, r * 1.38, 6.6, 3, 3);
+            ink(ctx, "rgba(140, 228, 236, 0.38)", "#17262d", 1.4);
+            ctx.beginPath();
+            ctx.moveTo(h.cx - r * 0.45, y - 1.8);
+            ctx.lineTo(h.cx - r * 0.1, y - 1.8);
+            ink(ctx, null, "rgba(255,255,255,0.8)", 0.9);
+            break;
+        }
         case "wasteland": {
             // Goggles pushed up on the forehead, and a bandana.
             const gy = h.cy - r * 0.52;

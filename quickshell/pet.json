@@ -1,11 +1,21 @@
 {
-    "affection": 104,
+    "affection": 114,
     "chatty": 2,
     "fur": "natural",
-    "lastFed": 1790594163092,
-    "lastGreeting": "2026-09-28",
+    "lastFed": 1790665916877,
+    "lastGreeting": "2026-09-29",
     "name": "Mochi",
     "recent": [
+        {
+            "icon": "movie",
+            "image": "",
+            "key": "ipc:qs ipc call animePlayer toggle",
+            "subtitle": "Shell",
+            "terminal": false,
+            "title": "Toggle Anime Player",
+            "type": "cmd",
+            "value": "qs ipc call animePlayer toggle"
+        },
         {
             "icon": "auto_stories",
             "image": "",
@@ -55,16 +65,6 @@
             "title": "Slack",
             "type": "app",
             "value": "/usr/bin/slack --gtk-version=3 -s"
-        },
-        {
-            "icon": "language",
-            "image": "",
-            "key": "trick:t-browser",
-            "subtitle": "Trick · firefox",
-            "terminal": false,
-            "title": "Browser",
-            "type": "cmd",
-            "value": "firefox"
         }
     ],
     "reminders": [

@@ -12,8 +12,10 @@ import qs.services as Services
 // tab, a glass pane, nothing at all (text shadow only), a paper slip with a
 // seal, a cut-corner neon panel, a pebble of washi mended with gold, black
 // lacquer in a stepped gold rule, a leaded lancet window, a newspaper
-// clipping, or a plate of scrap with its name on masking tape. Children
-// stack in a Column under the title; set their text in `ink`.
+// clipping, a plate of scrap with its name on masking tape, an enamelled
+// plate in a graduated brass rim, or the dark glass face of a deep-sea
+// instrument. Children stack in a Column under the title; set their text in
+// `ink`.
 Item {
     id: frame
 
@@ -30,7 +32,7 @@ Item {
     readonly property color ink: WidgetStyle.ink(themeId)
     readonly property bool isConsole: st.frame === "console"
     readonly property bool hasTitle: title.length > 0 && !isConsole
-    readonly property bool centredTitle: st.frame === "gilt" || st.frame === "lancet"
+    readonly property bool centredTitle: st.frame === "gilt" || st.frame === "lancet" || st.frame === "brass"
     // Room above the console box for its title tab, which straddles the top
     // edge: a widget's surface ends at its frame, so it would be cut off.
     readonly property real tabRoom: isConsole && title.length > 0 ? 10 : 0
@@ -315,6 +317,99 @@ Item {
         opacity: 0.95
     }
 
+    // Observatory: night-blue enamel in an engraved brass rim, graduated
+    // along its head like an instrument's limb, the title between two stars.
+    Rectangle {
+        anchors.fill: parent
+        visible: frame.st.frame === "brass"
+        radius: 12
+        color: Colors.withAlpha(Qt.tint("#0a0e19", Colors.withAlpha(Services.DesktopTheme.accent2Of(frame.themeId), 0.14)), 0.86)
+        border.width: 1
+        border.color: frame.accent
+
+        Rectangle {
+            anchors.fill: parent
+            anchors.margins: 5
+            radius: 8
+            color: "transparent"
+            border.width: 1
+            border.color: Colors.withAlpha(frame.accent, 0.35)
+        }
+
+        ScaleTicks {
+            x: 20
+            y: 6
+            width: parent.width - 40
+            height: 6
+            step: 5
+            major: 6
+            minorLength: 2.5
+            majorLength: 5
+            color: Colors.withAlpha(frame.accent, 0.5)
+        }
+    }
+
+    Repeater {
+        model: frame.st.frame === "brass" && frame.hasTitle ? 2 : 0
+
+        Text {
+            required property int index
+            x: index === 0 ? titleText.x - width - 9 : titleText.x + titleText.width + 9
+            y: titleText.y + (titleText.height - height) / 2
+            text: "✶"
+            font.pixelSize: 11
+            color: frame.accent
+        }
+    }
+
+    // Abyss: the dark glass face of a deep-sea instrument, a lume hairline
+    // round it, light catching along its top, a ping spreading into one
+    // corner and a lit lamp beside the title.
+    Rectangle {
+        anchors.fill: parent
+        visible: frame.st.frame === "instrument"
+        radius: 18
+        color: Colors.withAlpha(Qt.tint("#06151b", Colors.withAlpha(frame.accent, 0.06)), 0.86)
+        border.width: 1
+        border.color: Colors.withAlpha(Services.DesktopTheme.accent2Of(frame.themeId), 0.38)
+
+        Rectangle {
+            anchors.fill: parent
+            anchors.margins: 1
+            radius: 17
+            gradient: Gradient {
+                GradientStop { position: 0; color: Colors.withAlpha("#dff6f4", 0.07) }
+                GradientStop { position: 0.3; color: "transparent" }
+            }
+        }
+
+        PingArcs {
+            anchors.fill: parent
+            cx: width - 18
+            cy: 18
+            gap: 5.5
+            color: Colors.withAlpha(Services.DesktopTheme.accent2Of(frame.themeId), 0.55)
+        }
+    }
+
+    Rectangle {
+        visible: frame.st.frame === "instrument" && frame.hasTitle
+        x: frame.st.pad
+        y: titleText.y + (titleText.height - height) / 2
+        width: 7
+        height: 7
+        radius: 3.5
+        color: Services.DesktopTheme.accent2Of(frame.themeId)
+
+        Rectangle {
+            anchors.centerIn: parent
+            width: 15
+            height: 15
+            radius: 7.5
+            color: Colors.withAlpha(Services.DesktopTheme.accent2Of(frame.themeId), 0.22)
+        }
+    }
+
     // Neon Noir's title splits like a bad signal: a ghost in the other neon.
     Text {
         x: titleText.x + 1.5
@@ -327,14 +422,14 @@ Item {
 
     Text {
         id: titleText
-        x: frame.centredTitle ? Math.round((frame.width - implicitWidth) / 2) : frame.st.pad + (frame.st.frame === "neon" ? 4 : 0)
+        x: frame.centredTitle ? Math.round((frame.width - implicitWidth) / 2) : frame.st.pad + (frame.st.frame === "neon" ? 4 : frame.st.frame === "instrument" ? 15 : 0)
         y: frame.headRoom + frame.st.pad
         visible: frame.hasTitle
         rotation: frame.st.frame === "scrap" ? -1.5 : 0
         text: (frame.st.frame === "chamfer" ? "▸ " : "") + WidgetStyle.label(frame.title, frame.st)
         font.family: frame.st.frame === "scrap" ? Waste.type : frame.st.ui ?? frame.st.cjk ?? (frame.st.frame === "chamfer" ? frame.st.mono : frame.st.font)
-        font.pixelSize: ({ neon: 15, washi: 12, lancet: 17, clipping: 13, scrap: 13, gilt: 11 })[frame.st.frame] ?? 11
-        font.weight: frame.st.frame === "chamfer" || frame.st.frame === "clipping" ? Font.Bold : frame.st.frame === "neon" || frame.st.frame === "scrap" ? Font.Normal : frame.st.frame === "gilt" ? Font.DemiBold : Font.Medium
+        font.pixelSize: ({ neon: 15, washi: 12, lancet: 17, clipping: 13, scrap: 13, gilt: 11, brass: 16, instrument: 11 })[frame.st.frame] ?? 11
+        font.weight: frame.st.frame === "chamfer" || frame.st.frame === "clipping" || frame.st.frame === "instrument" ? Font.Bold : frame.st.frame === "neon" || frame.st.frame === "scrap" || frame.st.frame === "brass" ? Font.Normal : frame.st.frame === "gilt" ? Font.DemiBold : Font.Medium
         font.letterSpacing: frame.st.labelSpacing
         font.capitalization: WidgetStyle.caps(frame.st)
         color: frame.st.frame === "scrap" ? Waste.tapeInk : WidgetStyle.labelColor(frame.themeId)

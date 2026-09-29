@@ -1,0 +1,44 @@
+/* Abyss: B612, the instrument type, tab titles in spaced capitals, the
+ * bioluminescence as the accent, surfaces sunk in deep water, rounded like
+ * a porthole, and the selected tab lit from below by a strip of lume. */
+:root:root {
+  --qs-accent: var(--qs-theme-accent);
+  --qs-on-accent: #02090e;
+  --lwt-accent-color: color-mix(in srgb, var(--qs-bg) 82%, #0a3a4a) !important;
+  --lwt-accent-color-inactive: color-mix(in srgb, var(--qs-bg) 86%, #0a3a4a) !important;
+  --toolbar-bgcolor: color-mix(in srgb, var(--qs-surface-low) 86%, #0a3a4a) !important;
+  --tab-border-radius: 10px !important;
+  --toolbarbutton-border-radius: 10px !important;
+  --border-radius-small: 6px !important;
+  --border-radius-medium: 10px !important;
+  --border-radius-large: 16px !important;
+}
+
+#navigator-toolbox, #sidebar-main, menupopup, panel, .urlbarView {
+  font-family: "B612", sans-serif !important;
+}
+
+.tab-label {
+  text-transform: uppercase !important;
+  letter-spacing: 0.06em !important;
+  font-size: 0.92em !important;
+}
+
+#navigator-toolbox {
+  border-bottom: 1px solid color-mix(in srgb, var(--qs-theme-accent2) 35%, transparent) !important;
+}
+
+#urlbar .urlbar-background {
+  border-radius: 999px !important;
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--qs-theme-accent2) 35%, transparent) !important;
+}
+
+#urlbar[focused] .urlbar-background {
+  box-shadow: inset 0 0 0 1px var(--qs-theme-accent2),
+              0 0 14px color-mix(in srgb, var(--qs-theme-accent) 35%, transparent) !important;
+}
+
+.tab-background:is([selected], [multiselected]) {
+  box-shadow: inset 0 -2px 0 var(--qs-theme-accent2),
+              inset 0 -8px 10px -6px color-mix(in srgb, var(--qs-theme-accent2) 45%, transparent) !important;
+}

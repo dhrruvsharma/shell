@@ -48,7 +48,7 @@ WidgetFrame {
                     id: name
                     text: WidgetStyle.label(WidgetStyle.word(row.modelData.key, root.themeId), root.st)
                     font.family: root.st.ui ?? root.st.cjk ?? (root.st.frame === "chamfer" ? root.st.mono : root.st.font)
-                    font.pixelSize: ({ neon: 15, scrap: 14, lancet: 14, clipping: 13 })[root.st.frame] ?? 12
+                    font.pixelSize: ({ neon: 15, scrap: 14, lancet: 14, clipping: 13, brass: 15 })[root.st.frame] ?? 12
                     font.weight: root.st.frame === "clipping" ? Font.Bold : Font.Normal
                     font.letterSpacing: root.st.labelCase === "upper" ? 2 : 0.3
                     font.capitalization: WidgetStyle.caps(root.st)

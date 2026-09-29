@@ -8,8 +8,9 @@ import qs.services as Services
 // line, HUD segments, an ASCII gauge, an orbit with a glowing body, a
 // hairline, a tapering brush stroke, a neon tube with a lit tip, a line of
 // ink ending in a blot, a gilt bar with a diamond tip, a strip of leaded
-// glass lighting pane by pane, a newspaper's ruled bar, or hazard tape in a
-// steel channel.
+// glass lighting pane by pane, a newspaper's ruled bar, hazard tape in a
+// steel channel, a brass vernier scale with its pointer, or a lit tube with
+// a bright head and bubbles rising off it.
 Item {
     id: bar
 
@@ -23,7 +24,7 @@ Item {
 
     implicitWidth: st.bar === "ascii" ? ascii.implicitWidth : 200
     implicitHeight: st.bar === "ascii" ? ascii.implicitHeight
-        : ({ orbit: 10, segments: 6, neon: 6, ink: 6, hairline: 3, deco: 9, glass: 9, rule: 8, hazard: 9 })[st.bar] ?? 4
+        : ({ orbit: 10, segments: 6, neon: 6, ink: 6, hairline: 3, deco: 9, glass: 9, rule: 8, hazard: 9, vernier: 11, sonar: 12 })[st.bar] ?? 4
 
     // line
     Rectangle {
@@ -368,6 +369,103 @@ Item {
             stripe: 4
             colorA: bar.accent
             colorB: "#16120e"
+        }
+    }
+
+    // vernier: a brass scale graduated in twentieths, read by a pointer.
+    Item {
+        visible: bar.st.bar === "vernier"
+        anchors.fill: parent
+
+        Rectangle {
+            y: 3
+            width: parent.width
+            height: 1
+            color: Colors.withAlpha(bar.accent, 0.45)
+        }
+
+        ScaleTicks {
+            y: 3
+            width: parent.width
+            height: 6
+            step: parent.width / 20
+            major: 5
+            minorLength: 3
+            majorLength: 6
+            color: Colors.withAlpha(bar.accent, 0.55)
+        }
+
+        Rectangle {
+            y: 2
+            width: parent.width * bar.v
+            height: 3
+            color: bar.accent
+        }
+
+        Text {
+            x: parent.width * bar.v - width / 2
+            y: -height + 6
+            visible: bar.v > 0.005
+            text: "▼"
+            font.pixelSize: 8
+            color: Qt.lighter(bar.accent, 1.2)
+        }
+    }
+
+    // sonar: a lit tube with a bright head, bubbles rising off it.
+    Item {
+        visible: bar.st.bar === "sonar"
+        anchors.fill: parent
+
+        Rectangle {
+            y: parent.height - 7
+            width: parent.width
+            height: 6
+            radius: 3
+            color: Colors.withAlpha("#02090e", 0.55)
+            border.width: 1
+            border.color: Colors.withAlpha(Services.DesktopTheme.accent2Of(bar.themeId), 0.3)
+
+            Rectangle {
+                x: 1
+                y: 1
+                width: Math.max(height, (parent.width - 2) * bar.v)
+                height: parent.height - 2
+                radius: height / 2
+                visible: bar.v > 0.005
+                gradient: Gradient {
+                    orientation: Gradient.Horizontal
+                    GradientStop { position: 0; color: Colors.withAlpha(bar.accent, 0.35) }
+                    GradientStop { position: 1; color: Services.DesktopTheme.accent2Of(bar.themeId) }
+                }
+            }
+        }
+
+        Rectangle {
+            x: parent.width * bar.v - width / 2
+            y: parent.height - 4 - height / 2
+            visible: bar.v > 0.005
+            width: 9
+            height: 9
+            radius: 4.5
+            color: Colors.withAlpha(Services.DesktopTheme.accent2Of(bar.themeId), 0.3)
+        }
+
+        Repeater {
+            model: [{ dx: -3, dy: -9, s: 3 }, { dx: 2, dy: -13, s: 2 }]
+
+            Rectangle {
+                required property var modelData
+                x: bar.width * bar.v + modelData.dx - width / 2
+                y: bar.height + modelData.dy - height / 2
+                visible: bar.v > 0.05
+                width: modelData.s
+                height: width
+                radius: width / 2
+                color: "transparent"
+                border.width: 1
+                border.color: Colors.withAlpha(Services.DesktopTheme.accent2Of(bar.themeId), 0.7)
+            }
         }
     }
 }

@@ -12,7 +12,8 @@ import qs.services as Services
 // splits into its two neons; Wabi-sabi's is a faded pebble; Art Deco's
 // steps in at the corners inside a gold rule; Cathedral's is a leaded
 // lancet; Broadsheet prints it in halftone; Wasteland's is a faded photo
-// taped up at two corners.
+// taped up at two corners; Observatory's is an engraved portrait medallion
+// in a brass ring; Abyss's is seen through a bolted porthole, under water.
 Item {
     id: art
 
@@ -20,7 +21,8 @@ Item {
     property string source
     readonly property var st: WidgetStyle.of(themeId)
     readonly property color accent: WidgetStyle.accent(themeId)
-    readonly property real radius: st.art === "circle" ? width / 2 : st.art === "rounded" || st.art === "pebble" ? 14 : st.art === "soft" ? 12 : st.art === "seal" ? 4 : st.art === "taped" ? 2 : 0
+    readonly property bool round: ["circle", "medallion", "porthole"].includes(st.art)
+    readonly property real radius: round ? width / 2 : st.art === "rounded" || st.art === "pebble" ? 14 : st.art === "soft" ? 12 : st.art === "seal" ? 4 : st.art === "taped" ? 2 : 0
     readonly property bool cut: ["chamfer", "neon", "deco", "arch"].includes(st.art)
 
     implicitWidth: 76
@@ -102,9 +104,9 @@ Item {
             maskSource: ({ chamfer: chamferMask, neon: neonMask, deco: decoMask, arch: archMask })[art.st.art] ?? shapeMask
             maskThresholdMin: 0.5
             maskSpreadAtMin: 1.0
-            saturation: art.st.art === "pebble" ? -0.3 : art.st.art === "taped" ? -0.45 : 0
-            colorization: art.st.art === "taped" ? 0.25 : 0
-            colorizationColor: "#a0784a"
+            saturation: art.st.art === "pebble" ? -0.3 : art.st.art === "taped" ? -0.45 : art.st.art === "medallion" ? -0.35 : art.st.art === "porthole" ? -0.2 : 0
+            colorization: art.st.art === "taped" ? 0.25 : art.st.art === "medallion" ? 0.18 : art.st.art === "porthole" ? 0.3 : 0
+            colorizationColor: art.st.art === "porthole" ? "#1d6f82" : "#a0784a"
         }
 
         Rectangle {
@@ -241,6 +243,90 @@ Item {
             rotation: modelData.r
             color: "#d6c6a0"
             opacity: 0.88
+        }
+    }
+
+    // Observatory: a medallion in a brass ring, graduated round its edge.
+    Rectangle {
+        anchors.fill: parent
+        anchors.margins: -4
+        visible: art.st.art === "medallion"
+        radius: width / 2
+        color: "transparent"
+        border.width: 3
+        border.color: art.accent
+
+        Rectangle {
+            anchors.fill: parent
+            anchors.margins: 5
+            radius: width / 2
+            color: "transparent"
+            border.width: 1
+            border.color: Colors.withAlpha(art.accent, 0.5)
+        }
+    }
+
+    Repeater {
+        model: art.st.art === "medallion" ? 24 : 0
+
+        Rectangle {
+            required property int index
+            readonly property real a: index * 15 * Math.PI / 180
+            readonly property real r: art.width / 2 + 7
+            x: art.width / 2 + Math.sin(a) * r - width / 2
+            y: art.height / 2 - Math.cos(a) * r - height / 2
+            width: 1
+            height: index % 6 === 0 ? 5 : 3
+            rotation: index * 15
+            color: art.accent
+        }
+    }
+
+    // Abyss: behind the glass of a porthole, its steel ring bolted round.
+    Rectangle {
+        anchors.fill: parent
+        anchors.margins: -6
+        visible: art.st.art === "porthole"
+        radius: width / 2
+        color: "transparent"
+        border.width: 6
+        border.color: "#2c4048"
+
+        Rectangle {
+            anchors.fill: parent
+            anchors.margins: 1
+            radius: width / 2
+            color: "transparent"
+            border.width: 1
+            border.color: Colors.withAlpha("#9fb7bf", 0.55)
+        }
+    }
+
+    Repeater {
+        model: art.st.art === "porthole" ? 8 : 0
+
+        Rectangle {
+            required property int index
+            readonly property real a: (index * 45 + 22.5) * Math.PI / 180
+            readonly property real r: art.width / 2 + 3
+            x: art.width / 2 + Math.sin(a) * r - width / 2
+            y: art.height / 2 - Math.cos(a) * r - height / 2
+            width: 4
+            height: 4
+            radius: 2
+            color: "#a9bec5"
+            border.width: 0.5
+            border.color: "#0b1418"
+        }
+    }
+
+    Rectangle {
+        anchors.fill: parent
+        visible: art.st.art === "porthole"
+        radius: width / 2
+        gradient: Gradient {
+            GradientStop { position: 0; color: Colors.withAlpha("#e6fbff", 0.22) }
+            GradientStop { position: 0.45; color: "transparent" }
         }
     }
 }

@@ -205,7 +205,7 @@ Scope {
             WidgetFrame {
                 id: cavaFrame
                 readonly property real head: root.themeStyle.frame === "lancet" ? archRise : 0
-                visible: ["chamfer", "console", "glass", "scroll", "neon", "washi", "gilt", "lancet", "clipping", "scrap"].includes(root.themeStyle.frame)
+                visible: ["chamfer", "console", "glass", "scroll", "neon", "washi", "gilt", "lancet", "clipping", "scrap", "brass", "instrument"].includes(root.themeStyle.frame)
                 x: Services.CavaWidget.posX - 12
                 y: Services.CavaWidget.posY - 12 - cavaFrame.tabRoom - head
                 width: Services.CavaWidget.boxWidth + 24

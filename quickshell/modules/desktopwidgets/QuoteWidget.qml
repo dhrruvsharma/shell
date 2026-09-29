@@ -20,7 +20,7 @@ WidgetFrame {
         // Wasteland's is scrawled on the wall with a typewriter's letters.
         font.family: root.st.frame === "scrap" ? "Special Elite" : root.st.font
         font.pixelSize: root.st.frame === "bare" ? 16 : 14
-        font.italic: ["scroll", "bare", "lancet", "clipping"].includes(root.st.frame)
+        font.italic: ["scroll", "bare", "lancet", "clipping", "brass"].includes(root.st.frame)
         font.weight: root.st.frame === "bare" ? Font.Light : Font.Normal
         lineHeight: 1.15
         color: root.ink

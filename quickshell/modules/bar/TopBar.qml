@@ -249,7 +249,8 @@ Item {
         implicitHeight: topBar.islandHeight
         // Desktop themes restyle the group chrome; the HUD, Neon Noir, Art
         // Deco and Cathedral themes' is a cut-corner frame drawn below the
-        // atoms instead, Broadsheet rules it and Wasteland rivets it.
+        // atoms instead, Broadsheet rules it, Wasteland rivets it,
+        // Observatory graduates its foot and Abyss lights it from below.
         readonly property var look: Services.DesktopTheme.look
         readonly property bool hud: look.shape === "chamfer"
         readonly property bool neon: look.shape === "neon"
@@ -323,6 +324,32 @@ Item {
                 x: index % 2 === 0 ? 2 : island.width - width - 2
                 y: index < 2 ? 2 : island.height - height - 2
             }
+        }
+
+        // Observatory: the group graduated along its foot.
+        ScaleTicks {
+            visible: island.look.shape === "scale" && island.grouped
+            x: 8
+            y: island.height - height - 1
+            width: island.width - 16
+            height: 3
+            up: true
+            step: 5
+            major: 4
+            minorLength: 1.5
+            majorLength: 3
+            color: Services.DesktopTheme.borderColor(island.look)
+            opacity: 0.7
+        }
+
+        // Abyss: lit along its foot.
+        Rectangle {
+            visible: island.look.shape === "lume" && island.grouped
+            x: island.radius
+            y: island.height - 2
+            width: island.width - 2 * island.radius
+            height: 1
+            color: Colors.withAlpha(Services.DesktopTheme.accent2, 0.7)
         }
 
         // Insertion caret shown just left of this island.

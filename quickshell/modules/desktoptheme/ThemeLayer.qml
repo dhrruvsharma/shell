@@ -9,9 +9,10 @@ import qs.services as Services
 // same properties: boot (0..1, its switch-on choreography), now (a minute
 // clock) and pxScale (screen pixels per layer pixel, so shader detail and
 // hairlines stay visible in a small preview). A layer that reworks the
-// wallpaper itself (Broadsheet prints it in halftone; `usesWallpaper`) also
-// takes `wallpaper`: a texture provider of what's under the layer, the same
-// size. Clocks and the rest are desktop widgets (modules/desktopwidgets).
+// wallpaper itself (Broadsheet prints it in halftone, Abyss sinks it under
+// water; `usesWallpaper`) also takes `wallpaper`: a texture provider of
+// what's under the layer, the same size. Clocks and the rest are desktop
+// widgets (modules/desktopwidgets).
 Item {
     id: root
 
@@ -20,7 +21,7 @@ Item {
     property real pxScale: 1
     property real boot: still ? 1 : 0
     property Item wallpaper: null
-    readonly property bool usesWallpaper: themeId === "newspaper"
+    readonly property bool usesWallpaper: themeId === "newspaper" || themeId === "abyss"
 
     readonly property var components: ({
         hud: hudLayer,
@@ -33,7 +34,9 @@ Item {
         artdeco: decoLayer,
         gothic: gothicLayer,
         newspaper: broadsheetLayer,
-        wasteland: wastelandLayer
+        wasteland: wastelandLayer,
+        observatory: observatoryLayer,
+        abyss: abyssLayer
     })
 
     onThemeIdChanged: replay()
@@ -162,6 +165,25 @@ Item {
             boot: root.boot
             now: clock.date
             pxScale: root.pxScale
+        }
+    }
+
+    Component {
+        id: observatoryLayer
+        ObservatoryLayer {
+            boot: root.boot
+            now: clock.date
+            pxScale: root.pxScale
+        }
+    }
+
+    Component {
+        id: abyssLayer
+        AbyssLayer {
+            boot: root.boot
+            now: clock.date
+            pxScale: root.pxScale
+            wallpaper: root.wallpaper
         }
     }
 }

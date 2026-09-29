@@ -16,6 +16,10 @@ import qs.services as Services
 // cusped jewel line lined with lead, and a quatrefoil. Broadsheet: a heavy
 // and a thin rule under the head, the title as a section flag. Wasteland:
 // rivets, a length of hazard tape and the title on masking tape.
+// Observatory: an engraved double rim, graduated along the head like an
+// instrument's limb, with a star at its middle. Abyss: a lume hairline, a
+// lit status strip, a sonar ping in the far corner and the title on an
+// instrument label.
 Item {
     id: decor
 
@@ -41,7 +45,8 @@ Item {
         color: "transparent"
         border.width: 1
         border.color: decor.shape === "print" ? Colors.withAlpha(decor.accent2, 0.45)
-            : Colors.withAlpha(decor.accent, decor.shape === "square" ? 0.5 : decor.shape === "seal" ? 0.55 : decor.shape === "neon" ? 0.6 : decor.shape === "pebble" ? 0.28 : decor.shape === "plate" ? 0.45 : 0.32)
+            : decor.shape === "lume" ? Colors.withAlpha(decor.accent2, 0.4)
+            : Colors.withAlpha(decor.accent, decor.shape === "square" ? 0.5 : decor.shape === "seal" ? 0.55 : decor.shape === "neon" ? 0.6 : decor.shape === "pebble" ? 0.28 : decor.shape === "plate" ? 0.45 : decor.shape === "scale" ? 0.6 : 0.32)
     }
 
     // HUD: corner brackets.
@@ -441,6 +446,139 @@ Item {
                 font.family: "Special Elite"
                 font.pixelSize: 11
                 color: "#2a241c"
+            }
+        }
+    }
+
+    // Observatory: a second, finer rim inside the first, the head graduated
+    // between them like the limb of an instrument, and a little half-dial
+    // hanging at its middle.
+    Item {
+        anchors.fill: parent
+        visible: decor.shape === "scale"
+
+        Rectangle {
+            anchors.fill: parent
+            anchors.margins: 5
+            radius: Math.max(0, decor.radius - 4)
+            color: "transparent"
+            border.width: 1
+            border.color: Colors.withAlpha(decor.accent, 0.25)
+        }
+
+        Repeater {
+            model: 2
+
+            ScaleTicks {
+                required property int index
+                x: index === 0 ? 22 : decor.width / 2 + 16
+                y: 1
+                width: decor.width / 2 - 38
+                height: 4
+                step: 6
+                major: 5
+                minorLength: 2
+                majorLength: 4
+                color: Colors.withAlpha(decor.accent, 0.5)
+            }
+        }
+
+        Shape {
+            x: decor.width / 2 - 10
+            y: 0
+            width: 20
+            height: 12
+            preferredRendererType: Shape.CurveRenderer
+
+            ShapePath {
+                fillColor: Colors.withAlpha(decor.accent, 0.12)
+                strokeColor: Colors.withAlpha(decor.accent, 0.75)
+                strokeWidth: 1
+
+                PathAngleArc {
+                    centerX: 10
+                    centerY: 0.5
+                    radiusX: 9
+                    radiusY: 9
+                    startAngle: 0
+                    sweepAngle: 180
+                }
+            }
+
+            ShapePath {
+                fillColor: "transparent"
+                strokeColor: Colors.withAlpha(decor.accent, 0.75)
+                strokeWidth: 1
+                capStyle: ShapePath.FlatCap
+
+                PathMultiline {
+                    paths: {
+                        const out = [];
+                        for (let i = 1; i < 6; i++) {
+                            const a = i * Math.PI / 6;
+                            out.push([Qt.point(10 + Math.cos(a) * 5.5, 0.5 + Math.sin(a) * 5.5), Qt.point(10 + Math.cos(a) * 8.5, 0.5 + Math.sin(a) * 8.5)]);
+                        }
+                        // The index, pointing straight down.
+                        out.push([Qt.point(10, 0.5), Qt.point(10, 7.5)]);
+                        return out;
+                    }
+                }
+            }
+        }
+    }
+
+    // Abyss: a lit status strip at the head, a sonar ping in the far corner,
+    // and the title on an instrument label.
+    Item {
+        anchors.fill: parent
+        visible: decor.shape === "lume"
+
+        Rectangle {
+            x: Math.max(14, decor.radius)
+            y: 0
+            width: 34
+            height: 2
+            radius: 1
+            color: decor.accent2
+        }
+
+        Rectangle {
+            x: Math.max(14, decor.radius) - 2
+            y: -1
+            width: 38
+            height: 5
+            radius: 2.5
+            color: Colors.withAlpha(decor.accent2, 0.18)
+        }
+
+        PingArcs {
+            anchors.fill: parent
+            cx: width - Math.max(14, decor.radius)
+            cy: Math.max(14, decor.radius)
+            gap: 6
+            color: Colors.withAlpha(decor.accent2, 0.45)
+        }
+
+        Rectangle {
+            visible: decor.title.length > 0
+            x: Math.max(14, decor.radius) + 44
+            y: 5
+            width: labelText.implicitWidth + 16
+            height: 16
+            radius: 8
+            color: Colors.withAlpha(decor.accent2, 0.1)
+            border.width: 1
+            border.color: Colors.withAlpha(decor.accent2, 0.5)
+
+            Text {
+                id: labelText
+                anchors.centerIn: parent
+                text: decor.title.toUpperCase()
+                font.family: "B612"
+                font.pixelSize: 9
+                font.weight: Font.Bold
+                font.letterSpacing: 1.5
+                color: decor.accent2
             }
         }
     }

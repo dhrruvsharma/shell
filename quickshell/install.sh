@@ -36,8 +36,9 @@ PACMAN_PKGS=(
 AUR_PKGS=(ttf-material-symbols-variable-git)
 EXTRA_PKGS=(ollama github-cli)
 
-# Type for the Art Deco, Cathedral, Broadsheet and Wasteland desktop themes
-# (Google Fonts, OFL/Apache), fetched into ~/.local/share/fonts when missing.
+# Type for the Art Deco, Cathedral, Broadsheet, Wasteland, Observatory and
+# Abyss desktop themes (Google Fonts, OFL/Apache), fetched into
+# ~/.local/share/fonts when missing.
 THEME_FONTS=(
     ofl/limelight/Limelight-Regular.ttf
     ofl/poiretone/PoiretOne-Regular.ttf
@@ -57,6 +58,14 @@ THEME_FONTS=(
     ofl/barlowcondensed/BarlowCondensed-{Regular,Medium,SemiBold,Bold}.ttf
     ofl/barlowsemicondensed/BarlowSemiCondensed-{Regular,Medium,SemiBold,Bold,Italic}.ttf
     apache/specialelite/SpecialElite-Regular.ttf
+    ofl/imfellenglish/IMFeEN{rm,it}28P.ttf
+    ofl/imfellenglishsc/IMFeENsc28P.ttf
+    "ofl/ebgaramond/EBGaramond[wght].ttf"
+    "ofl/ebgaramond/EBGaramond-Italic[wght].ttf"
+    ofl/marcellussc/MarcellusSC-Regular.ttf
+    ofl/michroma/Michroma-Regular.ttf
+    ofl/b612/B612-{Regular,Bold,Italic}.ttf
+    ofl/b612mono/B612Mono-{Regular,Bold}.ttf
 )
 
 # venv path : pip packages (paths are hardcoded in services/{Anime,Manga,Novel}.qml)

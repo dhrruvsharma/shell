@@ -25,8 +25,8 @@ Item {
 
         // Desktop themes restyle the capsule; the HUD theme's is a chamfered
         // frame, Neon Noir's a cut-corner one, Art Deco's steps in at the
-        // corners, Cathedral's is cusped, Broadsheet's ruled and
-        // Wasteland's riveted.
+        // corners, Cathedral's is cusped, Broadsheet's ruled, Wasteland's
+        // riveted, Observatory's graduated and Abyss's lit from below.
         readonly property var look: DesktopTheme.look
         readonly property bool hud: look.shape === "chamfer"
         readonly property bool neon: look.shape === "neon"
@@ -96,6 +96,31 @@ Item {
                 x: index === 0 ? 3 : pill.width - width - 3
                 y: (pill.height - height) / 2
             }
+        }
+
+        ScaleTicks {
+            visible: pill.look.shape === "scale"
+            x: 6
+            y: pill.height - height - 1
+            width: pill.width - 12
+            height: 4
+            up: true
+            step: 4
+            major: 5
+            minorLength: 1.5
+            majorLength: 3.5
+            color: DesktopTheme.borderColor(pill.look)
+            opacity: 0.8
+        }
+
+        Rectangle {
+            visible: pill.look.shape === "lume"
+            x: pill.radius
+            y: pill.height - 4
+            width: pill.width - 2 * pill.radius
+            height: 2
+            radius: 1
+            color: Colors.withAlpha(DesktopTheme.accent2, 0.85)
         }
 
         implicitWidth: row.implicitWidth + 20

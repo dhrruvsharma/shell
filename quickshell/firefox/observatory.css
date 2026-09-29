@@ -1,0 +1,48 @@
+/* Observatory: EB Garamond, Fell small capitals on the tabs, brass as the
+ * accent, surfaces washed with the sky's enamel, corners like an
+ * instrument plate's, and the selected tab graduated along its foot like a
+ * scale. */
+:root:root {
+  --qs-accent: var(--qs-theme-accent);
+  --qs-on-accent: #17120a;
+  --lwt-accent-color: color-mix(in srgb, var(--qs-bg) 84%, var(--qs-theme-accent2)) !important;
+  --lwt-accent-color-inactive: color-mix(in srgb, var(--qs-bg) 88%, var(--qs-theme-accent2)) !important;
+  --toolbar-bgcolor: color-mix(in srgb, var(--qs-surface-low) 88%, var(--qs-theme-accent2)) !important;
+  --tab-border-radius: 4px !important;
+  --toolbarbutton-border-radius: 4px !important;
+  --border-radius-small: 4px !important;
+  --border-radius-medium: 4px !important;
+  --border-radius-large: 8px !important;
+}
+
+#navigator-toolbox, #sidebar-main, menupopup, panel, .urlbarView {
+  font-family: "EB Garamond", "IM FELL English", serif !important;
+}
+
+.tab-label {
+  font-family: "IM FELL English SC", "EB Garamond", serif !important;
+  letter-spacing: 0.02em !important;
+}
+
+#navigator-toolbox {
+  border-bottom: 1px solid color-mix(in srgb, var(--qs-theme-accent) 55%, transparent) !important;
+}
+
+#urlbar .urlbar-background {
+  border-radius: 4px !important;
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--qs-theme-accent) 45%, transparent) !important;
+}
+
+#urlbar[focused] .urlbar-background {
+  box-shadow: inset 0 0 0 1px var(--qs-theme-accent),
+              inset 0 0 0 4px color-mix(in srgb, var(--qs-theme-accent) 14%, transparent) !important;
+}
+
+.tab-background:is([selected], [multiselected]) {
+  border-radius: 4px !important;
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--qs-theme-accent) 55%, transparent) !important;
+  background-image: repeating-linear-gradient(90deg, color-mix(in srgb, var(--qs-theme-accent) 75%, transparent) 0 1px, transparent 1px 5px) !important;
+  background-size: 100% 3px !important;
+  background-position: bottom !important;
+  background-repeat: no-repeat !important;
+}
