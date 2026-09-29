@@ -1,0 +1,103 @@
+#version 320 es
+// Screen grade for the Siege desktop theme, applied by Hyprland to the
+// whole output (decoration:screen_shader). services/DesktopTheme.qml fills in
+// the @PLACEHOLDERS@ from the theme's tincture and steel and writes the
+// result to ~/.cache/quickshell/desktop-theme.frag.
+//
+// Deliberately static: it never reads `time` (the stitches are a fixed
+// pattern), so Hyprland keeps its damage tracking and an idle desktop costs
+// nothing.
+
+precision highp float;
+
+in vec2 v_texcoord;
+uniform sampler2D tex;
+out vec4 fragColor;
+
+const vec3 tincture = vec3(@ACCENT@);
+const vec3 steel = vec3(@ACCENT2@);
+const float strength = @STRENGTH@;
+const float strong = @STRONG@;
+
+float grain(vec2 p) {
+    return fract(52.9829189 * fract(dot(p, vec2(0.06711056, 0.00583715))));
+}
+
+vec3 hsv(vec3 c) {
+    vec4 K = vec4(0.0, -1.0 / 3.0, 2.0 / 3.0, -1.0);
+    vec4 p = mix(vec4(c.bg, K.wz), vec4(c.gb, K.xy), step(c.b, c.g));
+    vec4 q = mix(vec4(p.xyw, c.r), vec4(c.r, p.yzx), step(p.x, c.r));
+    float d = q.x - min(q.w, q.y);
+    return vec3(abs(q.z + (q.w - q.y) / (6.0 * d + 1e-10)), d / (q.x + 1e-10), q.x);
+}
+
+void main() {
+    vec4 c = texture(tex, v_texcoord);
+    float lum = dot(c.rgb, vec3(0.2126, 0.7152, 0.0722));
+
+    // Smoke over the field: colour dulls towards steel and ash, except
+    // what's near the tincture's hue, which keeps its colour like a banner
+    // through the smoke. Firelight in the highlights, the shadows smoky.
+    vec3 h = hsv(c.rgb);
+    float th = hsv(tincture).x;
+    float dh = abs(h.x - th);
+    dh = min(dh, 1.0 - dh);
+    float keep = (1.0 - smoothstep(0.05, 0.13, dh)) * smoothstep(0.12, 0.35, h.y);
+    vec3 ash = vec3(lum) * mix(vec3(1.0), steel / max(max(steel.r, max(steel.g, steel.b)), 0.2), 0.35);
+    c.rgb = mix(c.rgb, ash, 0.24 * strength * (1.0 - keep));
+    float high = smoothstep(0.55, 1.0, lum);
+    c.rgb = mix(c.rgb, c.rgb * vec3(1.07, 0.97, 0.84), high * 0.2 * strength);
+    float shade = 1.0 - smoothstep(0.0, 0.4, lum);
+    c.rgb = mix(c.rgb, c.rgb * vec3(0.9, 0.89, 0.93), shade * 0.3 * strength);
+
+    // Strong: the Bayeux Tapestry. The picture worked in wool on linen:
+    // colour pulled most of the way to the embroiderers' few dyes (weighted
+    // by nearness, so neighbouring colours never part along a hard edge),
+    // the pale ground left as bare linen, edges outlined in stem stitch and
+    // the laid-and-couched wool running across everything else.
+    vec3 pal[8] = vec3[8](
+        vec3(0.86, 0.8, 0.65), vec3(0.64, 0.27, 0.19), vec3(0.8, 0.62, 0.3), vec3(0.28, 0.44, 0.39),
+        vec3(0.52, 0.58, 0.41), vec3(0.23, 0.29, 0.45), vec3(0.17, 0.15, 0.13), vec3(0.56, 0.62, 0.66));
+    vec3 settled = vec3(0.0);
+    float weight = 0.0;
+    for (int i = 0; i < 8; i++) {
+        vec3 d = c.rgb - pal[i];
+        float w = exp(-dot(d, d) * 14.0);
+        settled += pal[i] * w;
+        weight += w;
+    }
+    settled /= max(weight, 1e-5);
+    c.rgb = mix(c.rgb, settled, 0.6 * strong);
+    // Worked in flat fields of wool, not shaded: the tones step.
+    float l0 = max(dot(c.rgb, vec3(0.2126, 0.7152, 0.0722)), 0.01);
+    float stepped = floor(l0 * 5.0 + 0.5) / 5.0;
+    c.rgb *= mix(1.0, clamp(stepped / l0, 0.6, 1.5), 0.35 * strong);
+    // The whole cloth aged to a warm linen.
+    c.rgb = mix(c.rgb, c.rgb * vec3(1.05, 0.98, 0.84), 0.35 * strong);
+    vec2 fc = floor(gl_FragCoord.xy);
+    float linen = smoothstep(0.62, 0.8, dot(c.rgb, vec3(0.2126, 0.7152, 0.0722)));
+    // Linen: a plain weave. Wool: laid threads, turned in patches, tied
+    // down by a couching stitch every few rows.
+    float weave = step(1.5, mod(fc.x, 3.0)) * 0.5 + step(1.5, mod(fc.y, 3.0)) * 0.5;
+    float patch_ = mod(floor(fc.x / 18.0) + floor(fc.y / 18.0), 2.0);
+    float laid = patch_ < 0.5 ? step(1.5, mod(fc.y, 3.0)) : step(1.5, mod(fc.x + fc.y, 3.0));
+    float couch = step(mod(fc.y, 9.0), 0.5) * step(mod(fc.x + floor(fc.y / 9.0) * 4.0, 7.0), 1.5);
+    float thread = mix(laid - couch * 0.8, weave, linen);
+    c.rgb *= 1.0 - (thread - 0.5) * 0.13 * strong;
+    if (strong > 0.5) {
+        // Stem stitch where the picture changes sharply.
+        vec2 px = 1.5 / vec2(textureSize(tex, 0));
+        float l1 = dot(texture(tex, v_texcoord + vec2(px.x, 0.0)).rgb, vec3(0.2126, 0.7152, 0.0722));
+        float l2 = dot(texture(tex, v_texcoord + vec2(0.0, px.y)).rgb, vec3(0.2126, 0.7152, 0.0722));
+        float edge = smoothstep(0.08, 0.22, abs(l1 - lum) + abs(l2 - lum));
+        c.rgb = mix(c.rgb, vec3(0.16, 0.14, 0.12), edge * 0.45 * (0.6 + 0.4 * step(1.5, mod(fc.x + fc.y, 4.0))));
+    }
+
+    // A dark vignette, heavier when strong, and a little grain.
+    vec2 d = v_texcoord - 0.5;
+    float r = length(d * vec2(1.0, 1.15));
+    c.rgb *= 1.0 - smoothstep(0.42, 0.95, r) * (0.18 * strength + 0.08 * strong);
+    c.rgb += (grain(fc) - 0.5) * (0.01 + 0.016 * strong);
+
+    fragColor = vec4(clamp(c.rgb, 0.0, 1.0), c.a);
+}

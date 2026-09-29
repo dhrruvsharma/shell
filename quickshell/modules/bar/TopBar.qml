@@ -250,13 +250,16 @@ Item {
         // Desktop themes restyle the group chrome; the HUD, Neon Noir, Art
         // Deco and Cathedral themes' is a cut-corner frame drawn below the
         // atoms instead, Broadsheet rules it, Wasteland rivets it,
-        // Observatory graduates its foot and Abyss lights it from below.
+        // Observatory graduates its foot, Abyss lights it from below,
+        // Devaloka stands it on a temple border and Siege cuts it into
+        // battlements.
         readonly property var look: Services.DesktopTheme.look
         readonly property bool hud: look.shape === "chamfer"
         readonly property bool neon: look.shape === "neon"
         readonly property bool deco: look.shape === "deco"
         readonly property bool cusp: look.shape === "cusp"
-        readonly property bool framed: hud || neon || deco || cusp
+        readonly property bool crenel: look.shape === "crenel"
+        readonly property bool framed: hud || neon || deco || cusp || crenel
         radius: Services.DesktopTheme.radius(island.look, 16, height)
         topLeftRadius: Services.DesktopTheme.corner(island.look, radius, 0)
         topRightRadius: Services.DesktopTheme.corner(island.look, radius, 1)
@@ -301,6 +304,15 @@ Item {
             strokeWidth: island.isMergeTarget ? 2 : 1
         }
 
+        CrenelFrame {
+            visible: island.crenel && (island.grouped || island.isMergeTarget)
+            merlon: 9
+            depth: 4
+            fill: island.grouped ? Colors.surface_container_high : "transparent"
+            stroke: island.isMergeTarget ? Services.DesktopTheme.accent2Of("siege") : Services.DesktopTheme.borderColor(island.look)
+            strokeWidth: island.isMergeTarget ? 2 : 1
+        }
+
         // Broadsheet: the group boxed between a heavy and a thin rule.
         Repeater {
             model: island.look.shape === "print" && island.grouped ? [{ y: 0, h: 2 }, { y: island.height - 1, h: 1 }] : []
@@ -340,6 +352,19 @@ Item {
             majorLength: 3
             color: Services.DesktopTheme.borderColor(island.look)
             opacity: 0.7
+        }
+
+        // Devaloka: a temple border along its foot.
+        TempleBorder {
+            visible: island.look.shape === "zari" && island.grouped
+            x: island.radius
+            y: island.height - height - 1
+            width: island.width - 2 * island.radius
+            height: 3
+            step: 5
+            rule: 0
+            color: Services.DesktopTheme.borderColor(island.look)
+            opacity: 0.8
         }
 
         // Abyss: lit along its foot.

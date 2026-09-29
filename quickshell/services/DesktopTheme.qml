@@ -30,13 +30,14 @@ Singleton {
     //       and `offset` [x, y] shadows, and optional window borders
     //       (`border`: active roles as a gradient, inactive role + hex alpha).
     // bar:  shape (round | chamfer | square | pill | soft | seal | neon |
-    //       pebble | deco | cusp | print | plate | scale | lume), font,
+    //       pebble | deco | cusp | print | plate | scale | lume | zari |
+    //       crenel), font,
     //       weight, size delta, letter spacing, `caps` (true: capitals,
     //       "small": small capitals), hairline border; `uiFont` sets panel
     //       text when the bar font is too decorative for it.
     // tone: how the theme colours the wallpaper's accents (see accentOf):
     //       "" as they are, "neon", "muted", "gilt", "jewel", "print",
-    //       "dusty", "brass" or "lume".
+    //       "dusty", "brass", "lume", "temple" or "heraldic".
     // A colour role is a Colors name, or "accent" / "accent2" for the
     // theme's toned accents.
     readonly property var themes: [
@@ -307,6 +308,48 @@ Singleton {
                 { icon: "water", text: "Your wallpaper under water: caustics, depth haze and marine snow" },
                 { icon: "scuba_diving", text: "Dive-watch clock with the zone of the ocean for the hour" }
             ]
+        },
+        {
+            id: "devaloka",
+            name: "Devaloka",
+            tagline: "Indian mythology desktop",
+            icon: "temple_hindu",
+            lockTheme: "devaloka",
+            tone: "temple",
+            description: "The realm of the devas in marigold gold, your wallpaper's colour beside it as a painter's pigment: a small yantra seal with today's panchang in the corner, temple-border tags on the bar, and a Konark sun-wheel clock.",
+            hypr: { rounding: 6, range: 28, power: 3, glow: "accent", glowAlpha: "44", inactive: "0c050388", dim: 0.08, border: { active: ["accent", "accent2"], angle: 90, inactive: "surface_container_high", inactiveAlpha: "cc" } },
+            bar: { shape: "zari", font: "Eczar", uiFont: "Tiro Devanagari Sanskrit", weight: Font.DemiBold, sizeDelta: -1, letterSpacing: 0.3, border: 1, borderRole: "accent", borderAlpha: 0.6 },
+            effects: {
+                subtle: "Lamplight in the temple: marigold warmth in the highlights, the shadows deepened towards lac red, and a soft vignette.",
+                strong: "An old pattachitra: colour settled into painted pigments on cloth, a fine weave and darkened edges."
+            },
+            changes: [
+                { icon: "rounded_corner", text: "Gently rounded windows edged from temple gold to your pigment" },
+                { icon: "temple_hindu", text: "Temple-border tags in Eczar on the bar" },
+                { icon: "filter_vintage", text: "A yantra seal and today's panchang in the corner of the wallpaper" },
+                { icon: "wb_sunny", text: "Konark sun-wheel clock: the prahar, the tithi and the nakshatra" }
+            ]
+        },
+        {
+            id: "siege",
+            name: "Siege",
+            tagline: "Medieval war desktop",
+            icon: "swords",
+            lockTheme: "siege",
+            tone: "heraldic",
+            description: "A castle at war: your wallpaper's colour as a heraldic tincture beside burnished steel, your coat of arms and the day of the siege in the corner, smoke and embers, crenellated tags on the bar, and a sword-and-buckler clock.",
+            hypr: { rounding: 0, range: 22, power: 3, glow: "accent", glowAlpha: "3a", inactive: "0a060488", dim: 0.08, border: { active: ["accent2", "accent"], angle: 90, inactive: "surface_container_high", inactiveAlpha: "cc" } },
+            bar: { shape: "crenel", font: "Germania One", uiFont: "Texturina", weight: Font.Normal, sizeDelta: -2, letterSpacing: 0.5, border: 1, borderRole: "accent", borderAlpha: 0.6 },
+            effects: {
+                subtle: "Smoke over the field: colour dulled towards steel and ash while your tincture keeps its colour like a banner, firelight in the highlights and a dark vignette.",
+                strong: "The Bayeux Tapestry: the picture worked in wool on linen, in the few dyes the embroiderers had, with the stitches showing."
+            },
+            changes: [
+                { icon: "crop_square", text: "Square windows edged from steel to your tincture" },
+                { icon: "fort", text: "Crenellated tags in Germania One on the bar" },
+                { icon: "shield", text: "Your coat of arms and the day of the siege in the corner of the wallpaper, under smoke and embers" },
+                { icon: "swords", text: "Sword-and-buckler clock that keeps the watches of the siege" }
+            ]
         }
     ]
 
@@ -337,8 +380,8 @@ Singleton {
     }
 
     // Shapes drawn square (their corners, if any, are cut by masks and
-    // frames: HudMask, NeonMask, DecoMask, CuspMask).
-    readonly property var squareShapes: ["chamfer", "square", "neon", "deco", "cusp", "print"]
+    // frames: HudMask, NeonMask, DecoMask, CuspMask, CrenelMask).
+    readonly property var squareShapes: ["chamfer", "square", "neon", "deco", "cusp", "print", "crenel"]
 
     // Corner radius for a bar shape, given the plain design's radius.
     function radius(lk, normal, h) {
@@ -349,6 +392,7 @@ Singleton {
         case "deco":
         case "cusp":
         case "print":
+        case "crenel":
             return 0;
         case "plate":
             return Math.min(normal, 2);
@@ -358,6 +402,8 @@ Singleton {
             return Math.min(normal, 4);
         case "lume":
             return Math.min(normal, 8);
+        case "zari":
+            return Math.min(normal, 6);
         case "soft":
             return Math.min(normal, 9);
         case "pebble":
@@ -380,18 +426,19 @@ Singleton {
     }
 
     // Corner radius for a panel's outer surface, given its plain radius:
-    // square for HUD, Mainframe, Neon Noir, Art Deco, Cathedral and
-    // Broadsheet, a slight round for Cave Abode and Wasteland, an
-    // instrument plate's for Observatory, unchanged for the round themes.
+    // square for HUD, Mainframe, Neon Noir, Art Deco, Cathedral, Broadsheet
+    // and Siege, a slight round for Cave Abode and Wasteland, an
+    // instrument plate's for Observatory, a lacquered plaque's for
+    // Devaloka, unchanged for the round themes.
     function panelRadius(normal) {
         const sh = look.shape;
         return squareShapes.includes(sh) ? 0 : sh === "seal" || sh === "plate" ? Math.min(normal, sh === "seal" ? 4 : 3)
-            : sh === "scale" ? Math.min(normal, 10) : normal;
+            : sh === "scale" ? Math.min(normal, 10) : sh === "zari" ? Math.min(normal, 8) : normal;
     }
 
     // Corner radius the theme imposes on controls inside panels (buttons,
     // cards, chips, fields), or -1 to leave them as designed.
-    readonly property real controlRadius: squareShapes.includes(look.shape) ? 0 : look.shape === "seal" ? 3 : look.shape === "plate" ? 2 : look.shape === "scale" ? 4 : -1
+    readonly property real controlRadius: squareShapes.includes(look.shape) ? 0 : look.shape === "seal" ? 3 : look.shape === "plate" ? 2 : look.shape === "scale" ? 4 : look.shape === "zari" ? 5 : -1
 
     // Astral rounds controls into capsules instead; Still drops card borders.
     // (Wabi-sabi's cards turn into pebbles through corner().)
@@ -432,6 +479,15 @@ Singleton {
     //   lume:  the wallpaper's colour as a creature's glow in the deep (drawn
     //          a little towards the sea's blue-green), and the pale sea-glow
     //          of a dive watch's lume beside it.
+    //   temple: marigold and temple gold (a breath of the wallpaper in it),
+    //          with the wallpaper's colour beside it as a painter's pigment:
+    //          indigo, lac, malachite; never golden, and kumkum vermilion
+    //          when the wallpaper has no colour to give.
+    //   heraldic: the wallpaper's colour drawn most of the way to the
+    //          heraldic tincture a herald would call it (gules, tenné, vert,
+    //          azure, purpure or murrey; gules when there is none; see
+    //          Heraldry), and argent beside it as burnished steel: a colour
+    //          and a metal, as the rule of tincture wants.
     // accent/accent2 are the active theme's; accentOf/accent2Of any theme's
     // (previews show themes that aren't on).
     readonly property color accent: accentOf(adapter.theme)
@@ -459,6 +515,12 @@ Singleton {
             return Qt.tint(Qt.hsla(0.108, 0.5, _dark ? 0.6 : 0.36, 1), Colors.withAlpha(Colors.primary, 0.1));
         case "lume":
             return _biolum(_toSea(_hue(Colors.primary, 0.52)));
+        case "temple":
+            return Qt.tint(Qt.hsla(0.1, 0.84, _dark ? 0.58 : 0.4, 1), Colors.withAlpha(Colors.primary, 0.08));
+        case "heraldic": {
+            const t = Heraldry.tincture;
+            return Qt.hsla(t.h, t.sat, _dark ? 0.6 : 0.4, 1);
+        }
         default:
             return Qt.color(Colors.primary);
         }
@@ -500,6 +562,16 @@ Singleton {
         }
         case "lume":
             return Qt.tint(Qt.hsla(0.46, 0.7, _dark ? 0.7 : 0.34, 1), Colors.withAlpha(Colors.tertiary, 0.08));
+        case "temple": {
+            // A pigment beside the gold: never golden itself.
+            const golden = h => h > 0.05 && h < 0.17;
+            const p = _hue(Colors.primary, -1);
+            const t = _hue(Colors.tertiary, -1);
+            const h = p >= 0 && !golden(p) ? p : t >= 0 && !golden(t) ? t : 0.015;
+            return Qt.hsla(h, 0.66, _dark ? 0.56 : 0.4, 1);
+        }
+        case "heraldic":
+            return Qt.tint(Qt.hsla(0.6, 0.09, _dark ? 0.8 : 0.34, 1), Colors.withAlpha(Colors.primary, 0.06));
         default:
             return Qt.color(Colors.tertiary);
         }

@@ -13,8 +13,10 @@ import qs.services as Services
 // step in at the corners under a gold line (DecoMask), Cathedral's are
 // cusped (CuspMask), Broadsheet's are ruled above and below like a
 // newspaper deck, Wasteland's are riveted plates, Observatory's are
-// graduated along the foot like an instrument's scale, and Abyss's are
-// backlit keys with a light strip. Widget colours are kept either way.
+// graduated along the foot like an instrument's scale, Abyss's are backlit
+// keys with a light strip, Devaloka's stand on a sari's temple border, and
+// Siege's are cut into battlements along the top (CrenelMask). Widget
+// colours are kept either way.
 //
 // `maxWidth` (0 = unbounded) turns on the truncating behaviour — clip + elide —
 // that only the pills with variable-length labels used.
@@ -35,8 +37,9 @@ Rectangle {
     readonly property bool neon: look.shape === "neon"
     readonly property bool deco: look.shape === "deco"
     readonly property bool cusp: look.shape === "cusp"
+    readonly property bool crenel: look.shape === "crenel"
     // Shapes whose outline is a mask and a frame drawn over it.
-    readonly property bool masked: hud || neon || deco || cusp
+    readonly property bool masked: hud || neon || deco || cusp || crenel
 
     signal clicked
 
@@ -46,12 +49,12 @@ Rectangle {
     bottomRightRadius: Services.DesktopTheme.corner(root.look, radius, 2)
     bottomLeftRadius: Services.DesktopTheme.corner(root.look, radius, 3)
     color: Colors.surface_container
-    border.width: root.neon || root.deco || root.cusp || root.look.shape === "print" ? 0 : root.look.border
+    border.width: root.neon || root.deco || root.cusp || root.crenel || root.look.shape === "print" ? 0 : root.look.border
     border.color: Services.DesktopTheme.borderColor(root.look)
     layer.enabled: root.masked
     layer.effect: MultiEffect {
         maskEnabled: true
-        maskSource: root.neon ? neonMask : root.deco ? decoMask : root.cusp ? cuspMask : hudMask
+        maskSource: root.neon ? neonMask : root.deco ? decoMask : root.cusp ? cuspMask : root.crenel ? crenelMask : hudMask
         maskThresholdMin: 0.5
         maskSpreadAtMin: 1.0
     }
@@ -141,6 +144,21 @@ Rectangle {
         inset: 1
     }
 
+    CrenelMask {
+        id: crenelMask
+        active: root.crenel
+        merlon: 7
+        depth: 3
+    }
+
+    CrenelFrame {
+        visible: root.crenel
+        merlon: 7
+        depth: 3
+        fill: "transparent"
+        stroke: Services.DesktopTheme.borderColor(root.look)
+    }
+
     // Broadsheet: a thin rule above, a heavy one below.
     Rectangle {
         visible: root.look.shape === "print"
@@ -183,6 +201,18 @@ Rectangle {
         majorLength: 3.5
         color: Services.DesktopTheme.borderColor(root.look)
         opacity: 0.8
+    }
+
+    // Devaloka: a temple border along the foot.
+    TempleBorder {
+        visible: root.look.shape === "zari"
+        x: root.radius
+        y: root.height - height - 1
+        width: root.width - 2 * root.radius
+        height: 3.5
+        step: 5
+        rule: 0
+        color: Services.DesktopTheme.borderColor(root.look)
     }
 
     // Abyss: a strip of light along the foot, as under a backlit key.

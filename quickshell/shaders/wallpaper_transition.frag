@@ -26,6 +26,12 @@
 //  13 tide   - the tide comes in: the new picture rises from the bottom
 //              under a rippling waterline, swimming as it settles, bubbles
 //              on the way (Abyss)
+//  14 lotus  - a lotus opens from the middle: the new picture inside two
+//              rings of pointed petals that grow and turn a little as they
+//              unfold, gold along their edges (Devaloka)
+//  15 fire   - the old picture burns away from the bottom up: a ragged
+//              front of glowing embers eats into it, scorching it brown
+//              ahead of the flames, sparks going up (Siege)
 // Only drawn while a transition runs; the wallpaper is a plain Image otherwise.
 
 layout(location = 0) in vec2 qt_TexCoord0;
@@ -254,6 +260,56 @@ void main() {
         vec2 g = vec2(uv.x * ubuf.aspect, uv.y) * 38.0 + vec2(0.0, p * 10.0);
         float bub = step(0.9, hash(floor(g))) * smoothstep(0.3, 0.18, length(fract(g) - 0.5)) * smoothstep(0.16, 0.0, uv.y - surf) * below;
         edge = mix(ubuf.edgeColor.rgb, vec3(0.9, 1.0, 1.0), 0.5) * (line * 0.85 + bub * 0.3);
+    } else if (mode == 14) {
+        // Two rings of eight petals, each a pointed arch standing on the
+        // circle where its neighbours meet, the back ring turned half a
+        // petal and a little taller: their outline is how far the flower
+        // has opened at this angle.
+        const float TAU = 6.2831853;
+        float d = length(c);
+        float a = atan(c.x, -c.y) + p * 0.5;
+        float R = p * maxR * 1.25;
+        float r0 = R * 0.52;
+        float slot = TAU / 8.0;
+        float w = 3.14159265 * r0 / 8.0;
+        float h = R - r0;
+        float xf = abs(fract(a / slot + 0.5) - 0.5) * slot * r0;
+        float xb = abs(fract(a / slot) - 0.5) * slot * r0;
+        float rcf = (w * w + h * h) / max(2.0 * w, 1e-5);
+        float hb = h * 1.12;
+        float rcb = (w * w + hb * hb) / max(2.0 * w, 1e-5);
+        float front = r0 + sqrt(max(0.0, rcf * rcf - pow(xf + rcf - w, 2.0)));
+        float back = r0 + sqrt(max(0.0, rcb * rcb - pow(xb + rcb - w, 2.0)));
+        float edgeR = max(front, back);
+        m = max(smoothstep(edgeR + 0.004, edgeR - 0.004, d), step(0.999, p));
+        float running = step(0.001, p) * step(p, 0.999);
+        float rim = exp(-abs(d - edgeR) * 300.0) * running;
+        // The front petals' edges where they lie over the back ones.
+        float over = exp(-abs(d - front) * 380.0) * step(d, back) * running * 0.6;
+        edge = ubuf.edgeColor.rgb * (rim * 1.05 + over);
+        // A warm light at the heart of the flower as it opens.
+        edge += ubuf.edgeColor.rgb * exp(-d * 7.0) * sin(p * 3.14159265) * 0.25;
+    } else if (mode == 15) {
+        // How soon each point burns: the bottom first, the front ragged
+        // with licks of flame that run on ahead.
+        vec2 q = vec2(uv.x * ubuf.aspect, uv.y);
+        float lick = fbm(q * 3.0 + vec2(0.0, 1.7)) * 0.55 + fbm(q * 9.0) * 0.18;
+        float key = (1.0 - uv.y) * 0.78 + lick;
+        float t = p * 1.24 + 0.12;
+        float dd = key - t;
+        m = max(smoothstep(0.004, -0.004, dd), step(0.999, p));
+        float running = step(0.001, p) * step(p, 0.999);
+        // Scorched brown ahead of the flames, black just before them.
+        float scorch = smoothstep(0.1, 0.0, dd) * step(0.0, dd) * running;
+        a.rgb = mix(a.rgb, a.rgb * vec3(0.45, 0.3, 0.18), scorch * 0.7);
+        a.rgb *= 1.0 - smoothstep(0.03, 0.0, dd) * step(0.0, dd) * 0.85 * running;
+        // The burning edge, and sparks rising off it.
+        float glow = exp(-abs(dd) * 90.0) * running;
+        vec3 flame = mix(vec3(1.0, 0.36, 0.06), vec3(1.0, 0.82, 0.42), exp(-abs(dd) * 260.0));
+        edge = flame * glow * 1.3;
+        vec2 g = vec2(uv.x * ubuf.aspect, uv.y) * 42.0 + vec2(0.0, p * 18.0);
+        float spark = step(0.93, hash(floor(g))) * smoothstep(0.24, 0.08, length(fract(g) - 0.5));
+        edge += vec3(1.0, 0.6, 0.2) * spark * smoothstep(0.16, 0.02, dd) * step(0.0, dd) * running;
     } else {
         float r = p * maxR * 1.05;
         m = smoothstep(r, r - 0.04, length(c));

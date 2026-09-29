@@ -13,9 +13,11 @@ import qs.modules.lock.themes.arcade as ArcadeTheme
 import qs.modules.lock.themes.artdeco as ArtdecoTheme
 import qs.modules.lock.themes.cosmos as CosmosTheme
 import qs.modules.lock.themes.cyberpunk as CyberpunkTheme
+import qs.modules.lock.themes.devaloka as DevalokaTheme
 import qs.modules.lock.themes.gothic as GothicTheme
 import qs.modules.lock.themes.newspaper as NewspaperTheme
 import qs.modules.lock.themes.observatory as ObservatoryTheme
+import qs.modules.lock.themes.siege as SiegeTheme
 import qs.modules.lock.themes.terminal as TerminalTheme
 import qs.modules.lock.themes.wabisabi as WabisabiTheme
 import qs.modules.lock.themes.wasteland as WastelandTheme

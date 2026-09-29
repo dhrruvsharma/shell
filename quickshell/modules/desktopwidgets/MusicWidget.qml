@@ -52,7 +52,7 @@ WidgetFrame {
                 elide: Text.ElideRight
                 font.family: root.st.font
                 font.pixelSize: 12
-                font.italic: ["scroll", "lancet", "clipping", "brass"].includes(root.st.frame)
+                font.italic: ["scroll", "lancet", "clipping", "brass", "patta", "banner"].includes(root.st.frame)
                 color: Colors.withAlpha(root.ink, 0.7)
             }
 
@@ -107,7 +107,7 @@ WidgetFrame {
                             Rectangle {
                                 anchors.fill: parent
                                 visible: button.main && root.st.frame !== "console" && root.st.frame !== "bare"
-                                radius: ({ chamfer: 0, neon: 0, gilt: 0, clipping: 0, scroll: 4, lancet: 4, scrap: 2, brass: 4 })[root.st.frame] ?? height / 2
+                                radius: ({ chamfer: 0, neon: 0, gilt: 0, clipping: 0, scroll: 4, lancet: 4, scrap: 2, brass: 4, patta: 5, banner: 1 })[root.st.frame] ?? height / 2
                                 color: Colors.withAlpha(root.accent, button.containsMouse ? 0.35 : 0.2)
                             }
 

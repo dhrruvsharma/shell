@@ -12,6 +12,7 @@ Hyprland + Quickshell rice. Each desktop theme takes its colours from the wallpa
 | ![](previews/rice-screenshots/theme-wabisabi.jpg) **Wabi-sabi** | ![](previews/rice-screenshots/theme-artdeco.jpg) **Art Deco** |
 | ![](previews/rice-screenshots/theme-gothic.jpg) **Cathedral** | ![](previews/rice-screenshots/theme-newspaper.jpg) **Broadsheet** |
 | ![](previews/rice-screenshots/theme-observatory.jpg) **Observatory** | ![](previews/rice-screenshots/theme-abyss.jpg) **Abyss** |
+| ![](previews/rice-screenshots/theme-devaloka.jpg) **Devaloka** | ![](previews/rice-screenshots/theme-siege.jpg) **Siege** |
 
 The Wasteland theme is shown at the top.
 

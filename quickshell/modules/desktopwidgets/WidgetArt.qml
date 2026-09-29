@@ -13,7 +13,10 @@ import qs.services as Services
 // steps in at the corners inside a gold rule; Cathedral's is a leaded
 // lancet; Broadsheet prints it in halftone; Wasteland's is a faded photo
 // taped up at two corners; Observatory's is an engraved portrait medallion
-// in a brass ring; Abyss's is seen through a bolted porthole, under water.
+// in a brass ring; Abyss's is seen through a bolted porthole, under water;
+// Devaloka's stands in a round-topped niche inside a prabhavali, the ring
+// of flames behind a temple image; Siege's is painted on a heater shield
+// in a steel rim.
 Item {
     id: art
 
@@ -22,8 +25,10 @@ Item {
     readonly property var st: WidgetStyle.of(themeId)
     readonly property color accent: WidgetStyle.accent(themeId)
     readonly property bool round: ["circle", "medallion", "porthole"].includes(st.art)
-    readonly property real radius: round ? width / 2 : st.art === "rounded" || st.art === "pebble" ? 14 : st.art === "soft" ? 12 : st.art === "seal" ? 4 : st.art === "taped" ? 2 : 0
-    readonly property bool cut: ["chamfer", "neon", "deco", "arch"].includes(st.art)
+    readonly property real radius: round ? width / 2 : st.art === "rounded" || st.art === "pebble" ? 14 : st.art === "soft" ? 12 : st.art === "seal" || st.art === "prabha" ? 4 : st.art === "taped" ? 2 : 0
+    // Devaloka's niche: a semicircle over square shoulders.
+    readonly property bool niche: st.art === "prabha"
+    readonly property bool cut: ["chamfer", "neon", "deco", "arch", "heater"].includes(st.art)
 
     implicitWidth: 76
     implicitHeight: 76
@@ -32,8 +37,8 @@ Item {
         id: shapeMask
         anchors.fill: parent
         radius: art.radius
-        topLeftRadius: art.st.art === "pebble" ? radius * Services.DesktopTheme.pebbleCorners[0] : radius
-        topRightRadius: art.st.art === "pebble" ? radius * Services.DesktopTheme.pebbleCorners[1] : radius
+        topLeftRadius: art.st.art === "pebble" ? radius * Services.DesktopTheme.pebbleCorners[0] : art.niche ? width / 2 : radius
+        topRightRadius: art.st.art === "pebble" ? radius * Services.DesktopTheme.pebbleCorners[1] : art.niche ? width / 2 : radius
         bottomRightRadius: art.st.art === "pebble" ? radius * Services.DesktopTheme.pebbleCorners[2] : radius
         bottomLeftRadius: art.st.art === "pebble" ? radius * Services.DesktopTheme.pebbleCorners[3] : radius
         visible: false
@@ -76,6 +81,23 @@ Item {
         }
     }
 
+    Shape {
+        id: heaterMask
+        anchors.fill: parent
+        visible: false
+        layer.enabled: art.st.art === "heater"
+        preferredRendererType: Shape.CurveRenderer
+
+        ShapePath {
+            fillColor: "white"
+            strokeColor: "transparent"
+
+            PathPolyline {
+                path: ThemeShapes.heater(0, 0, art.width, art.height)
+            }
+        }
+    }
+
     // Neon Noir: the frame again in each neon, knocked out of register.
     Repeater {
         model: art.st.art === "neon" ? [{ dx: -3, dy: 3, a: false }, { dx: 3, dy: -3, a: true }] : []
@@ -101,12 +123,12 @@ Item {
         layer.enabled: true
         layer.effect: MultiEffect {
             maskEnabled: true
-            maskSource: ({ chamfer: chamferMask, neon: neonMask, deco: decoMask, arch: archMask })[art.st.art] ?? shapeMask
+            maskSource: ({ chamfer: chamferMask, neon: neonMask, deco: decoMask, arch: archMask, heater: heaterMask })[art.st.art] ?? shapeMask
             maskThresholdMin: 0.5
             maskSpreadAtMin: 1.0
-            saturation: art.st.art === "pebble" ? -0.3 : art.st.art === "taped" ? -0.45 : art.st.art === "medallion" ? -0.35 : art.st.art === "porthole" ? -0.2 : 0
-            colorization: art.st.art === "taped" ? 0.25 : art.st.art === "medallion" ? 0.18 : art.st.art === "porthole" ? 0.3 : 0
-            colorizationColor: art.st.art === "porthole" ? "#1d6f82" : "#a0784a"
+            saturation: art.st.art === "pebble" ? -0.3 : art.st.art === "taped" ? -0.45 : art.st.art === "medallion" ? -0.35 : art.st.art === "porthole" ? -0.2 : art.niche ? -0.08 : art.st.art === "heater" ? -0.15 : 0
+            colorization: art.st.art === "taped" ? 0.25 : art.st.art === "medallion" ? 0.18 : art.st.art === "porthole" ? 0.3 : art.niche ? 0.14 : art.st.art === "heater" ? 0.1 : 0
+            colorizationColor: art.st.art === "porthole" ? "#1d6f82" : art.niche ? "#b86f35" : "#a0784a"
         }
 
         Rectangle {
@@ -327,6 +349,105 @@ Item {
         gradient: Gradient {
             GradientStop { position: 0; color: Colors.withAlpha("#e6fbff", 0.22) }
             GradientStop { position: 0.45; color: "transparent" }
+        }
+    }
+
+    // Devaloka: a prabhavali: flames round the niche's arch and down its
+    // sides, a gold rim, and a fine line inside it.
+    Repeater {
+        model: art.niche ? 15 : 0
+
+        Shape {
+            id: flame
+            required property int index
+            // Round the arch from the left shoulder over the top to the
+            // right one, then two down each side.
+            readonly property bool onArch: index < 11
+            readonly property real a: onArch ? (-90 + index * 18) * Math.PI / 180 : 0
+            readonly property real side: index < 13 ? -1 : 1
+            readonly property real down: onArch ? 0 : (index % 2 === 1 ? 15 : 31)
+            readonly property real cx: onArch ? art.width / 2 + Math.sin(a) * (art.width / 2 + 7) : art.width / 2 + side * (art.width / 2 + 7)
+            readonly property real cy: onArch ? art.width / 2 - Math.cos(a) * (art.width / 2 + 7) : art.width / 2 + down
+            x: cx - 4
+            y: cy - 5
+            width: 8
+            height: 10
+            rotation: onArch ? a * 180 / Math.PI : side * 90
+            preferredRendererType: Shape.CurveRenderer
+
+            ShapePath {
+                fillColor: Colors.withAlpha(art.accent, 0.9)
+                strokeColor: "transparent"
+                startX: 1.2
+                startY: 8
+
+                PathQuad { x: 4.6; y: 0; controlX: 0.4; controlY: 3.6 }
+                PathQuad { x: 6.8; y: 8; controlX: 7.4; controlY: 4.6 }
+                PathQuad { x: 1.2; y: 8; controlX: 4; controlY: 10.6 }
+            }
+        }
+    }
+
+    Rectangle {
+        anchors.fill: parent
+        anchors.margins: -2
+        visible: art.niche
+        radius: 5
+        topLeftRadius: width / 2
+        topRightRadius: width / 2
+        color: "transparent"
+        border.width: 2
+        border.color: art.accent
+
+        Rectangle {
+            anchors.fill: parent
+            anchors.margins: 4
+            radius: 2
+            topLeftRadius: width / 2
+            topRightRadius: width / 2
+            color: "transparent"
+            border.width: 1
+            border.color: Colors.withAlpha(art.accent, 0.55)
+        }
+    }
+
+    // Siege: a heater shield in a rolled steel rim, a fine line inside it.
+    Shape {
+        anchors.fill: parent
+        visible: art.st.art === "heater"
+        preferredRendererType: Shape.CurveRenderer
+
+        ShapePath {
+            fillColor: "transparent"
+            strokeColor: "#0b0a0a"
+            strokeWidth: 4.5
+            joinStyle: ShapePath.MiterJoin
+
+            PathPolyline {
+                path: ThemeShapes.heater(1, 1, art.width - 2, art.height - 2)
+            }
+        }
+
+        ShapePath {
+            fillColor: "transparent"
+            strokeColor: Services.DesktopTheme.accent2Of(art.themeId)
+            strokeWidth: 2.5
+            joinStyle: ShapePath.MiterJoin
+
+            PathPolyline {
+                path: ThemeShapes.heater(1, 1, art.width - 2, art.height - 2)
+            }
+        }
+
+        ShapePath {
+            fillColor: "transparent"
+            strokeColor: Colors.withAlpha(Services.DesktopTheme.accent2Of(art.themeId), 0.45)
+            strokeWidth: 1
+            joinStyle: ShapePath.MiterJoin
+
+            PathPolyline {
+                path: ThemeShapes.heater(5, 5, art.width - 10, art.height - 10)
+            }
         }
     }
 }

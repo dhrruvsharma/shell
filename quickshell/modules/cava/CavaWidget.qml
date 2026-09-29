@@ -201,15 +201,16 @@ Scope {
             }
 
             // The desktop theme's frame behind the spectrum (a lancet's
-            // pointed head sits above the box, so the bars stay inside it).
+            // pointed head and a banner's crossbar sit above the box and a
+            // banner's swallowtail below it, so the bars stay inside).
             WidgetFrame {
                 id: cavaFrame
-                readonly property real head: root.themeStyle.frame === "lancet" ? archRise : 0
-                visible: ["chamfer", "console", "glass", "scroll", "neon", "washi", "gilt", "lancet", "clipping", "scrap", "brass", "instrument"].includes(root.themeStyle.frame)
+                readonly property real head: root.themeStyle.frame === "lancet" ? archRise : root.themeStyle.frame === "banner" ? headRoom : 0
+                visible: ["chamfer", "console", "glass", "scroll", "neon", "washi", "gilt", "lancet", "clipping", "scrap", "brass", "instrument", "patta", "banner"].includes(root.themeStyle.frame)
                 x: Services.CavaWidget.posX - 12
                 y: Services.CavaWidget.posY - 12 - cavaFrame.tabRoom - head
                 width: Services.CavaWidget.boxWidth + 24
-                height: Services.CavaWidget.boxHeight + 24 + cavaFrame.tabRoom + head
+                height: Services.CavaWidget.boxHeight + 24 + cavaFrame.tabRoom + head + footRoom
                 rotation: Services.CavaWidget.rotation
                 themeId: root.themeId
                 title: root.themeStyle.frame === "console" ? "~ $ cava" : ""

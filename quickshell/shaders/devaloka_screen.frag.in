@@ -1,0 +1,72 @@
+#version 320 es
+// Screen grade for the Devaloka desktop theme, applied by Hyprland to the
+// whole output (decoration:screen_shader). services/DesktopTheme.qml fills in
+// the @PLACEHOLDERS@ from the theme's gold and pigment and writes the result
+// to ~/.cache/quickshell/desktop-theme.frag.
+//
+// Deliberately static: it never reads `time` (the weave is a fixed
+// pattern), so Hyprland keeps its damage tracking and an idle desktop costs
+// nothing.
+
+precision highp float;
+
+in vec2 v_texcoord;
+uniform sampler2D tex;
+out vec4 fragColor;
+
+const vec3 gold = vec3(@ACCENT@);
+const vec3 pigment = vec3(@ACCENT2@);
+const float strength = @STRENGTH@;
+const float strong = @STRONG@;
+
+float grain(vec2 p) {
+    return fract(52.9829189 * fract(dot(p, vec2(0.06711056, 0.00583715))));
+}
+
+void main() {
+    vec4 c = texture(tex, v_texcoord);
+    float lum = dot(c.rgb, vec3(0.2126, 0.7152, 0.0722));
+
+    // Lamplight in the temple: marigold warmth in the highlights, the
+    // shadows deepened towards lac red, a breath of the pigment in the
+    // darkest of them.
+    float shade = 1.0 - smoothstep(0.0, 0.45, lum);
+    float high = smoothstep(0.5, 1.0, lum);
+    c.rgb = mix(c.rgb, c.rgb * vec3(0.94, 0.8, 0.76), shade * 0.28 * strength);
+    c.rgb += pigment * shade * shade * 0.014 * strength;
+    vec3 lamp = mix(vec3(1.08, 0.98, 0.84), gold / max(max(gold.r, max(gold.g, gold.b)), 0.2), 0.25);
+    c.rgb = mix(c.rgb, c.rgb * lamp, high * 0.26 * strength);
+
+    // Strong: an old pattachitra. The colour settles a third of the way
+    // into the painters' pigments (lamp black, conch white, vermilion,
+    // orpiment yellow, indigo, leaf green), the whites go to the cream of
+    // the chalked cloth, and a fine weave runs through it all.
+    vec3 pal[6] = vec3[6](
+        vec3(0.09, 0.07, 0.06), vec3(0.93, 0.89, 0.8), vec3(0.76, 0.2, 0.12),
+        vec3(0.88, 0.68, 0.2), vec3(0.16, 0.2, 0.44), vec3(0.2, 0.44, 0.3));
+    // Weighted by nearness, so neighbouring colours never part along a
+    // hard edge.
+    vec3 settled = vec3(0.0);
+    float weight = 0.0;
+    for (int i = 0; i < 6; i++) {
+        vec3 d = c.rgb - pal[i];
+        float w = exp(-dot(d, d) * 12.0);
+        settled += pal[i] * w;
+        weight += w;
+    }
+    settled /= max(weight, 1e-5);
+    c.rgb = mix(c.rgb, settled, 0.32 * strong);
+    c.rgb = mix(c.rgb, c.rgb * vec3(0.99, 0.95, 0.86), high * 0.3 * strong);
+    vec2 fc = floor(gl_FragCoord.xy);
+    float weave = step(1.5, mod(fc.x, 3.0)) * 0.5 + step(1.5, mod(fc.y, 3.0)) * 0.5;
+    c.rgb *= 1.0 - (weave - 0.5) * 0.05 * strong;
+
+    // A soft vignette, darker at the edges of the cloth, and a little
+    // grain.
+    vec2 d = v_texcoord - 0.5;
+    float r = length(d * vec2(1.0, 1.15));
+    c.rgb *= 1.0 - smoothstep(0.4, 0.95, r) * (0.15 * strength + 0.1 * strong);
+    c.rgb += (grain(fc) - 0.5) * (0.008 + 0.018 * strong);
+
+    fragColor = vec4(clamp(c.rgb, 0.0, 1.0), c.a);
+}

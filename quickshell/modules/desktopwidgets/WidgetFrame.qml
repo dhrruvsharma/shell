@@ -4,6 +4,7 @@ import QtQuick.Effects
 import QtQuick.Shapes
 import qs.colors
 import qs.components
+import qs.modules.lock
 import qs.modules.lock.themes.wasteland
 import qs.services as Services
 
@@ -13,9 +14,10 @@ import qs.services as Services
 // seal, a cut-corner neon panel, a pebble of washi mended with gold, black
 // lacquer in a stepped gold rule, a leaded lancet window, a newspaper
 // clipping, a plate of scrap with its name on masking tape, an enamelled
-// plate in a graduated brass rim, or the dark glass face of a deep-sea
-// instrument. Children stack in a Column under the title; set their text in
-// `ink`.
+// plate in a graduated brass rim, the dark glass face of a deep-sea
+// instrument, a lacquered temple plaque bordered like a sari, or a war
+// banner hung from its crossbar. Children stack in a Column under the
+// title; set their text in `ink`.
 Item {
     id: frame
 
@@ -32,17 +34,19 @@ Item {
     readonly property color ink: WidgetStyle.ink(themeId)
     readonly property bool isConsole: st.frame === "console"
     readonly property bool hasTitle: title.length > 0 && !isConsole
-    readonly property bool centredTitle: st.frame === "gilt" || st.frame === "lancet" || st.frame === "brass"
+    readonly property bool centredTitle: st.frame === "gilt" || st.frame === "lancet" || st.frame === "brass" || st.frame === "patta" || st.frame === "banner"
     // Room above the console box for its title tab, which straddles the top
     // edge: a widget's surface ends at its frame, so it would be cut off.
     readonly property real tabRoom: isConsole && title.length > 0 ? 10 : 0
-    // The lancet's pointed head, and the heavy rule over a clipping's
-    // kicker, both above the title.
+    // The lancet's pointed head, the heavy rule over a clipping's kicker
+    // and a banner's crossbar, all above the title; a banner's swallowtail
+    // below everything.
     readonly property real archRise: Math.min(66, width * 0.18)
-    readonly property real headRoom: st.frame === "lancet" ? archRise * 0.62 : st.frame === "clipping" ? 8 : 0
+    readonly property real headRoom: st.frame === "lancet" ? archRise * 0.62 : st.frame === "clipping" ? 8 : st.frame === "banner" ? 6 : 0
+    readonly property real footRoom: st.frame === "banner" ? 24 : 0
 
     implicitWidth: body.implicitWidth + st.pad * 2
-    implicitHeight: tabRoom + headRoom + body.implicitHeight + st.pad * 2 + (hasTitle ? titleText.implicitHeight + frame.spacing : 0)
+    implicitHeight: tabRoom + headRoom + body.implicitHeight + st.pad * 2 + footRoom + (hasTitle ? titleText.implicitHeight + frame.spacing : 0)
 
     // Legibility for frameless widgets straight on the wallpaper.
     layer.enabled: st.frame === "bare"
@@ -410,6 +414,152 @@ Item {
         }
     }
 
+    // Devaloka: lac lacquered nearly black in a gold rim lined inside,
+    // temple borders hanging from the head and standing along the foot, and
+    // the title set between the double dandas that close a verse.
+    Rectangle {
+        anchors.fill: parent
+        visible: frame.st.frame === "patta"
+        radius: 8
+        color: Colors.withAlpha(Qt.tint("#170a08", Colors.withAlpha(Services.DesktopTheme.accent2Of(frame.themeId), 0.1)), 0.86)
+        border.width: 1
+        border.color: frame.accent
+
+        Rectangle {
+            anchors.fill: parent
+            anchors.margins: 5
+            radius: 5
+            color: "transparent"
+            border.width: 1
+            border.color: Colors.withAlpha(frame.accent, 0.3)
+        }
+
+        TempleBorder {
+            x: 14
+            y: 6
+            width: parent.width - 28
+            height: 4
+            step: 6
+            down: true
+            rule: 0
+            color: Colors.withAlpha(frame.accent, 0.5)
+        }
+
+        TempleBorder {
+            x: 14
+            y: parent.height - 10
+            width: parent.width - 28
+            height: 4
+            step: 6
+            rule: 0
+            color: Colors.withAlpha(frame.accent, 0.32)
+        }
+    }
+
+    Repeater {
+        model: frame.st.frame === "patta" && frame.hasTitle ? 2 : 0
+
+        Text {
+            required property int index
+            x: index === 0 ? titleText.x - width - 9 : titleText.x + titleText.width + 9
+            y: titleText.y + (titleText.height - height) / 2
+            text: "॥"
+            font.family: frame.st.display
+            font.pixelSize: 17
+            color: frame.accent
+        }
+    }
+
+    // Siege: a war banner on its crossbar, of the tincture dyed deep, an
+    // embroidered border of argent round it, its foot cut in a swallowtail
+    // and the title stitched between two pairs of crossed swords.
+    Item {
+        id: banner
+        anchors.fill: parent
+        visible: frame.st.frame === "banner"
+
+        readonly property color cloth: Qt.hsla(Math.max(0, frame.accent.hslHue), 0.4, 0.12, 0.9)
+        readonly property color thread: Services.DesktopTheme.accent2Of(frame.themeId)
+
+        Shape {
+            anchors.fill: parent
+            preferredRendererType: Shape.CurveRenderer
+
+            ShapePath {
+                strokeColor: Colors.withAlpha("black", 0.6)
+                strokeWidth: 1
+                joinStyle: ShapePath.MiterJoin
+                fillGradient: LinearGradient {
+                    x1: 0
+                    y1: 0
+                    x2: banner.width
+                    y2: 0
+                    GradientStop { position: 0; color: Qt.lighter(banner.cloth, 1.25) }
+                    GradientStop { position: 0.45; color: banner.cloth }
+                    GradientStop { position: 1; color: Qt.darker(banner.cloth, 1.3) }
+                }
+
+                PathPolyline {
+                    path: ThemeShapes.banner(4, 4, banner.width - 8, banner.height - 4, frame.footRoom, 1)
+                }
+            }
+
+            ShapePath {
+                fillColor: "transparent"
+                strokeColor: Colors.withAlpha(banner.thread, 0.5)
+                strokeWidth: 1.2
+                joinStyle: ShapePath.MiterJoin
+
+                PathPolyline {
+                    path: ThemeShapes.banner(10, 12, banner.width - 20, banner.height - 18, frame.footRoom - 3, 1)
+                }
+            }
+        }
+
+        // The crossbar, and the finials on its ends.
+        Rectangle {
+            y: 1
+            width: parent.width
+            height: 6
+            radius: 3
+            border.width: 0.5
+            border.color: "#0b0a0a"
+            gradient: Gradient {
+                GradientStop { position: 0; color: "#7a5a3a" }
+                GradientStop { position: 1; color: "#3a2616" }
+            }
+        }
+
+        Repeater {
+            model: 2
+
+            Rectangle {
+                required property int index
+                x: index === 0 ? 0 : banner.width - width
+                y: 0
+                width: 8
+                height: 8
+                radius: 4
+                color: Services.DesktopTheme.accent2Of(frame.themeId)
+                border.width: 0.5
+                border.color: "#0b0a0a"
+            }
+        }
+    }
+
+    Repeater {
+        model: frame.st.frame === "banner" && frame.hasTitle ? 2 : 0
+
+        Glyph {
+            required property int index
+            x: index === 0 ? titleText.x - width - 9 : titleText.x + titleText.width + 9
+            y: titleText.y + (titleText.height - height) / 2
+            text: "swords"
+            font.pixelSize: 16
+            color: Colors.withAlpha(Services.DesktopTheme.accent2Of(frame.themeId), 0.8)
+        }
+    }
+
     // Neon Noir's title splits like a bad signal: a ghost in the other neon.
     Text {
         x: titleText.x + 1.5
@@ -428,8 +578,8 @@ Item {
         rotation: frame.st.frame === "scrap" ? -1.5 : 0
         text: (frame.st.frame === "chamfer" ? "▸ " : "") + WidgetStyle.label(frame.title, frame.st)
         font.family: frame.st.frame === "scrap" ? Waste.type : frame.st.ui ?? frame.st.cjk ?? (frame.st.frame === "chamfer" ? frame.st.mono : frame.st.font)
-        font.pixelSize: ({ neon: 15, washi: 12, lancet: 17, clipping: 13, scrap: 13, gilt: 11, brass: 16, instrument: 11 })[frame.st.frame] ?? 11
-        font.weight: frame.st.frame === "chamfer" || frame.st.frame === "clipping" || frame.st.frame === "instrument" ? Font.Bold : frame.st.frame === "neon" || frame.st.frame === "scrap" || frame.st.frame === "brass" ? Font.Normal : frame.st.frame === "gilt" ? Font.DemiBold : Font.Medium
+        font.pixelSize: ({ neon: 15, washi: 12, lancet: 17, clipping: 13, scrap: 13, gilt: 11, brass: 16, instrument: 11, patta: 16, banner: 17 })[frame.st.frame] ?? 11
+        font.weight: frame.st.frame === "chamfer" || frame.st.frame === "clipping" || frame.st.frame === "instrument" ? Font.Bold : frame.st.frame === "neon" || frame.st.frame === "scrap" || frame.st.frame === "brass" || frame.st.frame === "patta" || frame.st.frame === "banner" ? Font.Normal : frame.st.frame === "gilt" ? Font.DemiBold : Font.Medium
         font.letterSpacing: frame.st.labelSpacing
         font.capitalization: WidgetStyle.caps(frame.st)
         color: frame.st.frame === "scrap" ? Waste.tapeInk : WidgetStyle.labelColor(frame.themeId)

@@ -134,6 +134,24 @@ Singleton {
             source: Qt.resolvedUrl("../modules/lock/themes/abyss/AbyssSurface.qml"),
             introMs: 1450, outroMs: 1250, rewardBaseMs: 1450, rewardLevelUpMs: 850, rewardAchievementMs: 400,
             ambient: true
+        },
+        {
+            id: "devaloka",
+            name: "Samudra Manthan",
+            tagline: "Devaloka · समुद्र मन्थन",
+            description: "The desktop is churned into the ocean of milk. Mount Mandara turns in the serpent Vasuki's coils: each keystroke brings a treasure up out of the sea, a wrong one raises the Halahala poison and spoils a kalash of amrita, and the right one brings up the amrita itself.",
+            source: Qt.resolvedUrl("../modules/lock/themes/devaloka/DevalokaSurface.qml"),
+            introMs: 1450, outroMs: 1200, rewardBaseMs: 1450, rewardLevelUpMs: 850, rewardAchievementMs: 400,
+            ambient: true
+        },
+        {
+            id: "siege",
+            name: "Portcullis",
+            tagline: "Siege · hold the gate",
+            description: "Night falls and the portcullis crashes down over the desktop, torches in the gatehouse and your banner on the lintel. Each letter of the watchword winches the gate up a notch and calls a knight to the muster; a false one drops it with a crash and strikes one of your banners, the true one lets you in.",
+            source: Qt.resolvedUrl("../modules/lock/themes/siege/SiegeSurface.qml"),
+            introMs: 1600, outroMs: 1250, rewardBaseMs: 1450, rewardLevelUpMs: 850, rewardAchievementMs: 400,
+            ambient: true
         }
     ]
 

@@ -19,7 +19,11 @@ import qs.services as Services
 // Observatory: an engraved double rim, graduated along the head like an
 // instrument's limb, with a star at its middle. Abyss: a lume hairline, a
 // lit status strip, a sonar ping in the far corner and the title on an
-// instrument label.
+// instrument label. Devaloka: a gold rim lined inside, temple borders
+// hanging from the head and standing along the foot like a sari's, and a
+// lotus at the middle of the head. Siege: iron straps nailed over the
+// corners, battlements along the head and the shield of your arms at its
+// middle.
 Item {
     id: decor
 
@@ -46,7 +50,7 @@ Item {
         border.width: 1
         border.color: decor.shape === "print" ? Colors.withAlpha(decor.accent2, 0.45)
             : decor.shape === "lume" ? Colors.withAlpha(decor.accent2, 0.4)
-            : Colors.withAlpha(decor.accent, decor.shape === "square" ? 0.5 : decor.shape === "seal" ? 0.55 : decor.shape === "neon" ? 0.6 : decor.shape === "pebble" ? 0.28 : decor.shape === "plate" ? 0.45 : decor.shape === "scale" ? 0.6 : 0.32)
+            : Colors.withAlpha(decor.accent, decor.shape === "square" ? 0.5 : decor.shape === "seal" ? 0.55 : decor.shape === "neon" ? 0.6 : decor.shape === "pebble" ? 0.28 : decor.shape === "plate" ? 0.45 : decor.shape === "scale" || decor.shape === "zari" || decor.shape === "crenel" ? 0.6 : 0.32)
     }
 
     // HUD: corner brackets.
@@ -579,6 +583,181 @@ Item {
                 font.weight: Font.Bold
                 font.letterSpacing: 1.5
                 color: decor.accent2
+            }
+        }
+    }
+
+    // Devaloka: a second rule inside the rim, temple borders hanging from
+    // the head (parted for a lotus at its middle) and standing along the
+    // foot.
+    Item {
+        id: zari
+        anchors.fill: parent
+        visible: decor.shape === "zari"
+
+        readonly property real inset: Math.max(12, decor.radius + 4)
+
+        Rectangle {
+            anchors.fill: parent
+            anchors.margins: 5
+            radius: Math.max(0, decor.radius - 4)
+            color: "transparent"
+            border.width: 1
+            border.color: Colors.withAlpha(decor.accent, 0.25)
+        }
+
+        Repeater {
+            model: 2
+
+            TempleBorder {
+                required property int index
+                x: index === 0 ? zari.inset : decor.width / 2 + 16
+                y: 1
+                width: decor.width / 2 - 16 - zari.inset
+                height: 4
+                step: 6
+                down: true
+                rule: 0
+                color: Colors.withAlpha(decor.accent, 0.5)
+            }
+        }
+
+        TempleBorder {
+            x: zari.inset
+            y: decor.height - height - 1
+            width: decor.width - 2 * zari.inset
+            height: 3
+            step: 6
+            rule: 0
+            color: Colors.withAlpha(decor.accent, 0.35)
+        }
+
+        Lotus {
+            x: (decor.width - width) / 2
+            y: 1
+            width: 22
+            height: 14
+            stroke: Colors.withAlpha(decor.accent, 0.85)
+            fill: Colors.withAlpha(decor.accent2, 0.3)
+        }
+    }
+
+    // Siege: a finer steel line inside the rim, battlements along the head
+    // (parted for the shield of your arms), and an iron strap nailed over
+    // each corner.
+    Item {
+        id: siege
+        anchors.fill: parent
+        visible: decor.shape === "crenel"
+
+        readonly property real inset: Math.max(26, decor.radius + 8)
+
+        Rectangle {
+            anchors.fill: parent
+            anchors.margins: 5
+            color: "transparent"
+            border.width: 1
+            border.color: Colors.withAlpha(decor.accent2, 0.18)
+        }
+
+        Repeater {
+            model: 2
+
+            Shape {
+                required property int index
+                x: index === 0 ? siege.inset : decor.width / 2 + 16
+                y: 5
+                width: decor.width / 2 - 16 - siege.inset
+                height: 7
+                preferredRendererType: Shape.CurveRenderer
+
+                ShapePath {
+                    fillColor: Colors.withAlpha(decor.accent, 0.16)
+                    strokeColor: Colors.withAlpha(decor.accent, 0.5)
+                    strokeWidth: 1
+                    joinStyle: ShapePath.MiterJoin
+
+                    PathPolyline {
+                        path: ThemeShapes.crenel(0, 0, siege.width / 2 - 16 - siege.inset, 7, 9, 3.5, 0.5)
+                    }
+                }
+            }
+        }
+
+        // The shield of your arms (services/Heraldry.qml).
+        ShaderEffect {
+            x: (decor.width - width) / 2
+            y: 2
+            width: 16
+            height: 19
+
+            property real itemWidth: width
+            property real itemHeight: height
+            property real ordinary: Services.Heraldry.arms.ordinary
+            property real charge: 0
+            property real lone: 0
+            property real rim: 1
+            property real worn: 0
+            property real glow: 0
+            property real seed: 1
+            property color fieldColor: Qt.hsla(Services.Heraldry.tincture.h, Math.min(0.78, Services.Heraldry.tincture.sat + 0.06), 0.4, 1)
+            property color metalColor: "#e4e6e6"
+            property color chargeColor: "#e3b24a"
+            property color rimColor: decor.accent2
+            property color glowColor: "black"
+
+            fragmentShader: Qt.resolvedUrl("../shaders/heraldry.frag.qsb")
+        }
+
+        Repeater {
+            model: 4
+
+            Item {
+                id: strap
+                required property int index
+                readonly property bool isRight: index === 1 || index === 2
+                readonly property bool isBottom: index >= 2
+                x: isRight ? decor.width - width : 0
+                y: isBottom ? decor.height - height : 0
+                width: 22
+                height: 22
+
+                component Iron: Rectangle {
+                    gradient: Gradient {
+                        GradientStop { position: 0; color: "#58575a" }
+                        GradientStop { position: 1; color: "#2c2b2d" }
+                    }
+                    border.width: 0.5
+                    border.color: "#0b0a0a"
+                }
+
+                Iron {
+                    y: strap.isBottom ? strap.height - 4 : 0
+                    width: strap.width
+                    height: 4
+                }
+
+                Iron {
+                    x: strap.isRight ? strap.width - 4 : 0
+                    width: 4
+                    height: strap.height
+                }
+
+                Repeater {
+                    model: [[0.62, 0], [0, 0.62]]
+
+                    Rectangle {
+                        required property var modelData
+                        readonly property real along: modelData[0] > 0 ? modelData[0] * strap.width : 2
+                        readonly property real down: modelData[1] > 0 ? modelData[1] * strap.height : 2
+                        x: (strap.isRight ? strap.width - along : along) - width / 2
+                        y: (strap.isBottom ? strap.height - down : down) - height / 2
+                        width: 3
+                        height: 3
+                        radius: 1.5
+                        color: "#8d8f93"
+                    }
+                }
             }
         }
     }

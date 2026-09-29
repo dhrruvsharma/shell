@@ -317,7 +317,8 @@ Canvas {
     }
 
     // Under the chin: a collar and bell in the theme's accent, or the
-    // costume's own neckwear (Art Deco's bow tie, Wasteland's bandana).
+    // costume's own neckwear (Art Deco's bow tie, Wasteland's bandana,
+    // Devaloka's garland of marigolds).
     // Drawn before the head, so only the part below the chin shows.
     function drawNeckwear(ctx, g, c) {
         if (fig.pose === "sleep")
@@ -341,6 +342,26 @@ Canvas {
             ink(ctx, acc, "#2a2010", 1);
             oval(ctx, cx, cy + 1.5, 1.4, 1.4);
             ink(ctx, "#2a2010", null);
+            return;
+        }
+        if (fig.costume === "devaloka") {
+            // A garland of marigolds, orange and yellow by turns, hanging a
+            // little lower in the middle.
+            for (let i = 0; i < 7; i++) {
+                const t = i / 6;
+                const a = Math.PI * (0.2 + 0.6 * t);
+                const fx = h.cx + Math.cos(a) * r * 1.1 * 1.04;
+                const fy = h.cy + Math.sin(a) * r * 1.1 * 0.92 + Math.sin(t * Math.PI) * 1.8;
+                oval(ctx, fx, fy, 2.3, 2.2);
+                ink(ctx, i % 2 === 0 ? "#ff9a1f" : "#ffcf3a", "#a84f0c", 0.8);
+                oval(ctx, fx, fy, 0.8, 0.8);
+                ink(ctx, "#c2600e", null);
+            }
+            ctx.beginPath();
+            ctx.moveTo(cx - 1.6, cy + 4.6);
+            ctx.quadraticCurveTo(cx, cy + 8.8, cx + 1.6, cy + 4.6);
+            ctx.closePath();
+            ink(ctx, "#3f8f3a", "#245c22", 0.7);
             return;
         }
         if (fig.costume === "wasteland") {
@@ -613,6 +634,40 @@ Canvas {
             ctx.moveTo(h.cx - r * 0.45, y - 1.8);
             ctx.lineTo(h.cx - r * 0.1, y - 1.8);
             ink(ctx, null, "rgba(255,255,255,0.8)", 0.9);
+            break;
+        }
+        case "siege": {
+            // A kettle hat: a steel dome with a broad brim, the ears poking
+            // out under it, and a plume of the tincture streaming back from
+            // its crown.
+            const by = h.cy - r * 0.7;
+            ctx.beginPath();
+            ctx.moveTo(h.cx - r * 0.12, by - r * 0.58);
+            ctx.quadraticCurveTo(h.cx - r * 0.7, by - r * 1.35, h.cx - r * 1.3, by - r * 0.95);
+            ctx.quadraticCurveTo(h.cx - r * 0.8, by - r * 0.95, h.cx - r * 0.36, by - r * 0.42);
+            ctx.closePath();
+            ink(ctx, acc, "#2a1512", 0.9);
+            ctx.beginPath();
+            ctx.arc(h.cx, by, r * 0.6, Math.PI, 0);
+            ctx.closePath();
+            ink(ctx, "#b9bec5", "#34373c", 1.1);
+            ctx.beginPath();
+            ctx.arc(h.cx, by, r * 0.42, Math.PI * 1.15, Math.PI * 1.45);
+            ink(ctx, null, "rgba(255,255,255,0.75)", 1);
+            oval(ctx, h.cx, by + 0.4, r * 1.08, 2.3);
+            ink(ctx, "#9aa0a8", "#34373c", 1.1);
+            // A rivet on the crown.
+            oval(ctx, h.cx, by - r * 0.6, 1.1, 1.1);
+            ink(ctx, "#e3b24a", "#34373c", 0.6);
+            break;
+        }
+        case "devaloka": {
+            // A blessing: a tika of kumkum on the forehead, a grain of rice
+            // on it.
+            oval(ctx, h.cx + 0.3, h.cy - r * 0.5, 1.35, 2.1);
+            ink(ctx, "#d8232a", "#8e1216", 0.6);
+            oval(ctx, h.cx + 0.3, h.cy - r * 0.54, 0.45, 0.7);
+            ink(ctx, "#fff4dc", null);
             break;
         }
         case "wasteland": {

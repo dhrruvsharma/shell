@@ -299,9 +299,17 @@ Item {
                     stroke: desk.dt.borderColor(mock.look, desk.selId)
                 }
 
+                CrenelFrame {
+                    visible: mock.look.shape === "crenel"
+                    merlon: 5
+                    depth: 2
+                    fill: Colors.surface_container
+                    stroke: desk.dt.borderColor(mock.look, desk.selId)
+                }
+
                 Rectangle {
                     anchors.fill: parent
-                    visible: !["chamfer", "neon", "deco", "cusp"].includes(mock.look.shape)
+                    visible: !["chamfer", "neon", "deco", "cusp", "crenel"].includes(mock.look.shape)
                     radius: desk.dt.radius(mock.look, 10, height)
                     topLeftRadius: desk.dt.corner(mock.look, radius, 0)
                     topRightRadius: desk.dt.corner(mock.look, radius, 1)
@@ -339,7 +347,8 @@ Item {
                     }
                 }
 
-                // Observatory's graduated foot, Abyss's light strip.
+                // Observatory's graduated foot, Abyss's light strip,
+                // Devaloka's temple border.
                 ScaleTicks {
                     visible: mock.look.shape === "scale"
                     x: 4
@@ -351,6 +360,17 @@ Item {
                     major: 5
                     minorLength: 1
                     majorLength: 2.5
+                    color: desk.dt.borderColor(mock.look, desk.selId)
+                }
+
+                TempleBorder {
+                    visible: mock.look.shape === "zari"
+                    x: 4
+                    y: tag.height - height - 1
+                    width: tag.width - 8
+                    height: 2.5
+                    step: 3.5
+                    rule: 0
                     color: desk.dt.borderColor(mock.look, desk.selId)
                 }
 
@@ -388,7 +408,7 @@ Item {
                 spacing: 6
 
                 MockTag {
-                    readonly property string pip: ({ chamfer: "◆", square: "■", neon: "▮", deco: "◆", cusp: "✦", print: "▪", plate: "✕", scale: "☉", lume: "◉" })[mock.look.shape] ?? "●"
+                    readonly property string pip: ({ chamfer: "◆", square: "■", neon: "▮", deco: "◆", cusp: "✦", print: "▪", plate: "✕", scale: "☉", lume: "◉", zari: "✿", crenel: "♜" })[mock.look.shape] ?? "●"
                     label: pip + " 2 " + pip + " " + pip + " " + pip
                 }
 

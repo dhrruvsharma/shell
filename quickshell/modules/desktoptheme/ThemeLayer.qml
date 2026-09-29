@@ -36,7 +36,9 @@ Item {
         newspaper: broadsheetLayer,
         wasteland: wastelandLayer,
         observatory: observatoryLayer,
-        abyss: abyssLayer
+        abyss: abyssLayer,
+        devaloka: devalokaLayer,
+        siege: siegeLayer
     })
 
     onThemeIdChanged: replay()
@@ -171,6 +173,24 @@ Item {
     Component {
         id: observatoryLayer
         ObservatoryLayer {
+            boot: root.boot
+            now: clock.date
+            pxScale: root.pxScale
+        }
+    }
+
+    Component {
+        id: devalokaLayer
+        DevalokaLayer {
+            boot: root.boot
+            now: clock.date
+            pxScale: root.pxScale
+        }
+    }
+
+    Component {
+        id: siegeLayer
+        SiegeLayer {
             boot: root.boot
             now: clock.date
             pxScale: root.pxScale

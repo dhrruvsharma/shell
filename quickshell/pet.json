@@ -1,8 +1,8 @@
 {
-    "affection": 129,
+    "affection": 255,
     "chatty": 2,
     "fur": "natural",
-    "lastFed": 1790665916877,
+    "lastFed": 1790699117176,
     "lastGreeting": "2026-09-29",
     "name": "Mochi",
     "recent": [
@@ -15,6 +15,16 @@
             "title": "Toggle Novel Reader",
             "type": "cmd",
             "value": "qs ipc call novelReader toggle"
+        },
+        {
+            "icon": "menu_book",
+            "image": "",
+            "key": "ipc:qs ipc call mangaReader toggle",
+            "subtitle": "Shell",
+            "terminal": false,
+            "title": "Toggle Manga Reader",
+            "type": "cmd",
+            "value": "qs ipc call mangaReader toggle"
         },
         {
             "icon": "movie",
@@ -35,16 +45,6 @@
             "title": "Clipboard",
             "type": "cmd",
             "value": "qs ipc call clipboardManager changeVisible"
-        },
-        {
-            "icon": "menu_book",
-            "image": "",
-            "key": "ipc:qs ipc call mangaReader toggle",
-            "subtitle": "Shell",
-            "terminal": false,
-            "title": "Toggle Manga Reader",
-            "type": "cmd",
-            "value": "qs ipc call mangaReader toggle"
         },
         {
             "icon": "widgets",

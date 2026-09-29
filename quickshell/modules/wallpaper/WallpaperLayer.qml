@@ -25,7 +25,7 @@ Scope {
             required property ShellScreen modelData
 
             // Transition per desktop theme (see the shader).
-            readonly property var modes: ({ "": 0, hud: 1, terminal: 2, cosmos: 3, zen: 4, xianxia: 5, cyberpunk: 6, wabisabi: 7, artdeco: 8, gothic: 9, newspaper: 10, wasteland: 11, observatory: 12, abyss: 13 })
+            readonly property var modes: ({ "": 0, hud: 1, terminal: 2, cosmos: 3, zen: 4, xianxia: 5, cyberpunk: 6, wabisabi: 7, artdeco: 8, gothic: 9, newspaper: 10, wasteland: 11, observatory: 12, abyss: 13, devaloka: 14, siege: 15 })
             readonly property int mode: modes[Services.DesktopTheme.enabled ? Services.DesktopTheme.theme : ""] ?? 0
 
             property Image front: imgA
@@ -59,7 +59,7 @@ Scope {
             function start() {
                 waiting = false;
                 progress = 0;
-                anim.duration = ({ 1: 1300, 4: 1500, 6: 950, 7: 1400, 8: 1400, 9: 1500, 10: 1600, 11: 1500, 12: 1500, 13: 1600 })[mode] ?? 1100;
+                anim.duration = ({ 1: 1300, 4: 1500, 6: 950, 7: 1400, 8: 1400, 9: 1500, 10: 1600, 11: 1500, 12: 1500, 13: 1600, 14: 1500, 15: 1600 })[mode] ?? 1100;
                 anim.start();
             }
 

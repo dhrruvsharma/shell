@@ -1,5 +1,6 @@
 pragma ComponentBehavior: Bound
 import QtQuick
+import QtQuick.Shapes
 import qs.colors
 import qs.components
 import qs.services as Services
@@ -9,8 +10,9 @@ import qs.services as Services
 // hairline, a tapering brush stroke, a neon tube with a lit tip, a line of
 // ink ending in a blot, a gilt bar with a diamond tip, a strip of leaded
 // glass lighting pane by pane, a newspaper's ruled bar, hazard tape in a
-// steel channel, a brass vernier scale with its pointer, or a lit tube with
-// a bright head and bubbles rising off it.
+// steel channel, a brass vernier scale with its pointer, a lit tube with a
+// bright head and bubbles rising off it, a string of prayer beads told
+// up to the value, or a sword drawn from its scabbard as far as the value.
 Item {
     id: bar
 
@@ -24,7 +26,7 @@ Item {
 
     implicitWidth: st.bar === "ascii" ? ascii.implicitWidth : 200
     implicitHeight: st.bar === "ascii" ? ascii.implicitHeight
-        : ({ orbit: 10, segments: 6, neon: 6, ink: 6, hairline: 3, deco: 9, glass: 9, rule: 8, hazard: 9, vernier: 11, sonar: 12 })[st.bar] ?? 4
+        : ({ orbit: 10, segments: 6, neon: 6, ink: 6, hairline: 3, deco: 9, glass: 9, rule: 8, hazard: 9, vernier: 11, sonar: 12, mala: 10, sword: 12 })[st.bar] ?? 4
 
     // line
     Rectangle {
@@ -466,6 +468,176 @@ Item {
                 border.width: 1
                 border.color: Colors.withAlpha(Services.DesktopTheme.accent2Of(bar.themeId), 0.7)
             }
+        }
+    }
+
+    // mala: a string of prayer beads, told in gold up to the value, the guru
+    // bead (meru) in the pigment at its head, with a tassel.
+    Item {
+        id: mala
+        visible: bar.st.bar === "mala"
+        anchors.fill: parent
+
+        readonly property real span: width - 14
+        readonly property int beads: Math.max(8, Math.floor(span / 9))
+        readonly property color meru: Services.DesktopTheme.accent2Of(bar.themeId)
+
+        Rectangle {
+            anchors.verticalCenter: parent.verticalCenter
+            width: mala.span
+            height: 1
+            color: Colors.withAlpha(bar.accent, 0.4)
+        }
+
+        Repeater {
+            model: mala.beads
+
+            Rectangle {
+                required property int index
+                readonly property bool told: (index + 0.5) / mala.beads <= bar.v
+                x: (index + 0.5) * mala.span / mala.beads - width / 2
+                y: (mala.height - height) / 2
+                width: 6
+                height: 6
+                radius: 3
+                color: told ? bar.accent : Colors.withAlpha(bar.accent, 0.16)
+                border.width: 1
+                border.color: told ? Qt.lighter(bar.accent, 1.25) : Colors.withAlpha(bar.accent, 0.45)
+            }
+        }
+
+        Rectangle {
+            x: mala.span + 1
+            anchors.verticalCenter: parent.verticalCenter
+            width: 9
+            height: 9
+            radius: 4.5
+            color: mala.meru
+            border.width: 1
+            border.color: bar.accent
+        }
+
+        Repeater {
+            model: 3
+
+            Rectangle {
+                required property int index
+                x: mala.span + 5 + (index - 1) * 2.2
+                y: mala.height / 2 + 4
+                width: 1
+                height: 5 - Math.abs(index - 1)
+                color: mala.meru
+            }
+        }
+    }
+
+    // sword: a sword drawn from its scabbard as far as the value: the hilt
+    // at the start, the bared blade bright, the rest of it still sheathed
+    // in leather of the tincture with a gilt locket at its mouth and a
+    // chape at its tip.
+    Item {
+        id: sword
+        visible: bar.st.bar === "sword"
+        anchors.fill: parent
+
+        readonly property real guard: 22
+        readonly property real len: width - guard - 1
+        readonly property real drawn: len * bar.v
+        readonly property color steel: Services.DesktopTheme.accent2Of(bar.themeId)
+        readonly property color gold: "#e3b24a"
+        readonly property real mid: height / 2
+
+        // The whole blade, most of it under the scabbard.
+        Shape {
+            anchors.fill: parent
+            preferredRendererType: Shape.CurveRenderer
+
+            ShapePath {
+                strokeColor: Colors.withAlpha("black", 0.55)
+                strokeWidth: 0.5
+                fillGradient: LinearGradient {
+                    x1: 0
+                    y1: sword.mid - 2.5
+                    x2: 0
+                    y2: sword.mid + 2.5
+                    GradientStop { position: 0; color: Qt.lighter(sword.steel, 1.2) }
+                    GradientStop { position: 0.5; color: sword.steel }
+                    GradientStop { position: 0.52; color: Qt.darker(sword.steel, 1.35) }
+                    GradientStop { position: 1; color: Qt.darker(sword.steel, 1.15) }
+                }
+                startX: sword.guard
+                startY: sword.mid - 2.5
+                PathLine { x: sword.width - 8; y: sword.mid - 2 }
+                PathLine { x: sword.width; y: sword.mid }
+                PathLine { x: sword.width - 8; y: sword.mid + 2 }
+                PathLine { x: sword.guard; y: sword.mid + 2.5 }
+                PathLine { x: sword.guard; y: sword.mid - 2.5 }
+            }
+        }
+
+        Rectangle {
+            x: sword.guard + 2
+            y: sword.mid - 0.5
+            width: Math.max(0, Math.min(sword.drawn, sword.len - 12) - 4)
+            height: 1
+            color: Qt.darker(sword.steel, 1.6)
+        }
+
+        // The scabbard, over what's still sheathed.
+        Rectangle {
+            visible: sword.drawn < sword.len - 1
+            x: sword.guard + sword.drawn
+            y: sword.mid - 3.5
+            width: sword.len - sword.drawn + 1
+            height: 7
+            radius: 2
+            color: Qt.hsla(Math.max(0, bar.accent.hslHue), 0.45, 0.2, 1)
+            border.width: 0.5
+            border.color: Colors.withAlpha("black", 0.7)
+
+            Rectangle {
+                width: 3
+                height: parent.height
+                color: sword.gold
+            }
+
+            Rectangle {
+                anchors.right: parent.right
+                width: Math.min(7, parent.width)
+                height: parent.height
+                radius: 2
+                color: sword.gold
+            }
+        }
+
+        // The hilt: pommel, grip and crossguard.
+        Rectangle {
+            x: 5
+            y: sword.mid - 2
+            width: sword.guard - 7
+            height: 4
+            color: "#3a2418"
+        }
+
+        Rectangle {
+            y: sword.mid - 3.5
+            width: 7
+            height: 7
+            radius: 3.5
+            color: sword.gold
+            border.width: 0.5
+            border.color: Colors.withAlpha("black", 0.6)
+        }
+
+        Rectangle {
+            x: sword.guard - 3
+            y: sword.mid - 6
+            width: 3
+            height: 12
+            radius: 1
+            color: sword.gold
+            border.width: 0.5
+            border.color: Colors.withAlpha("black", 0.6)
         }
     }
 }
