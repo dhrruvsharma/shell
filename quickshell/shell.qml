@@ -443,13 +443,14 @@ ShellRoot {
     Timer {
         id: closeMangaTimer
         interval: 600
-        onTriggered: mangaLoader.active = false
+        // unless it was reopened or minimized in the meantime
+        onTriggered: if (!mangaLoader.item?.visible && !mangaLoader.item?.minimized) mangaLoader.active = false
     }
 
     Connections {
         target: mangaLoader.item
         function onVisibleChanged() {
-            if (mangaLoader.item && !mangaLoader.item.visible) {
+            if (mangaLoader.item && !mangaLoader.item.visible && !mangaLoader.item.minimized) {
                 closeMangaTimer.start()
             }
         }
@@ -458,13 +459,14 @@ ShellRoot {
     Timer {
         id: closeNovelTimer
         interval: 600
-        onTriggered: novelLoader.active = false
+        // unless it was reopened or minimized in the meantime
+        onTriggered: if (!novelLoader.item?.visible && !novelLoader.item?.minimized) novelLoader.active = false
     }
 
     Connections {
         target: novelLoader.item
         function onVisibleChanged() {
-            if (novelLoader.item && !novelLoader.item.visible) {
+            if (novelLoader.item && !novelLoader.item.visible && !novelLoader.item.minimized) {
                 closeNovelTimer.start()
             }
         }
@@ -473,13 +475,14 @@ ShellRoot {
     Timer {
         id: closeAnimeTimer
         interval: 600
-        onTriggered: animeLoader.active = false
+        // unless it was reopened or minimized in the meantime
+        onTriggered: if (!animeLoader.item?.visible && !animeLoader.item?.minimized) animeLoader.active = false
     }
 
     Connections {
         target: animeLoader.item
         function onVisibleChanged() {
-            if (animeLoader.item && !animeLoader.item.visible) {
+            if (animeLoader.item && !animeLoader.item.visible && !animeLoader.item.minimized) {
                 closeAnimeTimer.start()
             }
         }
@@ -551,8 +554,12 @@ ShellRoot {
             if (!mangaLoader.active) {
                 mangaLoader.active = true
                 mangaLoader.item.visible = true
+            } else if (mangaLoader.item.visible) {
+                mangaLoader.item.visible = false
             } else {
-                mangaLoader.item.visible = !mangaLoader.item.visible
+                // restoring a minimized panel; closing it next time unloads it
+                mangaLoader.item.minimized = false
+                mangaLoader.item.visible = true
             }
         }
     }
@@ -564,8 +571,12 @@ ShellRoot {
             if (!novelLoader.active) {
                 novelLoader.active = true
                 novelLoader.item.visible = true
+            } else if (novelLoader.item.visible) {
+                novelLoader.item.visible = false
             } else {
-                novelLoader.item.visible = !novelLoader.item.visible
+                // restoring a minimized panel; closing it next time unloads it
+                novelLoader.item.minimized = false
+                novelLoader.item.visible = true
             }
         }
     }
@@ -577,8 +588,12 @@ ShellRoot {
             if (!animeLoader.active) {
                 animeLoader.active = true
                 animeLoader.item.visible = true
+            } else if (animeLoader.item.visible) {
+                animeLoader.item.visible = false
             } else {
-                animeLoader.item.visible = !animeLoader.item.visible
+                // restoring a minimized panel; closing it next time unloads it
+                animeLoader.item.minimized = false
+                animeLoader.item.visible = true
             }
         }
     }

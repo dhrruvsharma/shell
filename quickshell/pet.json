@@ -1,21 +1,11 @@
 {
-    "affection": 114,
+    "affection": 129,
     "chatty": 2,
     "fur": "natural",
     "lastFed": 1790665916877,
     "lastGreeting": "2026-09-29",
     "name": "Mochi",
     "recent": [
-        {
-            "icon": "movie",
-            "image": "",
-            "key": "ipc:qs ipc call animePlayer toggle",
-            "subtitle": "Shell",
-            "terminal": false,
-            "title": "Toggle Anime Player",
-            "type": "cmd",
-            "value": "qs ipc call animePlayer toggle"
-        },
         {
             "icon": "auto_stories",
             "image": "",
@@ -25,6 +15,16 @@
             "title": "Toggle Novel Reader",
             "type": "cmd",
             "value": "qs ipc call novelReader toggle"
+        },
+        {
+            "icon": "movie",
+            "image": "",
+            "key": "ipc:qs ipc call animePlayer toggle",
+            "subtitle": "Shell",
+            "terminal": false,
+            "title": "Toggle Anime Player",
+            "type": "cmd",
+            "value": "qs ipc call animePlayer toggle"
         },
         {
             "icon": "content_paste",

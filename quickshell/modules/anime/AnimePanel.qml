@@ -26,6 +26,15 @@ Item {
     property int browseStack:  0
     property int libraryStack: 0
 
+    // Hidden but kept loaded: shell.qml skips the unload while this is set,
+    // so the toggle brings the panel back exactly as it was left.
+    property bool minimized: false
+
+    function minimize() {
+        minimized = true
+        visible = false
+    }
+
     // ── Background ────────────────────────────────────────────────────────────
     Rectangle {
         anchors.fill: parent
@@ -114,8 +123,15 @@ Item {
                 height: 1; color: Colors.outline_variant; opacity: 0.4
             }
 
+            IconButton {
+                id: minimizeButton
+                anchors { right: parent.right; rightMargin: 8; verticalCenter: parent.verticalCenter }
+                icon: "󰖰"
+                onClicked: root.minimize()
+            }
+
             Row {
-                anchors.fill: parent
+                anchors { left: parent.left; top: parent.top; bottom: parent.bottom; right: minimizeButton.left; rightMargin: 8 }
 
                 Repeater {
                     model: [
@@ -124,7 +140,7 @@ Item {
                     ]
 
                     delegate: Item {
-                        width: root.width / 2
+                        width: (root.width - 46) / 2
                         height: parent.height
 
                         readonly property bool active: root.tabIndex === index
