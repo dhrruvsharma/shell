@@ -63,8 +63,13 @@ Item {
                     }
                 }
 
+                // The graphs only while the panel shows: they otherwise went
+                // on redrawing every stats poll behind the closed panel. The
+                // Screen tab stays, as its screenshot process outlives the
+                // panel (it closes the panel before grimblast runs).
                 Loader {
                     anchors.horizontalCenter: parent.horizontalCenter
+                    active: systemPanel.visible || systemPanel.currentTab !== 0
                     sourceComponent: currentTab === 0 ? systemTab : screenTab
                 }
             }

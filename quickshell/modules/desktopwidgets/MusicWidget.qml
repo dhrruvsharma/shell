@@ -85,24 +85,24 @@ WidgetFrame {
                     anchors.right: parent.right
                     spacing: root.st.frame === "console" ? 6 : 2
 
+                    // A fixed model; the play/pause look is worked out in the
+                    // delegate, so pausing doesn't rebuild the buttons.
                     Repeater {
-                        model: [
-                            { icon: "skip_previous", word: "prev", act: () => root.media.previous() },
-                            { icon: root.media.isPlaying ? "pause" : "play_arrow", word: root.media.isPlaying ? "pause" : "play", act: () => root.media.playPause() },
-                            { icon: "skip_next", word: "next", act: () => root.media.next() }
-                        ]
+                        model: 3
 
                         MouseArea {
                             id: button
-                            required property var modelData
                             required property int index
                             readonly property bool main: index === 1
+                            readonly property var spec: index === 0 ? { icon: "skip_previous", word: "prev", act: () => root.media.previous() }
+                                : index === 2 ? { icon: "skip_next", word: "next", act: () => root.media.next() }
+                                : { icon: root.media.isPlaying ? "pause" : "play_arrow", word: root.media.isPlaying ? "pause" : "play", act: () => root.media.playPause() }
                             width: root.st.frame === "console" ? label.implicitWidth + 4 : main ? 34 : 28
                             height: 28
                             enabled: root.has
                             hoverEnabled: true
                             cursorShape: Qt.PointingHandCursor
-                            onClicked: modelData.act()
+                            onClicked: spec.act()
 
                             Rectangle {
                                 anchors.fill: parent
@@ -114,7 +114,7 @@ WidgetFrame {
                             Glyph {
                                 anchors.centerIn: parent
                                 visible: root.st.frame !== "console"
-                                text: button.modelData.icon
+                                text: button.spec.icon
                                 filled: true
                                 font.pixelSize: button.main ? 22 : 20
                                 color: button.containsMouse || button.main ? root.accent : Colors.withAlpha(root.ink, 0.75)
@@ -124,7 +124,7 @@ WidgetFrame {
                                 id: label
                                 anchors.centerIn: parent
                                 visible: root.st.frame === "console"
-                                text: "[" + button.modelData.word + "]"
+                                text: "[" + button.spec.word + "]"
                                 font.family: root.st.mono
                                 font.pixelSize: 13
                                 color: button.containsMouse ? root.ink : root.accent

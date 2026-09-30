@@ -20,14 +20,18 @@ Item {
 
     // ── File views ────────────────────────────────────────────────────────────
 
+    // Read only while their tab is showing: parsed at startup, the ~3000
+    // emoji and kaomoji sat in memory behind the closed panel.
     FileView {
         id: emojiFile
-        path: Quickshell.env("HOME") + "/.config/quickshell/files/emoji.json"
+        path: root.currentTab === 1 ? Quickshell.env("HOME") + "/.config/quickshell/files/emoji.json" : ""
+        blockLoading: true
     }
 
     FileView {
         id: kaomojiFile
-        path: Quickshell.env("HOME") + "/.config/quickshell/files/kaomoji.json"
+        path: root.currentTab === 2 ? Quickshell.env("HOME") + "/.config/quickshell/files/kaomoji.json" : ""
+        blockLoading: true
     }
 
     readonly property var _emojiRaw: {
@@ -151,8 +155,6 @@ Item {
         }
     }
 
-    Process { id: pasteProcess; running: false }
-    Process { id: copyProcess;  running: false }
     Process {
         id: wipeProcess
         command: ["cliphist", "wipe"]
@@ -162,16 +164,16 @@ Item {
 
     function pasteClipEntry(entry) {
         if (!entry) return
-        pasteProcess.command = ["bash", "-c",
-            "cliphist list | sed -n '" + entry.lineIdx + "p' | cliphist decode | wl-copy"]
-        pasteProcess.running = true
+        // Detached: the panel is unloaded once closed, which would kill a
+        // pipeline still running.
+        Quickshell.execDetached(["bash", "-c",
+            "cliphist list | sed -n '" + entry.lineIdx + "p' | cliphist decode | wl-copy"])
         root.close()
     }
 
     function copyText(text) {
         const esc = text.replace(/'/g, "'\\''")
-        copyProcess.command = ["bash", "-c", "printf '%s' '" + esc + "' | wl-copy"]
-        copyProcess.running = true
+        Quickshell.execDetached(["bash", "-c", "printf '%s' '" + esc + "' | wl-copy"])
         root.close()
     }
 
@@ -575,6 +577,9 @@ Item {
                                 source: entry && entry.isImage && entry.thumbPath !== ""
                                     ? "file://" + entry.thumbPath + "?gen=" + root._thumbGen : ""
                                 fillMode: Image.PreserveAspectCrop
+                                // Decoded at the row's size: a screenshot in the
+                                // history is otherwise held at full resolution.
+                                sourceSize: Qt.size(clipList.width, 200)
                                 smooth: true; mipmap: true; asynchronous: true; cache: false
                                 visible: entry && entry.isImage
                             }
@@ -640,7 +645,8 @@ Item {
                     clip: true
                     cellWidth: 56; cellHeight: 56
                     currentIndex: -1
-                    model: root.emojiFiltered
+                    // Only the tab on show builds its delegates.
+                    model: root.currentTab === 1 ? root.emojiFiltered : []
 
                     ScrollBar.vertical: StyledScrollBar {
                         background: Item {}
@@ -725,7 +731,7 @@ Item {
                     clip: true
                     spacing: 3
                     currentIndex: -1
-                    model: root.kaoFiltered
+                    model: root.currentTab === 2 ? root.kaoFiltered : []
 
                     ScrollBar.vertical: StyledScrollBar {
                         background: Item {}

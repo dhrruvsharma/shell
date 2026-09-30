@@ -54,7 +54,7 @@ Rectangle {
     layer.enabled: root.masked
     layer.effect: MultiEffect {
         maskEnabled: true
-        maskSource: root.neon ? neonMask : root.deco ? decoMask : root.cusp ? cuspMask : root.crenel ? crenelMask : hudMask
+        maskSource: maskLoader.item
         maskThresholdMin: 0.5
         maskSpreadAtMin: 1.0
     }
@@ -94,148 +94,238 @@ Rectangle {
         visible: false
     }
 
-    HudMask {
+    // Only the theme's own outline and trim are built (one mask, one set of
+    // decorations): all of them at once, hidden, came to a dozen shapes per
+    // pill, every one re-traced whenever a pill's text changed width.
+    Loader {
+        id: maskLoader
+        anchors.fill: parent
+        active: root.masked
+        sourceComponent: root.neon ? neonMask : root.deco ? decoMask : root.cusp ? cuspMask : root.crenel ? crenelMask : hudMask
+    }
+
+    Loader {
+        anchors.fill: parent
+        sourceComponent: ({
+            chamfer: hudTrim,
+            neon: neonTrim,
+            deco: decoTrim,
+            cusp: cuspTrim,
+            crenel: crenelTrim,
+            print: printTrim,
+            plate: plateTrim,
+            scale: scaleTrim,
+            zari: zariTrim,
+            lume: lumeTrim
+        })[root.look.shape] ?? null
+    }
+
+    Component {
         id: hudMask
-        active: root.hud
+
+        HudMask {
+            active: true
+        }
     }
 
-    HudTick {
-        visible: root.hud
-    }
-
-    NeonMask {
+    Component {
         id: neonMask
-        active: root.neon
+
+        NeonMask {
+            active: true
+        }
     }
 
-    NeonFrame {
-        visible: root.neon
-        cut: 7
-        fill: "transparent"
-        glow: 0
-        inset: 1
-    }
-
-    DecoMask {
+    Component {
         id: decoMask
-        active: root.deco
-        cut: 4
+
+        DecoMask {
+            active: true
+            cut: 4
+        }
     }
 
-    DecoFrame {
-        visible: root.deco
-        cut: 4
-        fill: "transparent"
-        stroke: Services.DesktopTheme.borderColor(root.look)
-        inset: 1
-    }
-
-    CuspMask {
+    Component {
         id: cuspMask
-        active: root.cusp
-        cut: 6
+
+        CuspMask {
+            active: true
+            cut: 6
+        }
     }
 
-    CuspFrame {
-        visible: root.cusp
-        cut: 6
-        fill: "transparent"
-        stroke: Services.DesktopTheme.borderColor(root.look)
-        inset: 1
-    }
-
-    CrenelMask {
+    Component {
         id: crenelMask
-        active: root.crenel
-        merlon: 7
-        depth: 3
+
+        CrenelMask {
+            active: true
+            merlon: 7
+            depth: 3
+        }
     }
 
-    CrenelFrame {
-        visible: root.crenel
-        merlon: 7
-        depth: 3
-        fill: "transparent"
-        stroke: Services.DesktopTheme.borderColor(root.look)
+    Component {
+        id: hudTrim
+
+        Item {
+            HudTick {}
+        }
+    }
+
+    Component {
+        id: neonTrim
+
+        Item {
+            NeonFrame {
+                cut: 7
+                fill: "transparent"
+                glow: 0
+                inset: 1
+            }
+        }
+    }
+
+    Component {
+        id: decoTrim
+
+        Item {
+            DecoFrame {
+                cut: 4
+                fill: "transparent"
+                stroke: Services.DesktopTheme.borderColor(root.look)
+                inset: 1
+            }
+        }
+    }
+
+    Component {
+        id: cuspTrim
+
+        Item {
+            CuspFrame {
+                cut: 6
+                fill: "transparent"
+                stroke: Services.DesktopTheme.borderColor(root.look)
+                inset: 1
+            }
+        }
+    }
+
+    Component {
+        id: crenelTrim
+
+        Item {
+            CrenelFrame {
+                merlon: 7
+                depth: 3
+                fill: "transparent"
+                stroke: Services.DesktopTheme.borderColor(root.look)
+            }
+        }
     }
 
     // Broadsheet: a thin rule above, a heavy one below.
-    Rectangle {
-        visible: root.look.shape === "print"
-        width: parent.width
-        height: 1
-        color: Services.DesktopTheme.borderColor(root.look)
-    }
+    Component {
+        id: printTrim
 
-    Rectangle {
-        visible: root.look.shape === "print"
-        y: parent.height - height
-        width: parent.width
-        height: 2
-        color: Services.DesktopTheme.borderColor(root.look)
+        Item {
+            Rectangle {
+                width: parent.width
+                height: 1
+                color: Services.DesktopTheme.borderColor(root.look)
+            }
+
+            Rectangle {
+                y: parent.height - height
+                width: parent.width
+                height: 2
+                color: Services.DesktopTheme.borderColor(root.look)
+            }
+        }
     }
 
     // Wasteland: bolted on at both ends.
-    Repeater {
-        model: root.look.shape === "plate" ? 2 : 0
+    Component {
+        id: plateTrim
 
-        Rivet {
-            required property int index
-            size: 5
-            x: index === 0 ? 3 : root.width - width - 3
-            y: (root.height - height) / 2
+        Item {
+            Repeater {
+                model: 2
+
+                Rivet {
+                    required property int index
+                    size: 5
+                    x: index === 0 ? 3 : root.width - width - 3
+                    y: (root.height - height) / 2
+                }
+            }
         }
     }
 
     // Observatory: graduated along the foot.
-    ScaleTicks {
-        visible: root.look.shape === "scale"
-        x: 5
-        y: root.height - height - 1
-        width: root.width - 10
-        height: 4
-        up: true
-        step: 4
-        major: 5
-        minorLength: 1.5
-        majorLength: 3.5
-        color: Services.DesktopTheme.borderColor(root.look)
-        opacity: 0.8
+    Component {
+        id: scaleTrim
+
+        Item {
+            ScaleTicks {
+                x: 5
+                y: root.height - height - 1
+                width: root.width - 10
+                height: 4
+                up: true
+                step: 4
+                major: 5
+                minorLength: 1.5
+                majorLength: 3.5
+                color: Services.DesktopTheme.borderColor(root.look)
+                opacity: 0.8
+            }
+        }
     }
 
     // Devaloka: a temple border along the foot.
-    TempleBorder {
-        visible: root.look.shape === "zari"
-        x: root.radius
-        y: root.height - height - 1
-        width: root.width - 2 * root.radius
-        height: 3.5
-        step: 5
-        rule: 0
-        color: Services.DesktopTheme.borderColor(root.look)
+    Component {
+        id: zariTrim
+
+        Item {
+            TempleBorder {
+                x: root.radius
+                y: root.height - height - 1
+                width: root.width - 2 * root.radius
+                height: 3.5
+                step: 5
+                rule: 0
+                color: Services.DesktopTheme.borderColor(root.look)
+            }
+        }
     }
 
     // Abyss: a strip of light along the foot, as under a backlit key.
-    Item {
-        visible: root.look.shape === "lume"
-        x: root.radius
-        y: root.height - 5
-        width: root.width - 2 * root.radius
-        height: 4
+    Component {
+        id: lumeTrim
 
-        Rectangle {
-            anchors.fill: parent
-            anchors.margins: -1
-            radius: 3
-            color: Colors.withAlpha(Services.DesktopTheme.accent2, 0.16)
-        }
+        Item {
+            Item {
+                x: root.radius
+                y: root.height - 5
+                width: root.width - 2 * root.radius
+                height: 4
 
-        Rectangle {
-            anchors.centerIn: parent
-            width: parent.width
-            height: 2
-            radius: 1
-            color: Colors.withAlpha(Services.DesktopTheme.accent2, 0.85)
+                Rectangle {
+                    anchors.fill: parent
+                    anchors.margins: -1
+                    radius: 3
+                    color: Colors.withAlpha(Services.DesktopTheme.accent2, 0.16)
+                }
+
+                Rectangle {
+                    anchors.centerIn: parent
+                    width: parent.width
+                    height: 2
+                    radius: 1
+                    color: Colors.withAlpha(Services.DesktopTheme.accent2, 0.85)
+                }
+            }
         }
     }
 

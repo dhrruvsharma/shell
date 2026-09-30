@@ -60,19 +60,32 @@ Item {
             smooth: false
 
             property var barsData: root.bars
+            // The row's pixels, reused from frame to frame: one putImageData
+            // per cava frame instead of a fillStyle and fillRect per bar.
+            property var pixels: null
             onBarsDataChanged: dataCanvas.requestPaint()
             Component.onCompleted: dataCanvas.requestPaint()
 
             onPaint: {
                 var ctx = getContext("2d");
-                ctx.clearRect(0, 0, width, height);
                 var bars = root.bars;
                 var n = bars ? bars.length : 0;
-                for (var i = 0; i < n; i++) {
-                    var v = Math.max(0, Math.min(1, bars[i]));
-                    ctx.fillStyle = Qt.rgba(v, v, v, 1);
-                    ctx.fillRect(i, 0, 1, 1);
+                if (n === 0) {
+                    ctx.clearRect(0, 0, width, height);
+                    return;
                 }
+                if (!pixels || pixels.width !== n)
+                    pixels = ctx.createImageData(n, 1);
+                var d = pixels.data;
+                for (var i = 0; i < n; i++) {
+                    var v = (Math.max(0, Math.min(1, bars[i])) * 255 + 0.5) | 0;
+                    d[i * 4] = v;
+                    d[i * 4 + 1] = v;
+                    d[i * 4 + 2] = v;
+                    d[i * 4 + 3] = 255;
+                }
+                // Qt ignores putImageData unless given the dirty rect too.
+                ctx.putImageData(pixels, 0, 0, 0, 0, n, 1);
             }
         }
     }

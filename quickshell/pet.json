@@ -1,11 +1,21 @@
 {
-    "affection": 272,
+    "affection": 306,
     "chatty": 2,
     "fur": "natural",
-    "lastFed": 1790748393308,
+    "lastFed": 1790762169472,
     "lastGreeting": "2026-09-30",
     "name": "Mochi",
     "recent": [
+        {
+            "icon": "palette",
+            "image": "",
+            "key": "trick:t-themes",
+            "subtitle": "Trick · qs ipc call themes desktop",
+            "terminal": false,
+            "title": "Themes",
+            "type": "cmd",
+            "value": "qs ipc call themes desktop"
+        },
         {
             "icon": "auto_stories",
             "image": "",
@@ -55,16 +65,6 @@
             "title": "Toggle Widgets",
             "type": "cmd",
             "value": "qs ipc call widgets toggle"
-        },
-        {
-            "icon": "apps",
-            "image": "file:///usr/share/icons/Papirus/16x16/apps/slack.svg",
-            "key": "app:Slack",
-            "subtitle": "App · Slack Desktop",
-            "terminal": false,
-            "title": "Slack",
-            "type": "app",
-            "value": "/usr/bin/slack --gtk-version=3 -s"
         }
     ],
     "reminders": [

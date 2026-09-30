@@ -62,6 +62,16 @@ hl.animation({ leaf = "workspaces",    enabled = true, speed = 0.5,  bezier = "b
 hl.animation({ leaf = "workspacesIn",  enabled = true, speed = 4.5,  bezier = "bounceCurve",  style = "slidefadevert" })
 hl.animation({ leaf = "workspacesOut", enabled = true, speed = 4.5,  bezier = "bounceCurve",  style = "slidefadevert" })
 
+-- The shell's panel surface grows from a pixel to the whole screen when a
+-- panel opens (and shrinks back once it has closed), and its OSD gets a
+-- surface each time it shows. Both animate themselves; Hyprland's layer
+-- animation on top drew the panels growing out of the top-left corner.
+hl.layer_rule({
+    name    = "quickshell-panels-no-anim",
+    match   = { namespace = "^quickshell:(panels|osd)$" },
+    no_anim = true,
+})
+
 
 ------------------
 ---- KEYBINDS ----

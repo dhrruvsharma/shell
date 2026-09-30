@@ -40,6 +40,11 @@ Singleton {
         stdinEnabled: true
         running: root.running
         command: ["cava", "-p", "/dev/stdin"]
+        // cava links libGL for its SDL output. With the session's
+        // __GLX_VENDOR_LIBRARY_NAME=nvidia that pulled the whole NVIDIA GL
+        // driver (~100 MB resident, 3x the anonymous memory) into a process
+        // that only ever prints numbers.
+        environment: ({ "__GLX_VENDOR_LIBRARY_NAME": null })
         onStarted: {
             for (const k in config) {
                 if (typeof config[k] !== "object") {

@@ -30,7 +30,6 @@ Item {
 
     function open() {
         if (isOpen) return
-        isOpen = true
         searchField.text = ""
 
         backdrop.opacity   = 0
@@ -39,7 +38,10 @@ Item {
         gridContainer.opacity = 0
         hintText.opacity   = 0
 
+        // Started before isOpen builds the grid, so its delegates know
+        // they're part of the opening.
         openAnim.restart()
+        isOpen = true
         searchField.forceActiveFocus()
     }
 
@@ -207,7 +209,10 @@ Item {
             cellHeight: 138
             clip: true
 
-            model: root.filteredApps
+            // Delegates (and their icons) only while the launcher is up: the
+            // grid behind the closed launcher held every app's icon, and was
+            // rebuilt each time an app was registered.
+            model: root.isOpen ? root.filteredApps : []
 
             Keys.onReturnPressed: {
                 if (currentIndex >= 0 && currentIndex < root.filteredApps.length)
@@ -232,7 +237,14 @@ Item {
                 property bool isPressed: false
 
                 opacity: 0
+                // Built as the launcher opens, the grid simply fades in with
+                // it (as when it was built in advance); later rebuilds (a new
+                // search) pop in.
                 Component.onCompleted: {
+                    if (openAnim.running) {
+                        opacity = 1
+                        return
+                    }
                     scale = 0.80
                     entranceAnim.start()
                 }
@@ -315,6 +327,7 @@ Item {
                             anchors.centerIn: parent
                             width: 44; height: 44
                             sourceSize.width: 88; sourceSize.height: 88
+                            asynchronous: true
                             source: Services.AppRegistry.iconForAppMeta(delegateRoot.app)
                             fillMode: Image.PreserveAspectFit
                             smooth: true; antialiasing: true

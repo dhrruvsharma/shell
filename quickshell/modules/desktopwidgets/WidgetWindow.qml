@@ -36,7 +36,9 @@ PanelWindow {
     readonly property bool full: width >= sw - 1 && height >= sh - 1
 
     screen: Quickshell.screens[0] ?? null
-    visible: Services.DesktopWidgets.enabled(widgetId)
+    // Mapped once the widget is built at its own size (the loader only runs
+    // while the widget is on, so a switched-off one costs nothing).
+    visible: loader.item !== null
     WlrLayershell.layer: WlrLayer.Bottom
     WlrLayershell.namespace: "quickshell:widget"
     WlrLayershell.keyboardFocus: WlrKeyboardFocus.None
@@ -94,6 +96,7 @@ PanelWindow {
 
         Loader {
             id: loader
+            active: Services.DesktopWidgets.enabled(win.widgetId)
             sourceComponent: win.widget
         }
     }

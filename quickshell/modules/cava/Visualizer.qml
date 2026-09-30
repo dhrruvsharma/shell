@@ -30,6 +30,8 @@ PanelWindow {
     Process {
         id: cavaProc
         running: musicVis.visible
+        // Keeps the NVIDIA GL driver out of cava (see services/Cava.qml).
+        environment: ({ "__GLX_VENDOR_LIBRARY_NAME": null })
 
         command: ["sh", "-c", `
             cava -p /dev/stdin <<EOF

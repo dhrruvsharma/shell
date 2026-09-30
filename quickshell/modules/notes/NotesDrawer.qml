@@ -13,6 +13,9 @@ Item {
     implicitHeight: opened ? 600 : 0
     implicitWidth: drawerWidth
     property int drawerWidth: 900
+    // Hidden once fully closed: a collapsed but visible drawer still went on
+    // laying out and repainting its notes.
+    visible: opened || implicitHeight > 0
 
     // Theme accent as a real color (so we can derive translucent tints from it).
     readonly property color accent: Colors.primary

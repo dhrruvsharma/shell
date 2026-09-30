@@ -102,6 +102,10 @@ Singleton {
         return ""
     }
 
+    // Apps found so far; published to `apps` once the scan is done, so its
+    // users (the launcher grid, the pet's search) rebuild once, not per app.
+    property var _found: []
+
     function registerApp(displayName, comment, icon, exec, wmClass, desktopId) {
         const entry = {
             name: displayName,
@@ -112,7 +116,7 @@ Singleton {
             desktopId: desktopId
         }
 
-        apps = [...apps,entry]
+        _found.push(entry)
 
         if (wmClass)
             classToIcon[wmClass.toLowerCase()] = icon
@@ -141,9 +145,9 @@ Singleton {
         running: true
         command: ["bash", Quickshell.shellDir + "/scripts/find-apps.sh"]
 
-        stdout: SplitParser {
-            onRead: (data) => {
-                const lines = data.split("\n")
+        stdout: StdioCollector {
+            onStreamFinished: {
+                const lines = text.split("\n")
 
                 for (let line of lines) {
                     line = line.trim()
@@ -163,6 +167,8 @@ Singleton {
                     }
                 }
 
+                registry.apps = registry._found
+                registry._found = []
                 registry.ready()
             }
         }

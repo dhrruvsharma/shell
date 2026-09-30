@@ -270,111 +270,184 @@ Item {
         border.color: island.isMergeTarget ? Services.DesktopTheme.accent : Services.DesktopTheme.borderColor(island.look)
         opacity: island.beingDragged ? 0.4 : 1
 
-        HudFrame {
-            visible: island.hud && (island.grouped || island.isMergeTarget)
-            fill: island.grouped ? Colors.surface_container_high : "transparent"
-            stroke: island.isMergeTarget ? Colors.primary : Colors.withAlpha(Colors.on_surface, 0.12)
-            strokeWidth: island.isMergeTarget ? 2 : 1
-            tick: island.grouped
+        // The chrome of a group (or of a drop target) in the theme's look,
+        // built only for the theme in use and only while there's a group or
+        // target to show: every theme's, hidden, came to half a dozen shapes
+        // per island, re-traced whenever an island changed width.
+        Loader {
+            anchors.fill: parent
+            active: island.grouped || island.isMergeTarget
+            sourceComponent: ({
+                chamfer: hudChrome,
+                neon: neonChrome,
+                deco: decoChrome,
+                cusp: cuspChrome,
+                crenel: crenelChrome,
+                print: printChrome,
+                plate: plateChrome,
+                scale: scaleChrome,
+                zari: zariChrome,
+                lume: lumeChrome
+            })[island.look.shape] ?? null
         }
 
-        NeonFrame {
-            visible: island.neon && (island.grouped || island.isMergeTarget)
-            cut: 10
-            fill: island.grouped ? Colors.surface_container_high : "transparent"
-            stroke: island.isMergeTarget ? Services.DesktopTheme.accent2Of("cyberpunk") : Services.DesktopTheme.accentOf("cyberpunk")
-            strokeWidth: island.isMergeTarget ? 2 : 1
-            glow: island.grouped ? 0.5 : 0
+        Component {
+            id: hudChrome
+
+            HudFrame {
+                fill: island.grouped ? Colors.surface_container_high : "transparent"
+                stroke: island.isMergeTarget ? Colors.primary : Colors.withAlpha(Colors.on_surface, 0.12)
+                strokeWidth: island.isMergeTarget ? 2 : 1
+                tick: island.grouped
+            }
         }
 
-        DecoFrame {
-            visible: island.deco && (island.grouped || island.isMergeTarget)
-            cut: 4
-            steps: 2
-            fill: island.grouped ? Colors.surface_container_high : "transparent"
-            stroke: island.isMergeTarget ? Services.DesktopTheme.accent2Of("artdeco") : Services.DesktopTheme.borderColor(island.look)
-            strokeWidth: island.isMergeTarget ? 2 : 1
+        Component {
+            id: neonChrome
+
+            NeonFrame {
+                cut: 10
+                fill: island.grouped ? Colors.surface_container_high : "transparent"
+                stroke: island.isMergeTarget ? Services.DesktopTheme.accent2Of("cyberpunk") : Services.DesktopTheme.accentOf("cyberpunk")
+                strokeWidth: island.isMergeTarget ? 2 : 1
+                glow: island.grouped ? 0.5 : 0
+            }
         }
 
-        CuspFrame {
-            visible: island.cusp && (island.grouped || island.isMergeTarget)
-            cut: 8
-            fill: island.grouped ? Colors.surface_container_high : "transparent"
-            stroke: island.isMergeTarget ? Services.DesktopTheme.accent2Of("gothic") : Services.DesktopTheme.borderColor(island.look)
-            strokeWidth: island.isMergeTarget ? 2 : 1
+        Component {
+            id: decoChrome
+
+            DecoFrame {
+                cut: 4
+                steps: 2
+                fill: island.grouped ? Colors.surface_container_high : "transparent"
+                stroke: island.isMergeTarget ? Services.DesktopTheme.accent2Of("artdeco") : Services.DesktopTheme.borderColor(island.look)
+                strokeWidth: island.isMergeTarget ? 2 : 1
+            }
         }
 
-        CrenelFrame {
-            visible: island.crenel && (island.grouped || island.isMergeTarget)
-            merlon: 9
-            depth: 4
-            fill: island.grouped ? Colors.surface_container_high : "transparent"
-            stroke: island.isMergeTarget ? Services.DesktopTheme.accent2Of("siege") : Services.DesktopTheme.borderColor(island.look)
-            strokeWidth: island.isMergeTarget ? 2 : 1
+        Component {
+            id: cuspChrome
+
+            CuspFrame {
+                cut: 8
+                fill: island.grouped ? Colors.surface_container_high : "transparent"
+                stroke: island.isMergeTarget ? Services.DesktopTheme.accent2Of("gothic") : Services.DesktopTheme.borderColor(island.look)
+                strokeWidth: island.isMergeTarget ? 2 : 1
+            }
+        }
+
+        Component {
+            id: crenelChrome
+
+            CrenelFrame {
+                merlon: 9
+                depth: 4
+                fill: island.grouped ? Colors.surface_container_high : "transparent"
+                stroke: island.isMergeTarget ? Services.DesktopTheme.accent2Of("siege") : Services.DesktopTheme.borderColor(island.look)
+                strokeWidth: island.isMergeTarget ? 2 : 1
+            }
         }
 
         // Broadsheet: the group boxed between a heavy and a thin rule.
-        Repeater {
-            model: island.look.shape === "print" && island.grouped ? [{ y: 0, h: 2 }, { y: island.height - 1, h: 1 }] : []
+        Component {
+            id: printChrome
 
-            Rectangle {
-                required property var modelData
-                y: modelData.y
-                width: island.width
-                height: modelData.h
-                color: Services.DesktopTheme.borderColor(island.look)
+            Item {
+                visible: island.grouped
+
+                Repeater {
+                    model: [{ y: 0, h: 2 }, { y: island.height - 1, h: 1 }]
+
+                    Rectangle {
+                        required property var modelData
+                        y: modelData.y
+                        width: island.width
+                        height: modelData.h
+                        color: Services.DesktopTheme.borderColor(island.look)
+                    }
+                }
             }
         }
 
         // Wasteland: a plate bolted at the corners.
-        Repeater {
-            model: island.look.shape === "plate" && island.grouped ? 4 : 0
+        Component {
+            id: plateChrome
 
-            Rivet {
-                required property int index
-                size: 3
-                x: index % 2 === 0 ? 2 : island.width - width - 2
-                y: index < 2 ? 2 : island.height - height - 2
+            Item {
+                visible: island.grouped
+
+                Repeater {
+                    model: 4
+
+                    Rivet {
+                        required property int index
+                        size: 3
+                        x: index % 2 === 0 ? 2 : island.width - width - 2
+                        y: index < 2 ? 2 : island.height - height - 2
+                    }
+                }
             }
         }
 
         // Observatory: the group graduated along its foot.
-        ScaleTicks {
-            visible: island.look.shape === "scale" && island.grouped
-            x: 8
-            y: island.height - height - 1
-            width: island.width - 16
-            height: 3
-            up: true
-            step: 5
-            major: 4
-            minorLength: 1.5
-            majorLength: 3
-            color: Services.DesktopTheme.borderColor(island.look)
-            opacity: 0.7
+        Component {
+            id: scaleChrome
+
+            Item {
+                visible: island.grouped
+
+                ScaleTicks {
+                    x: 8
+                    y: island.height - height - 1
+                    width: island.width - 16
+                    height: 3
+                    up: true
+                    step: 5
+                    major: 4
+                    minorLength: 1.5
+                    majorLength: 3
+                    color: Services.DesktopTheme.borderColor(island.look)
+                    opacity: 0.7
+                }
+            }
         }
 
         // Devaloka: a temple border along its foot.
-        TempleBorder {
-            visible: island.look.shape === "zari" && island.grouped
-            x: island.radius
-            y: island.height - height - 1
-            width: island.width - 2 * island.radius
-            height: 3
-            step: 5
-            rule: 0
-            color: Services.DesktopTheme.borderColor(island.look)
-            opacity: 0.8
+        Component {
+            id: zariChrome
+
+            Item {
+                visible: island.grouped
+
+                TempleBorder {
+                    x: island.radius
+                    y: island.height - height - 1
+                    width: island.width - 2 * island.radius
+                    height: 3
+                    step: 5
+                    rule: 0
+                    color: Services.DesktopTheme.borderColor(island.look)
+                    opacity: 0.8
+                }
+            }
         }
 
         // Abyss: lit along its foot.
-        Rectangle {
-            visible: island.look.shape === "lume" && island.grouped
-            x: island.radius
-            y: island.height - 2
-            width: island.width - 2 * island.radius
-            height: 1
-            color: Colors.withAlpha(Services.DesktopTheme.accent2, 0.7)
+        Component {
+            id: lumeChrome
+
+            Item {
+                visible: island.grouped
+
+                Rectangle {
+                    x: island.radius
+                    y: island.height - 2
+                    width: island.width - 2 * island.radius
+                    height: 1
+                    color: Colors.withAlpha(Services.DesktopTheme.accent2, 0.7)
+                }
+            }
         }
 
         // Insertion caret shown just left of this island.

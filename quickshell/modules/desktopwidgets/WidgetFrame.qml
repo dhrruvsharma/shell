@@ -60,514 +60,610 @@ Item {
         shadowVerticalOffset: 1
     }
 
-    Rectangle {
+    // Only the theme's own frame is built: every frame at once, all but one
+    // hidden, cost hundreds of items (and a shader or two) per widget.
+    Loader {
         anchors.fill: parent
-        visible: frame.st.frame === "card"
-        radius: 22
-        color: Colors.withAlpha(Colors.surface_container, 0.86)
-        border.width: 1
-        border.color: Colors.withAlpha(Colors.outline_variant, 0.5)
+        sourceComponent: ({
+            card: cardFrame,
+            chamfer: chamferFrame,
+            console: consoleFrame,
+            glass: glassFrame,
+            scroll: scrollFrame,
+            neon: neonFrame,
+            washi: washiFrame,
+            gilt: giltFrame,
+            lancet: lancetFrame,
+            clipping: clippingFrame,
+            scrap: scrapFrame,
+            brass: brassFrame,
+            instrument: instrumentFrame,
+            patta: pattaFrame,
+            banner: bannerFrame
+        })[frame.st.frame] ?? null
     }
 
-    HudFrame {
-        visible: frame.st.frame === "chamfer"
-        cut: 14
-        fill: Colors.withAlpha(Colors.background, 0.68)
-        stroke: Colors.withAlpha(frame.accent, 0.35)
-        tickColor: frame.accent
-    }
+    Component {
+        id: cardFrame
 
-    Rectangle {
-        anchors.fill: parent
-        anchors.topMargin: frame.tabRoom
-        visible: frame.isConsole
-        color: Colors.withAlpha(Colors.background, 0.8)
-        border.width: 1
-        border.color: Colors.withAlpha(frame.accent, 0.45)
-
-        Rectangle {
-            x: 16
-            y: -10
-            visible: frame.title.length > 0
-            width: tabText.implicitWidth + 18
-            height: 20
-            color: Colors.background
-            border.width: 1
-            border.color: Colors.withAlpha(frame.accent, 0.45)
-
-            Text {
-                id: tabText
-                anchors.centerIn: parent
-                text: frame.title
-                font.family: frame.st.mono
-                font.pixelSize: 12
-                font.weight: Font.Medium
-                color: frame.accent
+        Item {
+            Rectangle {
+                anchors.fill: parent
+                radius: 22
+                color: Colors.withAlpha(Colors.surface_container, 0.86)
+                border.width: 1
+                border.color: Colors.withAlpha(Colors.outline_variant, 0.5)
             }
         }
     }
 
-    Rectangle {
-        anchors.fill: parent
-        visible: frame.st.frame === "glass"
-        radius: 28
-        color: Colors.withAlpha(Colors.background, 0.46)
-        border.width: 1
-        border.color: Colors.withAlpha(frame.accent, 0.3)
-    }
+    Component {
+        id: chamferFrame
 
-    Rectangle {
-        anchors.fill: parent
-        visible: frame.st.frame === "scroll"
-        radius: 4
-        color: Colors.withAlpha(Colors.surface_container, 0.8)
-        border.width: 1
-        border.color: Colors.withAlpha(frame.accent, 0.55)
-
-        Rectangle {
-            anchors.fill: parent
-            anchors.margins: 4
-            radius: 2
-            color: "transparent"
-            border.width: 1
-            border.color: Colors.withAlpha(frame.accent, 0.22)
-        }
-
-        Rectangle {
-            anchors.right: parent.right
-            anchors.top: parent.top
-            anchors.margins: 12
-            width: 22
-            height: 22
-            radius: 3
-            rotation: -4
-            color: frame.accent
-
-            Text {
-                anchors.centerIn: parent
-                text: frame.seal
-                font.family: frame.st.cjk ?? frame.st.font
-                font.pixelSize: 13
-                font.weight: Font.Bold
-                color: Colors.on_tertiary
+        Item {
+            HudFrame {
+                cut: 14
+                fill: Colors.withAlpha(Colors.background, 0.68)
+                stroke: Colors.withAlpha(frame.accent, 0.35)
+                tickColor: frame.accent
             }
         }
     }
 
-    // Neon Noir: a dark panel with a cut corner, a neon hairline and a tab.
-    NeonFrame {
-        visible: frame.st.frame === "neon"
-        cut: 18
-        fill: Colors.withAlpha(Qt.tint(Colors.background, "#59000000"), 0.8)
-        stroke: frame.accent
-        edge: Services.DesktopTheme.accent2Of(frame.themeId)
-        glow: 0.7
-    }
+    Component {
+        id: consoleFrame
 
-    Rectangle {
-        visible: frame.st.frame === "neon"
-        x: 1
-        y: frame.st.pad - 2
-        width: 3
-        height: 24
-        color: frame.accent
-    }
+        Item {
+            Rectangle {
+                anchors.fill: parent
+                anchors.topMargin: frame.tabRoom
+                color: Colors.withAlpha(Colors.background, 0.8)
+                border.width: 1
+                border.color: Colors.withAlpha(frame.accent, 0.45)
 
-    // Wabi-sabi: washi on a pebble, with a crack mended in gold running in
-    // from the rim.
-    Rectangle {
-        anchors.fill: parent
-        visible: frame.st.frame === "washi"
-        radius: 20
-        topLeftRadius: radius * Services.DesktopTheme.pebbleCorners[0]
-        topRightRadius: radius * Services.DesktopTheme.pebbleCorners[1]
-        bottomRightRadius: radius * Services.DesktopTheme.pebbleCorners[2]
-        bottomLeftRadius: radius * Services.DesktopTheme.pebbleCorners[3]
-        color: Colors.withAlpha(Qt.tint(Colors.surface_container, "#1ad9b88c"), 0.82)
-        border.width: 1
-        border.color: Colors.withAlpha(frame.accent, 0.3)
+                Rectangle {
+                    x: 16
+                    y: -10
+                    visible: frame.title.length > 0
+                    width: tabText.implicitWidth + 18
+                    height: 20
+                    color: Colors.background
+                    border.width: 1
+                    border.color: Colors.withAlpha(frame.accent, 0.45)
 
-        Shape {
-            anchors.fill: parent
-            preferredRendererType: Shape.CurveRenderer
-
-            ShapePath {
-                fillColor: "transparent"
-                strokeColor: "#c9a24f"
-                strokeWidth: 1.7
-                capStyle: ShapePath.RoundCap
-                joinStyle: ShapePath.RoundJoin
-                startX: frame.width * 0.66
-                startY: 0
-                PathLine { x: frame.width * 0.66 + 5; y: 6 }
-                PathLine { x: frame.width * 0.66 + 3; y: 11 }
-                PathLine { x: frame.width * 0.66 + 11; y: 16 }
-                PathLine { x: frame.width * 0.66 + 9; y: 21 }
-                PathLine { x: frame.width * 0.66 + 14; y: 26 }
-            }
-
-            ShapePath {
-                fillColor: "transparent"
-                strokeColor: "#c9a24f"
-                strokeWidth: 1.2
-                capStyle: ShapePath.RoundCap
-                joinStyle: ShapePath.RoundJoin
-                startX: frame.width * 0.66 + 11
-                startY: 16
-                PathLine { x: frame.width * 0.66 + 19; y: 15 }
-                PathLine { x: frame.width * 0.66 + 23; y: 19 }
-            }
-        }
-    }
-
-    // Art Deco: black lacquer in a double gold rule stepped at the corners,
-    // the title centred between two short rules.
-    DecoFrame {
-        visible: frame.st.frame === "gilt"
-        cut: 7
-        steps: 2
-        fill: Colors.withAlpha("#0d0b08", 0.84)
-        stroke: frame.accent
-        gap: 5
-        innerStroke: Colors.withAlpha(frame.accent, 0.35)
-    }
-
-    Repeater {
-        model: frame.st.frame === "gilt" && frame.hasTitle ? 2 : 0
-
-        Rectangle {
-            required property int index
-            x: index === 0 ? titleText.x - width - 10 : titleText.x + titleText.width + 10
-            y: Math.round(titleText.y + titleText.height / 2 - 1)
-            width: 26
-            height: 1
-            color: frame.accent
-        }
-    }
-
-    // Cathedral: a lancet window of dark stone, its lead line doubled inside
-    // with a line of the theme's glass.
-    Shape {
-        anchors.fill: parent
-        visible: frame.st.frame === "lancet"
-        preferredRendererType: Shape.CurveRenderer
-
-        ShapePath {
-            fillColor: Colors.withAlpha("#141210", 0.86)
-            strokeColor: "#060505"
-            strokeWidth: 3
-            joinStyle: ShapePath.RoundJoin
-
-            PathPolyline {
-                path: ThemeShapes.arch(1.5, 1.5, frame.width - 3, frame.height - 3, frame.archRise)
-            }
-        }
-
-        ShapePath {
-            fillColor: "transparent"
-            strokeColor: Colors.withAlpha(frame.accent, 0.75)
-            strokeWidth: 1.2
-            joinStyle: ShapePath.RoundJoin
-
-            PathPolyline {
-                path: ThemeShapes.arch(5.5, 5.5, frame.width - 11, frame.height - 11, frame.archRise - 3)
-            }
-        }
-    }
-
-    // Broadsheet: a clipping of newsprint casting a hard shadow, its title a
-    // kicker under a heavy rule.
-    Rectangle {
-        visible: frame.st.frame === "clipping"
-        x: 5
-        y: 5
-        width: frame.width
-        height: frame.height
-        color: Colors.withAlpha("black", 0.42)
-    }
-
-    Rectangle {
-        anchors.fill: parent
-        visible: frame.st.frame === "clipping"
-        color: "#ebe6d9"
-    }
-
-    Rectangle {
-        visible: frame.st.frame === "clipping" && frame.hasTitle
-        x: frame.st.pad
-        y: frame.st.pad
-        width: frame.width - frame.st.pad * 2
-        height: 3
-        color: frame.ink
-    }
-
-    // Wasteland: a plate of scrap, its name on a strip of masking tape.
-    ScrapPlate {
-        anchors.fill: parent
-        visible: frame.st.frame === "scrap"
-        seed: frame.title.length * 1.7 + 0.3
-        rust: 0.5
-        fill: 0.9
-    }
-
-    Rectangle {
-        visible: frame.st.frame === "scrap" && frame.hasTitle
-        x: titleText.x - 9
-        y: titleText.y - 3
-        width: titleText.implicitWidth + 18
-        height: titleText.implicitHeight + 5
-        rotation: -1.5
-        color: Waste.tape
-        opacity: 0.95
-    }
-
-    // Observatory: night-blue enamel in an engraved brass rim, graduated
-    // along its head like an instrument's limb, the title between two stars.
-    Rectangle {
-        anchors.fill: parent
-        visible: frame.st.frame === "brass"
-        radius: 12
-        color: Colors.withAlpha(Qt.tint("#0a0e19", Colors.withAlpha(Services.DesktopTheme.accent2Of(frame.themeId), 0.14)), 0.86)
-        border.width: 1
-        border.color: frame.accent
-
-        Rectangle {
-            anchors.fill: parent
-            anchors.margins: 5
-            radius: 8
-            color: "transparent"
-            border.width: 1
-            border.color: Colors.withAlpha(frame.accent, 0.35)
-        }
-
-        ScaleTicks {
-            x: 20
-            y: 6
-            width: parent.width - 40
-            height: 6
-            step: 5
-            major: 6
-            minorLength: 2.5
-            majorLength: 5
-            color: Colors.withAlpha(frame.accent, 0.5)
-        }
-    }
-
-    Repeater {
-        model: frame.st.frame === "brass" && frame.hasTitle ? 2 : 0
-
-        Text {
-            required property int index
-            x: index === 0 ? titleText.x - width - 9 : titleText.x + titleText.width + 9
-            y: titleText.y + (titleText.height - height) / 2
-            text: "✶"
-            font.pixelSize: 11
-            color: frame.accent
-        }
-    }
-
-    // Abyss: the dark glass face of a deep-sea instrument, a lume hairline
-    // round it, light catching along its top, a ping spreading into one
-    // corner and a lit lamp beside the title.
-    Rectangle {
-        anchors.fill: parent
-        visible: frame.st.frame === "instrument"
-        radius: 18
-        color: Colors.withAlpha(Qt.tint("#06151b", Colors.withAlpha(frame.accent, 0.06)), 0.86)
-        border.width: 1
-        border.color: Colors.withAlpha(Services.DesktopTheme.accent2Of(frame.themeId), 0.38)
-
-        Rectangle {
-            anchors.fill: parent
-            anchors.margins: 1
-            radius: 17
-            gradient: Gradient {
-                GradientStop { position: 0; color: Colors.withAlpha("#dff6f4", 0.07) }
-                GradientStop { position: 0.3; color: "transparent" }
-            }
-        }
-
-        PingArcs {
-            anchors.fill: parent
-            cx: width - 18
-            cy: 18
-            gap: 5.5
-            color: Colors.withAlpha(Services.DesktopTheme.accent2Of(frame.themeId), 0.55)
-        }
-    }
-
-    Rectangle {
-        visible: frame.st.frame === "instrument" && frame.hasTitle
-        x: frame.st.pad
-        y: titleText.y + (titleText.height - height) / 2
-        width: 7
-        height: 7
-        radius: 3.5
-        color: Services.DesktopTheme.accent2Of(frame.themeId)
-
-        Rectangle {
-            anchors.centerIn: parent
-            width: 15
-            height: 15
-            radius: 7.5
-            color: Colors.withAlpha(Services.DesktopTheme.accent2Of(frame.themeId), 0.22)
-        }
-    }
-
-    // Devaloka: lac lacquered nearly black in a gold rim lined inside,
-    // temple borders hanging from the head and standing along the foot, and
-    // the title set between the double dandas that close a verse.
-    Rectangle {
-        anchors.fill: parent
-        visible: frame.st.frame === "patta"
-        radius: 8
-        color: Colors.withAlpha(Qt.tint("#170a08", Colors.withAlpha(Services.DesktopTheme.accent2Of(frame.themeId), 0.1)), 0.86)
-        border.width: 1
-        border.color: frame.accent
-
-        Rectangle {
-            anchors.fill: parent
-            anchors.margins: 5
-            radius: 5
-            color: "transparent"
-            border.width: 1
-            border.color: Colors.withAlpha(frame.accent, 0.3)
-        }
-
-        TempleBorder {
-            x: 14
-            y: 6
-            width: parent.width - 28
-            height: 4
-            step: 6
-            down: true
-            rule: 0
-            color: Colors.withAlpha(frame.accent, 0.5)
-        }
-
-        TempleBorder {
-            x: 14
-            y: parent.height - 10
-            width: parent.width - 28
-            height: 4
-            step: 6
-            rule: 0
-            color: Colors.withAlpha(frame.accent, 0.32)
-        }
-    }
-
-    Repeater {
-        model: frame.st.frame === "patta" && frame.hasTitle ? 2 : 0
-
-        Text {
-            required property int index
-            x: index === 0 ? titleText.x - width - 9 : titleText.x + titleText.width + 9
-            y: titleText.y + (titleText.height - height) / 2
-            text: "॥"
-            font.family: frame.st.display
-            font.pixelSize: 17
-            color: frame.accent
-        }
-    }
-
-    // Siege: a war banner on its crossbar, of the tincture dyed deep, an
-    // embroidered border of argent round it, its foot cut in a swallowtail
-    // and the title stitched between two pairs of crossed swords.
-    Item {
-        id: banner
-        anchors.fill: parent
-        visible: frame.st.frame === "banner"
-
-        readonly property color cloth: Qt.hsla(Math.max(0, frame.accent.hslHue), 0.4, 0.12, 0.9)
-        readonly property color thread: Services.DesktopTheme.accent2Of(frame.themeId)
-
-        Shape {
-            anchors.fill: parent
-            preferredRendererType: Shape.CurveRenderer
-
-            ShapePath {
-                strokeColor: Colors.withAlpha("black", 0.6)
-                strokeWidth: 1
-                joinStyle: ShapePath.MiterJoin
-                fillGradient: LinearGradient {
-                    x1: 0
-                    y1: 0
-                    x2: banner.width
-                    y2: 0
-                    GradientStop { position: 0; color: Qt.lighter(banner.cloth, 1.25) }
-                    GradientStop { position: 0.45; color: banner.cloth }
-                    GradientStop { position: 1; color: Qt.darker(banner.cloth, 1.3) }
-                }
-
-                PathPolyline {
-                    path: ThemeShapes.banner(4, 4, banner.width - 8, banner.height - 4, frame.footRoom, 1)
-                }
-            }
-
-            ShapePath {
-                fillColor: "transparent"
-                strokeColor: Colors.withAlpha(banner.thread, 0.5)
-                strokeWidth: 1.2
-                joinStyle: ShapePath.MiterJoin
-
-                PathPolyline {
-                    path: ThemeShapes.banner(10, 12, banner.width - 20, banner.height - 18, frame.footRoom - 3, 1)
+                    Text {
+                        id: tabText
+                        anchors.centerIn: parent
+                        text: frame.title
+                        font.family: frame.st.mono
+                        font.pixelSize: 12
+                        font.weight: Font.Medium
+                        color: frame.accent
+                    }
                 }
             }
         }
+    }
 
-        // The crossbar, and the finials on its ends.
-        Rectangle {
-            y: 1
-            width: parent.width
-            height: 6
-            radius: 3
-            border.width: 0.5
-            border.color: "#0b0a0a"
-            gradient: Gradient {
-                GradientStop { position: 0; color: "#7a5a3a" }
-                GradientStop { position: 1; color: "#3a2616" }
+    Component {
+        id: glassFrame
+
+        Item {
+            Rectangle {
+                anchors.fill: parent
+                radius: 28
+                color: Colors.withAlpha(Colors.background, 0.46)
+                border.width: 1
+                border.color: Colors.withAlpha(frame.accent, 0.3)
             }
         }
+    }
 
-        Repeater {
-            model: 2
+    Component {
+        id: scrollFrame
+
+        Item {
+            Rectangle {
+                anchors.fill: parent
+                radius: 4
+                color: Colors.withAlpha(Colors.surface_container, 0.8)
+                border.width: 1
+                border.color: Colors.withAlpha(frame.accent, 0.55)
+
+                Rectangle {
+                    anchors.fill: parent
+                    anchors.margins: 4
+                    radius: 2
+                    color: "transparent"
+                    border.width: 1
+                    border.color: Colors.withAlpha(frame.accent, 0.22)
+                }
+
+                Rectangle {
+                    anchors.right: parent.right
+                    anchors.top: parent.top
+                    anchors.margins: 12
+                    width: 22
+                    height: 22
+                    radius: 3
+                    rotation: -4
+                    color: frame.accent
+
+                    Text {
+                        anchors.centerIn: parent
+                        text: frame.seal
+                        font.family: frame.st.cjk ?? frame.st.font
+                        font.pixelSize: 13
+                        font.weight: Font.Bold
+                        color: Colors.on_tertiary
+                    }
+                }
+            }
+        }
+    }
+
+    Component {
+        id: neonFrame
+
+        Item {
+            // Neon Noir: a dark panel with a cut corner, a neon hairline and a tab.
+            NeonFrame {
+                cut: 18
+                fill: Colors.withAlpha(Qt.tint(Colors.background, "#59000000"), 0.8)
+                stroke: frame.accent
+                edge: Services.DesktopTheme.accent2Of(frame.themeId)
+                glow: 0.7
+            }
 
             Rectangle {
-                required property int index
-                x: index === 0 ? 0 : banner.width - width
-                y: 0
-                width: 8
-                height: 8
-                radius: 4
-                color: Services.DesktopTheme.accent2Of(frame.themeId)
-                border.width: 0.5
-                border.color: "#0b0a0a"
+                x: 1
+                y: frame.st.pad - 2
+                width: 3
+                height: 24
+                color: frame.accent
+            }
+
+            // Neon Noir's title splits like a bad signal: a ghost in the other neon.
+            Text {
+                x: titleText.x + 1.5
+                y: titleText.y
+                visible: frame.hasTitle
+                text: titleText.text
+                font: titleText.font
+                color: Colors.withAlpha(frame.accent, 0.55)
             }
         }
     }
 
-    Repeater {
-        model: frame.st.frame === "banner" && frame.hasTitle ? 2 : 0
+    Component {
+        id: washiFrame
 
-        Glyph {
-            required property int index
-            x: index === 0 ? titleText.x - width - 9 : titleText.x + titleText.width + 9
-            y: titleText.y + (titleText.height - height) / 2
-            text: "swords"
-            font.pixelSize: 16
-            color: Colors.withAlpha(Services.DesktopTheme.accent2Of(frame.themeId), 0.8)
+        Item {
+            // Wabi-sabi: washi on a pebble, with a crack mended in gold running in
+            // from the rim.
+            Rectangle {
+                anchors.fill: parent
+                radius: 20
+                topLeftRadius: radius * Services.DesktopTheme.pebbleCorners[0]
+                topRightRadius: radius * Services.DesktopTheme.pebbleCorners[1]
+                bottomRightRadius: radius * Services.DesktopTheme.pebbleCorners[2]
+                bottomLeftRadius: radius * Services.DesktopTheme.pebbleCorners[3]
+                color: Colors.withAlpha(Qt.tint(Colors.surface_container, "#1ad9b88c"), 0.82)
+                border.width: 1
+                border.color: Colors.withAlpha(frame.accent, 0.3)
+
+                Shape {
+                    anchors.fill: parent
+                    preferredRendererType: Shape.CurveRenderer
+
+                    ShapePath {
+                        fillColor: "transparent"
+                        strokeColor: "#c9a24f"
+                        strokeWidth: 1.7
+                        capStyle: ShapePath.RoundCap
+                        joinStyle: ShapePath.RoundJoin
+                        startX: frame.width * 0.66
+                        startY: 0
+                        PathLine { x: frame.width * 0.66 + 5; y: 6 }
+                        PathLine { x: frame.width * 0.66 + 3; y: 11 }
+                        PathLine { x: frame.width * 0.66 + 11; y: 16 }
+                        PathLine { x: frame.width * 0.66 + 9; y: 21 }
+                        PathLine { x: frame.width * 0.66 + 14; y: 26 }
+                    }
+
+                    ShapePath {
+                        fillColor: "transparent"
+                        strokeColor: "#c9a24f"
+                        strokeWidth: 1.2
+                        capStyle: ShapePath.RoundCap
+                        joinStyle: ShapePath.RoundJoin
+                        startX: frame.width * 0.66 + 11
+                        startY: 16
+                        PathLine { x: frame.width * 0.66 + 19; y: 15 }
+                        PathLine { x: frame.width * 0.66 + 23; y: 19 }
+                    }
+                }
+            }
         }
     }
 
-    // Neon Noir's title splits like a bad signal: a ghost in the other neon.
-    Text {
-        x: titleText.x + 1.5
-        y: titleText.y
-        visible: frame.hasTitle && frame.st.frame === "neon"
-        text: titleText.text
-        font: titleText.font
-        color: Colors.withAlpha(frame.accent, 0.55)
+    Component {
+        id: giltFrame
+
+        Item {
+            // Art Deco: black lacquer in a double gold rule stepped at the corners,
+            // the title centred between two short rules.
+            DecoFrame {
+                cut: 7
+                steps: 2
+                fill: Colors.withAlpha("#0d0b08", 0.84)
+                stroke: frame.accent
+                gap: 5
+                innerStroke: Colors.withAlpha(frame.accent, 0.35)
+            }
+
+            Repeater {
+                model: frame.hasTitle ? 2 : 0
+
+                Rectangle {
+                    required property int index
+                    x: index === 0 ? titleText.x - width - 10 : titleText.x + titleText.width + 10
+                    y: Math.round(titleText.y + titleText.height / 2 - 1)
+                    width: 26
+                    height: 1
+                    color: frame.accent
+                }
+            }
+        }
+    }
+
+    Component {
+        id: lancetFrame
+
+        Item {
+            // Cathedral: a lancet window of dark stone, its lead line doubled inside
+            // with a line of the theme's glass.
+            Shape {
+                anchors.fill: parent
+                preferredRendererType: Shape.CurveRenderer
+
+                ShapePath {
+                    fillColor: Colors.withAlpha("#141210", 0.86)
+                    strokeColor: "#060505"
+                    strokeWidth: 3
+                    joinStyle: ShapePath.RoundJoin
+
+                    PathPolyline {
+                        path: ThemeShapes.arch(1.5, 1.5, frame.width - 3, frame.height - 3, frame.archRise)
+                    }
+                }
+
+                ShapePath {
+                    fillColor: "transparent"
+                    strokeColor: Colors.withAlpha(frame.accent, 0.75)
+                    strokeWidth: 1.2
+                    joinStyle: ShapePath.RoundJoin
+
+                    PathPolyline {
+                        path: ThemeShapes.arch(5.5, 5.5, frame.width - 11, frame.height - 11, frame.archRise - 3)
+                    }
+                }
+            }
+        }
+    }
+
+    Component {
+        id: clippingFrame
+
+        Item {
+            // Broadsheet: a clipping of newsprint casting a hard shadow, its title a
+            // kicker under a heavy rule.
+            Rectangle {
+                x: 5
+                y: 5
+                width: frame.width
+                height: frame.height
+                color: Colors.withAlpha("black", 0.42)
+            }
+
+            Rectangle {
+                anchors.fill: parent
+                color: "#ebe6d9"
+            }
+
+            Rectangle {
+                visible: frame.hasTitle
+                x: frame.st.pad
+                y: frame.st.pad
+                width: frame.width - frame.st.pad * 2
+                height: 3
+                color: frame.ink
+            }
+        }
+    }
+
+    Component {
+        id: scrapFrame
+
+        Item {
+            // Wasteland: a plate of scrap, its name on a strip of masking tape.
+            ScrapPlate {
+                anchors.fill: parent
+                seed: frame.title.length * 1.7 + 0.3
+                rust: 0.5
+                fill: 0.9
+            }
+
+            Rectangle {
+                visible: frame.hasTitle
+                x: titleText.x - 9
+                y: titleText.y - 3
+                width: titleText.implicitWidth + 18
+                height: titleText.implicitHeight + 5
+                rotation: -1.5
+                color: Waste.tape
+                opacity: 0.95
+            }
+        }
+    }
+
+    Component {
+        id: brassFrame
+
+        Item {
+            // Observatory: night-blue enamel in an engraved brass rim, graduated
+            // along its head like an instrument's limb, the title between two stars.
+            Rectangle {
+                anchors.fill: parent
+                radius: 12
+                color: Colors.withAlpha(Qt.tint("#0a0e19", Colors.withAlpha(Services.DesktopTheme.accent2Of(frame.themeId), 0.14)), 0.86)
+                border.width: 1
+                border.color: frame.accent
+
+                Rectangle {
+                    anchors.fill: parent
+                    anchors.margins: 5
+                    radius: 8
+                    color: "transparent"
+                    border.width: 1
+                    border.color: Colors.withAlpha(frame.accent, 0.35)
+                }
+
+                ScaleTicks {
+                    x: 20
+                    y: 6
+                    width: parent.width - 40
+                    height: 6
+                    step: 5
+                    major: 6
+                    minorLength: 2.5
+                    majorLength: 5
+                    color: Colors.withAlpha(frame.accent, 0.5)
+                }
+            }
+
+            Repeater {
+                model: frame.hasTitle ? 2 : 0
+
+                Text {
+                    required property int index
+                    x: index === 0 ? titleText.x - width - 9 : titleText.x + titleText.width + 9
+                    y: titleText.y + (titleText.height - height) / 2
+                    text: "✶"
+                    font.pixelSize: 11
+                    color: frame.accent
+                }
+            }
+        }
+    }
+
+    Component {
+        id: instrumentFrame
+
+        Item {
+            // Abyss: the dark glass face of a deep-sea instrument, a lume hairline
+            // round it, light catching along its top, a ping spreading into one
+            // corner and a lit lamp beside the title.
+            Rectangle {
+                anchors.fill: parent
+                radius: 18
+                color: Colors.withAlpha(Qt.tint("#06151b", Colors.withAlpha(frame.accent, 0.06)), 0.86)
+                border.width: 1
+                border.color: Colors.withAlpha(Services.DesktopTheme.accent2Of(frame.themeId), 0.38)
+
+                Rectangle {
+                    anchors.fill: parent
+                    anchors.margins: 1
+                    radius: 17
+                    gradient: Gradient {
+                        GradientStop { position: 0; color: Colors.withAlpha("#dff6f4", 0.07) }
+                        GradientStop { position: 0.3; color: "transparent" }
+                    }
+                }
+
+                PingArcs {
+                    anchors.fill: parent
+                    cx: width - 18
+                    cy: 18
+                    gap: 5.5
+                    color: Colors.withAlpha(Services.DesktopTheme.accent2Of(frame.themeId), 0.55)
+                }
+            }
+
+            Rectangle {
+                visible: frame.hasTitle
+                x: frame.st.pad
+                y: titleText.y + (titleText.height - height) / 2
+                width: 7
+                height: 7
+                radius: 3.5
+                color: Services.DesktopTheme.accent2Of(frame.themeId)
+
+                Rectangle {
+                    anchors.centerIn: parent
+                    width: 15
+                    height: 15
+                    radius: 7.5
+                    color: Colors.withAlpha(Services.DesktopTheme.accent2Of(frame.themeId), 0.22)
+                }
+            }
+        }
+    }
+
+    Component {
+        id: pattaFrame
+
+        Item {
+            // Devaloka: lac lacquered nearly black in a gold rim lined inside,
+            // temple borders hanging from the head and standing along the foot, and
+            // the title set between the double dandas that close a verse.
+            Rectangle {
+                anchors.fill: parent
+                radius: 8
+                color: Colors.withAlpha(Qt.tint("#170a08", Colors.withAlpha(Services.DesktopTheme.accent2Of(frame.themeId), 0.1)), 0.86)
+                border.width: 1
+                border.color: frame.accent
+
+                Rectangle {
+                    anchors.fill: parent
+                    anchors.margins: 5
+                    radius: 5
+                    color: "transparent"
+                    border.width: 1
+                    border.color: Colors.withAlpha(frame.accent, 0.3)
+                }
+
+                TempleBorder {
+                    x: 14
+                    y: 6
+                    width: parent.width - 28
+                    height: 4
+                    step: 6
+                    down: true
+                    rule: 0
+                    color: Colors.withAlpha(frame.accent, 0.5)
+                }
+
+                TempleBorder {
+                    x: 14
+                    y: parent.height - 10
+                    width: parent.width - 28
+                    height: 4
+                    step: 6
+                    rule: 0
+                    color: Colors.withAlpha(frame.accent, 0.32)
+                }
+            }
+
+            Repeater {
+                model: frame.hasTitle ? 2 : 0
+
+                Text {
+                    required property int index
+                    x: index === 0 ? titleText.x - width - 9 : titleText.x + titleText.width + 9
+                    y: titleText.y + (titleText.height - height) / 2
+                    text: "॥"
+                    font.family: frame.st.display
+                    font.pixelSize: 17
+                    color: frame.accent
+                }
+            }
+        }
+    }
+
+    Component {
+        id: bannerFrame
+
+        Item {
+            // Siege: a war banner on its crossbar, of the tincture dyed deep, an
+            // embroidered border of argent round it, its foot cut in a swallowtail
+            // and the title stitched between two pairs of crossed swords.
+            Item {
+                id: banner
+                anchors.fill: parent
+
+                readonly property color cloth: Qt.hsla(Math.max(0, frame.accent.hslHue), 0.4, 0.12, 0.9)
+                readonly property color thread: Services.DesktopTheme.accent2Of(frame.themeId)
+
+                Shape {
+                    anchors.fill: parent
+                    preferredRendererType: Shape.CurveRenderer
+
+                    ShapePath {
+                        strokeColor: Colors.withAlpha("black", 0.6)
+                        strokeWidth: 1
+                        joinStyle: ShapePath.MiterJoin
+                        fillGradient: LinearGradient {
+                            x1: 0
+                            y1: 0
+                            x2: banner.width
+                            y2: 0
+                            GradientStop { position: 0; color: Qt.lighter(banner.cloth, 1.25) }
+                            GradientStop { position: 0.45; color: banner.cloth }
+                            GradientStop { position: 1; color: Qt.darker(banner.cloth, 1.3) }
+                        }
+
+                        PathPolyline {
+                            path: ThemeShapes.banner(4, 4, banner.width - 8, banner.height - 4, frame.footRoom, 1)
+                        }
+                    }
+
+                    ShapePath {
+                        fillColor: "transparent"
+                        strokeColor: Colors.withAlpha(banner.thread, 0.5)
+                        strokeWidth: 1.2
+                        joinStyle: ShapePath.MiterJoin
+
+                        PathPolyline {
+                            path: ThemeShapes.banner(10, 12, banner.width - 20, banner.height - 18, frame.footRoom - 3, 1)
+                        }
+                    }
+                }
+
+                // The crossbar, and the finials on its ends.
+                Rectangle {
+                    y: 1
+                    width: parent.width
+                    height: 6
+                    radius: 3
+                    border.width: 0.5
+                    border.color: "#0b0a0a"
+                    gradient: Gradient {
+                        GradientStop { position: 0; color: "#7a5a3a" }
+                        GradientStop { position: 1; color: "#3a2616" }
+                    }
+                }
+
+                Repeater {
+                    model: 2
+
+                    Rectangle {
+                        required property int index
+                        x: index === 0 ? 0 : banner.width - width
+                        y: 0
+                        width: 8
+                        height: 8
+                        radius: 4
+                        color: Services.DesktopTheme.accent2Of(frame.themeId)
+                        border.width: 0.5
+                        border.color: "#0b0a0a"
+                    }
+                }
+            }
+
+            Repeater {
+                model: frame.hasTitle ? 2 : 0
+
+                Glyph {
+                    required property int index
+                    x: index === 0 ? titleText.x - width - 9 : titleText.x + titleText.width + 9
+                    y: titleText.y + (titleText.height - height) / 2
+                    text: "swords"
+                    font.pixelSize: 16
+                    color: Colors.withAlpha(Services.DesktopTheme.accent2Of(frame.themeId), 0.8)
+                }
+            }
+        }
     }
 
     Text {

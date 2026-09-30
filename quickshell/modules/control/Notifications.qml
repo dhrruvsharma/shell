@@ -163,6 +163,9 @@ Item {
                                 anchors.fill: parent
                                 fillMode: Image.PreserveAspectFit
                                 smooth: true
+                                // Decoded small: the "icon" is sometimes a
+                                // whole screenshot (grimblast's, say).
+                                sourceSize: Qt.size(64, 64)
 
                                 source: {
                                     const icon = modelData.appIcon;

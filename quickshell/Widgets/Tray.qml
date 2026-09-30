@@ -50,6 +50,9 @@ RowLayout {
                 height: trayRoot.iconSize
 
                 source: modelData.icon || ""
+                // Requested at (twice) the drawn size: unsized, an app's
+                // largest tray pixmap was decoded and kept.
+                sourceSize: Qt.size(trayRoot.iconSize * 2, trayRoot.iconSize * 2)
                 fillMode: Image.PreserveAspectFit
                 smooth: true
                 visible: status === Image.Ready || status === Image.Loading

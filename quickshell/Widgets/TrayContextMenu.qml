@@ -168,6 +168,7 @@ PanelWindow {
                                     width: 16
                                     height: 16
                                     source: modelData.icon || ""
+                                    sourceSize: Qt.size(32, 32)
                                     fillMode: Image.PreserveAspectFit
                                     visible: modelData.icon !== undefined && modelData.icon !== ""
                                     layer.enabled: true

@@ -7,23 +7,25 @@ import qs.Core
 import QtQuick.Layouts
 import qs.components
 
-Item {
+// The volume / brightness OSD, in a small click-through surface of its own
+// that exists only while it shows. (It used to live in the full-screen panel
+// surface, which then had to stay mapped and repaint whole for it.)
+PanelWindow {
     id: root
     visible: Services.Osd.visible
 
-    anchors.bottom: parent.bottom
-    anchors.horizontalCenter: parent.horizontalCenter
-    anchors.bottomMargin: Services.Osd.visible ? 60 : -implicitHeight
+    anchors.bottom: true
+    margins.bottom: 60
+    exclusionMode: ExclusionMode.Ignore
+    // No layer animation from Hyprland (hypr/quickshell.lua): the card fades
+    // itself in, and used to vanish at once.
+    WlrLayershell.namespace: "quickshell:osd"
+    WlrLayershell.keyboardFocus: WlrKeyboardFocus.None
+    color: "transparent"
+    mask: Region {}
 
     implicitWidth: 360
     implicitHeight: 100
-
-    Behavior on y {
-        NumberAnimation {
-            duration: 250
-            easing.type: Easing.OutCubic
-        }
-    }
 
     Card {
         anchors.fill: parent

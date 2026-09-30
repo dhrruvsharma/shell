@@ -403,6 +403,9 @@ PanelWindow {
                     }
 
                     property var rawWindowList: {
+                        // Nothing while closed: this tracked every window's
+                        // title and rebuilt the (hidden) cards on each change.
+                        if (!root.isActive) return []
                         var q = (searchText || "").toLowerCase()
                         var list = []
                         var idx = 0

@@ -47,101 +47,159 @@ Item {
 
         clip: true
 
-        HudFrame {
-            visible: pill.hud
-            fill: Colors.background
+        // Only the theme's own capsule is built: every theme's, hidden,
+        // were half a dozen shapes re-traced as the title changed width.
+        Loader {
+            anchors.fill: parent
+            sourceComponent: ({
+                chamfer: hudCapsule,
+                neon: neonCapsule,
+                deco: decoCapsule,
+                cusp: cuspCapsule,
+                crenel: crenelCapsule,
+                print: printCapsule,
+                plate: plateCapsule,
+                scale: scaleCapsule,
+                zari: zariCapsule,
+                lume: lumeCapsule
+            })[pill.look.shape] ?? null
         }
 
-        NeonFrame {
-            visible: pill.neon
-            cut: 9
-            fill: Colors.background
-            glow: 0.5
-        }
+        Component {
+            id: hudCapsule
 
-        DecoFrame {
-            visible: pill.deco
-            cut: 4
-            steps: 2
-            fill: Colors.background
-            stroke: DesktopTheme.borderColor(pill.look)
-        }
-
-        CuspFrame {
-            visible: pill.cusp
-            cut: 8
-            fill: Colors.background
-            stroke: DesktopTheme.borderColor(pill.look)
-        }
-
-        CrenelFrame {
-            visible: pill.crenel
-            merlon: 8
-            depth: 3.5
-            fill: Colors.background
-            stroke: DesktopTheme.borderColor(pill.look)
-        }
-
-        Rectangle {
-            visible: pill.look.shape === "print"
-            width: parent.width
-            height: 2
-            color: DesktopTheme.borderColor(pill.look)
-        }
-
-        Rectangle {
-            visible: pill.look.shape === "print"
-            y: parent.height - 1
-            width: parent.width
-            height: 1
-            color: DesktopTheme.borderColor(pill.look)
-        }
-
-        Repeater {
-            model: pill.look.shape === "plate" ? 2 : 0
-
-            Rivet {
-                required property int index
-                size: 5
-                x: index === 0 ? 3 : pill.width - width - 3
-                y: (pill.height - height) / 2
+            HudFrame {
+                fill: Colors.background
             }
         }
 
-        ScaleTicks {
-            visible: pill.look.shape === "scale"
-            x: 6
-            y: pill.height - height - 1
-            width: pill.width - 12
-            height: 4
-            up: true
-            step: 4
-            major: 5
-            minorLength: 1.5
-            majorLength: 3.5
-            color: DesktopTheme.borderColor(pill.look)
-            opacity: 0.8
+        Component {
+            id: neonCapsule
+
+            NeonFrame {
+                cut: 9
+                fill: Colors.background
+                glow: 0.5
+            }
         }
 
-        TempleBorder {
-            visible: pill.look.shape === "zari"
-            x: pill.radius
-            y: pill.height - height - 1
-            width: pill.width - 2 * pill.radius
-            height: 3.5
-            step: 5
-            rule: 0
-            color: DesktopTheme.borderColor(pill.look)
+        Component {
+            id: decoCapsule
+
+            DecoFrame {
+                cut: 4
+                steps: 2
+                fill: Colors.background
+                stroke: DesktopTheme.borderColor(pill.look)
+            }
         }
 
-        Rectangle {
-            visible: pill.look.shape === "lume"
-            x: pill.radius
-            y: pill.height - 4
-            width: pill.width - 2 * pill.radius
-            height: 2
-            radius: 1
-            color: Colors.withAlpha(DesktopTheme.accent2, 0.85)
+        Component {
+            id: cuspCapsule
+
+            CuspFrame {
+                cut: 8
+                fill: Colors.background
+                stroke: DesktopTheme.borderColor(pill.look)
+            }
+        }
+
+        Component {
+            id: crenelCapsule
+
+            CrenelFrame {
+                merlon: 8
+                depth: 3.5
+                fill: Colors.background
+                stroke: DesktopTheme.borderColor(pill.look)
+            }
+        }
+
+        Component {
+            id: printCapsule
+
+            Item {
+                Rectangle {
+                    width: parent.width
+                    height: 2
+                    color: DesktopTheme.borderColor(pill.look)
+                }
+
+                Rectangle {
+                    y: parent.height - 1
+                    width: parent.width
+                    height: 1
+                    color: DesktopTheme.borderColor(pill.look)
+                }
+            }
+        }
+
+        Component {
+            id: plateCapsule
+
+            Item {
+                Repeater {
+                    model: 2
+
+                    Rivet {
+                        required property int index
+                        size: 5
+                        x: index === 0 ? 3 : pill.width - width - 3
+                        y: (pill.height - height) / 2
+                    }
+                }
+            }
+        }
+
+        Component {
+            id: scaleCapsule
+
+            Item {
+                ScaleTicks {
+                    x: 6
+                    y: pill.height - height - 1
+                    width: pill.width - 12
+                    height: 4
+                    up: true
+                    step: 4
+                    major: 5
+                    minorLength: 1.5
+                    majorLength: 3.5
+                    color: DesktopTheme.borderColor(pill.look)
+                    opacity: 0.8
+                }
+            }
+        }
+
+        Component {
+            id: zariCapsule
+
+            Item {
+                TempleBorder {
+                    x: pill.radius
+                    y: pill.height - height - 1
+                    width: pill.width - 2 * pill.radius
+                    height: 3.5
+                    step: 5
+                    rule: 0
+                    color: DesktopTheme.borderColor(pill.look)
+                }
+            }
+        }
+
+        Component {
+            id: lumeCapsule
+
+            Item {
+                Rectangle {
+                    x: pill.radius
+                    y: pill.height - 4
+                    width: pill.width - 2 * pill.radius
+                    height: 2
+                    radius: 1
+                    color: Colors.withAlpha(DesktopTheme.accent2, 0.85)
+                }
+            }
         }
 
         implicitWidth: row.implicitWidth + 20

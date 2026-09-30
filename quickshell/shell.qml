@@ -64,218 +64,265 @@ ShellRoot {
         anchorBottom: false
         visible: visBottom.visible
     }
+    // Hover strips along the screen edges that open the launcher, the notes
+    // drawer and the GitHub popout. Each is a tiny surface of its own, so the
+    // full-screen panel surface below can shrink away while no panel is open.
+    // Declared before it: surfaces on one layer stack in creation order, and
+    // the panels must cover the strips (rootPanel's mask leaves them out, so
+    // they keep working while a panel is open, as when they lived inside it).
+    component EdgeTrigger: PanelWindow {
+        id: trigger
+
+        signal hovered
+        signal clicked
+
+        exclusionMode: ExclusionMode.Ignore
+        WlrLayershell.keyboardFocus: WlrKeyboardFocus.None
+        color: "transparent"
+
+        MouseArea {
+            anchors.fill: parent
+            hoverEnabled: true
+            onEntered: trigger.hovered()
+            onClicked: trigger.clicked()
+
+            Rectangle {
+                anchors.fill: parent
+                color: parent.containsMouse ? "#40FFFFFF" : "transparent"
+                visible: parent.containsMouse
+            }
+        }
+    }
+
+    EdgeTrigger {
+        id: notesDrawerTrigger
+        anchors.bottom: true
+        implicitWidth: 900
+        implicitHeight: 2
+        onClicked: notesDrawer.opened = !notesDrawer.opened
+    }
+
+    EdgeTrigger {
+        id: githubTrigger
+        anchors.right: true
+        anchors.bottom: true
+        implicitWidth: 2
+        implicitHeight: 500
+        onHovered: ghPopout.opened = !ghPopout.opened
+    }
+
+    EdgeTrigger {
+        id: launcherTrigger
+        anchors.left: true
+        anchors.bottom: true
+        implicitWidth: 2
+        implicitHeight: 600
+        onHovered: launcherWindow.toggle()
+    }
+
+    OsdWindow {}
+
     PanelWindow {
         id: rootPanel
+
+        // Whether any panel is up (or on its way out). While none is, the
+        // surface shrinks to a pixel in the corner rather than being unmapped
+        // (a new map would stack it over the bar and take keyboard focus):
+        // its full-screen buffers cost GPU memory, and the compositor blends
+        // it into every frame it draws. hypr/quickshell.lua turns Hyprland's
+        // layer animation off for this namespace, or the panels would be
+        // drawn growing out of the corner as the surface grows.
+        WlrLayershell.namespace: "quickshell:panels"
+        readonly property bool needed: mediaPanelLoader.active
+            || ghPopout.visible
+            || systemPanel.visible
+            || updatesPanel.visible
+            || networkPanelLoader.active
+            || notesDrawer.opened || notesDrawer.implicitHeight > 0
+            || launcherWindow.isOpen
+            || wallpaperLoader.active
+            || controlCenterLoader.active
+            || chatLoader.active
+            || (mangaLoader.item !== null && mangaLoader.item.visible)
+            || (novelLoader.item !== null && novelLoader.item.visible)
+            || (animeLoader.item !== null && animeLoader.item.visible)
+            || aikiraLoader.active
+            || clipboardLoader.active
+            || notepad.visible
+            || powerMenu.visible
+            || avatarPicker.visible
+            || lockThemes.visible
+        readonly property real screenW: screen ? screen.width : 1920
+        readonly property real screenH: screen ? screen.height : 1200
+
         exclusionMode: ExclusionMode.Ignore
-        implicitHeight: screen.height
-        implicitWidth: screen.width
+        implicitHeight: needed ? screenH : 1
+        implicitWidth: needed ? screenW : 1
         anchors {
             top: true
-            bottom: true
+            bottom: needed
             left: true
-            right: true
+            right: needed
         }
         color: "transparent"
         focusable: true
 
-        Loader {
-            id: mediaPanelLoader
-            active: false
-            anchors.horizontalCenter: parent.horizontalCenter
-            sourceComponent: MediaPanel {
-                id: mediaPanel
+        // The panels, laid out on the whole screen whatever the surface's
+        // size at the moment (it grows from and shrinks to the top-left
+        // corner, so nothing moves).
+        Item {
+            width: rootPanel.screenW
+            height: rootPanel.screenH
+
+            Loader {
+                id: mediaPanelLoader
+                active: false
+                anchors.horizontalCenter: parent.horizontalCenter
+                sourceComponent: MediaPanel {
+                    id: mediaPanel
+                }
+                focus: true
             }
-            focus: true
-        }
-        GhPopout {
-            id: ghPopout
-            anchors {
-                right: parent.right
-                bottom: parent.bottom
+            GhPopout {
+                id: ghPopout
+                anchors {
+                    right: parent.right
+                    bottom: parent.bottom
+                }
             }
-        }
-        SystemPanel {
-            id: systemPanel
-        }
-        UpdatesPanel {
-            id: updatesPanel
-            anchors {
-                right: parent.right
-                top: parent.top
+            SystemPanel {
+                id: systemPanel
             }
-        }
-        Loader {
-            id: networkPanelLoader
-            active: false
-            anchors.fill: parent
-            sourceComponent: NetworkPanel {
-                id: networkPanel
+            UpdatesPanel {
+                id: updatesPanel
+                anchors {
+                    right: parent.right
+                    top: parent.top
+                }
             }
-        }
-
-        OsdWindow {}
-
-        NotesDrawer{
-            id: notesDrawer
-        }
-
-        MouseArea {
-            id: notesDrawerTrigger
-            anchors.bottom: parent.bottom
-            anchors.horizontalCenter: parent.horizontalCenter
-            height: 2
-            z: 100
-            width: 900
-
-            onClicked: {
-                notesDrawer.opened = !notesDrawer.opened
-            }
-
-            hoverEnabled: true
-
-            Rectangle {
+            Loader {
+                id: networkPanelLoader
+                active: false
                 anchors.fill: parent
-                color: parent.containsMouse ? "#40FFFFFF" : "transparent"
-                visible: parent.containsMouse
-            }
-        }
-
-        MouseArea {
-            id: githubTrigger
-            anchors.right: parent.right
-            anchors.bottom: parent.bottom
-            width: 2
-            z: 100
-            height: 500
-
-            onEntered: {
-                ghPopout.opened = !ghPopout.opened
+                sourceComponent: NetworkPanel {
+                    id: networkPanel
+                }
             }
 
-            hoverEnabled: true
+            NotesDrawer{
+                id: notesDrawer
+            }
 
-            Rectangle {
+            LauncherWindow{
+                id: launcherWindow
+            }
+
+            Loader {
+                id: wallpaperLoader
+                active: false
                 anchors.fill: parent
-                color: parent.containsMouse ? "#40FFFFFF" : "transparent"
-                visible: parent.containsMouse
-            }
-        }
-
-        LauncherWindow{
-            id: launcherWindow
-        }
-
-        MouseArea {
-            id: launcherTrigger
-            anchors.left: parent.left
-            anchors.bottom: parent.bottom
-            width: 2
-            z: 100
-            height: 600
-
-            onEntered: {
-                launcherWindow.toggle()
+                sourceComponent: Wallpaper {}
+                focus: true
             }
 
-            hoverEnabled: true
-
-            Rectangle {
+            Loader {
+                active: false
+                id: controlCenterLoader
                 anchors.fill: parent
-                color: parent.containsMouse ? "#40FFFFFF" : "transparent"
-                visible: parent.containsMouse
+                sourceComponent: ControlCenter {
+                    id: controlCenter
+                }
+                focus: true
             }
-        }
-        Loader {
-            id: wallpaperLoader
-            active: false
-            anchors.fill: parent
-            sourceComponent: Wallpaper {}
-            focus: true
-        }
+            Loader {
+                active: false
+                id: chatLoader
+                anchors.centerIn: parent
+                sourceComponent: OllamaChat{
+                    id: ollamaChat
+                }
+                focus: true
+            }
+            Loader {
+                active: false
+                id: mangaLoader
+                anchors {
+                    left: parent.left
+                    top: parent.top
+                    bottom: parent.bottom
+                }
+                sourceComponent: MangaReader{
+                    id: mangaReader
+                }
+            }
+            Loader {
+                active: false
+                id: novelLoader
+                anchors {
+                    right: parent.right
+                    top: parent.top
+                    bottom: parent.bottom
+                }
+                sourceComponent: NovelReader{
+                    id: novelReaderReader
+                }
+            }
+            Loader {
+                active: false
+                id: animeLoader
+                anchors {
+                    left: parent.left
+                    top: parent.top
+                    bottom: parent.bottom
+                }
+                sourceComponent: AnimePanel{
+                    id: animePlayer
+                }
+            }
 
-        Loader {
-            active: false
-            id: controlCenterLoader
-            anchors.fill: parent
-            sourceComponent: ControlCenter {
-                id: controlCenter
+            Loader {
+                active: false
+                id: aikiraLoader
+                anchors.centerIn: parent
+                sourceComponent: Aikira {
+                    id: aikiraChat
+                }
+                focus: true
             }
-            focus: true
-        }
-        Loader {
-            active: false
-            id: chatLoader
-            anchors.centerIn: parent
-            sourceComponent: OllamaChat{
-                id: ollamaChat
-            }
-            focus: true
-        }
-        Loader {
-            active: false
-            id: mangaLoader
-            anchors {
-                left: parent.left
-                top: parent.top
-                bottom: parent.bottom
-            }
-            sourceComponent: MangaReader{
-                id: mangaReader
-            }
-        }
-        Loader {
-            active: false
-            id: novelLoader
-            anchors {
-                right: parent.right
-                top: parent.top
-                bottom: parent.bottom
-            }
-            sourceComponent: NovelReader{
-                id: novelReaderReader
-            }
-        }
-        Loader {
-            active: false
-            id: animeLoader
-            anchors {
-                left: parent.left
-                top: parent.top
-                bottom: parent.bottom
-            }
-            sourceComponent: AnimePanel{
-                id: animePlayer
-            }
-        }
 
-        Loader {
-            active: false
-            id: aikiraLoader
-            anchors.centerIn: parent
-            sourceComponent: Aikira {
-                id: aikiraChat
+            // Built for each opening (the emoji and kaomoji lists, the history
+            // and its thumbnails stayed in memory behind the closed panel), on
+            // the tab it was last left on.
+            Loader {
+                id: clipboardLoader
+                active: false
+                anchors.fill: parent
+                focus: true
+
+                property int lastTab: 0
+
+                sourceComponent: ClipboardManager {
+                    currentTab: clipboardLoader.lastTab
+                    onCurrentTabChanged: clipboardLoader.lastTab = currentTab
+                }
             }
-            focus: true
-        }
 
-        ClipboardManager {
-            id: clipboardManager
-        }
+            NotepadPanel {
+                id: notepad
+            }
 
-        NotepadPanel {
-            id: notepad
-        }
+            PowerMenu {
+                id: powerMenu
+            }
 
-        PowerMenu {
-            id: powerMenu
-        }
+            AvatarPicker {
+                id: avatarPicker
+            }
 
-        AvatarPicker {
-            id: avatarPicker
-        }
+            LockThemesPanel {
+                id: lockThemes
+            }
 
-        LockThemesPanel {
-            id: lockThemes
         }
 
         property bool altHeld: false
@@ -294,22 +341,13 @@ ShellRoot {
                 item: notesDrawer.opened ? notesDrawer : null
             }
             Region{
-                item: notesDrawerTrigger
-            }
-            Region{
                 item: controlCenterLoader.item && controlCenterLoader.item.visible ? controlCenterLoader.item : null
-            }
-            Region {
-                item: githubTrigger
             }
             Region {
                 item: ghPopout
             }
             Region {
                 item: updatesPanel.opened ? updatesPanel : null
-            }
-            Region{
-                item: launcherTrigger
             }
             Region {
                 item: launcherWindow.isOpen ? launcherWindow : null
@@ -333,7 +371,7 @@ ShellRoot {
                 item: aikiraLoader.active ? aikiraLoader : null
             }
             Region {
-                item: clipboardManager.visible ? clipboardManager : null
+                item: clipboardLoader.item && clipboardLoader.item.visible ? clipboardLoader.item : null
             }
             Region {
                 item: notepad.visible ? notepad : null
@@ -346,6 +384,28 @@ ShellRoot {
             }
             Region {
                 item: lockThemes.visible ? lockThemes : null
+            }
+            // The edge strips stay with their own surfaces below.
+            Region {
+                intersection: Intersection.Subtract
+                x: (rootPanel.screenW - notesDrawerTrigger.implicitWidth) / 2
+                y: rootPanel.screenH - notesDrawerTrigger.implicitHeight
+                width: notesDrawerTrigger.implicitWidth
+                height: notesDrawerTrigger.implicitHeight
+            }
+            Region {
+                intersection: Intersection.Subtract
+                x: rootPanel.screenW - githubTrigger.implicitWidth
+                y: rootPanel.screenH - githubTrigger.implicitHeight
+                width: githubTrigger.implicitWidth
+                height: githubTrigger.implicitHeight
+            }
+            Region {
+                intersection: Intersection.Subtract
+                x: 0
+                y: rootPanel.screenH - launcherTrigger.implicitHeight
+                width: launcherTrigger.implicitWidth
+                height: launcherTrigger.implicitHeight
             }
         }
     }
@@ -372,7 +432,7 @@ ShellRoot {
             || (novelLoader.item !== null && novelLoader.item.visible)
             || (animeLoader.item !== null && animeLoader.item.visible)
             || aikiraLoader.active
-            || clipboardManager.visible
+            || (clipboardLoader.item !== null && clipboardLoader.item.visible)
             || notepad.visible
             || powerMenu.visible
             || avatarPicker.visible
@@ -703,10 +763,29 @@ ShellRoot {
     IpcHandler {
         target: "clipboardManager"
         function changeVisible(): void {
-            if (!clipboardManager.visible) {
-                clipboardManager.open()
+            if (!clipboardLoader.active)
+                clipboardLoader.active = true
+            const clipboard = clipboardLoader.item
+            if (!clipboard.visible) {
+                clipboard.open()
             } else {
-                clipboardManager.close()
+                clipboard.close()
+            }
+        }
+    }
+
+    Timer {
+        id: closeClipboardTimer
+        interval: 600
+        // unless it was opened again in the meantime
+        onTriggered: if (!clipboardLoader.item?.visible) clipboardLoader.active = false
+    }
+
+    Connections {
+        target: clipboardLoader.item
+        function onVisibleChanged() {
+            if (clipboardLoader.item && !clipboardLoader.item.visible) {
+                closeClipboardTimer.start()
             }
         }
     }

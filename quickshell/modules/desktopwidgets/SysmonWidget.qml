@@ -26,17 +26,15 @@ WidgetFrame {
         }
     }
 
+    // A fixed list of rows, each reading its own stat: a model holding the
+    // values themselves rebuilt every row (and its bar) on each 2 s poll.
     Repeater {
-        model: [
-            { key: "cpu", value: root.sys.cpu / 100, text: Math.round(root.sys.cpu) + "%" },
-            { key: "ram", value: root.sys.ram / 100, text: Math.round(root.sys.ram) + "%" },
-            { key: "temp", value: root.sys.temp / 100, text: Math.round(root.sys.temp) + "°C" },
-            { key: "disk", value: root.sys.disk / 100, text: Math.round(root.sys.disk) + "%" }
-        ]
+        model: ["cpu", "ram", "temp", "disk"]
 
         Column {
             id: row
-            required property var modelData
+            required property string modelData
+            readonly property real stat: root.sys[modelData]
             width: 260
             spacing: 5
 
@@ -46,7 +44,7 @@ WidgetFrame {
 
                 Text {
                     id: name
-                    text: WidgetStyle.label(WidgetStyle.word(row.modelData.key, root.themeId), root.st)
+                    text: WidgetStyle.label(WidgetStyle.word(row.modelData, root.themeId), root.st)
                     font.family: root.st.ui ?? root.st.cjk ?? (root.st.frame === "chamfer" ? root.st.mono : root.st.font)
                     font.pixelSize: ({ neon: 15, scrap: 14, lancet: 14, clipping: 13, brass: 15, patta: 14, banner: 15 })[root.st.frame] ?? 12
                     font.weight: root.st.frame === "clipping" ? Font.Bold : Font.Normal
@@ -57,7 +55,7 @@ WidgetFrame {
 
                 Text {
                     anchors.right: parent.right
-                    text: row.modelData.text
+                    text: Math.round(row.stat) + (row.modelData === "temp" ? "°C" : "%")
                     font.family: root.st.frame === "glass" ? root.st.display : root.st.mono
                     font.pixelSize: 12
                     font.weight: Font.Medium
@@ -68,7 +66,7 @@ WidgetFrame {
             WidgetBar {
                 width: parent.width
                 themeId: root.themeId
-                value: row.modelData.value
+                value: row.stat / 100
             }
         }
     }
