@@ -333,7 +333,7 @@ curl -X POST http://127.0.0.1:5151/provider/switch \
 **Setup:**
 ```bash
 python -m venv ~/novel-env
-~/novel-env/bin/pip install requests beautifulsoup4
+~/novel-env/bin/pip install curl_cffi requests
 ```
 
 > Venv path is hardcoded in `services/Novel.qml` lines 144–146. Edit those lines to change it.

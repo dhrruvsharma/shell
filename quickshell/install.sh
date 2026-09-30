@@ -77,7 +77,7 @@ THEME_FONTS=(
 VENVS=(
     "$HOME/ani-env:flask requests"
     "$HOME/.venv/manga:curl_cffi requests"
-    "$HOME/novel-env:requests beautifulsoup4"
+    "$HOME/novel-env:curl_cffi requests"
 )
 
 info() { printf '\033[1;34m::\033[0m %s\n' "$*"; }
