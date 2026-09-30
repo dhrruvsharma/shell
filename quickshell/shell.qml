@@ -49,23 +49,6 @@ ShellRoot {
     WallpaperLayer {}
     NotificationToasts {}
     CalendarWindow {}
-    // A full-screen, input-catching surface on the Bottom layer (from the
-    // original config). Declared before the desktop widgets and the
-    // visualizer: surfaces on one layer stack in creation order, and above
-    // them it swallowed every click meant for a widget.
-    PanelWindow {
-        focusable: true
-        WlrLayershell.layer: WlrLayer.Bottom
-        exclusionMode: ExclusionMode.Ignore
-        WlrLayershell.keyboardFocus: WlrKeyboardFocus.None
-        color: "transparent"
-        anchors {
-            left: true
-            right: true
-            top: true
-            bottom: true
-        }
-    }
     DesktopWidgetsLayer {}
     WorkspaceDiscWindow {}
     Expose {}
@@ -202,8 +185,12 @@ ShellRoot {
                 visible: parent.containsMouse
             }
         }
-        Wallpaper{
-            id: wallpaper
+        Loader {
+            id: wallpaperLoader
+            active: false
+            anchors.fill: parent
+            sourceComponent: Wallpaper {}
+            focus: true
         }
 
         Loader {
@@ -328,7 +315,7 @@ ShellRoot {
                 item: launcherWindow.isOpen ? launcherWindow : null
             }
             Region{
-                item: wallpaper.visible ? wallpaper : null
+                item: wallpaperLoader.item && wallpaperLoader.item.visible ? wallpaperLoader.item : null
             }
             Region{
                 item: chatLoader.active ? chatLoader : null
@@ -378,7 +365,7 @@ ShellRoot {
 
         readonly property bool coveredByPanel: notesDrawer.opened
             || launcherWindow.isOpen
-            || wallpaper.visible
+            || (wallpaperLoader.item !== null && wallpaperLoader.item.visible)
             || (controlCenterLoader.item !== null && controlCenterLoader.item.visible)
             || chatLoader.active
             || (mangaLoader.item !== null && mangaLoader.item.visible)
@@ -516,6 +503,22 @@ ShellRoot {
                 return
             panel.currentTab = 1
             panel.opened = true
+        }
+    }
+
+    Timer {
+        id: closeWallpaperTimer
+        interval: 600
+        // unless it was opened again in the meantime
+        onTriggered: if (!wallpaperLoader.item?.visible) wallpaperLoader.active = false
+    }
+
+    Connections {
+        target: wallpaperLoader.item
+        function onVisibleChanged() {
+            if (wallpaperLoader.item && !wallpaperLoader.item.visible) {
+                closeWallpaperTimer.start()
+            }
         }
     }
 
@@ -669,14 +672,22 @@ ShellRoot {
     IpcHandler {
         target: "wallpaper"
         function toggle() {
-            wallpaper.visible = !wallpaper.visible
+            if (!wallpaperLoader.active)
+                wallpaperLoader.active = true
+            const picker = wallpaperLoader.item
+            if (!picker.visible || picker.closing)
+                picker.open()
+            else
+                picker.close()
         }
         function set(path: string): void {
             Services.WallpaperEngine.set(path)
         }
         function wallhaven(): void {
-            wallpaper.visible = true
-            wallpaper.setMode("wallhaven")
+            if (!wallpaperLoader.active)
+                wallpaperLoader.active = true
+            wallpaperLoader.item.open()
+            wallpaperLoader.item.setMode("wallhaven")
         }
         function current(): string {
             return Services.WallpaperEngine.current

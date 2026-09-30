@@ -30,6 +30,8 @@ PanelWindow {
         hasCurrent = false;
     }
 
+    // Full-screen surface: mapped only while a menu is showing or closing.
+    visible: hasCurrent || wrapper.height > 0
     color: "transparent"
     WlrLayershell.layer: WlrLayer.Overlay
     WlrLayershell.keyboardFocus: wrapper.visible ? WlrKeyboardFocus.Exclusive : WlrKeyboardFocus.None

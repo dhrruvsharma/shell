@@ -17,7 +17,8 @@ hl.on("hyprland.start", function()
     hl.exec_cmd("kdeconnectd")
     hl.exec_cmd("kdeconnect-indicator")
     hl.exec_cmd("wl-paste --watch cliphist store")
-    hl.exec_cmd("qs")
+    -- THP off for Quickshell: see the wrapper's header
+    hl.exec_cmd(os.getenv("HOME") .. "/.config/quickshell/scripts/qs-nothp qs")
 end)
 
 -------------------------------

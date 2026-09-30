@@ -125,13 +125,18 @@ PanelWindow {
             anchors.verticalCenter: parent.verticalCenter
             anchors.horizontalCenter: parent.horizontalCenter
 
-            ExposeContent {
-                id: content
+            // Built only while the overview is up: its live window
+            // thumbnails each hold a full-size capture buffer.
+            Loader {
                 anchors.fill: parent
+                active: root.visible
                 visible: wrapper.height === 470
 
                 focus: root.visible
-                Keys.onEscapePressed: Svc.ExposeState.open = false
+                sourceComponent: ExposeContent {
+                    focus: true
+                    Keys.onEscapePressed: Svc.ExposeState.open = false
+                }
             }
         }
     }

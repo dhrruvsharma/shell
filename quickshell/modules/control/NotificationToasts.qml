@@ -18,6 +18,7 @@ PanelWindow {
 
     implicitWidth: Services.Notification.popups.length > 0 ? 328 : 0
     implicitHeight: 600
+    visible: Services.Notification.popups.length > 0
     exclusionMode: ExclusionMode.Ignore
     WlrLayershell.layer: WlrLayer.Overlay
 

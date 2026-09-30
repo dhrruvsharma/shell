@@ -180,6 +180,7 @@ Item {
                         anchors.fill: parent
                         source:       "file://" + cell.filePath
                         fillMode:     Image.PreserveAspectCrop
+                        sourceSize:   Qt.size(136, 136)   // 2x the 68px tile
                         smooth:       true; mipmap: true
                         asynchronous: true; cache: true
                     }

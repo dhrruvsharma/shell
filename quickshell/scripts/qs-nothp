@@ -1,0 +1,14 @@
+#!/usr/bin/env python3
+# Runs a command with transparent huge pages disabled for it and its children.
+# Used to start Quickshell: with THP "always", its many per-thread malloc
+# arenas get backed by mostly-empty 2 MB pages (~200 MB of extra RAM).
+#
+#   qs-nothp qs [args...]
+#
+# The flag survives the exec, so the command replaces this script in place
+# (same PID). Check with: grep THP_enabled /proc/$(pgrep -x qs)/status  -> 0
+import ctypes, os, sys
+
+PR_SET_THP_DISABLE = 41
+ctypes.CDLL(None).prctl(PR_SET_THP_DISABLE, 1, 0, 0, 0)
+os.execvp(sys.argv[1], sys.argv[1:])

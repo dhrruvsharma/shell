@@ -15,9 +15,9 @@ import qs.settings
 // filmstrip of thumbnails under it, for three sources:
 //   Local       ~/Pictures/wallpapers
 //   Favourites  the hearted ones (services/WallpaperFavorites)
-//   Wallhaven   search results (services/Wallhaven), fetched on first visit
-//               and page by page as you reach the end; setting one downloads
-//               it into ~/Pictures/wallpapers first
+//   Wallhaven   search results (services/Wallhaven), fetched when the tab is
+//               opened and page by page as you reach the end; setting one
+//               downloads it into ~/Pictures/wallpapers first
 // Browsing crossfades the preview (Wallhaven: the thumbnail at once, full
 // resolution after a short pause). Enter, a click on the preview or a
 // double-click on a thumbnail sets it (services/WallpaperEngine, which plays
@@ -26,6 +26,10 @@ import qs.settings
 //
 // Keys: ←→ browse, Home/End, PgUp/PgDn, Enter set, F favourite, Tab next
 // source, / search (Wallhaven), Esc close.
+//
+// Loaded per opening (shell.qml's wallpaperLoader) and destroyed once closed,
+// so its previews and thumbnails don't stay in memory. Every opening starts
+// fresh: Local, on the wallpaper on screen, with a blank Wallhaven search.
 Rectangle {
     id: window
 
@@ -52,9 +56,6 @@ Rectangle {
             set[w.fileName] = true;
         return set;
     }
-    // The picker keeps its source, search and position between openings;
-    // only the very first opening jumps to the wallpaper on screen.
-    property bool opened: false
     // The last Wallhaven result a download was started for (for "retry").
     property string lastDownload: ""
 
@@ -79,6 +80,7 @@ Rectangle {
 
     // Opening/closing choreography, 0..1.
     property real shown: 0
+    readonly property bool closing: closeAnim.running
 
     function rebuildList() {
         const arr = [];
@@ -121,6 +123,16 @@ Rectangle {
             Wallhaven.fetchWallhaven(true);
     }
 
+    function open() {
+        if (visible) {
+            // Reopened while the close animation plays.
+            closeAnim.stop();
+            openAnim.restart();
+        } else {
+            visible = true;
+        }
+    }
+
     function close() {
         openAnim.stop();
         closeAnim.restart();
@@ -140,16 +152,12 @@ Rectangle {
     visible: false
     focus: true
 
+    Component.onDestruction: Wallhaven.resetSearch()
+
     onVisibleChanged: {
         if (!visible)
             return;
-        if (!opened || currentIndex < 0 || currentIndex >= count) {
-            opened = true;
-            if (mode === "local")
-                selectActive();
-            else
-                currentIndex = count > 0 ? 0 : -1;
-        }
+        selectActive();
         preview.show(currentEntry ? (currentEntry.fullUrl || currentEntry.fileUrl) : "", true);
         strip.positionViewAtIndex(Math.max(0, currentIndex), ListView.Center);
         keys.forceActiveFocus();

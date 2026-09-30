@@ -33,6 +33,7 @@ Singleton {
     property int  onlinePage: 1
     property bool hasMorePages: false
     property string _fetchBuffer: ""
+    property bool _discardFetch: false
     property string onlineError: ""
 
     // ── React to SettingsConfig changes and re-fetch ────────────────────────
@@ -130,6 +131,22 @@ Singleton {
         fetchWallhaven(false)
     }
 
+    // Back to a blank search (the picker calls this when it's destroyed, so
+    // it opens fresh). A fetch in flight is stopped and its result dropped.
+    function resetSearch() {
+        if (isFetchingOnline) {
+            _discardFetch = true
+            wallhavenFetcher.running = false
+        }
+        // Before the list: emptying it looks like reaching its end to the
+        // picker, which would fetch the next page.
+        hasMorePages = false
+        currentSearchText = ""
+        onlineWallpapers = []
+        onlinePage = 1
+        onlineError = ""
+    }
+
     function updateSearch(searchText) {
         currentSearchText = searchText
         fetchWallhaven(true)
@@ -164,7 +181,10 @@ Singleton {
             onRead: line => { root._fetchBuffer += line }
         }
         onExited: (exitCode) => {
-            if (exitCode === 0) {
+            if (root._discardFetch) {
+                root._discardFetch = false
+                root.isFetchingOnline = false
+            } else if (exitCode === 0) {
                 root._parseWallhavenResults(root._fetchBuffer)
             } else {
                 root.onlineError = "Network error — check your connection (curl exit " + exitCode + ")"
