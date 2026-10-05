@@ -34,6 +34,11 @@ Singleton {
     property bool hasMorePages: false
     property string _fetchBuffer: ""
     property bool _discardFetch: false
+    // A new search arrived while one was in flight: it starts once that
+    // one has stopped.
+    property bool _restartFetch: false
+    // Random order pages through one shuffle only with the seed page 1 gave.
+    property string _seed: ""
     property string onlineError: ""
 
     // ── React to SettingsConfig changes and re-fetch ────────────────────────
@@ -66,6 +71,8 @@ Singleton {
             p.push("ratios=" + SettingsConfig.wallhavenRatios)
         if (currentSearchText.length > 0)
             p.push("q=" + encodeURIComponent(currentSearchText))
+        if (SettingsConfig.wallhavenSorting === "random" && page > 1 && _seed.length > 0)
+            p.push("seed=" + _seed)
         if (SettingsConfig.wallhavenApiKey.length > 0)
             p.push("apikey=" + SettingsConfig.wallhavenApiKey)
         p.push("page=" + page)
@@ -73,10 +80,25 @@ Singleton {
     }
 
     function fetchWallhaven(resetPage) {
-        if (isFetchingOnline) return
         if (resetPage) {
+            // Before the list: emptying it looks like reaching its end to
+            // the picker, which would fetch the next page (of this search,
+            // before its first).
+            hasMorePages = false
             onlinePage = 1
+            _seed = ""
             onlineWallpapers = []
+            onlineError = ""
+            // The fetch in flight is for the old search: dropped, and this
+            // one started when it stops.
+            if (isFetchingOnline) {
+                _restartFetch = true
+                _discardFetch = true
+                wallhavenFetcher.running = false
+                return
+            }
+        } else if (isFetchingOnline) {
+            return
         }
         isFetchingOnline = true
         onlineError = ""
@@ -106,13 +128,19 @@ Singleton {
                 thumbUrl:   item.thumbs.large,
                 fullUrl:    item.path,
                 resolution: item.resolution,
-                fileType:   item.file_type
+                fileType:   item.file_type,
+                fileSize:   item.file_size || 0,
+                favorites:  item.favorites || 0,
+                // The image's main colours (for the picker's swatch cards).
+                colors:     item.colors || []
             }))
 
             onlineWallpapers = (onlinePage === 1)
                 ? parsed
                 : [...onlineWallpapers, ...parsed]
 
+            if (onlinePage === 1)
+                _seed = meta.seed || ""
             hasMorePages = (meta.current_page || 1) < (meta.last_page || 1)
             onlineError = ""
             console.log("[ServiceWallpaper] Wallhaven: got", parsed.length,
@@ -134,10 +162,12 @@ Singleton {
     // Back to a blank search (the picker calls this when it's destroyed, so
     // it opens fresh). A fetch in flight is stopped and its result dropped.
     function resetSearch() {
+        _restartFetch = false
         if (isFetchingOnline) {
             _discardFetch = true
             wallhavenFetcher.running = false
         }
+        _seed = ""
         // Before the list: emptying it looks like reaching its end to the
         // picker, which would fetch the next page.
         hasMorePages = false
@@ -184,6 +214,12 @@ Singleton {
             if (root._discardFetch) {
                 root._discardFetch = false
                 root.isFetchingOnline = false
+                root._fetchBuffer = ""
+                if (root._restartFetch) {
+                    root._restartFetch = false
+                    root.fetchWallhaven(false)
+                }
+                return
             } else if (exitCode === 0) {
                 root._parseWallhavenResults(root._fetchBuffer)
             } else {

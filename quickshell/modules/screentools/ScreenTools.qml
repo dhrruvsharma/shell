@@ -219,6 +219,6 @@ Item {
 
     Process {
         id: screenshotProc
-        command: ["sh", "-c", "qs ipc call systemPanel toggle && grimblast copysave area ~/Pictures/Screenshots/screenshot_$(date +%Y%m%d_%H%M%S).png"]
+        command: ["sh", "-c", "qs ipc call systemPanel toggle && grimblast copysave area ~/Pictures/screenshots/screenshot_$(date +%Y%m%d_%H%M%S).png"]
     }
 }

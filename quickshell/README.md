@@ -22,7 +22,7 @@ A feature-complete [Quickshell](https://quickshell.outfoxxed.me/) desktop shell 
 8. [Power Menu](#power-menu)
 9. [GitHub Contributions](#github-contributions)
 10. [Wallpaper](#wallpaper)
-    - [Local Picker](#local-picker)
+    - [Swatch Deck Picker](#swatch-deck-picker)
     - [Wallhaven Browser](#wallhaven-browser)
 11. [Media Features](#media-features)
     - [Anime](#anime)
@@ -236,23 +236,31 @@ Displays a 40-week (280-day) contribution heatmap fetched from the `github-contr
 
 ## Wallpaper
 
-### Local Picker
+### Swatch Deck Picker
 
-`modules/wallpaper/Wallpaper.qml`
+`modules/wallpaper/Wallpaper.qml` + `SwatchCard.qml`, `SpectrumRibbon.qml`, `WallpaperBackdrop.qml`; colours from `services/WallpaperSwatches.qml`
 
-A horizontal card carousel that reads `~/Pictures/wallpapers/`. Supports `.jpg`, `.jpeg`, `.png`, `.webp`, `.gif`, `.mp4`, `.mkv`, `.mov`, `.webm`. Cards are skewed with a `Matrix4x4` transform and scale up on focus. Selecting a card calls the `setwall` script:
+Every wallpaper in `~/Pictures/wallpapers/` (`.jpg`, `.jpeg`, `.png`, `.webp`, `.gif`) is a paint-chip card **dressed in the colour scheme it would give your desktop**: the card is the scheme's surface, its text the on-surface colour, and a strip of chips shows primary, secondary, tertiary, container and surface with their hex codes. The cards are held fanned out like a hand along the bottom of the screen. Behind them the whole screen previews the card in front at full size, and the picker's own accents take on that card's colours, so browsing is trying each wallpaper on before you set it.
 
-```
-~/.local/bin/setwall <path>
-```
+- **Sources:** Local, Favourites (press <kbd>F</kbd>), and Wallhaven search results.
+- **Sort:** by name, newest first, or **by colour**. Colour sort goes round the hue wheel of each scheme's source colour, so the deck becomes a spectrum (grey schemes come last).
+- **Spectrum ribbon:** the whole deck as one strip of colour under the header. A bracket marks the cards in hand and ticks mark favourites. Hover for a glimpse of any wallpaper; click or drag to jump there.
+- **Peek:** hold <kbd>Space</kbd>, or tap it to keep it, and the deck steps aside for an unobstructed look. Clicking the picture does the same.
+- **Themes:** it follows the active desktop theme: corner radii, fonts, and the theme's frame on the card in front.
 
-**IPC:** `qs ipc call wallpaper toggle`
+The schemes come from `scripts/wallpaper-palettes.py`. It runs `matugen image … --dry-run` with the same options as setting a wallpaper (nothing is applied), so a card shows exactly the scheme you will get. It only runs while the picker asks, niced and three images at a time, with the cards in view first. Each file is read once and cached in `~/.cache/quickshell/wallpaper-palettes.json`, keyed by file name and mtime.
+
+**Keys:** <kbd>←</kbd><kbd>→</kbd> or the wheel to browse, <kbd>Home</kbd>/<kbd>End</kbd>, <kbd>PgUp</kbd>/<kbd>PgDn</kbd>, <kbd>R</kbd> random card, <kbd>Enter</kbd> set, <kbd>F</kbd> favourite, <kbd>S</kbd> sort, <kbd>Space</kbd> peek, <kbd>Tab</kbd> next source, <kbd>/</kbd> search (Wallhaven), <kbd>Esc</kbd> close. You can also drag anywhere to turn the deck. Click a card to bring it to the front, then click the front card (or double-click any card) to set it.
+
+Setting a wallpaper goes through `services/WallpaperEngine.qml`, which plays the desktop theme's transition and regenerates the colour scheme with matugen.
+
+**IPC:** `qs ipc call wallpaper toggle`, `qs ipc call wallpaper wallhaven`, `qs ipc call wallpaper set <path>`
 
 ### Wallhaven Browser
 
 `modules/wallpaper/WallhavenPanel.qml` + `services/Wallhaven.qml`
 
-Browses [Wallhaven](https://wallhaven.cc) with full API parameter support: categories, purity, sorting, order, top-range, minimum resolution, aspect ratios, search query, and API key. All options are persisted in `SettingsConfig` and changes trigger an automatic re-fetch. Results load incrementally (pagination). Selecting a wallpaper downloads it to `~/Pictures/wallpapers/` then calls `setwall`.
+The picker's Wallhaven tab browses [Wallhaven](https://wallhaven.cc) with full API parameter support: categories, purity, sorting, order, top-range, minimum resolution, aspect ratios, search query, and API key. All options are persisted in `SettingsConfig`, and changes trigger an automatic re-fetch. Results load page by page as you near the end of the deck. Their cards wear the colours Wallhaven reports for each image. Setting one downloads it to `~/Pictures/wallpapers/` first, with the progress shown on the card and the button.
 
 ---
 
@@ -483,7 +491,7 @@ All panels are controlled through Quickshell's `IpcHandler` system. Use `qs ipc 
 | `ollamaChat` | `qs ipc call ollamaChat changeVisible` | Centered panel |
 | `aikiraChat` | `qs ipc call aikiraChat changeVisible` | Centered panel |
 | `launcherWindow` | `qs ipc call launcherWindow toggle` | Left-edge launcher |
-| `wallpaper` | `qs ipc call wallpaper toggle` | Local wallpaper picker |
+| `wallpaper` | `qs ipc call wallpaper toggle` | Wallpaper picker (swatch deck) |
 | `visBottom` | `qs ipc call visBottom toggle` | Full-screen CAVA visualizer |
 
 ### Example Hyprland keybindings
@@ -538,6 +546,5 @@ Ollama  → chatLoader    (centered)
 | `scripts/manga_server.py` | 48–50 | `~/.local/share/quickshell-manga` | Manga data/downloads dir |
 | `services/Wallhaven.qml` | 13–14 | `/home/igris/Pictures/wallpapers` | Wallpaper directory |
 | `services/Wallhaven.qml` | 14 | `/home/igris/.local/bin/setwall` | Wallpaper setter script |
-| `modules/wallpaper/Wallpaper.qml` | 20 | `/home/igris/.local/bin/setwall '%1'` | Wallpaper setter script |
 | `aikira/Api.qml` | 8 | `http://127.0.0.1:7842/api/v1` | Aikira backend port |
 | `aikira/Aikira.qml` | 97 | `~/.config/quickshell/scripts/aikira/aikira-stream.py` | Aikira stream script |
