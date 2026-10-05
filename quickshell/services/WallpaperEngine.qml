@@ -5,9 +5,12 @@ import Quickshell.Io
 import QtQuick
 
 // The wallpaper, drawn by Quickshell itself (modules/wallpaper/WallpaperLayer)
-// instead of a separate daemon. `set()` starts the transition on every screen,
-// points ~/.cache/current_wallpaper at the new image (the lock screens and the
-// Themes panel read it) and regenerates the colour scheme with matugen.
+// instead of a separate daemon. `set()` starts the transition on every screen
+// and runs scripts/wallpaper-apply: ~/.cache/current_wallpaper_source points at
+// the file, ~/.cache/current_wallpaper at a still of it (the lock screens and
+// the Themes panel read that) and matugen makes the colour scheme from the
+// still. A wallpaper can be an image, an animated GIF/WebP or a video; a
+// video's still is a frame grabbed from it (scripts/wallpaper-still).
 //
 // `qs ipc call wallpaper set <path>` and scripts/setwall end up here too.
 Singleton {
@@ -15,6 +18,7 @@ Singleton {
 
     readonly property string dir: Quickshell.env("HOME") + "/Pictures/wallpapers"
     readonly property string link: Quickshell.env("HOME") + "/.cache/current_wallpaper"
+    readonly property string sourceLink: Quickshell.env("HOME") + "/.cache/current_wallpaper_source"
 
     // Absolute path of the wallpaper on screen ("" until the link is read).
     property string current: ""
@@ -23,6 +27,17 @@ Singleton {
     property bool ready: false
 
     signal changed(string path)
+
+    // What a file is drawn as: "video", "animated" (GIF/WebP, which may
+    // still be one frame) or "image".
+    function kind(path) {
+        const p = String(path ?? "").toLowerCase();
+        if (/\.(mp4|webm|mkv|mov|m4v)$/.test(p))
+            return "video";
+        if (/\.(gif|webp)$/.test(p))
+            return "animated";
+        return "image";
+    }
 
     function resolve(path) {
         let p = String(path ?? "").trim().replace(/^file:\/\//, "");
@@ -40,7 +55,7 @@ Singleton {
         current = p;
         serial++;
         changed(p);
-        apply.exec(["sh", "-c", "[ -f \"$1\" ] || exit 1; ln -sfn \"$1\" \"$HOME/.cache/current_wallpaper\"; matugen image \"$1\" --source-color-index 0", "sh", p]);
+        apply.exec([Quickshell.shellPath("scripts/wallpaper-apply"), p]);
     }
 
     Process {
@@ -53,10 +68,11 @@ Singleton {
         }
     }
 
-    // What was on screen last session.
+    // What was on screen last session (the still's link, from before
+    // videos had their own).
     Process {
         running: true
-        command: ["readlink", "-f", root.link]
+        command: ["sh", "-c", "for l in \"$1\" \"$2\"; do [ -e \"$l\" ] && exec readlink -f \"$l\"; done", "sh", root.sourceLink, root.link]
         stdout: StdioCollector {
             onStreamFinished: {
                 if (!root.current)

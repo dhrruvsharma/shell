@@ -1,0 +1,35 @@
+#!/usr/bin/env bash
+# A still image for a wallpaper, for whatever needs a picture rather than
+# a moving one: matugen, the lock screens and the picker's cards.
+#
+#     wallpaper-still FILE
+#
+# Prints FILE itself for an image (a GIF too: matugen reads its first
+# frame). For a video it prints a frame grabbed with ffmpeg, cached in
+# ~/.cache/quickshell/wallpaper-frames and grabbed again when the video
+# is newer. Exits 1 when there's nothing to show.
+
+file=$1
+[[ -f $file ]] || exit 1
+
+case ${file,,} in
+    *.mp4 | *.webm | *.mkv | *.mov | *.m4v) ;;
+    *) printf '%s\n' "$file"; exit 0 ;;
+esac
+
+dir=${XDG_CACHE_HOME:-$HOME/.cache}/quickshell/wallpaper-frames
+key=$(printf '%s' "$file" | md5sum | cut -c1-16)
+out=$dir/$key.jpg
+
+if [[ ! -s $out || $file -nt $out ]]; then
+    mkdir -p "$dir"
+    tmp=$out.$$.jpg
+    # A second in, past any fade from black; the first frame for a clip
+    # shorter than that.
+    for at in 1 0; do
+        ffmpeg -nostdin -loglevel error -y -ss "$at" -i "$file" -frames:v 1 -pix_fmt yuvj420p -q:v 2 "$tmp" && [[ -s $tmp ]] && break
+    done
+    [[ -s $tmp ]] || { rm -f "$tmp"; exit 1; }
+    mv -f "$tmp" "$out"
+fi
+printf '%s\n' "$out"

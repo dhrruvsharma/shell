@@ -2,7 +2,8 @@
 # Set the wallpaper. Quickshell draws it (services/WallpaperEngine.qml): with
 # the shell running this hands over to it, which plays the transition, points
 # ~/.cache/current_wallpaper at the image and runs matugen. Without the shell
-# it just does the last two, and the shell shows the image when it starts.
+# it just does the last two (scripts/wallpaper-apply), and the shell shows the
+# wallpaper when it starts. Images, GIFs and videos (mp4, webm, mkv, mov) all work.
 
 # Use argument if provided, otherwise fall back to default
 if [[ -n "$1" ]]; then
@@ -26,5 +27,4 @@ if qs ipc call wallpaper set "$WALL" >/dev/null 2>&1; then
     exit 0
 fi
 
-ln -sfn "$WALL" "$HOME/.cache/current_wallpaper"
-matugen image "$WALL" --source-color-index 0
+exec "$HOME/.config/quickshell/scripts/wallpaper-apply" "$WALL"

@@ -17,6 +17,8 @@ Item {
 
     // { fileName, fileUrl, ... } as the picker lists it.
     property var entry: null
+    // What the card shows (a video's frame rather than the video).
+    property string picture: entry ? entry.fileUrl : ""
     // The matugen scheme ({ role: "#rrggbb" }), or null until it's read.
     property var scheme: null
     // Wallhaven's colours for the image, when there's no scheme.
@@ -107,7 +109,7 @@ Item {
             Glyph {
                 anchors.centerIn: parent
                 visible: thumb.status !== Image.Ready
-                text: thumb.status === Image.Error ? "broken_image" : "image"
+                text: thumb.status === Image.Error ? "broken_image" : card.entry && card.entry.video ? "movie" : "image"
                 font.pixelSize: 22 * card.u
                 color: Colors.withAlpha(card.dress.muted, 0.5)
             }
@@ -116,7 +118,7 @@ Item {
         Image {
             id: thumb
             anchors.fill: thumbBase
-            source: card.entry ? card.entry.fileUrl : ""
+            source: card.picture
             fillMode: Image.PreserveAspectCrop
             // Room for the card in front, which is drawn larger.
             sourceSize: Qt.size(Math.ceil(thumbBase.width * 1.3), Math.ceil(thumbBase.height * 1.3))

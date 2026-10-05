@@ -53,7 +53,8 @@ Item {
     readonly property string sort: WallpaperSwatches.sort
     readonly property var sorts: ["name", "colour", "newest"]
 
-    // Every local wallpaper as listed: [{ fileName, fileUrl, modified, size }].
+    // Every local wallpaper as listed: [{ fileName, fileUrl, modified, size,
+    // video }] (a video's picture is a frame of it: pictureOf()).
     property var allWallpapers: []
     // ...in the chosen order (set by resort(): the colour sort waits for
     // the colours rather than reshuffling as each one is read).
@@ -173,6 +174,17 @@ Item {
         return entry && !entry.item ? WallpaperSwatches.scheme(entry.fileName) : null;
     }
 
+    // The picture a card and the preview show: a video's grabbed frame (once
+    // the swatch worker has it), the file itself for anything else.
+    function pictureOf(entry) {
+        if (!entry)
+            return "";
+        if (!entry.video)
+            return entry.fileUrl;
+        const e = WallpaperSwatches.entry(entry.fileName);
+        return e && e.f ? "file://" + e.f : "";
+    }
+
     function swatchOf(entry) {
         if (!entry)
             return "";
@@ -189,7 +201,8 @@ Item {
                 fileName: folderModel.get(i, "fileName"),
                 fileUrl: String(folderModel.get(i, "fileUrl")),
                 modified: folderModel.get(i, "fileModified"),
-                size: folderModel.get(i, "fileSize")
+                size: folderModel.get(i, "fileSize"),
+                video: WallpaperEngine.kind(folderModel.get(i, "fileName")) === "video"
             });
         }
         allWallpapers = arr;
@@ -354,7 +367,7 @@ Item {
         place(displayedWallpapers.findIndex(w => w.fileName === activeName));
         if (currentIndex < 0 && count > 0)
             place(0);
-        backdrop.show(currentEntry ? (currentEntry.fullUrl || currentEntry.fileUrl) : "", true);
+        backdrop.show(currentEntry ? (currentEntry.fullUrl || pictureOf(currentEntry)) : "", true);
         keys.forceActiveFocus();
         closeAnim.stop();
         openAnim.restart();
@@ -389,6 +402,12 @@ Item {
 
     Connections {
         target: WallpaperSwatches
+
+        // A video's frame, once it's grabbed.
+        function onRevisionChanged() {
+            if (window.currentEntry && window.currentEntry.video && backdrop.wanted !== window.pictureOf(window.currentEntry))
+                backdropTimer.restart();
+        }
 
         // The colour sort, once every colour is in.
         function onScanFinished() {
@@ -449,7 +468,7 @@ Item {
                 backdrop.show(e.fileUrl);
                 hiresTimer.restart();
             } else {
-                backdrop.show(e.fileUrl);
+                backdrop.show(window.pictureOf(e));
             }
         }
     }
@@ -466,7 +485,7 @@ Item {
     FolderListModel {
         id: folderModel
         folder: window.srcDir
-        nameFilters: ["*.jpg", "*.jpeg", "*.png", "*.webp", "*.gif"]
+        nameFilters: ["*.jpg", "*.jpeg", "*.png", "*.webp", "*.gif", "*.mp4", "*.webm", "*.mkv", "*.mov", "*.m4v"]
         caseSensitive: false
         showDirs: false
         sortField: FolderListModel.Name
@@ -709,6 +728,7 @@ Item {
                     anchors.fill: parent
                     u: window.u
                     entry: slot.entry
+                    picture: window.pictureOf(slot.entry)
                     front: slot.near
                     dim: Math.min(0.3, Math.max(0, slot.ad - 0.6) * 0.065)
                     scheme: window.schemeOf(slot.entry)
@@ -1106,7 +1126,7 @@ Item {
             return out;
         }
         activeIndex: window.displayedWallpapers.findIndex(e => window.isActive(e))
-        thumbs: window.displayedWallpapers.map(e => e.fileUrl)
+        thumbs: window.displayedWallpapers.map(e => window.pictureOf(e))
         names: window.displayedWallpapers.map(e => e.item ? "wallhaven " + e.fileName : e.fileName)
         onScrub: index => {
             posAnim.stop();

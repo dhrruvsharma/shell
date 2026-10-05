@@ -12,7 +12,9 @@ it's read:
     {"n": name, "m": mtime, "s": bytes, "w": width, "h": height,
      "c": {role: "#rrggbb", ...}}
 
-with "e": 1 instead of "c" when matugen can't read the image. A line on stdin
+with "e": 1 instead of "c" when matugen can't read the image. A video is
+read from a frame of it (scripts/wallpaper-still), whose path comes as "f";
+"w" and "h" are the frame's. A line on stdin
 of tab-separated names moves those names to the front of the queue, in that
 order (the picker sends the cards in view).
 """
@@ -26,6 +28,9 @@ import threading
 from collections import deque
 
 WORKERS = 3
+
+STILL = os.path.join(os.path.dirname(os.path.abspath(__file__)), "wallpaper-still")
+VIDEO = (".mp4", ".webm", ".mkv", ".mov", ".m4v")
 
 ROLES = (
     "background", "surface", "surface_container_lowest", "surface_container_low",
@@ -90,6 +95,16 @@ def image_size(path):
     return 0, 0
 
 
+def still(path):
+    """A video's grabbed frame (cached by wallpaper-still), or None."""
+    try:
+        out = subprocess.run([STILL, path], capture_output=True, text=True, timeout=120)
+        frame = out.stdout.strip()
+        return frame if out.returncode == 0 and frame else None
+    except (OSError, subprocess.SubprocessError):
+        return None
+
+
 def scheme(path):
     try:
         out = subprocess.run(
@@ -132,9 +147,14 @@ def main():
                 st = os.stat(path)
             except OSError:
                 continue
-            w, h = image_size(path)
-            record = {"n": name, "m": int(st.st_mtime), "s": st.st_size, "w": w, "h": h}
-            colors = scheme(path)
+            record = {"n": name, "m": int(st.st_mtime), "s": st.st_size}
+            image = path
+            if name.lower().endswith(VIDEO):
+                image = still(path)
+                if image:
+                    record["f"] = image
+            record["w"], record["h"] = image_size(image) if image else (0, 0)
+            colors = scheme(image) if image else None
             if colors:
                 record["c"] = colors
             else:
