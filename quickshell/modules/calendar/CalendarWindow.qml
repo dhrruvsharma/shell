@@ -3,6 +3,7 @@ import Quickshell
 import qs.components
 import qs.services as Services
 import Quickshell.Io
+import Quickshell.Wayland
 
 PanelWindow {
     id: calendarWindow
@@ -10,7 +11,20 @@ PanelWindow {
     // Stay mapped while the close animation plays out, then unmap.
     visible: Services.CalendarState.open || wrapper.opacity > 0.001
     color: "transparent"
-    focusable: true
+
+    // Keyboard focus (for the notes field) only once the surface is up.
+    // Hyprland hands the pointer to a layer surface that maps with keyboard
+    // interactivity, wherever the cursor is, so the clock pill missed the
+    // next click (closing the calendar) until the mouse moved. Turning it on
+    // after mapping grabs nothing; clicking into the calendar then focuses it.
+    property bool keyboardReady: false
+    WlrLayershell.keyboardFocus: keyboardReady ? WlrKeyboardFocus.OnDemand : WlrKeyboardFocus.None
+
+    Timer {
+        id: keyboardDelay
+        interval: 150
+        onTriggered: calendarWindow.keyboardReady = Services.CalendarState.open
+    }
 
     anchors.top: true
     anchors.left: true
@@ -38,8 +52,12 @@ PanelWindow {
     Connections {
         target: Services.CalendarState
         function onOpenChanged() {
-            if (Services.CalendarState.open)
+            if (Services.CalendarState.open) {
                 cal.resetView()
+                keyboardDelay.restart()
+            } else {
+                calendarWindow.keyboardReady = false
+            }
         }
     }
 

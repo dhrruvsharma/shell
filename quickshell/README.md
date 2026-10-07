@@ -149,10 +149,18 @@ Hyprland-aware window switcher with live thumbnails (`WindowThumbnail.qml`) and 
 
 `modules/network/NetworkPanel.qml`
 
-Two-tab panel (Wi-Fi · Bluetooth). Wi-Fi tab (`WifiPanel.qml`) lists available networks; Bluetooth tab (`BluetoothPanel.qml`) lists paired and nearby devices and does its own pairing, no blueman needed:
+The airwaves round this computer, in two tabs (Wi-Fi · Bluetooth). Each tab's head shows its radio's state and has its own switch.
+
+**Wi-Fi** (`WifiPanel.qml`) opens the Wi-Fi sign out into a map of the networks round you (`WifiFan.qml`). The computer sits at the foot of the sign and its four bars arc over it, a quarter of the signal strengths each with the strongest innermost. Every network the radio hears sits on the bar of its strength, closer and brighter the stronger it is. 2.4 GHz has the left of the fan and 5 GHz (then 6 GHz) the right, in channel order, so a crowded channel shows as a cluster; a network on both bands appears on both sides. The network in use is a disc in the theme's accent tethered to the computer, and its bar is lit. Saved networks are ringed, hidden ones are specks. Under the fan are the connection (address, live down/up rates and the last minute of traffic) and the networks in range, each with its signal as a small Wi-Fi sign. Pointing at a row lights its network on the fan and pointing at a network lights its row.
+
+Picking a band: clicking a row joins the network on whichever band NetworkManager prefers. A network on more than one band shows a chip per band with its signal there (`2.4 GHz 95%`, `5 GHz 64%`): a chip joins on that band, and so does clicking the network on its side of the fan. For a network that needs a password, the chip chooses the band the password form joins on. The connection's own chips show the band in use, and the other chip moves it over. A saved network is brought up on the chosen access point (`nmcli connection up … ap <BSSID>`) without changing its profile; a new one is created on that access point and then released, so its profile isn't tied to one band afterwards.
+
+Opening the panel rescans if the last scan is more than 30 s old, and a scan lights the bars outwards in turn. Traffic is sampled from `/proc/net/dev` only while it's on screen.
+
+**Bluetooth** (`BluetoothPanel.qml`) puts the devices in orbit round the computer (`OrbitMap.qml`): connected ones on the inner orbit, tethered to it and ringed by their battery; paired ones on the middle orbit; ones a scan found on the outer, dashed one. A device glides to its new orbit as it pairs or connects, and a scan sends rings out from the computer. Below, the devices are listed as Connected, Paired and Nearby. It does its own pairing, no blueman needed:
 
 - Click a device to pair it (which also trusts and connects it), connect it or disconnect it. Hover a paired device for **trust** (the shield: whether it may connect by itself) and **remove**.
-- PIN, passkey and "does it show this code?" questions appear as a card at the top of the tab (`BluetoothPrompt.qml`), as do untrusted devices asking to connect (Deny / Allow / Always allow). The panel opens itself when one comes in.
+- PIN, passkey and "does it show this code?" questions appear as a card under the orbits (`BluetoothPrompt.qml`), as do untrusted devices asking to connect (Deny / Allow / Always allow). The panel opens itself when one comes in.
 - The eye icon makes this computer discoverable, so a phone can pair from its side.
 
 Quickshell registers no BlueZ pairing agent, and without one bluetoothd refuses PIN/passkey pairing and turns away untrusted devices. `scripts/bluetooth_agent.py` is that agent: `services/Bluetooth.qml` runs it and talks to it in JSON lines (the protocol is in the script's docstring). It needs `python-gobject`; without it pairing falls back to Quickshell's own, which only handles devices that need no code.
