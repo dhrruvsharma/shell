@@ -231,16 +231,21 @@ Singleton {
 
     Process {
         id: serverProcess
-        command: [
-            Quickshell.env("HOME") + "/novel-env/bin/python3",
-            Quickshell.env("HOME") + "/.config/quickshell/scripts/novel_server/main.py"
-        ]
+        command: [ReaderEnv.novelPython, ReaderEnv.scripts + "/novel_server/main.py"]
         running: true
         onExited: (code) => {
             console.warn("[ServiceNovel] Server exited with code", code, "— restarting")
             serverReady = false
-            serverProcess.running = true
+            restartTimer.start()
         }
+    }
+
+    // A pause before restarting, so a server that can't start (port taken,
+    // venv missing) isn't respawned in a tight loop.
+    Timer {
+        id: restartTimer
+        interval: 3000
+        onTriggered: serverProcess.running = true
     }
 
     HealthPoller {

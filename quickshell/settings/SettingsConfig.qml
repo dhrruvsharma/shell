@@ -18,7 +18,11 @@ Singleton {
     property alias dockAutoHide: settingsAdapter.dockAutoHide
     property alias dockMusicPlayer: settingsAdapter.dockMusicPlayer
 
-    // Wallhaven online wallpaper settings
+    // Wallpaper picker: the folder it lists (and saves downloads to; "~/"
+    // allowed), the command that sets a wallpaper when another program
+    // draws it, and Wallhaven's settings
+    property alias wallpaperDir: settingsAdapter.wallpaperDir
+    property alias wallpaperCommand: settingsAdapter.wallpaperCommand
     property alias wallhavenApiKey: settingsAdapter.wallhavenApiKey
     property alias wallhavenCategories: settingsAdapter.wallhavenCategories
     property alias wallhavenPurity: settingsAdapter.wallhavenPurity
@@ -70,6 +74,10 @@ Singleton {
             property bool dock: true
             property bool dockAutoHide: true
             property bool dockMusicPlayer: true
+
+            property string wallpaperDir: "~/Pictures/wallpapers"
+            // "" = Quickshell draws the wallpaper; else e.g. "swww img {}"
+            property string wallpaperCommand: ""
 
             // Wallhaven params
             property string wallhavenApiKey: "ugj2klyucx6IylJNxGQYu6sHyztDaav2"

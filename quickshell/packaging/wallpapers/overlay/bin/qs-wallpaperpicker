@@ -1,0 +1,37 @@
+#!/usr/bin/env bash
+# qs-wallpaperpicker: the Quickshell wallpaper picker.
+# Installed by qs-wallpaperpicker's install.sh.
+#
+#   qs-wallpaperpicker              start it (put this in your autostart)
+#   qs-wallpaperpicker toggle       open/close the picker
+#   qs-wallpaperpicker wallhaven    open the picker on Wallhaven
+#   qs-wallpaperpicker set FILE     set a wallpaper (a name in the wallpaper
+#                                   folder, or a path)
+#   qs-wallpaperpicker current      the wallpaper's path
+#   qs-wallpaperpicker stop         quit it
+#   qs-wallpaperpicker log          its log
+set -euo pipefail
+
+cfg="${XDG_CONFIG_HOME:-$HOME/.config}/qs-wallpaperpicker"
+case ${1-} in -h | --help | help) ;; *)
+    [[ -f $cfg/shell.qml ]] || { echo "qs-wallpaperpicker: no config in $cfg (run its install.sh)" >&2; exit 1; } ;;
+esac
+
+usage() { sed -n '2,12p' "$0" | sed 's/^# \{0,1\}//'; }
+
+case ${1-start} in
+    start)     exec qs -p "$cfg" --no-duplicate ;;
+    toggle)    exec qs -p "$cfg" ipc call wallpaper toggle ;;
+    wallhaven) exec qs -p "$cfg" ipc call wallpaper wallhaven ;;
+    set)
+        [[ -n ${2-} ]] || { usage >&2; exit 1; }
+        # A relative path from here, not a name in the wallpaper folder.
+        file=$2
+        [[ $file != /* && -e $file ]] && file=$(realpath "$file")
+        exec qs -p "$cfg" ipc call wallpaper set "$file" ;;
+    current)   exec qs -p "$cfg" ipc call wallpaper current ;;
+    stop)      exec qs -p "$cfg" kill ;;
+    log)       exec qs -p "$cfg" log ;;
+    -h|--help|help) usage ;;
+    *) usage >&2; exit 1 ;;
+esac

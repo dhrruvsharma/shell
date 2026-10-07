@@ -76,6 +76,18 @@
     "subtext": "Refresh Github"
   },
   {
+    "text": "qs ipc call keybinds close",
+    "subtext": "Close Keybinds"
+  },
+  {
+    "text": "qs ipc call keybinds open",
+    "subtext": "Open Keybinds"
+  },
+  {
+    "text": "qs ipc call keybinds toggle",
+    "subtext": "Toggle Keybinds · SUPER+slash"
+  },
+  {
     "text": "qs ipc call launcherWindow toggle",
     "subtext": "Toggle Launcher Window · SUPER+R"
   },

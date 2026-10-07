@@ -73,7 +73,7 @@ THEME_FONTS=(
     "ofl/texturina/Texturina-Italic[opsz,wght].ttf"
 )
 
-# venv path : pip packages (paths are hardcoded in services/{Anime,Manga,Novel}.qml)
+# venv path : pip packages (the paths are set in services/ReaderEnv.qml)
 VENVS=(
     "$HOME/ani-env:flask requests"
     "$HOME/.venv/manga:curl_cffi requests"

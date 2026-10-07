@@ -17,6 +17,7 @@ A feature-complete [Quickshell](https://quickshell.outfoxxed.me/) desktop shell 
    - [Media Panel & CAVA](#media-panel--cava)
    - [Calendar](#calendar)
    - [OSD](#osd)
+   - [Keybinds Manager](#keybinds-manager)
 6. [Notes Drawer](#notes-drawer)
 7. [Clipboard Manager](#clipboard-manager)
 8. [Power Menu](#power-menu)
@@ -36,6 +37,7 @@ A feature-complete [Quickshell](https://quickshell.outfoxxed.me/) desktop shell 
 14. [Settings](#settings)
 15. [IPC Reference](#ipc-reference)
 16. [Hardcoded Paths](#hardcoded-paths)
+17. [Standalone Packages](#standalone-packages)
 
 ---
 
@@ -193,6 +195,22 @@ Popup calendar with a full clock display.
 
 `Osd/OsdWindow.qml` — On-screen display for volume and brightness changes.
 
+### Keybinds Manager
+
+`modules/keybinds/KeybindsPanel.qml` + `services/Keybinds.qml` + `scripts/keybinds.py`
+
+Every Hyprland bind in `~/.config/hypr/*.lua` (`hyprland.lua`, `quickshell.lua`, …), on a drawn keyboard and in a list, to add, change and delete. **SUPER + /** opens it.
+
+- **The keyboard** shows one modifier layer at a time: the keys bound with those modifiers held light up in their action's colour, with the app's own icon on a launcher's key and the number on a workspace's. Pick the layer with the chips above it, by clicking the modifier keys, or peek by holding the real ones. Media keys and the mouse (buttons and scroll) have a row underneath. Two binds on one key get a red dot.
+- **The list** keeps the config's own grouping: each heading is the comment above a group of binds. A loop's binds (the workspaces 1–10) share a row and are read-only, since changing them means changing the loop.
+- **Hover** a key or a row to see what it runs, where it's written (`file:line`) and its options; **click** a free key to bind it; **double-click** a bind to edit it.
+- **The editor** takes the shortcut by recording it (Hyprland steps aside into an empty submap meanwhile, so the keys you press don't fire their binds; Escape or 15 s leave it), by clicking a key on the keyboard, or from the modifier toggles. Anything already on that combo is named, and can be replaced. The action is a command (with your installed apps and common media/screenshot commands to hand), one of the shell's panels (from `ipc-commands.json`), a window or workspace action, or any Lua dispatcher. Options are Hyprland's bind flags (lock screen, repeat, on release, …) and an optional label (`description`). The line it'll write shows as you go.
+- **Saving** rewrites only what changed on the line and keeps the rest as written (`mainMod ..`, variables such as `terminal`, alignment, other options). New binds go under the heading that suits them; that's adjustable. Before anything is written, the change goes through `luac -p` and a dry run of the config, and the running Hyprland builds the new action once to check it. The old file is kept in `~/.cache/quickshell/keybinds/` (the last 30 per file). Hyprland's own file watch reloads it; if Hyprland then reports a config error it didn't have before, the file is put back. **Undo** (in the toast, or Ctrl+Z) restores the previous version, but not over edits made since.
+
+Keys: `/` search, `N` new bind, `Enter` edit and `Delete` delete the selected bind, `Ctrl+Z` undo, `Esc` back out. Reading the config runs it in a sandbox (`scripts/keybinds-probe.lua`, with Lua 5.5 like Hyprland): a stand-in `hl` records the binds, and nothing the config does is carried out.
+
+**IPC:** `qs ipc call keybinds toggle` (also `open`, `close`)
+
 ---
 
 ## Notes Drawer
@@ -248,7 +266,7 @@ Displays a 40-week (280-day) contribution heatmap fetched from the `github-contr
 
 `modules/wallpaper/Wallpaper.qml` + `SwatchCard.qml`, `SpectrumRibbon.qml`, `WallpaperBackdrop.qml`; colours from `services/WallpaperSwatches.qml`
 
-Every wallpaper in `~/Pictures/wallpapers/` (`.jpg`, `.jpeg`, `.png`, `.webp`, `.gif`) is a paint-chip card **dressed in the colour scheme it would give your desktop**: the card is the scheme's surface, its text the on-surface colour, and a strip of chips shows primary, secondary, tertiary, container and surface with their hex codes. The cards are held fanned out like a hand along the bottom of the screen. Behind them the whole screen previews the card in front at full size, and the picker's own accents take on that card's colours, so browsing is trying each wallpaper on before you set it.
+Every wallpaper in your wallpaper folder (`~/Pictures/wallpapers/` unless you change it; images, GIFs and videos) is a paint-chip card **dressed in the colour scheme it would give your desktop**: the card is the scheme's surface, its text the on-surface colour, and a strip of chips shows primary, secondary, tertiary, container and surface with their hex codes. The cards are held fanned out like a hand along the bottom of the screen. Behind them the whole screen previews the card in front at full size, and the picker's own accents take on that card's colours, so browsing is trying each wallpaper on before you set it.
 
 - **Sources:** Local, Favourites (press <kbd>F</kbd>), and Wallhaven search results.
 - **Sort:** by name, newest first, or **by colour**. Colour sort goes round the hue wheel of each scheme's source colour, so the deck becomes a spectrum (grey schemes come last).
@@ -262,13 +280,20 @@ The schemes come from `scripts/wallpaper-palettes.py`. It runs `matugen image �
 
 Setting a wallpaper goes through `services/WallpaperEngine.qml`, which plays the desktop theme's transition and regenerates the colour scheme with matugen.
 
+**Settings:** the gear at the top right opens three settings, each applied with <kbd>Enter</kbd>:
+- **Wallpaper folder:** where the picker looks, and where Wallhaven downloads are saved. If the folder doesn't exist, it offers to create it.
+- **Wallpaper command:** empty, Quickshell draws the wallpaper. Set it (e.g. `swww img {}`, where `{}` is the file) to have another tool do it: the wallpaper layer then makes no windows, so the desktop theme's layer and video wallpapers go with it.
+- **Wallhaven API key:** optional; it unlocks NSFW results. The picker asks Wallhaven whether it accepts the key.
+
+Both are saved in `settings.json` (see [Settings](#settings)), and `scripts/setwall` reads the folder from there too.
+
 **IPC:** `qs ipc call wallpaper toggle`, `qs ipc call wallpaper wallhaven`, `qs ipc call wallpaper set <path>`
 
 ### Wallhaven Browser
 
 `modules/wallpaper/WallhavenPanel.qml` + `services/Wallhaven.qml`
 
-The picker's Wallhaven tab browses [Wallhaven](https://wallhaven.cc) with full API parameter support: categories, purity, sorting, order, top-range, minimum resolution, aspect ratios, search query, and API key. All options are persisted in `SettingsConfig`, and changes trigger an automatic re-fetch. Results load page by page as you near the end of the deck. Their cards wear the colours Wallhaven reports for each image. Setting one downloads it to `~/Pictures/wallpapers/` first, with the progress shown on the card and the button.
+The picker's Wallhaven tab browses [Wallhaven](https://wallhaven.cc) with full API parameter support: categories, purity, sorting, order, top-range, minimum resolution, aspect ratios, search query, and API key. All options are persisted in `SettingsConfig`, and changes trigger an automatic re-fetch. Results load page by page as you near the end of the deck. Their cards wear the colours Wallhaven reports for each image. Setting one downloads it to the wallpaper folder first, with the progress shown on the card and the button.
 
 ---
 
@@ -478,7 +503,7 @@ All persistent UI settings are managed by `settings/SettingsConfig.qml` and stor
 ~/.cache/quickshell/settings.json
 ```
 
-Settings include: color scheme, music visualizer toggle, pinned apps, dock visibility / auto-hide / music player display, Wallhaven API parameters, and the app grid layout.
+Settings include: color scheme, music visualizer toggle, pinned apps, dock visibility / auto-hide / music player display, the wallpaper folder, Wallhaven API parameters, and the app grid layout.
 
 ---
 
@@ -501,6 +526,7 @@ All panels are controlled through Quickshell's `IpcHandler` system. Use `qs ipc 
 | `launcherWindow` | `qs ipc call launcherWindow toggle` | Left-edge launcher |
 | `wallpaper` | `qs ipc call wallpaper toggle` | Wallpaper picker (swatch deck) |
 | `visBottom` | `qs ipc call visBottom toggle` | Full-screen CAVA visualizer |
+| `keybinds` | `qs ipc call keybinds toggle` | Keybinds manager (SUPER + /) |
 
 ### Example Hyprland keybindings
 
@@ -544,15 +570,27 @@ Ollama  → chatLoader    (centered)
 
 | File | Line(s) | Hardcoded path | What to change |
 |---|---|---|---|
-| `services/Anime.qml` | 148–149 | `~/ani-env/bin/python3` | Anime Python venv |
-| `services/Manga.qml` | 137–138 | `~/.venv/manga/bin/python3` | Manga Python venv |
-| `services/Novel.qml` | 144–146 | `~/novel-env/bin/python3` | Novel Python venv |
+| `services/ReaderEnv.qml` | 10–12 | `~/ani-env`, `~/.venv/manga`, `~/novel-env` | Anime/manga/novel Python venvs |
 | `services/LyricsService.qml` | 60 | `http://localhost:8080` | Lyrics API port |
 | `services/Anime.qml` | 39–40 | `~/.local/share/quickshell/anime_library.json` | Anime library file |
 | `services/Manga.qml` | 47–48 | `~/.local/share/quickshell/manga_library.json` | Manga library file |
 | `services/Novel.qml` | 59–60 | `~/.local/share/quickshell/new_novel_library.json` | Novel library file |
 | `scripts/manga_server.py` | 48–50 | `~/.local/share/quickshell-manga` | Manga data/downloads dir |
-| `services/Wallhaven.qml` | 13–14 | `/home/igris/Pictures/wallpapers` | Wallpaper directory |
-| `services/Wallhaven.qml` | 14 | `/home/igris/.local/bin/setwall` | Wallpaper setter script |
 | `aikira/Api.qml` | 8 | `http://127.0.0.1:7842/api/v1` | Aikira backend port |
 | `aikira/Aikira.qml` | 97 | `~/.config/quickshell/scripts/aikira/aikira-stream.py` | Aikira stream script |
+
+---
+
+## Standalone Packages
+
+The anime/manga/novel readers and the wallpaper picker can also run on their own, without the rest of this config, for people who only want those. `packaging/export.sh` builds each one as a separate Quickshell config:
+
+```sh
+packaging/export.sh readers [OUT_DIR]      # default ~/quickshell-readers
+packaging/export.sh wallpapers [OUT_DIR]   # default ~/quickshell-wallpapers
+```
+
+A package keeps this config's folder layout, so its QML files are copied unchanged. On top go `packaging/common/overlay/` and `packaging/<package>/overlay/`: a standalone `shell.qml`, an `install.sh` and README, and small stand-ins for the rice-only parts (desktop themes, backend paths, settings). The script stops if an exported file uses a component that wasn't copied, so a new dependency can't slip out unnoticed. `OUT_DIR` can be the package's own git checkout: everything but `.git` is replaced on each export.
+
+The packages are called **qs-novelmangareader** and **qs-wallpaperpicker**. Their `install.sh` installs the system packages and fonts they need (pacman, apt or dnf), puts the package in `~/.config/<name>`, and puts a `<name>` command on `PATH` (`~/.local/bin`, or `/usr/local/bin` after asking when `~/.local/bin` isn't on `PATH`, which is the default on Arch and in fish) (`qs-wallpaperpicker toggle`, `qs-novelmangareader manga`, …). They run with `qs -p` rather than `qs -c`, because Quickshell ignores every folder under `~/.config/quickshell/` once a `shell.qml` sits there, so they work next to any existing Quickshell config without touching it.
+

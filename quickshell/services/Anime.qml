@@ -146,14 +146,21 @@ Singleton {
 
     Process {
         id: serverProcess
-        command: [Quickshell.env("HOME") + "/ani-env/bin/python3",
-            Quickshell.env("HOME") + "/.config/quickshell/scripts/anime_server.py"]
+        command: [ReaderEnv.animePython, ReaderEnv.scripts + "/anime_server.py"]
         running: true
         onExited: (code) => {
             console.warn("[ServiceAnime] Server exited with code", code, "— restarting")
             root.serverReady = false
-            serverProcess.running = true
+            restartTimer.start()
         }
+    }
+
+    // A pause before restarting, so a server that can't start (port taken,
+    // venv missing) isn't respawned in a tight loop.
+    Timer {
+        id: restartTimer
+        interval: 3000
+        onTriggered: serverProcess.running = true
     }
 
     HealthPoller {

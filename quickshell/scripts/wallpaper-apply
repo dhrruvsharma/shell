@@ -7,7 +7,7 @@
 #   ~/.cache/current_wallpaper        -> a still of it (scripts/wallpaper-still:
 #                                        FILE itself, or a video's frame), which
 #                                        the lock screens and Themes panel read
-#   and the colour scheme, from matugen on that still.
+#   and the colour scheme, from matugen on that still (when it's installed).
 #
 # services/WallpaperEngine.qml runs it; scripts/setwall too without the shell.
 
@@ -17,4 +17,6 @@ still=$("$(dirname "$0")/wallpaper-still" "$file") || { echo "wallpaper-apply: n
 
 ln -sfn "$file" "$HOME/.cache/current_wallpaper_source"
 ln -sfn "$still" "$HOME/.cache/current_wallpaper"
+# The colour scheme, for those who use matugen.
+command -v matugen >/dev/null || exit 0
 matugen image "$still" --source-color-index 0

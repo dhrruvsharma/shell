@@ -1,7 +1,7 @@
 {
-    "appliedTheme": "cyberpunk",
-    "lastTheme": "cyberpunk",
+    "appliedTheme": "hud",
+    "lastTheme": "hud",
     "matchLock": true,
-    "screenEffect": "off",
-    "theme": "cyberpunk"
+    "screenEffect": "subtle",
+    "theme": "hud"
 }

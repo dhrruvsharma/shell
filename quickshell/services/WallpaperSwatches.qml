@@ -16,7 +16,7 @@ import QtQuick
 Singleton {
     id: root
 
-    readonly property string dir: Quickshell.env("HOME") + "/Pictures/wallpapers"
+    readonly property string dir: WallpaperEngine.dir
 
     // File name -> { m: mtime (s), s: bytes, w, h, c: { role: "#rrggbb" } };
     // `e` instead of `c` when matugen couldn't read the image.

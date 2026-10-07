@@ -8,8 +8,10 @@ Run: pip install flask requests && python ani_api.py
 import base64
 import html
 import json
+import os
 import re
 import threading
+import time
 
 import requests
 from flask import Flask, jsonify, request
@@ -848,14 +850,29 @@ def nextep_route():
     return jsonify({"query": q, "results": results})
 
 
+
+def exit_with_parent():
+    """Quit once the shell that started us is gone: a killed Quickshell
+    leaves its children running, and a stale server would hold the port."""
+    parent = os.getppid()
+
+    def watch():
+        while os.getppid() == parent:
+            time.sleep(2)
+        os._exit(0)
+
+    threading.Thread(target=watch, daemon=True).start()
+
+
 if __name__ == "__main__":
     import argparse
 
     parser = argparse.ArgumentParser(description="ani-cli Python API server")
-    parser.add_argument("--host", default="0.0.0.0", help="Host to bind (default: 0.0.0.0)")
+    parser.add_argument("--host", default="127.0.0.1", help="Host to bind (default: 127.0.0.1)")
     parser.add_argument("--port", type=int, default=5050, help="Port to listen on (default: 5050)")
     parser.add_argument("--debug", action="store_true", help="Enable Flask debug mode")
     args = parser.parse_args()
+    exit_with_parent()
 
     print(f"""
   ┌─────────────────────────────────────────┐

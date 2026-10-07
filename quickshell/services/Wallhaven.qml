@@ -10,7 +10,7 @@ pragma ComponentBehavior: Bound
 Singleton {
     id: root
 
-    property string wallpaperDir: Quickshell.env("HOME") + "/Pictures/wallpapers"
+    readonly property string wallpaperDir: WallpaperEngine.dir
     property string scheme: "material"
     property string theme: "dark"
 
@@ -73,8 +73,8 @@ Singleton {
             p.push("q=" + encodeURIComponent(currentSearchText))
         if (SettingsConfig.wallhavenSorting === "random" && page > 1 && _seed.length > 0)
             p.push("seed=" + _seed)
-        if (SettingsConfig.wallhavenApiKey.length > 0)
-            p.push("apikey=" + SettingsConfig.wallhavenApiKey)
+        if (SettingsConfig.wallhavenApiKey.trim().length > 0)
+            p.push("apikey=" + encodeURIComponent(SettingsConfig.wallhavenApiKey.trim()))
         p.push("page=" + page)
         return "https://wallhaven.cc/api/v1/search?" + p.join("&")
     }
@@ -105,7 +105,7 @@ Singleton {
         _fetchBuffer = ""
         const url = buildWallhavenUrl(onlinePage)
         console.log("[ServiceWallpaper] Fetching Wallhaven page", onlinePage, "–", url)
-        wallhavenFetcher.command = ["bash", "-c", "curl -s '" + url + "'"]
+        wallhavenFetcher.command = ["curl", "-s", url]
         wallhavenFetcher.running = true
     }
 

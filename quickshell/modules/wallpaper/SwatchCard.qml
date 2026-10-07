@@ -31,7 +31,7 @@ Item {
     property real dim: 0
     property bool current: false
     property bool favourite: false
-    // A Wallhaven result already in ~/Pictures/wallpapers.
+    // A Wallhaven result already in the wallpaper folder.
     property bool saved: false
     // 0..1 while this card's wallpaper downloads, else -1.
     property real download: -1

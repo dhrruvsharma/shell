@@ -794,7 +794,21 @@ class Handler(BaseHTTPRequestHandler):
             self._error(str(e))
 
 
+def exit_with_parent():
+    """Quit once the shell that started us is gone: a killed Quickshell
+    leaves its children running, and a stale server would hold the port."""
+    parent = os.getppid()
+
+    def watch():
+        while os.getppid() == parent:
+            time.sleep(2)
+        os._exit(0)
+
+    threading.Thread(target=watch, daemon=True).start()
+
+
 def run():
+    exit_with_parent()
     server = ThreadingHTTPServer(("127.0.0.1", PORT), Handler)
     print(f"[manga-server] Listening on http://127.0.0.1:{PORT} (threaded)")
     server.serve_forever()

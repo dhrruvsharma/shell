@@ -22,7 +22,9 @@ import qs.services as Services
 // wanted.
 Scope {
     Variants {
-        model: Quickshell.screens
+        // None while another program draws the wallpaper (a wallpaper
+        // command is set).
+        model: Services.WallpaperEngine.external ? [] : Quickshell.screens
 
         PanelWindow {
             id: win

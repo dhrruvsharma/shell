@@ -5,16 +5,22 @@
 # it just does the last two (scripts/wallpaper-apply), and the shell shows the
 # wallpaper when it starts. Images, GIFs and videos (mp4, webm, mkv, mov) all work.
 
+# The wallpaper folder: the picker's setting (~/Pictures/wallpapers unless
+# changed there).
+DIR=$(jq -r '.wallpaperDir // empty' "$HOME/.cache/quickshell/settings.json" 2>/dev/null)
+DIR=${DIR:-~/Pictures/wallpapers}
+[[ $DIR == "~" || $DIR == "~/"* ]] && DIR=$HOME${DIR:1}
+
 # Use argument if provided, otherwise fall back to default
 if [[ -n "$1" ]]; then
     # Handle both absolute paths and filenames relative to wallpaper dir
     if [[ "$1" = /* ]]; then
         WALL="$1"
     else
-        WALL="$HOME/Pictures/wallpapers/$1"
+        WALL="$DIR/$1"
     fi
 else
-    WALL="$HOME/Pictures/wallpapers/current.jpg"
+    WALL="$DIR/current.jpg"
 fi
 
 # Validate the file exists

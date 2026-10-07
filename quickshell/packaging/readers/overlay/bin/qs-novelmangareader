@@ -1,0 +1,27 @@
+#!/usr/bin/env bash
+# qs-novelmangareader: the Quickshell anime player, manga reader and novel
+# reader. Installed by qs-novelmangareader's install.sh.
+#
+#   qs-novelmangareader           start it (put this in your autostart)
+#   qs-novelmangareader anime     open/close the anime player
+#   qs-novelmangareader manga     open/close the manga reader
+#   qs-novelmangareader novel     open/close the novel reader
+#   qs-novelmangareader stop      quit it
+#   qs-novelmangareader log       its log
+set -euo pipefail
+
+cfg="${XDG_CONFIG_HOME:-$HOME/.config}/qs-novelmangareader"
+case ${1-} in -h | --help | help) ;; *)
+    [[ -f $cfg/shell.qml ]] || { echo "qs-novelmangareader: no config in $cfg (run its install.sh)" >&2; exit 1; } ;;
+esac
+
+case ${1-start} in
+    start) exec qs -p "$cfg" --no-duplicate ;;
+    anime) exec qs -p "$cfg" ipc call animePlayer toggle ;;
+    manga) exec qs -p "$cfg" ipc call mangaReader toggle ;;
+    novel) exec qs -p "$cfg" ipc call novelReader toggle ;;
+    stop)  exec qs -p "$cfg" kill ;;
+    log)   exec qs -p "$cfg" log ;;
+    -h|--help|help) sed -n '2,10p' "$0" | sed 's/^# \{0,1\}//' ;;
+    *) sed -n '2,10p' "$0" | sed 's/^# \{0,1\}//' >&2; exit 1 ;;
+esac

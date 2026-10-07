@@ -34,6 +34,7 @@ import qs.modules.lockthemes
 import qs.modules.desktoptheme
 import qs.modules.desktopwidgets
 import qs.modules.pet
+import qs.modules.keybinds
 
 ShellRoot {
     id: root
@@ -152,6 +153,7 @@ ShellRoot {
             || powerMenu.visible
             || avatarPicker.visible
             || lockThemes.visible
+            || keybindsLoader.active
         readonly property real screenW: screen ? screen.width : 1920
         readonly property real screenH: screen ? screen.height : 1200
 
@@ -323,6 +325,16 @@ ShellRoot {
                 id: lockThemes
             }
 
+            // Built for each opening, like the clipboard: the keyboard, the
+            // list and the apps' icons go again once it has closed.
+            Loader {
+                id: keybindsLoader
+                active: false
+                anchors.fill: parent
+                focus: true
+                sourceComponent: KeybindsPanel {}
+            }
+
         }
 
         property bool altHeld: false
@@ -385,6 +397,9 @@ ShellRoot {
             Region {
                 item: lockThemes.visible ? lockThemes : null
             }
+            Region {
+                item: keybindsLoader.item && keybindsLoader.item.visible ? keybindsLoader.item : null
+            }
             // The edge strips stay with their own surfaces below.
             Region {
                 intersection: Intersection.Subtract
@@ -437,6 +452,7 @@ ShellRoot {
             || powerMenu.visible
             || avatarPicker.visible
             || lockThemes.visible
+            || (keybindsLoader.item !== null && keybindsLoader.item.visible)
 
         WlrLayershell.layer: coveredByPanel ? WlrLayer.Bottom : WlrLayer.Top
         anchors {
@@ -879,6 +895,40 @@ ShellRoot {
         }
         function preview(theme: string): void {
             lockThemes.preview(theme)
+        }
+    }
+
+    IpcHandler {
+        target: "keybinds"
+        function toggle(): void {
+            if (!keybindsLoader.active)
+                keybindsLoader.active = true
+            keybindsLoader.item.toggle()
+        }
+        function open(): void {
+            if (!keybindsLoader.active)
+                keybindsLoader.active = true
+            if (!keybindsLoader.item.visible)
+                keybindsLoader.item.open()
+        }
+        function close(): void {
+            if (keybindsLoader.item?.visible)
+                keybindsLoader.item.close()
+        }
+    }
+
+    Timer {
+        id: closeKeybindsTimer
+        interval: 600
+        // unless it was opened again in the meantime
+        onTriggered: if (!keybindsLoader.item?.visible) keybindsLoader.active = false
+    }
+
+    Connections {
+        target: keybindsLoader.item
+        function onVisibleChanged() {
+            if (keybindsLoader.item && !keybindsLoader.item.visible)
+                closeKeybindsTimer.start()
         }
     }
 

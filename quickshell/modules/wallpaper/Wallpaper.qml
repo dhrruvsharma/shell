@@ -20,13 +20,14 @@ import qs.settings
 // and the picker's own accents take on its colours, so browsing is trying
 // each wallpaper on.
 //
-// Sources: Local (~/Pictures/wallpapers), Favourites (the hearted ones) and
+// Sources: Local (the wallpaper folder), Favourites (the hearted ones) and
 // Wallhaven (search results fetched page by page as you reach the end;
 // setting one downloads it first; their cards wear the colours Wallhaven
 // reports for the image). Local cards sort by name, by colour (round the
 // hue wheel: the deck becomes a spectrum) or newest first. The ribbon under
 // the header is the whole deck in colour: hover for a glimpse, click or
-// drag to go there.
+// drag to go there. The gear opens the settings: the wallpaper folder
+// (~/Pictures/wallpapers by default) and a Wallhaven API key.
 //
 // Keys: ←→ browse, Home/End, PgUp/PgDn, R a random card, Enter set, F
 // favourite, S sort, Space peek (hold, or tap to keep: the deck steps aside
@@ -42,7 +43,8 @@ import qs.settings
 Item {
     id: window
 
-    readonly property string srcDir: "file://" + Quickshell.env("HOME") + "/Pictures/wallpapers"
+    readonly property string srcDir: "file://" + WallpaperEngine.dir
+    property bool settingsOpen: false
 
     // ── What's in the deck ───────────────────────────────────────────────
     // Source: "local", "favorites" or "wallhaven".
@@ -337,6 +339,14 @@ Item {
         peekKept = !peekKept;
     }
 
+    function setSettingsOpen(on) {
+        settingsOpen = on;
+        if (on)
+            settingsCard.reset();
+        else
+            keys.forceActiveFocus();
+    }
+
     // ── Opening and closing ──────────────────────────────────────────────
     function open() {
         if (visible) {
@@ -364,6 +374,7 @@ Item {
             return;
         peekKept = false;
         peekHeld = false;
+        settingsOpen = false;
         place(displayedWallpapers.findIndex(w => w.fileName === activeName));
         if (currentIndex < 0 && count > 0)
             place(0);
@@ -601,7 +612,9 @@ Item {
         Keys.onPressed: event => {
             const k = event.key;
             if (k === Qt.Key_Escape) {
-                if (window.peekKept)
+                if (window.settingsOpen)
+                    window.setSettingsOpen(false);
+                else if (window.peekKept)
                     window.peekKept = false;
                 else
                     window.close();
@@ -1083,6 +1096,12 @@ Item {
 
             RoundButton {
                 anchors.verticalCenter: parent.verticalCenter
+                icon: "settings"
+                onClicked: window.setSettingsOpen(!window.settingsOpen)
+            }
+
+            RoundButton {
+                anchors.verticalCenter: parent.verticalCenter
                 icon: "visibility"
                 onClicked: window.togglePeek()
             }
@@ -1348,10 +1367,63 @@ Item {
         StyledText {
             anchors.horizontalCenter: parent.horizontalCenter
             text: window.online ? (Wallhaven.onlineError || (Wallhaven.isFetchingOnline ? "Searching Wallhaven…" : "No results"))
-                : window.favoritesOnly ? "No favourites yet: press F on a wallpaper you like" : "No wallpapers in ~/Pictures/wallpapers"
+                : window.favoritesOnly ? "No favourites yet: press F on a wallpaper you like" : "No wallpapers in " + WallpaperEngine.tildeHome(WallpaperEngine.dir)
             font.pixelSize: 16 * window.u
             color: "white"
         }
+
+        ClickableRect {
+            id: folderButton
+            anchors.horizontalCenter: parent.horizontalCenter
+            visible: window.mode === "local" && !window.settingsOpen
+            width: folderRow.implicitWidth + 32 * window.u
+            height: 40 * window.u
+            radius: height / 2
+            color: folderButton.hovered ? Qt.lighter(tint.accent, 1.08) : tint.accent
+            cursorShape: Qt.PointingHandCursor
+            onClicked: window.setSettingsOpen(true)
+
+            Row {
+                id: folderRow
+                anchors.centerIn: parent
+                spacing: 8 * window.u
+
+                Glyph {
+                    anchors.verticalCenter: parent.verticalCenter
+                    text: "folder_open"
+                    font.pixelSize: 18 * window.u
+                    color: tint.accentInk
+                }
+
+                StyledText {
+                    anchors.verticalCenter: parent.verticalCenter
+                    text: "Choose another folder"
+                    font.pixelSize: 14 * window.u
+                    font.weight: Font.DemiBold
+                    color: tint.accentInk
+                }
+            }
+        }
+    }
+
+    // The gear's settings, under the head on the right.
+    PickerSettings {
+        id: settingsCard
+
+        anchors.right: parent.right
+        anchors.rightMargin: 40 * window.u
+        y: head.y + head.height + 12 * window.u
+        z: 10
+        visible: window.settingsOpen && head.visible
+        opacity: head.opacity
+        u: window.u
+        surface: tint.surface
+        ink: tint.ink
+        muted: tint.muted
+        accent: tint.accent
+        accentInk: tint.accentInk
+        wallpaperCount: window.allWallpapers.length
+        onCloseRequested: window.setSettingsOpen(false)
     }
 
     // While peeking: how to get back.
