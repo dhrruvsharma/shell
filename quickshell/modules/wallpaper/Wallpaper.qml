@@ -1,5 +1,6 @@
 pragma ComponentBehavior: Bound
 import QtQuick
+import QtQuick.Effects
 import Qt.labs.folderlistmodel
 import Quickshell
 import qs.services
@@ -29,9 +30,22 @@ import qs.settings
 // drag to go there. The gear opens the settings: the wallpaper folder
 // (~/Pictures/wallpapers by default) and a Wallhaven API key.
 //
+// The live preview (the play button, or V; kept in settings.json) plays
+// videos and animated GIF/WebP wallpapers in the preview and in the card
+// in front, instead of a still of them.
+//
+// Choosing a card: it leaves the hand for the middle of the screen while
+// the rest of the hand is put away, lights up as it's set, then its
+// picture grows into the wallpaper and the picker goes, over the
+// wallpaper itself. A Wallhaven result waits in the middle while it
+// downloads (Esc sends it back to the deck). With that turned off in the
+// settings (wallpaperAnimateChoice), a card is set straight away and the
+// deck stays open for more browsing.
+//
 // Keys: ←→ browse, Home/End, PgUp/PgDn, R a random card, Enter set, F
 // favourite, S sort, Space peek (hold, or tap to keep: the deck steps aside
-// for a clear look), Tab next source, / search (Wallhaven), Esc close.
+// for a clear look), V live preview, Tab next source, / search (Wallhaven),
+// Esc close.
 // Mouse: wheel or drag anywhere to browse, click a card to bring it to the
 // front, click the front card (or double-click any) to set it, click the
 // picture itself to peek.
@@ -126,6 +140,32 @@ Item {
         NumberAnimation { duration: 300; easing.type: Easing.OutCubic }
     }
 
+    // ── The live preview ─────────────────────────────────────────────────
+    readonly property bool live: SettingsConfig.wallpaperLivePreview
+    // Anything in the folder that moves (the toggle shows only then).
+    readonly property bool hasMotion: allWallpapers.some(w => w.video || w.animated)
+
+    // ── Choosing (see the top) ───────────────────────────────────────────
+    // The entry being chosen, null the rest of the time.
+    property var chosen: null
+    readonly property bool choosing: chosen !== null
+    // In the middle, waiting for its download.
+    property bool awaiting: false
+    // In the middle, waiting for its video to be drawn under it (a video
+    // is set only once the card is there: a player starting up stalls the
+    // shell for a moment, which would show as a jolt on the way).
+    property bool settling: false
+    // Its wallpaper is set (the card wears the "current" tag from then).
+    property bool chosenSet: false
+    // It was playing in the preview when it was chosen, so its picture is
+    // that video.
+    property bool chosenLive: false
+    // The picker steps back (0..1) and the screen dims behind the card.
+    property real hush: 0
+    property real spot: 0
+    // The card's size in the middle of the screen.
+    readonly property real midScale: Math.max(1.4, Math.min(2.4, 0.5 * height / Math.max(1, cardH)))
+
     // ── Helpers ──────────────────────────────────────────────────────────
     // File name a Wallhaven result is saved under ("" for local entries).
     function savedName(entry) {
@@ -187,6 +227,11 @@ Item {
         return e && e.f ? "file://" + e.f : "";
     }
 
+    // What the live preview plays for a card: the file, when it moves.
+    function motionOf(entry) {
+        return entry && !entry.item && (entry.video || entry.animated) ? entry.fileUrl : "";
+    }
+
     function swatchOf(entry) {
         if (!entry)
             return "";
@@ -204,7 +249,8 @@ Item {
                 fileUrl: String(folderModel.get(i, "fileUrl")),
                 modified: folderModel.get(i, "fileModified"),
                 size: folderModel.get(i, "fileSize"),
-                video: WallpaperEngine.kind(folderModel.get(i, "fileName")) === "video"
+                video: WallpaperEngine.kind(folderModel.get(i, "fileName")) === "video",
+                animated: WallpaperEngine.kind(folderModel.get(i, "fileName")) === "animated"
             });
         }
         allWallpapers = arr;
@@ -277,7 +323,7 @@ Item {
 
     // To a card, the deck turning; a long way is cut short.
     function go(i) {
-        if (count === 0)
+        if (count === 0 || choosing)
             return;
         i = Math.max(0, Math.min(count - 1, i));
         currentIndex = i;
@@ -305,7 +351,7 @@ Item {
             shuffleAnim.change = null;
             pending();
         }
-        if (!visible || closing || openAnim.running) {
+        if (!visible || closing || openAnim.running || choosing) {
             change();
             return;
         }
@@ -314,20 +360,171 @@ Item {
     }
 
     // ── Acting on the card in front ──────────────────────────────────────
-    // Sets it and stays open, so browsing can go on. A Wallhaven result is
+    // Sets it, and the card is chosen (see the top), or with that turned
+    // off it's just set and the picker stays open. A Wallhaven result is
     // downloaded first (once; a saved one is set from disk).
     function pickCurrent() {
         const e = currentEntry;
-        if (!e || isActive(e))
+        if (!e || isActive(e) || choosing || closing)
             return;
+        const downloading = Wallhaven.downloadingWallpaperId;
+        // Another one is downloading.
+        if (e.item && !isSaved(e) && downloading !== "" && downloading !== e.fileName)
+            return;
+        // Chosen first: the wallpaper under it then changes without its
+        // transition (see WallpaperEngine.pickerCovers). A video waits till
+        // the card's in the middle (arrived()).
+        const animate = SettingsConfig.wallpaperAnimateChoice;
+        if (animate)
+            choose(e);
         if (!e.item) {
-            WallpaperEngine.set(e.fileUrl);
+            if (!animate || !e.video)
+                WallpaperEngine.set(e.fileUrl);
         } else if (isSaved(e)) {
             WallpaperEngine.set(Wallhaven.savePathFor(e.item));
-        } else if (Wallhaven.downloadingWallpaperId === "") {
+        } else if (downloading === "") {
             lastDownload = e.fileName;
             Wallhaven.downloadAndSetWallpaper(e.item);
         }
+    }
+
+    // The wallpaper on screen is this entry's (read from the engine, not
+    // activeName, which may lag inside the engine's change handlers).
+    function isSet(entry) {
+        const name = WallpaperEngine.current.split("/").pop();
+        return !!entry && name === (entry.item ? savedName(entry) : entry.fileName);
+    }
+
+    // The slot holding an entry, if it's in the hand.
+    function slotOf(entry) {
+        for (let i = 0; i < hand.count; i++) {
+            const s = hand.itemAt(i);
+            if (s && s.live && s.entry && s.entry.fileName === entry.fileName)
+                return s;
+        }
+        return null;
+    }
+
+    // The card in front's place, the hand dealt.
+    function frontPlace() {
+        return {
+            x: pivotX - cardW / 2,
+            y: pivotY - handR - lift - cardH / 2 + peek * (cardH * 1.25 + 120 * u),
+            rotation: 0,
+            scale: frontScale
+        };
+    }
+
+    // The card goes from the hand to the middle of the screen.
+    function choose(e) {
+        posAnim.stop();
+        if (shuffleAnim.running) {
+            const change = shuffleAnim.change;
+            shuffleAnim.change = null;
+            shuffleAnim.stop();
+            if (change)
+                change();
+        }
+        openAnim.stop();
+        backdropTimer.stop();
+        hiresTimer.stop();
+        motionTimer.stop();
+        const from = slotOf(e) ?? frontPlace();
+        flight.x = from.x;
+        flight.y = from.y;
+        flight.rotation = from.rotation;
+        flight.scale = from.scale;
+        flight.glow = 0;
+        flight.ring = 0;
+        flight.pulse = 0;
+        flight.shine = -1;
+        flight.fade = 0;
+        flight.bloom = 0;
+        chosenLive = backdrop.playing !== "" && backdrop.playing === motionOf(e) && backdrop.motionShown > 0.99;
+        // Nothing new starts playing behind it (and nothing's unloaded
+        // while it moves: that's left to the picker's end).
+        if (!chosenLive)
+            backdrop.motionPaused = true;
+        // The preview shows it (a double-click picks before it has).
+        const picture = e.fullUrl || pictureOf(e);
+        if (picture)
+            backdrop.show(picture, !!e.fullUrl);
+        // Keys to the picker, not a field left focused.
+        if (settingsOpen)
+            setSettingsOpen(false);
+        else
+            keys.forceActiveFocus();
+        chosenSet = false;
+        awaiting = false;
+        settling = false;
+        chosen = e;
+        riseAnim.restart();
+    }
+
+    // In the middle: on to the wallpaper, or wait for the download, or
+    // set a video and wait for it to be drawn.
+    function arrived() {
+        if (!chosen.item && chosen.video && !isSet(chosen)) {
+            settling = true;
+            settleTimer.start();
+            WallpaperEngine.set(chosen.fileUrl);
+            if (WallpaperEngine.external)
+                settled();
+        } else if (isSet(chosen)) {
+            bloomAnim.restart();
+        } else {
+            awaiting = true;
+        }
+    }
+
+    function settled() {
+        if (!settling)
+            return;
+        settling = false;
+        settleTimer.stop();
+        bloomAnim.restart();
+    }
+
+    // The picture fills the screen: the picker goes once the wallpaper
+    // itself is drawn under it (another program's, it can't tell: at once).
+    function bloomed() {
+        spot = 0;
+        if (WallpaperEngine.external || WallpaperEngine.drawn === WallpaperEngine.current)
+            close();
+        else
+            revealTimer.start();
+    }
+
+    // Back into the hand (its download failed, or Esc while it waited).
+    function returnCard() {
+        if (!choosing || backAnim.running)
+            return;
+        riseAnim.stop();
+        bloomAnim.stop();
+        awaiting = false;
+        settling = false;
+        place(currentIndex);
+        const to = frontPlace();
+        backAnim.toX = to.x;
+        backAnim.toY = to.y;
+        backAnim.toScale = to.scale;
+        backAnim.restart();
+    }
+
+    function resetChoice() {
+        riseAnim.stop();
+        bloomAnim.stop();
+        backAnim.stop();
+        revealTimer.stop();
+        chosen = null;
+        awaiting = false;
+        settling = false;
+        settleTimer.stop();
+        chosenSet = false;
+        chosenLive = false;
+        hush = 0;
+        spot = 0;
+        flight.bloom = 0;
     }
 
     function toggleFavorite(name) {
@@ -352,6 +549,10 @@ Item {
         if (visible) {
             // Reopened while the close animation plays.
             closeAnim.stop();
+            if (choosing) {
+                resetChoice();
+                place(currentIndex);
+            }
             openAnim.restart();
         } else {
             visible = true;
@@ -367,11 +568,20 @@ Item {
     visible: false
     focus: true
 
-    Component.onDestruction: Wallhaven.resetSearch()
+    // Being destroyed (resetSearch() then empties the Wallhaven list).
+    property bool dying: false
+
+    Component.onDestruction: {
+        dying = true;
+        Wallhaven.resetSearch();
+        if (WallpaperEngine.pickerCovers === Screen.name)
+            WallpaperEngine.pickerCovers = "";
+    }
 
     onVisibleChanged: {
         if (!visible)
             return;
+        resetChoice();
         peekKept = false;
         peekHeld = false;
         settingsOpen = false;
@@ -379,6 +589,9 @@ Item {
         if (currentIndex < 0 && count > 0)
             place(0);
         backdrop.show(currentEntry ? (currentEntry.fullUrl || pictureOf(currentEntry)) : "", true);
+        backdrop.motion = "";
+        backdrop.motionPaused = false;
+        motionTimer.restart();
         keys.forceActiveFocus();
         closeAnim.stop();
         openAnim.restart();
@@ -390,10 +603,32 @@ Item {
         const e = displayedWallpapers[currentIndex];
         frontName = e ? e.fileName : "";
     }
-    onDisplayedWallpapersChanged: Qt.callLater(refocus)
+    onDisplayedWallpapersChanged: {
+        if (!dying)
+            Qt.callLater(refocus);
+    }
+    onLiveChanged: {
+        if (choosing)
+            return;
+        backdrop.motion = live ? motionOf(currentEntry) : "";
+        backdrop.motionPaused = false;
+    }
+    onChoosingChanged: {
+        if (choosing)
+            WallpaperEngine.pickerCovers = Screen.name;
+        else if (WallpaperEngine.pickerCovers === Screen.name)
+            WallpaperEngine.pickerCovers = "";
+    }
     onCurrentEntryChanged: {
-        // The picture behind waits for the deck to slow down.
+        // A chosen card keeps the preview as it is.
+        if (choosing)
+            return;
+        // The picture behind waits for the deck to slow down, and the
+        // live preview for it to stop (the one playing pauses and fades
+        // meanwhile, unless it's this card's).
         backdropTimer.restart();
+        backdrop.motionPaused = backdrop.playing !== motionOf(currentEntry);
+        motionTimer.restart();
         // The next page of results as the end comes into view.
         if (online && currentIndex >= count - 8)
             Wallhaven.fetchNextPage();
@@ -412,11 +647,47 @@ Item {
     }
 
     Connections {
+        target: WallpaperEngine
+
+        // A chosen Wallhaven result, downloaded and set.
+        function onCurrentChanged() {
+            if (window.awaiting && window.isSet(window.chosen)) {
+                window.awaiting = false;
+                bloomAnim.restart();
+            }
+        }
+
+        // The wallpaper drawn under a chosen card: on with it (a video's,
+        // set as the card arrived), or time to go (once it has grown into
+        // the picture).
+        function onDrawnChanged() {
+            if (WallpaperEngine.drawn !== WallpaperEngine.current)
+                return;
+            if (window.settling) {
+                window.settled();
+            } else if (revealTimer.running) {
+                revealTimer.stop();
+                window.close();
+            }
+        }
+    }
+
+    Connections {
+        target: Wallhaven
+
+        // A chosen Wallhaven result whose download failed goes back.
+        function onDownloadingWallpaperIdChanged() {
+            if (window.choosing && Wallhaven.downloadingWallpaperId === "" && Wallhaven.downloadError !== "")
+                window.returnCard();
+        }
+    }
+
+    Connections {
         target: WallpaperSwatches
 
         // A video's frame, once it's grabbed.
         function onRevisionChanged() {
-            if (window.currentEntry && window.currentEntry.video && backdrop.wanted !== window.pictureOf(window.currentEntry))
+            if (!window.choosing && window.currentEntry && window.currentEntry.video && backdrop.wanted !== window.pictureOf(window.currentEntry))
                 backdropTimer.restart();
         }
 
@@ -461,9 +732,93 @@ Item {
 
     ParallelAnimation {
         id: closeAnim
-        NumberAnimation { target: window; property: "shown"; to: 0; duration: 240; easing.type: Easing.InCubic }
+        NumberAnimation { target: window; property: "shown"; to: 0; duration: window.choosing ? 340 : 240; easing.type: Easing.InCubic }
         NumberAnimation { target: window; property: "deal"; to: 0; duration: 220; easing.type: Easing.InCubic }
         onFinished: window.visible = false
+    }
+
+    // ── Choosing, in three moves ─────────────────────────────────────────
+    // 1. Slowly out of the hand to the middle of the screen, upright and
+    // larger, while the rest of the hand is put away and the picker
+    // steps back.
+    ParallelAnimation {
+        id: riseAnim
+        // (Picked as the picker opened: it finishes opening.)
+        NumberAnimation { target: window; property: "shown"; to: 1; duration: 300; easing.type: Easing.OutCubic }
+        NumberAnimation { target: window; property: "deal"; to: 0; duration: 560; easing.type: Easing.InCubic }
+        NumberAnimation { target: window; property: "hush"; to: 1; duration: 420; easing.type: Easing.OutCubic }
+        NumberAnimation { target: window; property: "spot"; to: 1; duration: 1000; easing.type: Easing.InOutQuad }
+        NumberAnimation { target: flight; property: "x"; to: window.width / 2 - window.cardW / 2; duration: 1250; easing.type: Easing.InOutCubic }
+        NumberAnimation { target: flight; property: "y"; to: window.height / 2 - window.cardH / 2; duration: 1250; easing.type: Easing.InOutCubic }
+        NumberAnimation { target: flight; property: "rotation"; to: 0; duration: 900; easing.type: Easing.OutCubic }
+        NumberAnimation { target: flight; property: "scale"; to: window.midScale; duration: 1250; easing.type: Easing.InOutCubic }
+        NumberAnimation { target: flight; property: "glow"; to: 1; duration: 1250; easing.type: Easing.InQuad }
+        onFinished: window.arrived()
+    }
+
+    // 2. Chosen: the tag pops, a ring goes out and light crosses the
+    // picture; 3. the picture grows into the wallpaper.
+    SequentialAnimation {
+        id: bloomAnim
+        ScriptAction {
+            script: {
+                window.chosenSet = true;
+                chosenCard.popTag();
+            }
+        }
+        ParallelAnimation {
+            NumberAnimation { target: flight; property: "ring"; from: 0; to: 1; duration: 800; easing.type: Easing.OutCubic }
+            NumberAnimation { target: flight; property: "shine"; from: -0.35; to: 1.35; duration: 820; easing.type: Easing.InOutSine }
+            SequentialAnimation {
+                NumberAnimation { target: flight; property: "pulse"; to: 1; duration: 170; easing.type: Easing.OutCubic }
+                NumberAnimation { target: flight; property: "pulse"; to: 0; duration: 480; easing.type: Easing.InOutQuad }
+            }
+        }
+        PauseAnimation { duration: 100 }
+        // The card falls away from round its picture, which grows.
+        ParallelAnimation {
+            NumberAnimation { target: flight; property: "fade"; to: 1; duration: 320; easing.type: Easing.OutQuad }
+            NumberAnimation { target: flight; property: "glow"; to: 0; duration: 380; easing.type: Easing.OutQuad }
+            NumberAnimation { target: flight; property: "bloom"; to: 1; duration: 1000; easing.type: Easing.InOutCubic }
+        }
+        ScriptAction { script: window.bloomed() }
+    }
+
+    // Back into the hand.
+    ParallelAnimation {
+        id: backAnim
+
+        property real toX: 0
+        property real toY: 0
+        property real toScale: 1
+
+        NumberAnimation { target: window; property: "deal"; to: 1; duration: 620; easing.type: Easing.OutCubic }
+        NumberAnimation { target: window; property: "hush"; to: 0; duration: 420; easing.type: Easing.OutCubic }
+        NumberAnimation { target: window; property: "spot"; to: 0; duration: 420; easing.type: Easing.OutCubic }
+        NumberAnimation { target: flight; property: "x"; to: backAnim.toX; duration: 620; easing.type: Easing.InOutCubic }
+        NumberAnimation { target: flight; property: "y"; to: backAnim.toY; duration: 620; easing.type: Easing.InOutCubic }
+        NumberAnimation { target: flight; property: "rotation"; to: 0; duration: 620; easing.type: Easing.OutCubic }
+        NumberAnimation { target: flight; property: "scale"; to: backAnim.toScale; duration: 620; easing.type: Easing.InOutCubic }
+        NumberAnimation { target: flight; property: "glow"; to: 0; duration: 300 }
+        onFinished: {
+            window.chosen = null;
+            window.chosenLive = false;
+            motionTimer.restart();
+        }
+    }
+
+    // Waiting on the wallpaper to be drawn under the picture, not forever.
+    Timer {
+        id: revealTimer
+        interval: 2500
+        onTriggered: window.close()
+    }
+
+    // Nor on a video starting up under the card in the middle.
+    Timer {
+        id: settleTimer
+        interval: 3000
+        onTriggered: window.settled()
     }
 
     // Full resolution once the selection settles; a local picture as soon
@@ -473,6 +828,8 @@ Item {
         interval: 110
         onTriggered: {
             const e = window.currentEntry;
+            if (window.choosing)
+                return;
             if (!e) {
                 backdrop.show("");
             } else if (e.fullUrl) {
@@ -488,8 +845,23 @@ Item {
         id: hiresTimer
         interval: 550
         onTriggered: {
-            if (window.currentEntry && window.currentEntry.fullUrl)
+            if (!window.choosing && window.currentEntry && window.currentEntry.fullUrl)
                 backdrop.show(window.currentEntry.fullUrl, true);
+        }
+    }
+
+    // The live preview changes only once the deck has been still for a
+    // moment, the picture behind it faded in (a player loading or
+    // unloading stalls the shell briefly: not mid-motion, and not for
+    // every card passed on the way).
+    Timer {
+        id: motionTimer
+        interval: 700
+        onTriggered: {
+            if (window.choosing)
+                return;
+            backdrop.motion = window.live ? window.motionOf(window.currentEntry) : "";
+            backdrop.motionPaused = false;
         }
     }
 
@@ -550,7 +922,7 @@ Item {
     Rectangle {
         anchors.fill: parent
         color: Colors.scrim
-        opacity: 0.55 * window.shown
+        opacity: 0.55 * window.shown * (1 - window.hush)
     }
 
     WallpaperBackdrop {
@@ -563,7 +935,7 @@ Item {
     // any picture; it lifts while peeking.
     Rectangle {
         anchors.fill: parent
-        opacity: window.shown * (1 - 0.85 * window.peek)
+        opacity: window.shown * (1 - 0.85 * window.peek) * (1 - window.hush)
         gradient: Gradient {
             GradientStop { position: 0; color: Qt.rgba(0, 0, 0, 0.66) }
             GradientStop { position: 0.13; color: Qt.rgba(0, 0, 0, 0.32) }
@@ -572,6 +944,14 @@ Item {
             GradientStop { position: 0.78; color: Qt.rgba(0, 0, 0, 0.18) }
             GradientStop { position: 1; color: Qt.rgba(0, 0, 0, 0.6) }
         }
+    }
+
+    // Dimmed behind a chosen card.
+    Rectangle {
+        anchors.fill: parent
+        color: "black"
+        visible: opacity > 0
+        opacity: 0.55 * window.spot * window.shown
     }
 
     // The wheel browses wherever it turns; a click on the picture peeks.
@@ -611,6 +991,18 @@ Item {
 
         Keys.onPressed: event => {
             const k = event.key;
+            // While a card is chosen: Esc sends a waiting one back, or
+            // skips to the end.
+            if (window.choosing) {
+                if (k === Qt.Key_Escape && !event.isAutoRepeat) {
+                    if (window.awaiting)
+                        window.returnCard();
+                    else if (!backAnim.running)
+                        window.close();
+                }
+                event.accepted = true;
+                return;
+            }
             if (k === Qt.Key_Escape) {
                 if (window.settingsOpen)
                     window.setSettingsOpen(false);
@@ -643,6 +1035,8 @@ Item {
                 window.setSort(window.sorts[(window.sorts.indexOf(window.sort) + 1) % window.sorts.length]);
             } else if (k === Qt.Key_R) {
                 window.random();
+            } else if (k === Qt.Key_V && window.hasMotion) {
+                SettingsConfig.wallpaperLivePreview = !SettingsConfig.wallpaperLivePreview;
             } else if (k === Qt.Key_Tab || k === Qt.Key_Backtab) {
                 window.setMode(window.modes[(window.modes.indexOf(window.mode) + (k === Qt.Key_Tab ? 1 : 2)) % 3]);
             } else if (k === Qt.Key_Slash && window.online) {
@@ -654,7 +1048,7 @@ Item {
         }
 
         Keys.onReleased: event => {
-            if (event.key !== Qt.Key_Space || event.isAutoRepeat)
+            if (event.key !== Qt.Key_Space || event.isAutoRepeat || window.choosing)
                 return;
             window.peekHeld = false;
             // A tap keeps the peek (or ends a kept one).
@@ -677,6 +1071,7 @@ Item {
 
             target: null
             yAxis.enabled: false
+            enabled: !window.choosing
             onActiveChanged: {
                 if (active) {
                     posAnim.stop();
@@ -696,6 +1091,7 @@ Item {
         }
 
         Repeater {
+            id: hand
             model: window.slots
 
             Item {
@@ -710,6 +1106,10 @@ Item {
                 readonly property real ad: Math.abs(d)
                 readonly property bool live: idx >= 0 && idx < window.count && ad < window.side + 1
                 readonly property var entry: live ? window.displayedWallpapers[idx] : null
+                // Out of the hand: the chosen card (drawn by `flight`).
+                readonly property bool lifted: window.choosing && !!entry && entry.fileName === window.chosen.fileName
+                // Playing in the live preview behind.
+                readonly property bool playing: !!entry && backdrop.playing !== "" && backdrop.playing === window.motionOf(entry)
                 // 1 for the card in front.
                 readonly property real near: Math.max(0, 1 - ad)
                 readonly property real dealt: {
@@ -734,7 +1134,7 @@ Item {
                 scale: 1 + (window.frontScale - 1) * near
                 z: 100 - ad
                 opacity: Math.max(0, Math.min(1, window.side + 1 - ad))
-                visible: live && opacity > 0.01 && y < window.height
+                visible: live && opacity > 0.01 && y < window.height && !lifted
 
                 SwatchCard {
                     id: card
@@ -752,6 +1152,9 @@ Item {
                     download: !!slot.entry && !!slot.entry.item && Wallhaven.downloadingWallpaperId === slot.entry.fileName ? Wallhaven.downloadProgress : -1
                     title: !slot.entry ? "" : slot.entry.item ? "wallhaven " + slot.entry.fileName : window.baseName(slot.entry.fileName)
                     meta: window.metaOf(slot.entry)
+                    art: slot.playing && backdrop.motionShown > 0 ? liveTexture : null
+                    artAspect: window.width / Math.max(1, window.height)
+                    artOpacity: backdrop.motionShown
                     onClicked: {
                         if (slot.idx === window.currentIndex)
                             window.pickCurrent();
@@ -957,12 +1360,15 @@ Item {
         id: rb
 
         property string icon
+        // A toggle that's on: filled with the accent.
+        property bool checked: false
 
         width: 40 * window.u
         height: 40 * window.u
         radius: height / 2
-        color: rb.hovered ? Colors.withAlpha(tint.surface, 0.95) : Colors.withAlpha(tint.surface, 0.8)
-        border.width: 1
+        color: rb.checked ? (rb.hovered ? Qt.lighter(tint.accent, 1.08) : tint.accent)
+            : rb.hovered ? Colors.withAlpha(tint.surface, 0.95) : Colors.withAlpha(tint.surface, 0.8)
+        border.width: rb.checked ? 0 : 1
         border.color: Colors.withAlpha(tint.ink, 0.12)
         cursorShape: Qt.PointingHandCursor
 
@@ -970,7 +1376,7 @@ Item {
             anchors.centerIn: parent
             text: rb.icon
             font.pixelSize: 19 * window.u
-            color: tint.ink
+            color: rb.checked ? tint.accentInk : tint.ink
         }
     }
 
@@ -978,10 +1384,10 @@ Item {
         id: head
 
         x: 40 * window.u
-        y: 28 * window.u - (1 - window.shown) * 18 * window.u - window.peek * 24 * window.u
+        y: 28 * window.u - (1 - window.shown) * 18 * window.u - Math.max(window.peek, window.hush) * 24 * window.u
         width: parent.width - 80 * window.u
         height: 44 * window.u
-        opacity: window.shown * (1 - window.peek)
+        opacity: window.shown * (1 - window.peek) * (1 - window.hush)
         visible: opacity > 0.01
 
         Row {
@@ -1098,6 +1504,15 @@ Item {
                 anchors.verticalCenter: parent.verticalCenter
                 icon: "settings"
                 onClicked: window.setSettingsOpen(!window.settingsOpen)
+            }
+
+            // The live preview: videos and animated pictures play.
+            RoundButton {
+                anchors.verticalCenter: parent.verticalCenter
+                visible: !window.online && window.hasMotion
+                icon: window.live ? "motion_photos_on" : "motion_photos_off"
+                checked: window.live
+                onClicked: SettingsConfig.wallpaperLivePreview = !SettingsConfig.wallpaperLivePreview
             }
 
             RoundButton {
@@ -1273,7 +1688,8 @@ Item {
         StyledText {
             id: hints
             anchors.centerIn: parent
-            text: "←→ or wheel browse  ·  Enter set  ·  F favourite  ·  S sort  ·  R random  ·  Space peek  ·  Tab source  ·  Esc close"
+            text: "←→ or wheel browse  ·  Enter set  ·  F favourite  ·  S sort  ·  R random  ·  Space peek  ·  "
+                + (window.hasMotion ? "V live preview  ·  " : "") + "Tab source  ·  Esc close"
             font.pixelSize: 12 * window.u
             color: Colors.withAlpha(tint.ink, 0.78)
         }
@@ -1286,7 +1702,7 @@ Item {
         anchors.right: parent.right
         anchors.rightMargin: 40 * window.u
         y: (window.online ? filters.y + filters.height : ribbon.y + ribbon.height) + 16 * window.u
-        visible: backdrop.loading && backdrop.upgrading && window.shown > 0.5
+        visible: backdrop.loading && backdrop.upgrading && window.shown > 0.5 && !window.choosing
         width: hiresRow.implicitWidth + 24 * window.u
         height: 34 * window.u
 
@@ -1315,7 +1731,7 @@ Item {
         anchors.right: parent.right
         anchors.rightMargin: 40 * window.u
         y: (window.online ? filters.y + filters.height : ribbon.y + ribbon.height) + 16 * window.u
-        visible: backdrop.failed && window.shown > 0.5
+        visible: backdrop.failed && window.shown > 0.5 && !window.choosing
         width: failedRow.implicitWidth + 24 * window.u
         height: 34 * window.u
 
@@ -1432,7 +1848,7 @@ Item {
         anchors.bottom: parent.bottom
         anchors.bottomMargin: 30 * window.u
         visible: opacity > 0.01
-        opacity: window.peekKept ? window.peek : 0
+        opacity: window.peekKept ? window.peek * (1 - window.hush) : 0
         width: peekRow.implicitWidth + 28 * window.u
         height: 36 * window.u
 
@@ -1456,5 +1872,184 @@ Item {
                 color: tint.muted
             }
         }
+    }
+
+    // ── The chosen card ──────────────────────────────────────────────────
+    // The live preview as a texture, so the card in front (and a chosen
+    // one) shows the video playing too.
+    ShaderEffectSource {
+        id: liveTexture
+        width: window.width
+        height: window.height
+        visible: false
+        sourceItem: backdrop.motionShown > 0 ? backdrop.motionItem : null
+        live: true
+        mipmap: true
+    }
+
+    // What a chosen card's picture is drawn from: the video that was
+    // playing behind it, or the preview's image once that shows the card
+    // (sharper than the card's own, which shows till then).
+    readonly property var chosenArt: {
+        const e = chosen;
+        if (!e)
+            return null;
+        if (chosenLive && backdrop.motionShown > 0)
+            return liveTexture;
+        const f = backdrop.front;
+        const src = String(f.source);
+        return f.status === Image.Ready && src !== "" && (src === pictureOf(e) || src === (e.fullUrl ?? "")) ? f : null;
+    }
+    readonly property real chosenArtAspect: chosenArt === liveTexture ? width / Math.max(1, height)
+        : chosenArt ? chosenArt.implicitWidth / Math.max(1, chosenArt.implicitHeight) : 16 / 10
+
+    // The card out of the hand: placed where it was in the hand, then
+    // moved by riseAnim, bloomAnim and backAnim.
+    Item {
+        id: flight
+
+        // Each 0..1: the glow behind the card, the ring going out from it,
+        // its pulse as it's set, the card gone from round its picture, the
+        // picture grown into the wallpaper. And the light across the
+        // picture (-0.35..1.35 as it sweeps).
+        property real glow: 0
+        property real ring: 0
+        property real pulse: 0
+        property real fade: 0
+        property real bloom: 0
+        property real shine: -1
+
+        z: 20
+        width: window.cardW
+        height: window.cardH
+        visible: window.choosing
+        opacity: window.shown
+
+        RectangularShadow {
+            anchors.fill: chosenCard
+            radius: chosenCard.radius
+            blur: (34 + 22 * flight.pulse) * window.u
+            spread: 5 * window.u * flight.pulse
+            color: Colors.withAlpha(chosenCard.dress.accent, 0.6)
+            visible: opacity > 0.01
+            opacity: flight.glow
+        }
+
+        // Goes out from the card as it's set.
+        Rectangle {
+            readonly property real grow: 64 * window.u * flight.ring
+
+            anchors.centerIn: parent
+            width: parent.width + grow * 2
+            height: parent.height + grow * 2
+            radius: chosenCard.radius + grow
+            antialiasing: true
+            color: "transparent"
+            border.width: Math.max(1, 2.4 * window.u * (1 - 0.6 * flight.ring))
+            border.color: chosenCard.dress.accent
+            visible: opacity > 0.01
+            opacity: flight.ring > 0 && flight.ring < 1 ? Math.pow(1 - flight.ring, 1.3) : 0
+        }
+
+        SwatchCard {
+            id: chosenCard
+
+            readonly property var chosen: window.chosen
+
+            anchors.fill: parent
+            scale: 1 + 0.035 * flight.pulse
+            opacity: 1 - flight.fade
+            u: window.u
+            entry: chosen
+            picture: window.pictureOf(chosen)
+            front: 1
+            scheme: window.schemeOf(chosen)
+            imageColors: chosen && chosen.item ? chosen.colors : []
+            current: window.chosenSet
+            favourite: !!chosen && !chosen.item && WallpaperFavorites.favorites.indexOf(chosen.fileName) >= 0
+            saved: !!chosen && !!chosen.item && window.isSaved(chosen)
+            download: !!chosen && !!chosen.item && Wallhaven.downloadingWallpaperId === chosen.fileName ? Wallhaven.downloadProgress : -1
+            title: !chosen ? "" : chosen.item ? "wallhaven " + chosen.fileName : window.baseName(chosen.fileName)
+            meta: window.metaOf(chosen)
+            art: window.chosenArt
+            artAspect: window.chosenArtAspect
+            shine: flight.shine
+        }
+
+        // The picture, from its place on the card (upright by then) to the
+        // whole screen: the wallpaper.
+        Loader {
+            active: flight.bloom > 0 && !!window.chosenArt
+            sourceComponent: CardPicture {
+                readonly property rect from: chosenCard.pictureRect
+                readonly property real k: Math.max(0.01, flight.scale)
+                // The screen, in the card's own units.
+                readonly property real toX: flight.width / 2 - (flight.x + flight.width / 2) / k
+                readonly property real toY: flight.height / 2 - (flight.y + flight.height / 2) / k
+                readonly property real e: flight.bloom
+
+                x: from.x + (toX - from.x) * e
+                y: from.y + (toY - from.y) * e
+                width: from.width + (window.width / k - from.width) * e
+                height: from.height + (window.height / k - from.height) * e
+                radius: chosenCard.thumbRadius * (1 - e)
+                pixelScale: k
+                source: window.chosenArt
+                sourceAspect: window.chosenArtAspect
+            }
+        }
+    }
+
+    // A Wallhaven result in the middle while it downloads.
+    Glass {
+        z: 21
+        anchors.horizontalCenter: parent.horizontalCenter
+        y: flight.y + flight.height / 2 + flight.height * flight.scale / 2 + 28 * window.u
+        visible: opacity > 0.01
+        opacity: window.awaiting ? window.shown : 0
+        width: waitRow.implicitWidth + 28 * window.u
+        height: 36 * window.u
+
+        Behavior on opacity {
+            NumberAnimation { duration: 220 }
+        }
+
+        Row {
+            id: waitRow
+            anchors.centerIn: parent
+            spacing: 10 * window.u
+
+            Spinner {
+                anchors.verticalCenter: parent.verticalCenter
+                width: 14 * window.u
+                arcColor: tint.accent
+                running: window.awaiting
+            }
+
+            StyledText {
+                anchors.verticalCenter: parent.verticalCenter
+                text: "Downloading " + Math.round(Wallhaven.downloadProgress * 100) + "%"
+                font.pixelSize: 13 * window.u
+                font.weight: Font.DemiBold
+                color: tint.ink
+            }
+
+            StyledText {
+                anchors.verticalCenter: parent.verticalCenter
+                text: "Esc: back to the deck"
+                font.pixelSize: 12 * window.u
+                color: tint.muted
+            }
+        }
+    }
+
+    // Nothing under a chosen card takes the pointer.
+    MouseArea {
+        z: 30
+        anchors.fill: parent
+        visible: window.choosing
+        hoverEnabled: true
+        acceptedButtons: Qt.AllButtons
+        onWheel: wheel => wheel.accepted = true
     }
 }

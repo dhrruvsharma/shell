@@ -15,7 +15,11 @@ The picker's own colours change to match it as you browse.
 - **Wallhaven:** search [wallhaven.cc](https://wallhaven.cc) and download a wallpaper
   into your folder as you set it.
 - Images, animated GIF/WebP and videos (mp4, webm, mkv, mov). A video wallpaper pauses
-  while windows cover it (on Hyprland).
+  while windows cover it (on Hyprland). With the live preview on (the play button, or `V`),
+  they play in the preview too.
+- The card you set comes slowly to the middle of the screen, lights up, and grows into
+  the wallpaper (a switch in the settings turns this off: the wallpaper then changes
+  straight away and the picker stays open).
 
 By default Quickshell draws the wallpaper itself, with a transition between wallpapers
 and support for videos. If you'd rather keep your own wallpaper tool (swww, hyprpaper,
@@ -88,23 +92,46 @@ qs-wallpaperpicker log          # its log
 Underneath that's `qs -p ~/.config/qs-wallpaperpicker …`, with the IPC target `wallpaper`
 (`toggle`, `wallhaven`, `set`, `current`).
 
+## Updating
+
+Pull the new version in the folder you cloned. A running picker reloads itself when its
+files change:
+
+```sh
+cd ~/.config/qs-wallpaperpicker   # or wherever you cloned it
+git pull
+```
+
+If you installed with `--copy`, the copy doesn't follow the clone: after `git pull`, run the
+installer again to refresh it. It keeps your settings and colours:
+
+```sh
+./install.sh --copy --no-deps
+```
+
+Your `settings.json` is kept, and settings that are new start at their defaults. If the
+picker doesn't reload by itself, restart it: `qs-wallpaperpicker stop`, then start it again
+(`setsid -f qs-wallpaperpicker`, or log out and back in).
+
 ## Using it
 
 | | |
 |---|---|
 | `←` `→`, wheel, drag | browse |
-| `Enter`, click the front card | set it |
+| `Enter`, click the front card | set it (the card grows into the wallpaper and the picker closes, unless that's switched off in the settings) |
 | `F` | favourite |
 | `S` | sort: name, colour, newest |
 | `R` | a random card |
 | `Space` | peek: hold, or tap to keep (the deck steps aside) |
+| `V` | live preview: videos and animated GIF/WebP play in the preview |
 | `Tab` | next source |
 | `/` | search (Wallhaven) |
 | `Esc` | close |
 
 ## Settings
 
-The gear at the top right opens them. Each one is applied when you press Enter.
+The gear at the top right opens them. Each field is applied when you press Enter, the
+switch as you click it.
 
 - **Wallpaper folder:** where your wallpapers are, and where Wallhaven downloads go.
   `~/Pictures/wallpapers` by default. If the folder you type doesn't exist yet,
@@ -129,6 +156,9 @@ The gear at the top right opens them. Each one is applied when you press Enter.
 - **Wallhaven API key:** optional. It unlocks NSFW results and your account's
   filters. Find it at [wallhaven.cc/settings/account](https://wallhaven.cc/settings/account).
   Wallhaven is asked to confirm the key works.
+- **Setting a wallpaper:** on by default, the card you set grows into the wallpaper and
+  the picker closes. Off, the wallpaper changes straight away and the picker stays open,
+  so you can keep browsing.
 
 They're kept in `settings.json` in this folder, along with the Wallhaven filters
 you pick in the picker. It's git-ignored, so your key stays out of the repo.

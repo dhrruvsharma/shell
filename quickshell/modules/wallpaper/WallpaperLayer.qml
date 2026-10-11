@@ -70,6 +70,11 @@ Scope {
             function start() {
                 waiting = false;
                 progress = 0;
+                // Under the picker's chosen card: straight in.
+                if (Services.WallpaperEngine.pickerCovers === modelData.name) {
+                    finish();
+                    return;
+                }
                 anim.duration = ({ 1: 1300, 4: 1500, 6: 950, 7: 1400, 8: 1400, 9: 1500, 10: 1600, 11: 1500, 12: 1500, 13: 1600, 14: 1500, 15: 1600 })[mode] ?? 1100;
                 anim.start();
             }
@@ -78,7 +83,21 @@ Scope {
                 const old = front;
                 front = back;
                 progress = 0;
-                old.path = "";
+                // Under the picker's chosen card the old one only pauses:
+                // unloading a video stalls the shell for a moment, which
+                // the card would show. It goes after the picker.
+                if (Services.WallpaperEngine.pickerCovers === modelData.name)
+                    old.retired = true;
+                else
+                    old.path = "";
+                Services.WallpaperEngine.drawn = front.path;
+            }
+
+            function unloadRetired() {
+                for (const w of [imgA, imgB]) {
+                    if (w.retired && w !== front)
+                        w.path = "";
+                }
             }
 
             screen: modelData
@@ -101,6 +120,18 @@ Scope {
                 function onCurrentChanged() {
                     win.show(Services.WallpaperEngine.current);
                 }
+
+                function onPickerCoversChanged() {
+                    if (Services.WallpaperEngine.pickerCovers !== win.modelData.name)
+                        retireTimer.restart();
+                }
+            }
+
+            // Not as the picker goes (its own player unloads then).
+            Timer {
+                id: retireTimer
+                interval: 1500
+                onTriggered: win.unloadRetired()
             }
 
             // One slot: whatever `path` is, cropped to fill the screen.
@@ -108,6 +139,8 @@ Scope {
                 id: wall
 
                 property string path: ""
+                // Replaced under the picker, paused till it's unloaded.
+                property bool retired: false
                 readonly property string kind: Services.WallpaperEngine.kind(path)
                 // Something to show (a video: its first frame is decoded).
                 readonly property bool ready: !!loader.item && loader.item.ready
@@ -115,9 +148,13 @@ Scope {
 
                 anchors.fill: parent
 
+                onPathChanged: retired = false
                 onReadyChanged: {
                     if (ready && win.waiting && wall === win.back)
                         win.start();
+                    // The first wallpaper: no transition.
+                    if (ready && wall === win.front)
+                        Services.WallpaperEngine.drawn = wall.path;
                 }
                 onFailedChanged: {
                     if (failed && wall === win.back)
@@ -161,7 +198,7 @@ Scope {
                         cache: false
                         smooth: true
                         playing: true
-                        paused: !win.playing
+                        paused: !win.playing || wall.retired
                     }
                 }
 
@@ -179,7 +216,7 @@ Scope {
                         readonly property bool failed: player.error !== MediaPlayer.NoError
 
                         function sync() {
-                            if (win.playing || !shown)
+                            if ((win.playing && !wall.retired) || !shown)
                                 player.play();
                             else
                                 player.pause();
@@ -191,6 +228,14 @@ Scope {
                             target: win
 
                             function onPlayingChanged() {
+                                clip.sync();
+                            }
+                        }
+
+                        Connections {
+                            target: wall
+
+                            function onRetiredChanged() {
                                 clip.sync();
                             }
                         }

@@ -5,13 +5,16 @@ import Quickshell.Io
 import QtQuick
 
 // The picker's settings, kept in settings.json next to this config. The
-// folder and API key are set from the picker's gear; the Wallhaven filters
-// from its chips.
+// folder, command, API key and the chosen card's animation are set from the
+// picker's gear; the Wallhaven filters from its chips; the live preview
+// from its play button.
 Singleton {
     id: root
 
     property alias wallpaperDir: settingsAdapter.wallpaperDir
     property alias wallpaperCommand: settingsAdapter.wallpaperCommand
+    property alias wallpaperLivePreview: settingsAdapter.wallpaperLivePreview
+    property alias wallpaperAnimateChoice: settingsAdapter.wallpaperAnimateChoice
     property alias wallhavenApiKey: settingsAdapter.wallhavenApiKey
     property alias wallhavenCategories: settingsAdapter.wallhavenCategories
     property alias wallhavenPurity: settingsAdapter.wallhavenPurity
@@ -49,6 +52,11 @@ Singleton {
             property string wallpaperDir: "~/Pictures/wallpapers"
             // "" = Quickshell draws the wallpaper; else e.g. "swww img {}"
             property string wallpaperCommand: ""
+            // Videos and animated pictures play in the preview
+            property bool wallpaperLivePreview: false
+            // The card set grows into the wallpaper (false: set straight
+            // away, the deck stays open)
+            property bool wallpaperAnimateChoice: true
             property string wallhavenApiKey: ""
             property string wallhavenCategories: "111"
             property string wallhavenPurity: "100"

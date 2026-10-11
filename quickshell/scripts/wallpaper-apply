@@ -17,6 +17,8 @@ still=$("$(dirname "$0")/wallpaper-still" "$file") || { echo "wallpaper-apply: n
 
 ln -sfn "$file" "$HOME/.cache/current_wallpaper_source"
 ln -sfn "$still" "$HOME/.cache/current_wallpaper"
-# The colour scheme, for those who use matugen.
+# The colour scheme, for those who use matugen. Niced: reading a big image
+# takes it most of a second on every core, which would cost the shell's
+# animations (the picker's) their frames.
 command -v matugen >/dev/null || exit 0
-matugen image "$still" --source-color-index 0
+nice -n 19 matugen image "$still" --source-color-index 0

@@ -40,6 +40,14 @@ Singleton {
     // Bumped on every change; layers run their transition on it.
     property int serial: 0
     property bool ready: false
+    // The wallpaper drawn on screen, its transition over (WallpaperLayer
+    // sets it): a card chosen in the picker grows into the wallpaper, and
+    // the picker waits for this before it fades away over it.
+    property string drawn: ""
+    // The screen (its name) the picker covers while a chosen card grows
+    // into the wallpaper: the wallpaper there changes without a transition,
+    // which no one would see and which would cost the card its frames.
+    property string pickerCovers: ""
 
     signal changed(string path)
 

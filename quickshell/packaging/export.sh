@@ -37,11 +37,12 @@ case $PKG in
         ) ;;
     wallpapers)
         FILES=(
-            modules/wallpaper/{Wallpaper,SwatchCard,SpectrumRibbon,WallpaperBackdrop,WallpaperLayer,PickerSettings}.qml
+            modules/wallpaper/{Wallpaper,SwatchCard,CardPicture,SpectrumRibbon,WallpaperBackdrop,WallpaperLayer,PickerSettings}.qml
             modules/lock/{Glyph,LockTheme}.qml
             services/{WallpaperEngine,WallpaperSwatches,WallpaperFavorites,Wallhaven}.qml
             components/{ClickableRect,Spinner,StyledText,StyledTextField}.qml
             shaders/wallpaper_transition.frag shaders/wallpaper_transition.frag.qsb
+            shaders/card_picture.frag shaders/card_picture.frag.qsb
             scripts/wallpaper-apply scripts/wallpaper-still scripts/wallpaper-palettes.py
         ) ;;
     *) die "usage: $0 readers|wallpapers [OUT_DIR]" ;;

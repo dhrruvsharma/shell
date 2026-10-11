@@ -37,6 +37,16 @@ Item {
     property real download: -1
     property string title: ""
     property string meta: ""
+    // The picture drawn from a texture instead, over the plain one: the
+    // video playing in the picker's preview, or the preview's own sharper
+    // image for a card shown large. `art` is an Image or a
+    // ShaderEffectSource, `artAspect` its width over its height.
+    property var art: null
+    property real artAspect: 16 / 10
+    property real artOpacity: 1
+    // A band of light across the picture (0..1 across; -1 for none; only
+    // on `art`).
+    property real shine: -1
 
     readonly property alias hovered: mouse.containsMouse
     signal clicked
@@ -46,6 +56,13 @@ Item {
     readonly property real radius: DesktopTheme.rad(16) * u
     readonly property real thumbRadius: DesktopTheme.rad(10) * u
     readonly property real chipHeight: 22 * u
+    // Where the picture is on the card.
+    readonly property rect pictureRect: Qt.rect(thumbBase.x, thumbBase.y, thumbBase.width, thumbBase.height)
+
+    // The "current" tag pops (the picker calls it when a chosen card is set).
+    function popTag() {
+        pop.restart();
+    }
 
     implicitWidth: 212 * u
     implicitHeight: pad + thumb.height + 8 * u + chipHeight * 5 + 9 * u + titleText.height + 2 * u + metaText.height + pad + 2 * u
@@ -129,6 +146,18 @@ Item {
 
             Behavior on opacity {
                 NumberAnimation { duration: 220 }
+            }
+        }
+
+        Loader {
+            anchors.fill: thumbBase
+            active: !!card.art
+            visible: card.artOpacity > 0
+            opacity: card.artOpacity
+            sourceComponent: CardPicture {
+                source: card.art
+                sourceAspect: card.artAspect
+                shine: card.shine
             }
         }
 

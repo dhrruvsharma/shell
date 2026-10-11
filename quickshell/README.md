@@ -264,7 +264,7 @@ Displays a 40-week (280-day) contribution heatmap fetched from the `github-contr
 
 ### Swatch Deck Picker
 
-`modules/wallpaper/Wallpaper.qml` + `SwatchCard.qml`, `SpectrumRibbon.qml`, `WallpaperBackdrop.qml`; colours from `services/WallpaperSwatches.qml`
+`modules/wallpaper/Wallpaper.qml` + `SwatchCard.qml`, `CardPicture.qml`, `SpectrumRibbon.qml`, `WallpaperBackdrop.qml`; colours from `services/WallpaperSwatches.qml`
 
 Every wallpaper in your wallpaper folder (`~/Pictures/wallpapers/` unless you change it; images, GIFs and videos) is a paint-chip card **dressed in the colour scheme it would give your desktop**: the card is the scheme's surface, its text the on-surface colour, and a strip of chips shows primary, secondary, tertiary, container and surface with their hex codes. The cards are held fanned out like a hand along the bottom of the screen. Behind them the whole screen previews the card in front at full size, and the picker's own accents take on that card's colours, so browsing is trying each wallpaper on before you set it.
 
@@ -272,20 +272,23 @@ Every wallpaper in your wallpaper folder (`~/Pictures/wallpapers/` unless you ch
 - **Sort:** by name, newest first, or **by colour**. Colour sort goes round the hue wheel of each scheme's source colour, so the deck becomes a spectrum (grey schemes come last).
 - **Spectrum ribbon:** the whole deck as one strip of colour under the header. A bracket marks the cards in hand and ticks mark favourites. Hover for a glimpse of any wallpaper; click or drag to jump there.
 - **Peek:** hold <kbd>Space</kbd>, or tap it to keep it, and the deck steps aside for an unobstructed look. Clicking the picture does the same.
+- **Live preview:** the play button in the header (or <kbd>V</kbd>) makes videos and animated GIF/WebP wallpapers play in the preview, and in the card in front, instead of a still of them. It's remembered (`wallpaperLivePreview` in `settings.json`), and the button only shows when the folder has something that moves.
+- **Choosing a card:** the card you set leaves the hand and comes slowly to the middle of the screen while the rest of the hand is put away. It lights up as it's set: the "current" tag pops, a ring goes out from it and light crosses its picture. Then the picture grows into the wallpaper and the picker fades away over the wallpaper itself. A Wallhaven result waits in the middle while it downloads (<kbd>Esc</kbd> sends it back to the deck). This can be turned off in the settings: the wallpaper then changes straight away and the deck stays open.
 - **Themes:** it follows the active desktop theme: corner radii, fonts, and the theme's frame on the card in front.
 
 The schemes come from `scripts/wallpaper-palettes.py`. It runs `matugen image … --dry-run` with the same options as setting a wallpaper (nothing is applied), so a card shows exactly the scheme you will get. It only runs while the picker asks, niced and three images at a time, with the cards in view first. Each file is read once and cached in `~/.cache/quickshell/wallpaper-palettes.json`, keyed by file name and mtime.
 
-**Keys:** <kbd>←</kbd><kbd>→</kbd> or the wheel to browse, <kbd>Home</kbd>/<kbd>End</kbd>, <kbd>PgUp</kbd>/<kbd>PgDn</kbd>, <kbd>R</kbd> random card, <kbd>Enter</kbd> set, <kbd>F</kbd> favourite, <kbd>S</kbd> sort, <kbd>Space</kbd> peek, <kbd>Tab</kbd> next source, <kbd>/</kbd> search (Wallhaven), <kbd>Esc</kbd> close. You can also drag anywhere to turn the deck. Click a card to bring it to the front, then click the front card (or double-click any card) to set it.
+**Keys:** <kbd>←</kbd><kbd>→</kbd> or the wheel to browse, <kbd>Home</kbd>/<kbd>End</kbd>, <kbd>PgUp</kbd>/<kbd>PgDn</kbd>, <kbd>R</kbd> random card, <kbd>Enter</kbd> set, <kbd>F</kbd> favourite, <kbd>S</kbd> sort, <kbd>Space</kbd> peek, <kbd>V</kbd> live preview, <kbd>Tab</kbd> next source, <kbd>/</kbd> search (Wallhaven), <kbd>Esc</kbd> close. You can also drag anywhere to turn the deck. Click a card to bring it to the front, then click the front card (or double-click any card) to set it.
 
 Setting a wallpaper goes through `services/WallpaperEngine.qml`, which plays the desktop theme's transition and regenerates the colour scheme with matugen.
 
-**Settings:** the gear at the top right opens three settings, each applied with <kbd>Enter</kbd>:
+**Settings:** the gear at the top right opens four settings. The three fields are each applied with <kbd>Enter</kbd>, the switch as it's clicked:
 - **Wallpaper folder:** where the picker looks, and where Wallhaven downloads are saved. If the folder doesn't exist, it offers to create it.
 - **Wallpaper command:** empty, Quickshell draws the wallpaper. Set it (e.g. `swww img {}`, where `{}` is the file) to have another tool do it: the wallpaper layer then makes no windows, so the desktop theme's layer and video wallpapers go with it.
 - **Wallhaven API key:** optional; it unlocks NSFW results. The picker asks Wallhaven whether it accepts the key.
+- **Setting a wallpaper:** on (the default), the chosen card grows into the wallpaper and the picker closes; off, the wallpaper changes straight away and the deck stays open for more browsing (`wallpaperAnimateChoice`).
 
-Both are saved in `settings.json` (see [Settings](#settings)), and `scripts/setwall` reads the folder from there too.
+They're saved in `settings.json` (see [Settings](#settings)), and `scripts/setwall` reads the folder from there too.
 
 **IPC:** `qs ipc call wallpaper toggle`, `qs ipc call wallpaper wallhaven`, `qs ipc call wallpaper set <path>`
 

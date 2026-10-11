@@ -20,9 +20,13 @@ Singleton {
 
     // Wallpaper picker: the folder it lists (and saves downloads to; "~/"
     // allowed), the command that sets a wallpaper when another program
-    // draws it, and Wallhaven's settings
+    // draws it, whether videos play in its preview, whether a card set
+    // grows into the wallpaper (the picker closing after), and Wallhaven's
+    // settings
     property alias wallpaperDir: settingsAdapter.wallpaperDir
     property alias wallpaperCommand: settingsAdapter.wallpaperCommand
+    property alias wallpaperLivePreview: settingsAdapter.wallpaperLivePreview
+    property alias wallpaperAnimateChoice: settingsAdapter.wallpaperAnimateChoice
     property alias wallhavenApiKey: settingsAdapter.wallhavenApiKey
     property alias wallhavenCategories: settingsAdapter.wallhavenCategories
     property alias wallhavenPurity: settingsAdapter.wallhavenPurity
@@ -78,6 +82,11 @@ Singleton {
             property string wallpaperDir: "~/Pictures/wallpapers"
             // "" = Quickshell draws the wallpaper; else e.g. "swww img {}"
             property string wallpaperCommand: ""
+            // Videos and animated pictures play in the picker's preview
+            property bool wallpaperLivePreview: false
+            // The card set grows into the wallpaper (false: set straight
+            // away, the deck stays open)
+            property bool wallpaperAnimateChoice: true
 
             // Wallhaven params
             property string wallhavenApiKey: "ugj2klyucx6IylJNxGQYu6sHyztDaav2"
