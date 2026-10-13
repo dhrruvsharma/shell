@@ -11,6 +11,9 @@
 #   ./install.sh --github USER   GitHub username for the contributions widget
 #                                (asked interactively otherwise; blank disables it)
 #   ./install.sh --yes           don't prompt for confirmation
+#   ./install.sh --update        pull the latest changes and redo the setup steps
+#                                they need, keeping your settings (combines with
+#                                --no-deps, --no-hypr, --extras, --yes)
 set -euo pipefail
 
 SRC_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
@@ -24,6 +27,9 @@ EXTRAS=0
 ASSUME_YES=0
 HYPR=1
 GITHUB_USER=
+UPDATE=0
+FINISH_FROM=
+ORIG_ARGS=("$@")
 
 PACMAN_PKGS=(
     hyprland qt6-5compat qt6-imageformats qt6-multimedia qt6-multimedia-ffmpeg
@@ -90,7 +96,7 @@ confirm() {
     [[ $reply =~ ^[Yy]$ ]]
 }
 
-usage() { sed -n '2,13p' "$0" | sed 's/^# \{0,1\}//'; exit 0; }
+usage() { sed -n '2,16p' "$0" | sed 's/^# \{0,1\}//'; exit 0; }
 
 while (($#)); do
     case $1 in
@@ -100,6 +106,9 @@ while (($#)); do
         --no-hypr) HYPR=0 ;;
         --github)  GITHUB_USER=${2-}; shift ;;
         -y|--yes)  ASSUME_YES=1 ;;
+        --update)  UPDATE=1 ;;
+        # Internal: the updated script, run by the old one after pulling.
+        --finish-update) FINISH_FROM=${2-}; shift ;;
         -h|--help) usage ;;
         *) die "unknown option: $1" ;;
     esac
@@ -171,6 +180,8 @@ install_config() {
     else
         info "Copying $SRC_DIR -> $TARGET"
         cp -a "$SRC_DIR" "$TARGET"
+        # The revision copied, so --update can tell your edits from ours.
+        git -C "$SRC_DIR" rev-parse HEAD >"$TARGET/.installed-rev" 2>/dev/null || true
     fi
 }
 
@@ -179,6 +190,8 @@ install_helpers() {
     mkdir -p "$HOME/Pictures/wallpapers" "$HOME/Pictures/avatars" \
         "$HOME/Pictures/Screenshots" "$HOME/Videos/recordings" \
         "$HOME/.cache/quickshell" "$HOME/.local/share/quickshell" "$BIN_DIR"
+
+    seed_state
 
     info "Linking setwall -> $BIN_DIR/setwall"
     ln -sf "$TARGET/scripts/setwall" "$BIN_DIR/setwall"
@@ -192,6 +205,19 @@ install_helpers() {
     fi
     register_matugen_template quickshell \
         "~/.config/matugen/templates/quickshell.json.hbs" "~/.config/quickshell/colors/Colors.json"
+}
+
+# The shell's runtime state (bar layout, desktop theme, widgets, colours, …)
+# isn't tracked: each install keeps its own, starting from defaults/.
+seed_state() {
+    local src rel
+    while IFS= read -r -d '' src; do
+        rel=${src#"$TARGET/defaults/"}
+        [[ -e $TARGET/$rel ]] && continue
+        info "Creating $rel from defaults/"
+        mkdir -p "$(dirname "$TARGET/$rel")"
+        cp "$src" "$TARGET/$rel"
+    done < <(find "$TARGET/defaults" -type f -print0)
 }
 
 register_matugen_template() {
@@ -290,6 +316,172 @@ install_venvs() {
         "$dir/bin/pip" install --quiet --upgrade $pkgs
     done
 }
+
+# ── Updating ─────────────────────────────────────────────────────────────────
+#
+# An update fast-forwards the checkout, keeping your local changes where the
+# update doesn't touch them, then runs the *new* install.sh with
+# --finish-update to redo whatever setup the new version needs. The shell's
+# state files are gitignored now, but older checkouts still track them.
+
+# Settings the shell writes at runtime: on an update, yours win.
+is_settings_file() { [[ $1 == *.json || $1 == *.conf ]]; }
+
+# Where the installed config lives relative to the checkout: "link" (it is the
+# checkout), "copy" (a separate copy), or "none".
+install_mode() {
+    if [[ $(realpath -m "$TARGET") == "$SRC_DIR" ]]; then
+        echo link
+    elif [[ -d $TARGET && ! -L $TARGET ]]; then
+        echo copy
+    else
+        echo none
+    fi
+}
+
+# Fast-forwards the checkout to its upstream, keeping local changes to
+# settings files. Prints the revision it started from.
+pull_updates() {
+    local repo
+    repo=$(git -C "$SRC_DIR" rev-parse --show-toplevel 2>/dev/null) ||
+        die "$SRC_DIR is not a git checkout; re-clone the repo to get updates"
+    git -C "$repo" rev-parse --abbrev-ref '@{u}' >/dev/null 2>&1 ||
+        die "the current branch has no upstream to update from (git branch -u origin/<branch>)"
+
+    info "Fetching updates" >&2
+    git -C "$repo" fetch --quiet || die "git fetch failed"
+
+    local old new
+    old=$(git -C "$repo" rev-parse HEAD)
+    new=$(git -C "$repo" rev-parse '@{u}')
+    if git -C "$repo" merge-base --is-ancestor "$new" "$old"; then
+        echo "$old"
+        return
+    fi
+    git -C "$repo" merge-base --is-ancestor "$old" "$new" ||
+        die "your branch has commits of its own; merge or rebase onto $(git -C "$repo" rev-parse --abbrev-ref '@{u}') yourself"
+
+    # Local edits: settings are set aside and put back; other files only
+    # survive if the update doesn't touch them.
+    local -a changed incoming blocked=()
+    local f
+    mapfile -t changed < <(git -C "$repo" diff --name-only HEAD)
+    mapfile -t incoming < <(git -C "$repo" diff --name-only "$old" "$new")
+    for f in "${changed[@]}"; do
+        is_settings_file "$f" && continue
+        # Already the updated version (e.g. install.sh checked out by hand).
+        git -C "$repo" diff --quiet "$new" -- "$f" 2>/dev/null && continue
+        printf '%s\n' "${incoming[@]}" | grep -qxF -- "$f" && blocked+=("$f")
+    done
+    if ((${#blocked[@]})); then
+        warn "you've edited files this update also changes:"
+        printf '     %s\n' "${blocked[@]}" >&2
+        die "commit or stash them (git -C $repo stash), then run --update again"
+    fi
+
+    local saved
+    saved=$(mktemp -d)
+    for f in "${changed[@]}"; do
+        if [[ -e $repo/$f ]]; then
+            mkdir -p "$saved/$(dirname "$f")"
+            cp -a "$repo/$f" "$saved/$f"
+        fi
+    done
+    ((${#changed[@]})) && git -C "$repo" checkout --quiet HEAD -- "${changed[@]}"
+
+    local merged=1
+    git -C "$repo" merge --ff-only --quiet "$new" || merged=0
+
+    # Put your versions back (also when the merge failed).
+    for f in "${changed[@]}"; do
+        if [[ -e $saved/$f ]]; then
+            mkdir -p "$repo/$(dirname "$f")"
+            cp -a "$saved/$f" "$repo/$f"
+            # Worth a word only if it still differs from the update's version.
+            if ((merged)) && ! git -C "$repo" diff --quiet HEAD -- "$f"; then
+                warn "kept your $f (the update changed it too; compare: git -C $repo diff -- $f)"
+            fi
+        else
+            rm -f "$repo/$f"
+        fi
+    done
+    rm -rf "$saved"
+    ((merged)) || die "couldn't fast-forward (see git's message above); nothing was changed"
+
+    info "Updated $(git -C "$repo" rev-parse --short "$old") -> $(git -C "$repo" rev-parse --short "$new"):" >&2
+    git -C "$repo" log --oneline --no-decorate "$old..$new" | head -n 15 | sed 's/^/     /' >&2
+    echo "$old"
+}
+
+# Copy installs: brings the checkout's changes since `base` into $TARGET,
+# leaving alone files you've changed there.
+sync_copy() {
+    local base=$1 status path dst
+    while IFS=$'\t' read -r status path; do
+        dst=$TARGET/$path
+        # Yours if it differs from the version that was installed.
+        if [[ -e $dst ]] && ! git -C "$SRC_DIR" cat-file blob "$base:./$path" 2>/dev/null | cmp -s - "$dst"; then
+            if [[ $status == D ]] || is_settings_file "$path"; then
+                warn "kept your $dst"
+            else
+                warn "kept your $dst; the new version is at $dst.new"
+                cp -a "$SRC_DIR/$path" "$dst.new"
+            fi
+            continue
+        fi
+        if [[ $status == D ]]; then
+            rm -f "$dst"
+        else
+            mkdir -p "$(dirname "$dst")"
+            cp -a "$SRC_DIR/$path" "$dst"
+        fi
+    done < <(git -C "$SRC_DIR" diff --name-status --no-renames --relative "$base" HEAD -- .)
+    git -C "$SRC_DIR" rev-parse HEAD >"$TARGET/.installed-rev"
+}
+
+# The second half of --update, run from the freshly pulled script.
+finish_update() {
+    local from=$1 mode
+    mode=$(install_mode)
+    [[ $mode == none ]] && die "no install found at $TARGET; run ./install.sh first"
+
+    if [[ $mode == copy ]]; then
+        local base=$from
+        [[ -s $TARGET/.installed-rev ]] && base=$(<"$TARGET/.installed-rev")
+        info "Updating the copy at $TARGET"
+        sync_copy "$base"
+    fi
+
+    ((DEPS)) && install_packages
+    ((DEPS)) && install_theme_fonts
+    install_helpers
+    if ((HYPR)) && ! git -C "$SRC_DIR" diff --quiet "$from" HEAD -- ../hypr/quickshell.lua; then
+        info "hypr/quickshell.lua changed"
+        install_hypr
+    fi
+    install_ipc_commands
+    ((EXTRAS)) && install_venvs
+
+    printf '\nUpdated. Quickshell reloads its config by itself; if anything looks off,\n'
+    printf 'restart it with: qs kill; qs -d\n'
+}
+
+# One compound command, parsed whole before it runs: pulling rewrites this
+# file, and bash would otherwise read on from the new one mid-way.
+if [[ -n $FINISH_FROM ]]; then
+    finish_update "$FINISH_FROM"
+    exit
+elif ((UPDATE)); then
+    confirm "Update the Quickshell config in $SRC_DIR?" || exit 1
+    from=$(pull_updates)
+    if [[ $from == "$(git -C "$SRC_DIR" rev-parse HEAD)" ]]; then
+        info "Already up to date"
+        exit 0
+    fi
+    args=()
+    for a in "${ORIG_ARGS[@]}"; do [[ $a == --update ]] || args+=("$a"); done
+    exec "$SRC_DIR/install.sh" "${args[@]}" --finish-update "$from"
+fi
 
 cat <<EOF
 Quickshell config installer
