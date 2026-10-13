@@ -5,6 +5,7 @@ import Quickshell
 import Quickshell.Io
 import qs.colors
 import qs.modules.lock
+import qs.services as Services
 
 // Mainframe desktop theme, over the wallpaper: scanlines, a darker tube
 // vignette and a console frame under the bar with its title tabs. Static once
@@ -53,10 +54,10 @@ Item {
         readonly property real line: root.pxScale < 1 ? 1 / root.pxScale : 1
         readonly property color lineColor: LockTheme.alpha(root.accent, 0.4)
 
-        x: 16
-        y: 44 + 10
-        width: parent.width - 32
-        height: parent.height - y - 16
+        x: 16 + Services.BarLayout.clearLeft
+        y: Services.BarLayout.clearTop + 10
+        width: parent.width - 32 - Services.BarLayout.clearLeft - Services.BarLayout.clearRight
+        height: parent.height - y - 16 - Services.BarLayout.clearBottom
 
         Rectangle { width: parent.width * frame.draw; height: frame.line; color: frame.lineColor }
         Rectangle { width: frame.line; height: parent.height * frame.draw; color: frame.lineColor }

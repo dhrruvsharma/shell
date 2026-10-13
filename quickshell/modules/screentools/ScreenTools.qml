@@ -3,9 +3,15 @@ import Quickshell.Io
 import qs.components
 import qs.colors
 
+// Record and screenshot buttons, side by side; stacked beside a standing
+// bar (`vertical`).
 Item {
-    width: 340
-    height: 110
+    id: root
+
+    property bool vertical: false
+
+    width: root.vertical ? 188 : 340
+    height: root.vertical ? 190 : 110
     property bool recording: false
     property bool hoveredRecord: false
     property bool hoveredScreenshot: false
@@ -60,12 +66,13 @@ Item {
                 opacity: 0.7
             }
 
-            Row {
+            Grid {
                 anchors.horizontalCenter: parent.horizontalCenter
+                columns: root.vertical ? 1 : 2
                 spacing: 12
 
                 ClickableRect {
-                    width: 140
+                    width: root.vertical ? 156 : 140
                     height: 52
                     radius: 10
                     color: recording
@@ -117,7 +124,7 @@ Item {
                 }
 
                 ClickableRect {
-                    width: 140
+                    width: root.vertical ? 156 : 140
                     height: 52
                     radius: 10
                     color: hoveredScreenshot

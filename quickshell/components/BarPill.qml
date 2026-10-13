@@ -20,6 +20,12 @@ import qs.services as Services
 //
 // `maxWidth` (0 = unbounded) turns on the truncating behaviour — clip + elide —
 // that only the pills with variable-length labels used.
+//
+// On a standing bar (left or right screen edge) the bar sets `vertical`: the
+// pill keeps its thickness and shows a compact upright face instead, `vIcon`
+// over `vLabel`, each shrunk to fit. By default the text splits at its first
+// space (glyph, then value); widgets whose text doesn't split that way set
+// them.
 Rectangle {
     id: root
 
@@ -28,6 +34,16 @@ Rectangle {
     property int fontPixelSize: 17
     property int horizontalPadding: 16
     property int maxWidth: 0
+    property bool vertical: false
+    readonly property var _parts: {
+        const t = root.text;
+        const i = t.indexOf(" ");
+        return i < 0 ? [t, ""] : [t.slice(0, i), t.slice(i + 1).trim()];
+    }
+    property string vIcon: root._parts[0]
+    property string vLabel: root._parts[1]
+    property int vIconSize: 15
+    property int vLabelSize: 11
     // Optional command to run on click, e.g. ["qs", "ipc", "call", "systemPanel", "toggle"].
     property var command: null
     property bool interactive: root.command !== null
@@ -43,7 +59,7 @@ Rectangle {
 
     signal clicked
 
-    radius: Services.DesktopTheme.radius(root.look, 13, height)
+    radius: Services.DesktopTheme.radius(root.look, 13, Math.min(width, height))
     topLeftRadius: Services.DesktopTheme.corner(root.look, radius, 0)
     topRightRadius: Services.DesktopTheme.corner(root.look, radius, 1)
     bottomRightRadius: Services.DesktopTheme.corner(root.look, radius, 2)
@@ -58,9 +74,10 @@ Rectangle {
         maskThresholdMin: 0.5
         maskSpreadAtMin: 1.0
     }
-    implicitHeight: 28
+    implicitHeight: root.vertical ? upright.implicitHeight + 12 : 28
     clip: root.maxWidth > 0
-    implicitWidth: root.maxWidth > 0
+    implicitWidth: root.vertical ? 28
+        : root.maxWidth > 0
         ? Math.min(label.implicitWidth + root.horizontalPadding, root.maxWidth)
         : label.implicitWidth + root.horizontalPadding
 
@@ -78,6 +95,7 @@ Rectangle {
     StyledText {
         id: label
         anchors.centerIn: parent
+        visible: !root.vertical
         color: root.textColor
         font.pixelSize: root.fontPixelSize + root.look.sizeDelta
         font.family: root.look.font || defaultFont.font.family
@@ -86,6 +104,55 @@ Rectangle {
         font.capitalization: root.look.caps === "small" ? Font.SmallCaps : root.look.caps ? Font.AllUppercase : Font.MixedCase
         elide: root.maxWidth > 0 ? Text.ElideRight : Text.ElideNone
         maximumLineCount: 1
+    }
+
+    // The upright face, on a standing bar.
+    Column {
+        id: upright
+        anchors.centerIn: parent
+        visible: root.vertical
+        spacing: 1
+
+        StyledText {
+            id: vIconText
+            width: root.width - 4
+            visible: root.vertical && text !== ""
+            text: root.vIcon
+            // Centred by its ink, not its advance: Nerd Font glyphs such as
+            // the Wi-Fi fans draw wider than they advance, and spill right.
+            transform: Translate {
+                x: root.vertical ? (iconInk.advanceWidth - iconInk.tightBoundingRect.width) / 2 - iconInk.tightBoundingRect.x : 0
+            }
+
+            TextMetrics {
+                id: iconInk
+                font: vIconText.font
+                text: root.vertical ? root.vIcon : ""
+            }
+            horizontalAlignment: Text.AlignHCenter
+            color: root.textColor
+            font.pixelSize: root.vIconSize + root.look.sizeDelta
+            font.family: root.look.font || defaultFont.font.family
+            font.weight: root.look.weight
+            fontSizeMode: Text.HorizontalFit
+            minimumPixelSize: 7
+            maximumLineCount: 1
+        }
+
+        StyledText {
+            width: root.width - 4
+            visible: root.vertical && text !== ""
+            text: root.vLabel
+            horizontalAlignment: Text.AlignHCenter
+            color: root.textColor
+            font.pixelSize: root.vLabelSize + root.look.sizeDelta
+            font.family: root.look.font || defaultFont.font.family
+            font.weight: root.look.weight
+            font.capitalization: root.look.caps === "small" ? Font.SmallCaps : root.look.caps ? Font.AllUppercase : Font.MixedCase
+            fontSizeMode: Text.HorizontalFit
+            minimumPixelSize: 7
+            maximumLineCount: 1
+        }
     }
 
     // The shell's default family, to return to when the theme is off.

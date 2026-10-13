@@ -8,7 +8,10 @@ import qs.services as Services
 
 Popout {
     id: root
-    alignment: 3
+    // In the bottom-right corner (shell.qml): on top of a bottom bar it is
+    // attached to the right edge only; a right bar drops beneath it, so
+    // there it sits in the corner like with no bar beside it.
+    alignment: Services.BarLayout.atBottom ? 2 : 3
     property bool opened: false
     // Hidden once fully collapsed so the calendar's loading indicator (and any
     // repaint) stops; a zero-width but visible panel still drives frames.

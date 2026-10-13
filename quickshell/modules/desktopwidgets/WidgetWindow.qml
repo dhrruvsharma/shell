@@ -31,8 +31,13 @@ PanelWindow {
     readonly property real sh: screen ? screen.height : 1080
     readonly property real bw: Math.max(1, Math.ceil(loader.implicitWidth))
     readonly property real bh: Math.max(1, Math.ceil(loader.implicitHeight))
-    readonly property real restX: Math.round(frac.x * Math.max(0, sw - bw))
-    readonly property real restY: Math.round(frac.y * Math.max(0, sh - bh))
+    // Kept clear of the bar, on whichever edge it is.
+    readonly property real minX: Services.BarLayout.reserveLeft
+    readonly property real maxX: sw - Services.BarLayout.reserveRight - bw
+    readonly property real minY: Services.BarLayout.reserveTop
+    readonly property real maxY: sh - Services.BarLayout.reserveBottom - bh
+    readonly property real restX: Math.round(Math.max(minX, Math.min(maxX, frac.x * Math.max(0, sw - bw))))
+    readonly property real restY: Math.round(Math.max(minY, Math.min(maxY, frac.y * Math.max(0, sh - bh))))
     readonly property bool full: width >= sw - 1 && height >= sh - 1
 
     screen: Quickshell.screens[0] ?? null
@@ -87,8 +92,8 @@ PanelWindow {
                 if (!win.moved && Math.hypot(mouse.x - pressX, mouse.y - pressY) < 4)
                     return;
                 win.moved = true;
-                win.dragX = Math.max(0, Math.min(win.sw - win.bw, win.dragX + mouse.x - pressX));
-                win.dragY = Math.max(0, Math.min(win.sh - win.bh, win.dragY + mouse.y - pressY));
+                win.dragX = Math.max(win.minX, Math.min(win.maxX, win.dragX + mouse.x - pressX));
+                win.dragY = Math.max(win.minY, Math.min(win.maxY, win.dragY + mouse.y - pressY));
             }
             onReleased: win.drop()
             onCanceled: win.drop()

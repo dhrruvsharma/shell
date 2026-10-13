@@ -44,8 +44,8 @@ Item {
     Column {
         anchors.right: parent.right
         anchors.bottom: parent.bottom
-        anchors.rightMargin: 44
-        anchors.bottomMargin: 38
+        anchors.rightMargin: 44 + Services.BarLayout.reserveRight
+        anchors.bottomMargin: 38 + Services.BarLayout.reserveBottom
         spacing: 3
         opacity: LockTheme.seg(root.boot, 0.45, 1) * 0.9
 

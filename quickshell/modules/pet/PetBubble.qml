@@ -7,14 +7,16 @@ import qs.components
 import qs.services as Services
 
 // The pet's speech bubble (services/Pet.qml say()): a small window hanging
-// under the bar beneath the pet, up for a few seconds. It exists only while
-// it's showing, and clicks pass through it.
+// from the bar by the pet (under it, over it on a bottom bar, beside it on a
+// standing one), up for a few seconds. It exists only while it's showing,
+// and clicks pass through it.
 Scope {
     id: root
 
     property bool up: false
     property string text: ""
-    property real anchorX: 0
+    // Where the pet was along the bar.
+    property real anchorPos: 0
     property real shown: 0
 
     Behavior on shown {
@@ -32,7 +34,7 @@ Scope {
             if (!Services.Pet.shown || Services.Pet.hubOpen)
                 return;
             root.text = Services.Pet.bubbleText;
-            root.anchorX = Services.Pet.barX;
+            root.anchorPos = Services.Pet.barPos;
             root.up = true;
             root.shown = 1;
             hideTimer.interval = Services.Pet.bubbleMs;
@@ -59,14 +61,25 @@ Scope {
             id: win
 
             readonly property real maxW: 300
+            readonly property string edge: Services.BarLayout.edge
+            readonly property bool vertical: Services.BarLayout.vertical
             readonly property real screenW: screen ? screen.width : 1920
-            readonly property real leftEdge: Math.max(8, Math.min(screenW - width - 8, root.anchorX - width / 2))
+            readonly property real screenH: screen ? screen.height : 1200
+            // Its start along the bar: centred on the pet, kept on screen.
+            readonly property real start: vertical
+                ? Math.max(8, Math.min(screenH - height - 8, root.anchorPos - height / 2))
+                : Math.max(8, Math.min(screenW - width - 8, root.anchorPos - width / 2))
 
-            anchors.top: true
-            anchors.left: true
-            margins.top: 44
-            margins.left: leftEdge
-            implicitWidth: card.width + 12
+            anchors.top: edge !== "bottom"
+            anchors.bottom: edge === "bottom"
+            anchors.left: edge !== "right"
+            anchors.right: edge === "right"
+            margins.top: edge === "top" ? 44 : vertical ? start : 0
+            margins.bottom: edge === "bottom" ? 44 : 0
+            margins.left: edge === "left" ? 44 : vertical ? 0 : start
+            margins.right: edge === "right" ? 44 : 0
+            // Room round the card for the tail, on the side facing the bar.
+            implicitWidth: card.width + (vertical ? 16 : 12)
             implicitHeight: card.height + 16
             exclusionMode: ExclusionMode.Ignore
             WlrLayershell.layer: WlrLayer.Overlay
@@ -78,19 +91,22 @@ Scope {
             Item {
                 id: card
 
-                readonly property real tailX: Math.max(16, Math.min(width - 16, root.anchorX - win.leftEdge - 6))
-                x: 6
+                // Where the tail meets the card's side facing the bar.
+                readonly property real tailAt: win.vertical
+                    ? Math.max(16, Math.min(height - 16, root.anchorPos - win.start - 8))
+                    : Math.max(16, Math.min(width - 16, root.anchorPos - win.start - 6))
+                x: win.vertical ? 8 : 6
                 y: 8
                 width: Math.min(win.maxW, label.implicitWidth + 28)
                 height: label.implicitHeight + 18
                 opacity: root.shown
                 scale: 0.85 + 0.15 * root.shown
-                transformOrigin: Item.Top
+                transformOrigin: ({ top: Item.Top, bottom: Item.Bottom, left: Item.Left, right: Item.Right })[win.edge]
 
-                // The tail, pointing up at the pet.
+                // The tail, pointing at the pet.
                 Rectangle {
-                    x: card.tailX - width / 2
-                    y: -5
+                    x: win.edge === "left" ? -5 : win.edge === "right" ? card.width - 6 : card.tailAt - width / 2
+                    y: win.edge === "top" ? -5 : win.edge === "bottom" ? card.height - 6 : card.tailAt - height / 2
                     width: 11
                     height: 11
                     rotation: 45
@@ -112,10 +128,10 @@ Scope {
 
                 // Covers the tail's base where it meets the body.
                 Rectangle {
-                    x: card.tailX - 7
-                    y: 1
-                    width: 14
-                    height: 6
+                    x: win.edge === "left" ? 1 : win.edge === "right" ? card.width - 7 : card.tailAt - 7
+                    y: win.edge === "top" ? 1 : win.edge === "bottom" ? card.height - 7 : card.tailAt - 7
+                    width: win.vertical ? 6 : 14
+                    height: win.vertical ? 14 : 6
                     color: body.color
                 }
 

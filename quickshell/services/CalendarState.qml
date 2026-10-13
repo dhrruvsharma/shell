@@ -10,23 +10,24 @@ Singleton {
 
     property bool open: false
 
-    // Screen-space geometry of the pill that owns the popup, reported by the
-    // Clock when it is clicked. The window aligns itself to this so the popup
-    // reads as dropping straight out of the pill.
-    property real anchorX: 240
-    property real anchorWidth: 0
+    // Where the pill that owns the popup lies along the bar (screen x on a
+    // lying bar, y on a standing one) and its length, reported by the Clock
+    // when it is clicked. The window aligns itself to this so the popup
+    // reads as coming straight out of the pill.
+    property real anchorPos: 240
+    property real anchorLength: 0
 
-    function openAt(x, w) {
-        anchorX = x
-        anchorWidth = w
+    function openAt(pos, length) {
+        anchorPos = pos
+        anchorLength = length
         open = true
     }
 
-    function toggleAt(x, w) {
+    function toggleAt(pos, length) {
         if (open) {
             open = false
         } else {
-            openAt(x, w)
+            openAt(pos, length)
         }
     }
 

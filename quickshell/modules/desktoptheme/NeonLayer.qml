@@ -65,7 +65,7 @@ Item {
     Item {
         id: sign
 
-        x: 34
+        x: 34 + Services.BarLayout.reserveLeft
         y: Math.round(parent.height * 0.4)
         width: 60
         height: kana.implicitHeight + 24 + 12 + open.implicitHeight
@@ -122,8 +122,8 @@ Item {
     Column {
         anchors.right: parent.right
         anchors.bottom: parent.bottom
-        anchors.rightMargin: 38
-        anchors.bottomMargin: 34
+        anchors.rightMargin: 38 + Services.BarLayout.reserveRight
+        anchors.bottomMargin: 34 + Services.BarLayout.reserveBottom
         spacing: 5
         opacity: root.stutter(root.boot, 0.45, 1) * 0.92
 

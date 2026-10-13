@@ -95,8 +95,8 @@ Item {
         id: board
         anchors.right: parent.right
         anchors.bottom: parent.bottom
-        anchors.rightMargin: 40
-        anchors.bottomMargin: 56
+        anchors.rightMargin: 40 + Services.BarLayout.reserveRight
+        anchors.bottomMargin: 56 + Services.BarLayout.reserveBottom
         width: lines.implicitWidth + 64
         height: lines.implicitHeight + 46
         opacity: LockTheme.seg(root.boot, 0.45, 1)

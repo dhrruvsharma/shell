@@ -36,9 +36,10 @@ Singleton {
 
     // ── Runtime ──────────────────────────────────────────────────────────────
     property bool hubOpen: false
-    // Where the pet is: the screen x of its middle (BarPet keeps it up to
-    // date), so the hub and the bubble hang from it.
-    property real barX: 0
+    // Where the pet is along the bar: the screen x of its middle on a lying
+    // bar, y on a standing one (BarPet keeps it up to date), so the hub and
+    // the bubble hang from it.
+    property real barPos: 0
     // Whether it's asleep (BarPet's say) and how rested it is (0..1).
     property bool asleep: false
     property real energy: 1

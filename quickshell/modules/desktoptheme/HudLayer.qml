@@ -37,12 +37,12 @@ Item {
         fragmentShader: Qt.resolvedUrl("../../shaders/lock_backdrop.frag.qsb")
     }
 
-    // Brackets frame the area under the bar.
+    // Brackets frame the area the bar leaves.
     HudCorners {
-        x: 0
-        y: 44
-        width: parent.width
-        height: parent.height - 44
+        x: Services.BarLayout.clearLeft
+        y: Services.BarLayout.clearTop
+        width: parent.width - Services.BarLayout.clearLeft - Services.BarLayout.clearRight
+        height: parent.height - Services.BarLayout.clearTop - Services.BarLayout.clearBottom
         size: 42
         margin: 14
         thickness: root.pxScale < 1 ? 2 / root.pxScale : 2
@@ -54,8 +54,8 @@ Item {
     Column {
         anchors.right: parent.right
         anchors.bottom: parent.bottom
-        anchors.rightMargin: 36
-        anchors.bottomMargin: 34
+        anchors.rightMargin: 36 + Services.BarLayout.reserveRight
+        anchors.bottomMargin: 34 + Services.BarLayout.reserveBottom
         spacing: 5
         opacity: LockTheme.seg(root.boot, 0.45, 1) * 0.85
 

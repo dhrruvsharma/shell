@@ -13,10 +13,24 @@ Rectangle {
     focus: true
     implicitWidth: 520
     property int popoutHeight: 320
-    implicitHeight: popoutHeight
+    // Beside a standing bar the bubble's body is inset at both ends (hanging
+    // down, it runs to the far edge), so it's a radius longer there for the
+    // same room: the cava strip and lyrics stay inside it.
+    implicitHeight: vertical ? popoutHeight + popout.radius : popoutHeight
     visible: implicitHeight > 1
-    y: opened ? 0 : -(popoutHeight + 20)  // Use dynamic height instead of fixed -340
-    anchors.horizontalCenter: parent.horizontalCenter
+    // Slides in from the bar's edge (shell.qml hangs it from the middle of
+    // the bar): down, up, or in from the side of a standing bar.
+    readonly property string edge: Services.BarLayout.edge
+    readonly property bool vertical: Services.BarLayout.vertical
+    x: opened || !vertical ? 0 : (edge === "left" ? -1 : 1) * (implicitWidth + 20)
+    y: opened || vertical ? 0 : (edge === "bottom" ? 1 : -1) * (popoutHeight + 20)
+
+    Behavior on x {
+        NumberAnimation {
+            duration: 500
+            easing.type: Easing.OutCubic
+        }
+    }
 
     Behavior on y {
         NumberAnimation {
@@ -53,17 +67,23 @@ Rectangle {
         }
 
         Popout {
+            id: popout
             anchors.fill: parent
-            alignment: 0
+            alignment: Services.BarLayout.middleAlignment
             MediaControl {
                 id: panel
                 anchors.horizontalCenter: parent.horizontalCenter
 
-                y: opened ? 0 : -implicitHeight - 30
-
                 opened: mediaPanel.opened
 
-                Behavior on y {
+                // Slides in from the bar's side, behind the panel's own slide.
+                property real slide: opened ? 0 : 1
+                transform: Translate {
+                    x: mediaPanel.vertical ? (mediaPanel.edge === "left" ? -1 : 1) * panel.slide * (panel.width + 30) : 0
+                    y: mediaPanel.vertical ? 0 : (mediaPanel.edge === "bottom" ? 1 : -1) * panel.slide * (panel.implicitHeight + 30)
+                }
+
+                Behavior on slide {
                     NumberAnimation {
                         duration: 350
                         easing.type: Easing.OutCubic

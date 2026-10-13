@@ -8,7 +8,7 @@ A feature-complete [Quickshell](https://quickshell.outfoxxed.me/) desktop shell 
 
 1. [Installation](#installation)
 2. [Architecture](#architecture)
-3. [Top Bar](#top-bar)
+3. [Bar](#bar)
 4. [Control Center](#control-center)
 5. [Panels & Overlays](#panels--overlays)
    - [Launcher](#launcher)
@@ -103,13 +103,19 @@ Services that own a Python process launch it on startup; no separate daemon mana
 
 ---
 
-## Top Bar
+## Bar
 
-`modules/bar/TopBar.qml` — a 42 px strip anchored to the top of the screen.
+`modules/bar/` — a 42 px strip on any edge of the screen: `Bar.qml` holds its surface and the room it reserves, `TopBar.qml` the widgets.
 
-**Left side:** Workspaces · CPU · Battery · Clock · Bluetooth  
-**Center:** Media pill (track info + controls, shown when something is playing)  
-**Right side:** Network · Volume · Temperature · Memory · System Tray
+**Start:** CPU · Battery · Clock · Bluetooth  
+**Middle:** Media pill (track info + controls, shown when something is playing)  
+**End:** Updates · Network · Volume · Temperature · Memory · System Tray
+
+- **Widgets:** drag one onto another to group them, or into a gap to move it. `qs ipc call barLayout reset` restores the default order.
+- **Edge:** drag an empty stretch of the bar towards another edge and let go to move it there. On the left or right edge it stands on end and each widget shows a compact upright face. Panels that hang from the bar follow it.
+- **Workspace disc** (`modules/workspacedisc/`): peeks out of a screen corner beside the bar. Hover it to open it out, click a chamber to switch workspace, drag it to another corner.
+
+**IPC:** `qs ipc call barLayout setEdge top|bottom|left|right`, `toggleEdge`, `edge`
 
 ---
 

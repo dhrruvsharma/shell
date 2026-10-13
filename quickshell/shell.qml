@@ -65,27 +65,41 @@ ShellRoot {
         anchorBottom: false
         visible: visBottom.visible
     }
-    // Hover strips along the screen edges that open the launcher, the notes
-    // drawer and the GitHub popout. Each is a tiny surface of its own, so the
+    // Strips along the screen edges that open the launcher (hover the left
+    // edge), the notes drawer (click the bottom edge) and the GitHub popout
+    // (hover the right edge). Each is a tiny surface of its own, so the
     // full-screen panel surface below can shrink away while no panel is open.
+    // They stay on the screen's very edge, where the pointer stops by
+    // itself; where the bar lies on that edge they take its outermost two
+    // pixels (which the bar leaves them) and open on a click instead, so
+    // reaching for the bar doesn't set them off.
     // Declared before it: surfaces on one layer stack in creation order, and
     // the panels must cover the strips (rootPanel's mask leaves them out, so
     // they keep working while a panel is open, as when they lived inside it).
     component EdgeTrigger: PanelWindow {
         id: trigger
 
-        signal hovered
-        signal clicked
+        // Opens on hover (on a click if `hover` is off); over the bar it
+        // opens on a click either way.
+        property bool hover: true
+        property bool overBar: false
+
+        signal activated
 
         exclusionMode: ExclusionMode.Ignore
         WlrLayershell.keyboardFocus: WlrKeyboardFocus.None
         color: "transparent"
+        // Out of the way while the workspace disc is dragged past.
+        mask: Region {
+            width: Services.WorkspaceDiscService.moving ? 0 : trigger.width
+            height: trigger.height
+        }
 
         MouseArea {
             anchors.fill: parent
             hoverEnabled: true
-            onEntered: trigger.hovered()
-            onClicked: trigger.clicked()
+            onEntered: if (trigger.hover && !trigger.overBar) trigger.activated()
+            onClicked: if (!trigger.hover || trigger.overBar) trigger.activated()
 
             Rectangle {
                 anchors.fill: parent
@@ -98,27 +112,34 @@ ShellRoot {
     EdgeTrigger {
         id: notesDrawerTrigger
         anchors.bottom: true
+        hover: false
+        overBar: Services.BarLayout.atBottom
         implicitWidth: 900
         implicitHeight: 2
-        onClicked: notesDrawer.opened = !notesDrawer.opened
+        onActivated: notesDrawer.opened = !notesDrawer.opened
     }
 
+    // The side strips stop short of a bottom bar.
     EdgeTrigger {
         id: githubTrigger
         anchors.right: true
         anchors.bottom: true
+        margins.bottom: Services.BarLayout.reserveBottom
+        overBar: Services.BarLayout.atRight
         implicitWidth: 2
         implicitHeight: 500
-        onHovered: ghPopout.opened = !ghPopout.opened
+        onActivated: ghPopout.opened = !ghPopout.opened
     }
 
     EdgeTrigger {
         id: launcherTrigger
         anchors.left: true
         anchors.bottom: true
+        margins.bottom: Services.BarLayout.reserveBottom
+        overBar: Services.BarLayout.atLeft
         implicitWidth: 2
         implicitHeight: 600
-        onHovered: launcherWindow.toggle()
+        onActivated: launcherWindow.toggle()
     }
 
     OsdWindow {}
@@ -176,31 +197,38 @@ ShellRoot {
             width: rootPanel.screenW
             height: rootPanel.screenH
 
+            // The media and system panels hang from the middle of the bar's
+            // edge, the updates panel from its far end (the right end, or
+            // the bottom of a standing bar).
             Loader {
                 id: mediaPanelLoader
                 active: false
-                anchors.horizontalCenter: parent.horizontalCenter
+                x: Services.BarLayout.atLeft ? 0 : Services.BarLayout.atRight ? parent.width - width : (parent.width - width) / 2
+                y: Services.BarLayout.atBottom ? parent.height - height : Services.BarLayout.vertical ? (parent.height - height) / 2 : 0
                 sourceComponent: MediaPanel {
                     id: mediaPanel
                 }
                 focus: true
             }
+            // In the bottom-right corner, clear of a bottom bar (a right bar
+            // drops beneath it).
             GhPopout {
                 id: ghPopout
                 anchors {
                     right: parent.right
                     bottom: parent.bottom
+                    bottomMargin: Services.BarLayout.reserveBottom
                 }
             }
             SystemPanel {
                 id: systemPanel
+                x: Services.BarLayout.atLeft ? 0 : Services.BarLayout.atRight ? parent.width - width : (parent.width - width) / 2
+                y: Services.BarLayout.atBottom ? parent.height - height : Services.BarLayout.vertical ? (parent.height - height) / 2 : 0
             }
             UpdatesPanel {
                 id: updatesPanel
-                anchors {
-                    right: parent.right
-                    top: parent.top
-                }
+                x: Services.BarLayout.atLeft ? 0 : parent.width - width
+                y: Services.BarLayout.atTop ? 0 : parent.height - height
             }
             Loader {
                 id: networkPanelLoader
@@ -411,35 +439,33 @@ ShellRoot {
             Region {
                 intersection: Intersection.Subtract
                 x: rootPanel.screenW - githubTrigger.implicitWidth
-                y: rootPanel.screenH - githubTrigger.implicitHeight
+                y: rootPanel.screenH - Services.BarLayout.reserveBottom - githubTrigger.implicitHeight
                 width: githubTrigger.implicitWidth
                 height: githubTrigger.implicitHeight
             }
             Region {
                 intersection: Intersection.Subtract
                 x: 0
-                y: rootPanel.screenH - launcherTrigger.implicitHeight
+                y: rootPanel.screenH - Services.BarLayout.reserveBottom - launcherTrigger.implicitHeight
                 width: launcherTrigger.implicitWidth
                 height: launcherTrigger.implicitHeight
             }
         }
     }
 
-    // The bar has its own 42px surface: hover animations and value updates in
-    // the bar then repaint a thin strip instead of the fullscreen panel
-    // surface above. It also reserves the bar's exclusive zone. Declared after
-    // rootPanel so it stacks above it on the Top layer.
-    //
-    // Inside the old shared surface, panels declared after TopBar drew over
-    // it while the ones before it (media, GitHub, system, updates, network,
-    // which hang from the bar) drew under it. To keep that, the bar drops to
-    // the Bottom layer — beneath rootPanel — while any of the later panels is
-    // open. The layer changes in place (layer-shell set_layer), no remap.
-    PanelWindow {
-        id: barWindow
-
-        readonly property bool coveredByPanel: notesDrawer.opened
+    // The bar, on the screen edge Services.BarLayout.edge says (drag it by an
+    // empty stretch to another one): its own surface, plus a sliver holding
+    // its exclusive zone (modules/bar/Bar.qml). Declared after rootPanel so
+    // it stacks above it on the Top layer. While any of the panels below is
+    // open the bar drops beneath them; the network panel joins them when
+    // the bar stands on the left or right, and the GitHub/timer popout when
+    // it stands on the right, where they come out over the bar.
+    Bar {
+        id: bar
+        coveredByPanel: notesDrawer.opened
             || launcherWindow.isOpen
+            || (Services.BarLayout.vertical && networkPanelLoader.item !== null && networkPanelLoader.item.visible)
+            || (Services.BarLayout.atRight && ghPopout.visible)
             || (wallpaperLoader.item !== null && wallpaperLoader.item.visible)
             || (controlCenterLoader.item !== null && controlCenterLoader.item.visible)
             || chatLoader.active
@@ -453,19 +479,6 @@ ShellRoot {
             || avatarPicker.visible
             || lockThemes.visible
             || (keybindsLoader.item !== null && keybindsLoader.item.visible)
-
-        WlrLayershell.layer: coveredByPanel ? WlrLayer.Bottom : WlrLayer.Top
-        anchors {
-            top: true
-            left: true
-            right: true
-        }
-        implicitHeight: 42
-        color: "transparent"
-
-        TopBar {
-            id: topBar
-        }
     }
 
     // The bar pet's hub and speech bubble (the pet itself lives in TopBar).
@@ -947,6 +960,17 @@ ShellRoot {
         target: "barLayout"
         function reset(): void {
             Services.BarLayout.reset()
+        }
+        // "top", "bottom", "left" or "right" (or drag the bar there).
+        function setEdge(edge: string): void {
+            Services.BarLayout.setEdge(edge)
+        }
+        // To the opposite edge.
+        function toggleEdge(): void {
+            Services.BarLayout.setEdge(Services.BarLayout.opposite(Services.BarLayout.edge))
+        }
+        function edge(): string {
+            return Services.BarLayout.edge
         }
     }
 

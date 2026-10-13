@@ -18,6 +18,9 @@ Item {
 
     // The bar's free stretches, [[from, to], ...] in this item's x.
     property var gaps: [[0, width]]
+    // This item's x runs against the screen's (up a left bar, where TopBar
+    // turns it on its side).
+    property bool reversed: false
     readonly property var coat: Services.Pet.coat
     readonly property real figW: 46
     readonly property real figH: 40
@@ -114,7 +117,11 @@ Item {
         }
     }
 
-    onPxChanged: Services.Pet.barX = pet.mapToItem(null, pet.px, 0).x
+    Binding {
+        target: Services.Pet
+        property: "barPos"
+        value: pet.px < 0 ? -1 : pet.reversed ? pet.width - pet.px : pet.px
+    }
 
     // ── Moving ───────────────────────────────────────────────────────────────
     function walkTo(x) {

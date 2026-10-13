@@ -15,7 +15,8 @@ import Quickshell.Io
 
 // Settings for the workspace disc, stored in its own dedicated JSON file
 // (not the shared settings.json) so the feature owns its data. Edit
-// ~/.config/quickshell/config/workspacedisc.json and it live-reloads.
+// ~/.config/quickshell/config/workspacedisc.json and it live-reloads; the
+// corner is also set by dragging the disc (setCorner()).
 Singleton {
     id: root
 
@@ -32,9 +33,24 @@ Singleton {
     readonly property int peekOffset:         settingsData.peekOffset          // px the disc peeks out when collapsed
     readonly property bool expressive:        settingsData.expressive          // size the ring to live workspaces
     readonly property string skin:            settingsData.skin                // "default" | "waterwheel" | "gris"
-    readonly property string corner:          settingsData.corner              // topLeft | topRight | bottomLeft | bottomRight
+    readonly property string corner:          root.corners.includes(settingsData.corner) ? settingsData.corner : "bottomLeft"
+
+    readonly property var corners: ["topLeft", "topRight", "bottomLeft", "bottomRight"]
+
+    // The disc is being dragged to another corner: the bar and the edge
+    // strips, which lie above its surface, stop taking the pointer meanwhile
+    // so they can't catch it on the way.
+    property bool moving: false
+
+    function setCorner(c) {
+        if (!root.corners.includes(c) || c === settingsData.corner)
+            return
+        settingsData.corner = c
+        settingsFile.writeAdapter()
+    }
 
     FileView {
+        id: settingsFile
         path: root._configPath
         watchChanges: true
         onFileChanged: reload()

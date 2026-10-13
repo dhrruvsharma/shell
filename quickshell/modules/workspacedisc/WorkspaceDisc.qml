@@ -18,9 +18,18 @@ import qs.components
 // Rotating "revolver cylinder" workspace indicator, ported from zesis-shell.
 // The disc rotates so the active workspace's chamber lands at a fixed corner
 // angle; chambers counter-rotate so numbers stay upright. Peeks from the
-// screen corner and expands on hover.
+// screen corner and expands on hover. Press and drag it to move it to
+// another corner (WorkspaceDiscWindow does the moving).
 Item {
     id: root
+
+    // Being dragged to another corner (set by the window).
+    property bool moving: false
+
+    // The press and the drag, in the window's coordinates.
+    signal grabbed(point pos)
+    signal dragged(point pos)
+    signal letGo()
 
     readonly property int discRadius:   Math.round(WorkspaceDiscService.discRadius * UIScale.value)
     readonly property int chamberSize:  Math.round(WorkspaceDiscService.chamberSize * UIScale.value)
@@ -159,6 +168,7 @@ Item {
         }
 
         Repeater {
+            id: chambers
             model: root.effectiveN
             delegate: Item {
                 id: wsItem
@@ -198,20 +208,17 @@ Item {
                     rotation: -root.discRotation
                 }
 
+                // Hover and cursor only: the grip below takes the clicks.
                 MouseArea {
                     id: chamberMouseArea
                     anchors.fill: parent
                     hoverEnabled: true
                     cursorShape: Qt.PointingHandCursor
-                    onClicked: {
-                        if (root.expanded)
-                            Hyprland.changeWorkspace(wsItem.wsIndex)
-                    }
                 }
 
                 PopupWindow {
                     id: wsPopup
-                    visible: chamberMouseArea.containsMouse && root.expanded && wsItem.hasWindows
+                    visible: chamberMouseArea.containsMouse && root.expanded && wsItem.hasWindows && !root.moving
                     color: "transparent"
 
                     anchor.item: wsItem
@@ -289,5 +296,58 @@ Item {
                 }
             }
         }
+    }
+
+    // A click: switch to the workspace of the chamber under `p` (in the
+    // grip's coordinates), once the disc has opened out.
+    function clickAt(p) {
+        if (!root.expanded)
+            return
+        for (let i = 0; i < chambers.count; i++) {
+            const c = chambers.itemAt(i)
+            if (!c)
+                continue
+            const q = c.mapFromItem(grip, p.x, p.y)
+            if (Math.hypot(q.x - c.width / 2, q.y - c.height / 2) <= c.width / 2) {
+                Hyprland.changeWorkspace(c.wsIndex)
+                return
+            }
+        }
+    }
+
+    // Takes every press, so the disc can be dragged; a plain click (no
+    // drag) switches to the chamber that was pressed. It goes by where the
+    // press was: the surface grows on a press (WorkspaceDiscWindow), and a
+    // Wayland button carries no position, so the release's is stale.
+    MouseArea {
+        id: grip
+
+        property point pressPoint: Qt.point(0, 0)
+        property bool wasDragged: false
+
+        anchors.fill: parent
+
+        onPressed: mouse => {
+            grip.pressPoint = Qt.point(mouse.x, mouse.y);
+            grip.wasDragged = false;
+            root.grabbed(grip.mapToItem(null, mouse.x, mouse.y));
+        }
+        onPositionChanged: mouse => {
+            root.dragged(grip.mapToItem(null, mouse.x, mouse.y));
+            if (root.moving)
+                grip.wasDragged = true;
+        }
+        onReleased: {
+            const click = !grip.wasDragged;
+            root.letGo();
+            if (click)
+                root.clickAt(grip.pressPoint);
+        }
+        onCanceled: root.letGo()
+    }
+
+    HoverHandler {
+        enabled: root.moving
+        cursorShape: Qt.ClosedHandCursor
     }
 }

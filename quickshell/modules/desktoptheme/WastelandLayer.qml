@@ -46,8 +46,8 @@ Item {
     Item {
         anchors.right: parent.right
         anchors.bottom: parent.bottom
-        anchors.rightMargin: 40
-        anchors.bottomMargin: 36
+        anchors.rightMargin: 40 + Services.BarLayout.reserveRight
+        anchors.bottomMargin: 36 + Services.BarLayout.reserveBottom
         width: tag.implicitWidth + 44
         height: tag.implicitHeight + 30
         opacity: LockTheme.seg(root.boot, 0.5, 1)

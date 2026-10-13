@@ -5,24 +5,22 @@ import Quickshell
 import Quickshell.Wayland
 import qs.colors
 import qs.components
+import qs.services as Services
 
 PanelWindow {
     id: root
 
     property var menuHandle: null
-    property real menuX: 0
-    property real menuY: 0
+    // Where the tray icon's middle lies along the bar (screen x on a lying
+    // bar, y on a standing one).
+    property real menuPos: 0
     property bool hasCurrent: false
     property int animLength: 400
     property var animCurve: [0.05, 0, 0.133, 0.06, 0.166, 0.4, 0.208, 0.82, 0.25, 1, 1, 1]
 
-    function open(handle, x, y) {
+    function open(handle, pos) {
         menuHandle = handle;
-        let width = 240;
-        let safeX = x - (width / 2);
-        safeX = Math.max(8, Math.min(safeX, Screen.width - width - 8));
-        menuX = safeX;
-        menuY = y - 32;
+        menuPos = pos;
         hasCurrent = true;
     }
 
@@ -31,7 +29,7 @@ PanelWindow {
     }
 
     // Full-screen surface: mapped only while a menu is showing or closing.
-    visible: hasCurrent || wrapper.height > 0
+    visible: hasCurrent || wrapper.unroll > 0
     color: "transparent"
     WlrLayershell.layer: WlrLayer.Overlay
     WlrLayershell.keyboardFocus: wrapper.visible ? WlrKeyboardFocus.Exclusive : WlrKeyboardFocus.None
@@ -53,24 +51,37 @@ PanelWindow {
         id: wrapper
 
         readonly property real contentHeight: menuColumn.implicitHeight + 16
+        readonly property string edge: Services.BarLayout.edge
+        readonly property bool vertical: Services.BarLayout.vertical
+        // How far it has unrolled out of the bar, 0 to 1.
+        property real unroll: root.hasCurrent ? 1 : 0
 
-        x: root.menuX
-        y: root.menuY
-        width: 240
-        visible: height > 0
+        // It comes out of the bar by the tray (the surface stops at the
+        // bar's exclusive zone): down from a top bar, up from a bottom one,
+        // sideways from a standing one, its corners square where it meets
+        // the bar.
+        x: !vertical ? Math.max(8, Math.min(root.width - 248, root.menuPos - 120))
+            : edge === "left" ? 2 : root.width - width - 2
+        y: vertical ? Math.max(8, Math.min(root.height - contentHeight - 8, root.menuPos - contentHeight / 2))
+            : edge === "bottom" ? root.height - height - 2 : 2
+        width: vertical ? 240 * unroll : 240
+        height: vertical ? contentHeight : contentHeight * unroll
+        visible: unroll > 0
         clip: true
-        implicitHeight: root.hasCurrent ? contentHeight : 0
 
         Rectangle {
             id: menuBg
 
-            anchors.fill: parent
+            // Sideways, the menu keeps its size and is wiped in from the bar.
+            x: wrapper.edge === "right" ? wrapper.width - width : 0
+            width: wrapper.vertical ? 240 : wrapper.width
+            height: wrapper.vertical ? wrapper.contentHeight : wrapper.height
             color: Colors.surface_container  // was: Colors.on_surface
             clip: true
-            topLeftRadius: 0
-            topRightRadius: 0
-            bottomLeftRadius: 14
-            bottomRightRadius: 14
+            topLeftRadius: wrapper.edge === "top" || wrapper.edge === "left" ? 0 : 14
+            topRightRadius: wrapper.edge === "top" || wrapper.edge === "right" ? 0 : 14
+            bottomLeftRadius: wrapper.edge === "bottom" || wrapper.edge === "left" ? 0 : 14
+            bottomRightRadius: wrapper.edge === "bottom" || wrapper.edge === "right" ? 0 : 14
 
             QsMenuOpener {
                 id: opener
@@ -255,7 +266,7 @@ PanelWindow {
 
         }
 
-        Behavior on implicitHeight {
+        Behavior on unroll {
             NumberAnimation {
                 duration: root.animLength
                 easing.type: Easing.BezierSpline

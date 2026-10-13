@@ -4,20 +4,45 @@ import qs.components
 import Quickshell.Io
 import Quickshell.Wayland
 import qs.modules.screentools
+import qs.services as Services
 
 Item {
     id: systemPanel
     property bool opened: false
     property int currentTab: 0
     focus: true
-    implicitWidth: 550
-    implicitHeight: opened ? 200 : 0
-    visible: opened || implicitHeight > 0
-    anchors.horizontalCenter: parent.horizontalCenter
+    // It unfolds out of the bar (shell.qml hangs it from the middle of the
+    // bar): down from a top bar, up from a bottom one, sideways from a
+    // standing one. `unfold` runs 0 (folded away) to 1 (open), so moving the
+    // bar to another edge doesn't play the animation.
+    readonly property bool vertical: Services.BarLayout.vertical
+    property real unfold: opened ? 1 : 0
+    // Hanging down it's wide and shallow, the gauges in a row. Beside a
+    // standing bar it stands too: the gauges stack under the tabs and the
+    // panel fits round them, a little clear of the bar, a little more in
+    // from the outer side (the theme's corner mark, the bubble's rounded
+    // corners), and inside the bubble's body, which is inset by the radius
+    // at both ends there.
+    readonly property real barPad: Services.BarLayout.size + 14
+    readonly property real outerPad: 28
+    readonly property real endPad: popout.radius + 14
+    implicitWidth: vertical ? (barPad + content.implicitWidth + outerPad) * unfold : 550
+    implicitHeight: vertical ? content.implicitHeight + 2 * endPad : 200 * unfold
+    visible: opened || unfold > 0
 
-    Behavior on implicitHeight {
+    Behavior on unfold {
         NumberAnimation {
             duration: 260
+            easing.type: Easing.OutCubic
+        }
+    }
+
+    // Standing, the panel follows its tab's height; only once it is out, as
+    // the graphs load on opening and the panel would grow while unfolding.
+    Behavior on implicitHeight {
+        enabled: systemPanel.vertical && systemPanel.opened && systemPanel.unfold === 1
+        NumberAnimation {
+            duration: 220
             easing.type: Easing.OutCubic
         }
     }
@@ -39,12 +64,18 @@ Item {
         Keys.onEscapePressed: systemPanel.opened = false
 
         Popout {
+            id: popout
             anchors.fill: parent
-            alignment: 0
+            alignment: Services.BarLayout.middleAlignment
+            leftPadding: !systemPanel.vertical ? radius : Services.BarLayout.atLeft ? systemPanel.barPad : systemPanel.outerPad
+            rightPadding: !systemPanel.vertical ? radius : Services.BarLayout.atRight ? systemPanel.barPad : systemPanel.outerPad
+            topPadding: systemPanel.vertical ? systemPanel.endPad : radius
+            bottomPadding: systemPanel.vertical ? systemPanel.endPad : radius
 
             Column {
+                id: content
                 anchors.fill: parent
-                spacing: 8
+                spacing: systemPanel.vertical ? 12 : 8
 
                 Row {
                     anchors.horizontalCenter: parent.horizontalCenter
@@ -78,12 +109,16 @@ Item {
 
     Component {
         id: systemTab
-        SystemGraphs { }
+        SystemGraphs {
+            vertical: systemPanel.vertical
+        }
     }
 
     Component {
         id: screenTab
-        ScreenTools { }
+        ScreenTools {
+            vertical: systemPanel.vertical
+        }
     }
 
     IpcHandler {

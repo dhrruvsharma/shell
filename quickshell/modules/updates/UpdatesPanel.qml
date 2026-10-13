@@ -6,13 +6,16 @@ import qs.components
 import qs.colors
 import qs.services as Services
 
-// Popout hanging from the top bar's Updates atom. Lists pending pacman/AUR
-// updates and offers "update all", "update selected", or a per-package update,
-// each handing off to a terminal (see Updates service). Detection stays
-// passwordless.
+// Popout hanging from the bar's far end, by the Updates atom. Lists pending
+// pacman/AUR updates and offers "update all", "update selected", or a
+// per-package update, each handing off to a terminal (see Updates service).
+// Detection stays passwordless.
 Popout {
     id: root
-    alignment: 1                    // attachedTopRight — hangs below the bar, right side
+    // In the corner at the bar's far end (shell.qml places it): top right
+    // under a top bar, bottom right over a bottom one or beside a right one,
+    // bottom left beside a left one.
+    alignment: Services.BarLayout.endAlignment
     // Hidden once fully collapsed so its spinner (and any repaint) stops;
     // a zero-width but visible panel still drives frames of the whole shell.
     visible: root.opened || root.implicitWidth > 0

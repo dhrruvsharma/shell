@@ -39,8 +39,8 @@ Item {
     Item {
         anchors.right: parent.right
         anchors.bottom: parent.bottom
-        anchors.rightMargin: 40
-        anchors.bottomMargin: 62
+        anchors.rightMargin: 40 + Services.BarLayout.reserveRight
+        anchors.bottomMargin: 62 + Services.BarLayout.reserveBottom
         width: plateRow.implicitWidth + 44
         height: plateRow.implicitHeight + 30
         opacity: LockTheme.seg(root.boot, 0.45, 1)

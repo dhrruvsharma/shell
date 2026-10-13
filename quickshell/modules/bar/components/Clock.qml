@@ -9,6 +9,12 @@ BarPill {
     readonly property bool active: Services.CalendarState.open
 
     text: Services.Time.format("d MMM • hh:mm AP")
+    // Upright, on a standing bar: the hour over the minutes (12-hour, like
+    // the full face; "hh" alone would count to 23).
+    vIcon: Services.Time.format("hh AP").split(" ")[0]
+    vLabel: Services.Time.format("mm")
+    vIconSize: 14
+    vLabelSize: 14
     interactive: true
     cursorShape: Qt.PointingHandCursor
 
@@ -21,9 +27,7 @@ BarPill {
     Behavior on textColor { ColorAnimation { duration: 180; easing.type: Easing.OutCubic } }
 
     onClicked: {
-        // Resolve the pill's on-screen x so the popup can center under it.
-        const global = pill.mapToGlobal(0, 0)
-        const px = (global && !isNaN(global.x)) ? global.x : pill.x
-        Services.CalendarState.toggleAt(px, pill.width)
+        // Where the pill sits along the bar, so the popup can hang from it.
+        Services.CalendarState.toggleAt(Services.BarLayout.along(pill, 0, 0), pill.vertical ? pill.height : pill.width)
     }
 }

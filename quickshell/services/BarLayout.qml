@@ -12,15 +12,17 @@ pragma Singleton
 import QtQuick
 import QtCore
 
-// Ordered island layout for the two draggable regions of the top bar.
+// Ordered island layout for the two draggable regions of the bar.
 //
 // `left`/`right` are arrays of "islands"; each island is an array of atom ids
 // (widget ids). A solo island renders as a lone pill; a 2+ island renders
 // inside a subtle grouping container ("nested pills"). The center media pill
-// and the right-edge system tray are fixed and deliberately NOT part of this
-// model, so they can never be dragged or displaced.
+// and the end system tray are fixed and deliberately NOT part of this model,
+// so they can never be dragged or displaced. On a standing bar (left or
+// right edge) "left" is the top region and "right" the bottom one.
 //
-// Persisted to a dedicated barlayout.conf so it never touches shared settings.
+// Persisted to a dedicated barlayout.conf so it never touches shared settings,
+// along with the screen edge the bar sits on.
 QtObject {
     id: root
 
@@ -38,10 +40,60 @@ QtObject {
     property var left: root.defaultLeft
     property var right: root.defaultRight
 
+    // Which screen edge the bar sits on: "top", "bottom", "left" or "right"
+    // (drag the bar by an empty stretch to another edge, or setEdge()).
+    // Panels that hang from the bar hang from that edge, and what lives on
+    // the other edges (the hover strips, the GitHub popout, the workspace
+    // disc) keeps clear of the bar.
+    readonly property var edges: ["top", "bottom", "left", "right"]
+    readonly property string edge: root.edges.includes(store.edge) ? store.edge : "top"
+    readonly property bool atTop: root.edge === "top"
+    readonly property bool atBottom: root.edge === "bottom"
+    readonly property bool atLeft: root.edge === "left"
+    readonly property bool atRight: root.edge === "right"
+    // On the left or right edge the bar stands on end: its islands stack
+    // and the widgets show a compact, upright face.
+    readonly property bool vertical: root.atLeft || root.atRight
+    // The bar's thickness, and the room it takes on its edge (none on the
+    // others).
+    readonly property int size: 42
+    readonly property int reserveTop: root.atTop ? root.size : 0
+    readonly property int reserveBottom: root.atBottom ? root.size : 0
+    readonly property int reserveLeft: root.atLeft ? root.size : 0
+    readonly property int reserveRight: root.atRight ? root.size : 0
+    // The room the desktop theme's frames leave it, a hair more.
+    readonly property int clearTop: root.atTop ? root.size + 2 : 0
+    readonly property int clearBottom: root.atBottom ? root.size + 2 : 0
+    readonly property int clearLeft: root.atLeft ? root.size + 2 : 0
+    readonly property int clearRight: root.atRight ? root.size + 2 : 0
+    // Popout (components/Popout) alignments for panels hanging from the
+    // bar: from its middle (media, system), and from its far end (updates):
+    // the right end of a lying bar, the bottom end of a standing one.
+    readonly property int middleAlignment: ({ top: 0, right: 2, bottom: 4, left: 6 })[root.edge]
+    readonly property int endAlignment: ({ top: 1, right: 3, bottom: 3, left: 5 })[root.edge]
+
+    function setEdge(e) {
+        if (root.edges.includes(e))
+            store.edge = e
+    }
+
+    function opposite(e) {
+        return ({ top: "bottom", bottom: "top", left: "right", right: "left" })[e] ?? "top"
+    }
+
+    // Where a point of `item` (an item in the bar) lies along the bar, in
+    // screen pixels: x on a lying bar, y on a standing one. The bar's
+    // surface starts at the screen's left or top edge either way.
+    function along(item, x, y) {
+        const p = item.mapToItem(null, x, y)
+        return root.vertical ? p.y : p.x
+    }
+
     property Settings store: Settings {
         location: StandardPaths.standardLocations(StandardPaths.ConfigLocation)[0] + "/quickshell/barlayout.conf"
         category: "barlayout"
         property string data: ""
+        property string edge: "top"
     }
 
     // ---- persistence ------------------------------------------------------

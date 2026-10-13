@@ -7,32 +7,36 @@ import qs.Widgets
 import qs.colors
 import qs.components
 
-RowLayout {
+// The tray at the bar's far end: a button that slides a card of tray icons
+// out beside it. On a standing bar (`vertical`) the two stack, the card
+// opening upwards.
+GridLayout {
     id: root
 
     property bool trayOpen: false
+    property bool vertical: false
 
     visible: SystemTray.items.values.length > 0
-    spacing: 4
+    flow: root.vertical ? GridLayout.TopToBottom : GridLayout.LeftToRight
+    rowSpacing: 4
+    columnSpacing: 4
 
     Card {
         clip: true
-        height: 26
-        radius: height / 2
+        radius: Math.min(width, height) / 2
 
+        // 26 thick across the bar; along it, as long as its icons when open.
+        Layout.preferredWidth: root.vertical ? 26 : root.trayOpen ? (trayInner.implicitWidth + 16) : 0
+        Layout.preferredHeight: root.vertical ? (root.trayOpen ? (trayInner.implicitHeight + 16) : 0) : 26
+        Layout.rightMargin: !root.vertical && root.trayOpen ? 4 : 0
+        Layout.bottomMargin: root.vertical && root.trayOpen ? 4 : 0
+        opacity: root.trayOpen ? 1 : 0
 
-        Layout.preferredWidth: trayOpen ? (trayInner.implicitWidth + 16) : 0
-        Layout.rightMargin: trayOpen ? 4 : 0
-        opacity: trayOpen ? 1 : 0
-
-        RowLayout {
+        Tray {
             id: trayInner
             anchors.centerIn: parent
-            spacing: 8
-
-            Tray {
-                iconSize: 16
-            }
+            iconSize: 16
+            vertical: root.vertical
         }
 
         /* ===== Animations restored with hardcoded values ===== */
@@ -44,7 +48,21 @@ RowLayout {
             }
         }
 
+        Behavior on Layout.preferredHeight {
+            NumberAnimation {
+                duration: 220
+                easing.type: Easing.InOutQuad
+            }
+        }
+
         Behavior on Layout.rightMargin {
+            NumberAnimation {
+                duration: 220
+                easing.type: Easing.InOutQuad
+            }
+        }
+
+        Behavior on Layout.bottomMargin {
             NumberAnimation {
                 duration: 220
                 easing.type: Easing.InOutQuad
@@ -73,7 +91,8 @@ RowLayout {
             font.pixelSize: 14
 
             color: Colors.on_surface
-            rotation: trayOpen ? 180 : 0
+            // Points the way the card opens, then back to close it.
+            rotation: root.vertical ? (root.trayOpen ? 270 : 90) : (root.trayOpen ? 180 : 0)
 
             Behavior on rotation {
                 NumberAnimation {
@@ -94,7 +113,7 @@ RowLayout {
             cursorShape: Qt.PointingHandCursor
             hoverEnabled: true
 
-            onClicked: trayOpen = !trayOpen
+            onClicked: root.trayOpen = !root.trayOpen
 
             onEntered: toggleBtn.border.color = Colors.primary
             onExited: toggleBtn.border.color = Colors.outline_variant

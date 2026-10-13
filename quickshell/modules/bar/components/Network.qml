@@ -7,4 +7,6 @@ BarPill {
     horizontalPadding: 20
     maxWidth: 200
     command: ["qs", "ipc", "call", "networkPanel", "changeVisible", "wifi"]
+    // Upright, the glyph alone: a network name doesn't fit across.
+    vLabel: ""
 }

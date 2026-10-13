@@ -15,20 +15,37 @@ import qs.services as Services
 import qs.colors
 import qs.components
 
-// Top bar with drag-rearrangeable "islands". Every draggable widget is an atom
+// The bar, with drag-rearrangeable "islands". Every draggable widget is an atom
 // living in an island (a group of 1+ atoms sharing a pill/tray). Islands live in
 // two ordered regions, left and right, driven by the BarLayout service. The
-// center media pill and the right-edge system tray are fixed and never move.
+// center media pill and the end system tray are fixed and never move.
 // The pet (modules/pet) lives in the free stretches between them.
+//
+// On the left or right screen edge the bar stands on end: the regions run
+// top and bottom, islands and their atoms stack, and dragging works along
+// the bar's length. Positions and lengths along the bar (x lying, y
+// standing) go through _along()/_pos()/_len().
 Item {
     id: topBar
 
-    implicitHeight: 42
-    anchors.left: parent.left
-    anchors.right: parent.right
+    // Fills the bar's strip (modules/bar/Bar.qml), whichever way it runs.
+    anchors.fill: parent
     focus: true
 
+    readonly property bool vertical: Services.BarLayout.vertical
+    // An island's thickness across the bar.
     readonly property real islandHeight: 34
+
+    // A point's or an item's position along the bar, and an item's length.
+    function _along(p) {
+        return topBar.vertical ? p.y : p.x;
+    }
+    function _pos(item) {
+        return topBar._along(item.mapToItem(topBar, 0, 0));
+    }
+    function _len(item) {
+        return topBar.vertical ? item.height : item.width;
+    }
 
     // id -> widget source for the draggable atoms. Media and tray are fixed and
     // intentionally excluded from this map.
@@ -70,13 +87,12 @@ Item {
         return arr;
     }
 
-    // First island whose horizontal center is right of px (insert before it), or
-    // "" to append at the region's end.
+    // First island whose middle lies past px along the bar (insert before
+    // it), or "" to append at the region's end.
     function _islandToInsertBefore(containers, px) {
         for (var i = 0; i < containers.length; i++) {
             var c = containers[i];
-            var tl = c.mapToItem(topBar, 0, 0);
-            if (px < tl.x + c.width / 2)
+            if (px < topBar._pos(c) + topBar._len(c) / 2)
                 return c.firstId;
         }
         return "";
@@ -89,8 +105,7 @@ Item {
             var slot = rep.itemAt(i);
             if (!slot)
                 continue;
-            var tl = slot.mapToItem(topBar, 0, 0);
-            if (px < tl.x + slot.width / 2)
+            if (px < topBar._pos(slot) + topBar._len(slot) / 2)
                 return slot.atomId;
         }
         return "";
@@ -131,7 +146,8 @@ Item {
 
     function updateDrag(p) {
         topBar.dragPos = p;
-        var region = p.x < topBar.width / 2 ? "left" : "right";
+        var a = topBar._along(p);
+        var region = a < topBar._len(topBar) / 2 ? "left" : "right";
         topBar.dropRegion = region;
         var containers = topBar._containersFor(region);
 
@@ -139,13 +155,13 @@ Item {
         if (topBar.dragAtomId !== "") {
             for (var i = 0; i < containers.length; i++) {
                 var c = containers[i];
-                var tl = c.mapToItem(topBar, 0, 0);
-                if (p.x >= tl.x && p.x <= tl.x + c.width) {
+                var from = topBar._pos(c);
+                if (a >= from && a <= from + topBar._len(c)) {
                     var solo = c.atomIds.length === 1 && c.atomIds[0] === topBar.dragAtomId;
                     if (!solo) {
                         topBar.dropKind = 1;
                         topBar.dropIslandFirstId = c.firstId;
-                        topBar.dropBeforeAtomId = topBar._beforeAtomInIsland(c, p.x);
+                        topBar.dropBeforeAtomId = topBar._beforeAtomInIsland(c, a);
                         return;
                     }
                 }
@@ -154,7 +170,7 @@ Item {
 
         topBar.dropKind = 2;
         topBar.dropBeforeAtomId = "";
-        topBar.dropIslandFirstId = topBar._islandToInsertBefore(containers, p.x);
+        topBar.dropIslandFirstId = topBar._islandToInsertBefore(containers, a);
     }
 
     function endDrag() {
@@ -166,6 +182,12 @@ Item {
         } else if (topBar.dragIslandIds) {
             Services.BarLayout.moveIsland(topBar.dropRegion, topBar.dragIslandIds, topBar.dropIslandFirstId);
         }
+        topBar.clearDrag();
+    }
+
+    // Ends a drag without dropping anything: after a drop, or when the press
+    // went away without a release (the pointer left the surface).
+    function clearDrag() {
         topBar.dragAtomId = "";
         topBar.dragIslandIds = null;
         topBar.dragGrab = null;
@@ -181,13 +203,14 @@ Item {
 
         implicitWidth: atomLoader.implicitWidth
         implicitHeight: atomLoader.implicitHeight
-        anchors.verticalCenter: parent ? parent.verticalCenter : undefined
         opacity: topBar.dragAtomId === slot.atomId ? 0.3 : 1
 
         Loader {
             id: atomLoader
             anchors.centerIn: parent
             source: Qt.resolvedUrl(topBar.atomSources[slot.atomId] || "")
+            // Widgets show their upright face on a standing bar.
+            onLoaded: if ("vertical" in item) item["vertical"] = Qt.binding(() => topBar.vertical)
         }
 
         // Drag capture modelled on the window switcher's working MouseArea: it
@@ -221,6 +244,11 @@ Item {
                     topBar.endDrag();
                 dragCapture.dragStarted = false;
             }
+            onCanceled: {
+                if (dragCapture.dragStarted)
+                    topBar.clearDrag();
+                dragCapture.dragStarted = false;
+            }
             onClicked: mouse => {
                 if (!dragCapture.dragStarted)
                     mouse.accepted = false;
@@ -244,9 +272,9 @@ Item {
         readonly property bool isBeforeTarget: topBar.dragActive && topBar.dropKind === 2 && topBar.dropRegion === island.regionKey && topBar.dropIslandFirstId === island.firstId
         readonly property bool beingDragged: topBar.dragIslandIds !== null && topBar.dragIslandIds.indexOf(island.firstId) >= 0
 
-        anchors.verticalCenter: parent ? parent.verticalCenter : undefined
-        implicitWidth: atomRow.implicitWidth + 2 * island.pad
-        implicitHeight: topBar.islandHeight
+        // Its atoms run along the bar; across it, it is islandHeight thick.
+        implicitWidth: topBar.vertical ? topBar.islandHeight : atomRow.implicitWidth + 2 * island.pad
+        implicitHeight: topBar.vertical ? atomRow.implicitHeight + 2 * island.pad : topBar.islandHeight
         // Desktop themes restyle the group chrome; the HUD, Neon Noir, Art
         // Deco and Cathedral themes' is a cut-corner frame drawn below the
         // atoms instead, Broadsheet rules it, Wasteland rivets it,
@@ -260,7 +288,7 @@ Item {
         readonly property bool cusp: look.shape === "cusp"
         readonly property bool crenel: look.shape === "crenel"
         readonly property bool framed: hud || neon || deco || cusp || crenel
-        radius: Services.DesktopTheme.radius(island.look, 16, height)
+        radius: Services.DesktopTheme.radius(island.look, 16, Math.min(width, height))
         topLeftRadius: Services.DesktopTheme.corner(island.look, radius, 0)
         topRightRadius: Services.DesktopTheme.corner(island.look, radius, 1)
         bottomRightRadius: Services.DesktopTheme.corner(island.look, radius, 2)
@@ -450,16 +478,16 @@ Item {
             }
         }
 
-        // Insertion caret shown just left of this island.
+        // Insertion caret shown just before this island: left of it, or above
+        // it on a standing bar.
         Rectangle {
             visible: island.isBeforeTarget
-            width: 3
+            width: topBar.vertical ? 22 : 3
+            height: topBar.vertical ? 3 : 22
             radius: 1.5
-            height: 22
             color: Services.DesktopTheme.accent
-            anchors.right: parent.left
-            anchors.rightMargin: 3
-            anchors.verticalCenter: parent.verticalCenter
+            x: topBar.vertical ? (island.width - width) / 2 : -width - 3
+            y: topBar.vertical ? -height - 3 : (island.height - height) / 2
         }
 
         // Whole-island drag from the group's padding/gaps (grouped only). It
@@ -493,12 +521,23 @@ Item {
                     topBar.endDrag();
                 groupCapture.dragStarted = false;
             }
+            onCanceled: {
+                if (groupCapture.dragStarted)
+                    topBar.clearDrag();
+                groupCapture.dragStarted = false;
+            }
         }
 
-        Row {
+        // The atoms, in a row, or a column on a standing bar. (Only columns
+        // is set: switching rows and columns over would pass through a
+        // 1x1 grid.)
+        Grid {
             id: atomRow
             anchors.centerIn: parent
+            columns: topBar.vertical ? 1 : Math.max(1, atomRep.count)
             spacing: island.grouped ? 4 : 0
+            horizontalItemAlignment: Grid.AlignHCenter
+            verticalItemAlignment: Grid.AlignVCenter
             Repeater {
                 id: atomRep
                 model: island.atomIds
@@ -514,27 +553,58 @@ Item {
 
     // ---- bar content ------------------------------------------------------
     Item {
+        id: content
         anchors.fill: parent
 
-        // Declared first, so it passes behind the islands as it crosses.
-        BarPet {
-            anchors.fill: parent
-            gaps: {
-                const pad = 8;
-                const l = leftRow.x + leftRow.width + pad;
-                const r = rightRow.x - pad;
-                if (!mediaPill.visible)
-                    return [[l, r]];
-                return [[l, mediaPill.x - pad], [mediaPill.x + mediaPill.width + pad, r]];
+        // Declared first, so it passes behind the islands as it crosses. The
+        // pet walks along the bar: on a standing bar its track is turned on
+        // its side, head to the screen edge, so its x runs up a left bar and
+        // down a right one.
+        Item {
+            id: petTrack
+
+            readonly property bool upward: topBar.vertical && Services.BarLayout.atLeft
+
+            width: topBar.vertical ? content.height : content.width
+            height: topBar.vertical ? content.width : content.height
+            transformOrigin: Item.TopLeft
+            rotation: !topBar.vertical ? 0 : petTrack.upward ? -90 : 90
+            x: topBar.vertical && !petTrack.upward ? content.width : 0
+            y: petTrack.upward ? content.height : 0
+
+            BarPet {
+                anchors.fill: parent
+                reversed: petTrack.upward
+                gaps: {
+                    const pad = 8;
+                    const v = topBar.vertical;
+                    const l = (v ? leftRow.y + leftRow.height : leftRow.x + leftRow.width) + pad;
+                    const r = (v ? rightRow.y : rightRow.x) - pad;
+                    const m0 = (v ? mediaPill.y : mediaPill.x) - pad;
+                    const m1 = (v ? mediaPill.y + mediaPill.height : mediaPill.x + mediaPill.width) + pad;
+                    const spans = mediaPill.visible ? [[l, m0], [m1, r]] : [[l, r]];
+                    if (!petTrack.upward)
+                        return spans;
+                    // Up the bar, its x counts from the bottom.
+                    const n = petTrack.width;
+                    return spans.map(s => [n - s[1], n - s[0]]).reverse();
+                }
             }
         }
 
-        Row {
+        // The start region: from the left end, or from the top. (Placed by
+        // x/y, not anchors: anchors swapped by bindings are briefly both
+        // set, and a left anchor with a horizontalCenter one fixes the width
+        // for good.)
+        Grid {
             id: leftRow
-            anchors.left: parent.left
-            anchors.leftMargin: 20
-            anchors.verticalCenter: parent.verticalCenter
+            x: topBar.vertical ? (parent.width - width) / 2 : 20
+            y: topBar.vertical ? 20 : (parent.height - height) / 2
+            // One column standing, else one per item shown (see atomRow).
+            columns: topBar.vertical ? 1 : Math.max(1, leftRepeater.count + (leftCaret.visible ? 1 : 0))
             spacing: 8
+            horizontalItemAlignment: Grid.AlignHCenter
+            verticalItemAlignment: Grid.AlignVCenter
 
             Repeater {
                 id: leftRepeater
@@ -550,12 +620,12 @@ Item {
 
             // Append caret for the left region.
             Rectangle {
+                id: leftCaret
                 visible: topBar.dragActive && topBar.dropKind === 2 && topBar.dropRegion === "left" && topBar.dropIslandFirstId === ""
-                width: 3
+                width: topBar.vertical ? 22 : 3
+                height: topBar.vertical ? 3 : 22
                 radius: 1.5
-                height: 22
                 color: Colors.primary
-                anchors.verticalCenter: parent.verticalCenter
             }
         }
 
@@ -564,12 +634,15 @@ Item {
             anchors.centerIn: parent
         }
 
-        Row {
+        // The end region, up to the tray: to the right end, or the bottom.
+        Grid {
             id: rightRow
-            anchors.right: parent.right
-            anchors.rightMargin: 20
-            anchors.verticalCenter: parent.verticalCenter
+            x: topBar.vertical ? (parent.width - width) / 2 : parent.width - width - 20
+            y: topBar.vertical ? parent.height - height - 20 : (parent.height - height) / 2
+            columns: topBar.vertical ? 1 : Math.max(1, rightRepeater.count + (rightCaret.visible ? 1 : 0) + (tray.visible ? 1 : 0))
             spacing: 8
+            horizontalItemAlignment: Grid.AlignHCenter
+            verticalItemAlignment: Grid.AlignVCenter
 
             Repeater {
                 id: rightRepeater
@@ -585,22 +658,34 @@ Item {
 
             // Append caret for the right region (before the tray).
             Rectangle {
+                id: rightCaret
                 visible: topBar.dragActive && topBar.dropKind === 2 && topBar.dropRegion === "right" && topBar.dropIslandFirstId === ""
-                width: 3
+                width: topBar.vertical ? 22 : 3
+                height: topBar.vertical ? 3 : 22
                 radius: 1.5
-                height: 22
                 color: Colors.primary
-                anchors.verticalCenter: parent.verticalCenter
             }
 
             SystemTray {
-                anchors.verticalCenter: parent.verticalCenter
+                id: tray
+                vertical: topBar.vertical
             }
         }
     }
 
     // ---- drag ghost overlay ----------------------------------------------
+    // It follows the pointer along the bar and is kept inside the bar's
+    // strip across it: the bar is its own 42px surface.
     Item {
+        id: ghostLayer
+
+        readonly property real ghostX: topBar.vertical
+            ? Math.max(0, Math.min(topBar.width - topBar.dragW, topBar.dragPos.x - topBar.dragW / 2))
+            : topBar.dragPos.x - topBar.dragW / 2
+        readonly property real ghostY: topBar.vertical
+            ? topBar.dragPos.y - topBar.dragH / 2
+            : Math.max(0, Math.min(topBar.height - topBar.dragH, topBar.dragPos.y - topBar.dragH / 2))
+
         anchors.fill: parent
         z: 1000
         visible: topBar.dragActive
@@ -608,9 +693,8 @@ Item {
         Rectangle {
             // Placeholder until the grabbed image is ready.
             visible: topBar.dragActive && (!topBar.dragGrab || ghost.status !== Image.Ready)
-            x: topBar.dragPos.x - width / 2
-            // Kept inside the bar strip: the bar is its own 42px surface.
-            y: Math.max(0, Math.min(topBar.height - height, topBar.dragPos.y - height / 2))
+            x: ghostLayer.ghostX
+            y: ghostLayer.ghostY
             width: topBar.dragW
             height: topBar.dragH
             radius: 14
@@ -622,9 +706,8 @@ Item {
             id: ghost
             visible: topBar.dragActive && topBar.dragGrab && status === Image.Ready
             source: topBar.dragGrab ? topBar.dragGrab.url : ""
-            x: topBar.dragPos.x - width / 2
-            // Kept inside the bar strip: the bar is its own 42px surface.
-            y: Math.max(0, Math.min(topBar.height - height, topBar.dragPos.y - height / 2))
+            x: ghostLayer.ghostX
+            y: ghostLayer.ghostY
             width: topBar.dragW
             height: topBar.dragH
             opacity: 0.9

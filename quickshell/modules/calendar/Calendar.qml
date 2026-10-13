@@ -19,6 +19,8 @@ Item {
 
     implicitWidth: 360
     implicitHeight: notesOpen ? (notesPanel.y + notesPanel.height) : calCard.height
+    // The month card alone (the notes panel opens below it).
+    readonly property real cardHeight: calCard.height
 
     Behavior on implicitHeight {
         NumberAnimation { duration: 260; easing.type: Easing.OutCubic }

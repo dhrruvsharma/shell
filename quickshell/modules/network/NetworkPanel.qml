@@ -9,9 +9,11 @@ import qs.components
 // spectrum, a ridge per access point over the band it occupies, above the
 // connection and the networks in range (WifiPanel); the Bluetooth tab puts
 // the devices in orbit round the computer (BluetoothPanel). A tab's head
-// shows its radio's state and switch. Slides in from the right edge;
-// shell.qml opens it on a tab, and on the Bluetooth one when bluetoothd
-// has a question.
+// shows its radio's state and switch. Slides in from the right edge, or
+// with the bar standing on the left or right, out over the bar from its
+// side to rest beside it (the bar drops beneath it then, as it does for the
+// control centre); shell.qml opens it on a tab, and on the Bluetooth one
+// when bluetoothd has a question.
 Item {
     id: networkPanel
     anchors.fill: parent
@@ -20,13 +22,19 @@ Item {
     property bool opened: false
     property int currentTab: 0
 
+    // Where the panel rests, and where it waits off-screen. Flush with the
+    // screen edge: a standing bar drops beneath the panel (shell.qml).
+    readonly property bool fromLeft: Services.BarLayout.atLeft
+    readonly property real openX: fromLeft ? 0 : networkPanel.width - panel.width
+    readonly property real closedX: fromLeft ? -panel.width : networkPanel.width
+
     readonly property color accent: Services.DesktopTheme.accent
     readonly property var adapter: Services.Bluetooth.defaultAdapter
 
     onOpenedChanged: {
         if (opened) {
             visible = true
-            panel.x = networkPanel.width
+            panel.x = networkPanel.closedX
             scrim.opacity = 0
             openAnim.restart()
             Services.Network.refresh()
@@ -73,7 +81,9 @@ Item {
         width: 400
         height: 680
         anchors.bottom: parent.bottom
-        x: networkPanel.width
+        // Clear of a bottom bar.
+        anchors.bottomMargin: Services.BarLayout.reserveBottom
+        x: networkPanel.closedX
 
         radius: Services.DesktopTheme.rad(22)
         color: Colors.surface_container
@@ -317,7 +327,7 @@ Item {
         }
         NumberAnimation {
             target: panel; property: "x"
-            to: networkPanel.width - panel.width
+            to: networkPanel.openX
             duration: 320; easing.type: Easing.OutCubic
         }
     }
@@ -330,7 +340,7 @@ Item {
         }
         NumberAnimation {
             target: panel; property: "x"
-            to: networkPanel.width
+            to: networkPanel.closedX
             duration: 260; easing.type: Easing.InCubic
         }
         onFinished: networkPanel.visible = false

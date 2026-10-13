@@ -90,8 +90,8 @@ Item {
         id: plaque
         anchors.right: parent.right
         anchors.bottom: parent.bottom
-        anchors.rightMargin: 40
-        anchors.bottomMargin: 56
+        anchors.rightMargin: 40 + Services.BarLayout.reserveRight
+        anchors.bottomMargin: 56 + Services.BarLayout.reserveBottom
         width: plaqueRow.implicitWidth + 48
         height: plaqueRow.implicitHeight + 40
         opacity: LockTheme.seg(root.boot, 0.45, 1)

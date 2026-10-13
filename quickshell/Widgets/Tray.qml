@@ -4,17 +4,21 @@ import Quickshell
 import Quickshell.Services.SystemTray
 import qs.colors
 import qs.components
+import qs.services as Services
 
-RowLayout {
+// The tray's icons: in a row, or a column on a standing bar (`vertical`).
+GridLayout {
     id: trayRoot
 
-
+    property bool vertical: false
     property int iconSize: 16
     property var pinnedApps: []
     property var blacklist: []
     property bool hidePassive: false
 
-    spacing: 6
+    flow: trayRoot.vertical ? GridLayout.TopToBottom : GridLayout.LeftToRight
+    rowSpacing: 6
+    columnSpacing: 6
 
     Repeater {
         model: SystemTray.items.values
@@ -79,10 +83,8 @@ RowLayout {
                         modelData.activate()
                     else if (mouse.button === Qt.MiddleButton)
                         modelData.secondaryActivate()
-                    else if (mouse.button === Qt.RightButton && modelData.hasMenu) {
-                        var pos = mapToGlobal(width/2, height)
-                        contextMenu.open(modelData.menu, pos.x, pos.y)
-                    }
+                    else if (mouse.button === Qt.RightButton && modelData.hasMenu)
+                        contextMenu.open(modelData.menu, Services.BarLayout.along(this, width / 2, height / 2))
                 }
             }
         }

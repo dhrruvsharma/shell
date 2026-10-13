@@ -43,10 +43,10 @@ Item {
     // The gilt frame under the bar: a double rule stepped at the corners.
     DecoFrame {
         anchors.fill: undefined
-        x: 14
-        y: 44 + 8
-        width: parent.width - 28
-        height: parent.height - y - 14
+        x: 14 + Services.BarLayout.clearLeft
+        y: Services.BarLayout.clearTop + 8
+        width: parent.width - 28 - Services.BarLayout.clearLeft - Services.BarLayout.clearRight
+        height: parent.height - y - 14 - Services.BarLayout.clearBottom
         cut: 9
         steps: 2
         fill: "transparent"
@@ -63,8 +63,8 @@ Item {
 
         anchors.right: parent.right
         anchors.bottom: parent.bottom
-        anchors.rightMargin: 40
-        anchors.bottomMargin: 36
+        anchors.rightMargin: 40 + Services.BarLayout.reserveRight
+        anchors.bottomMargin: 36 + Services.BarLayout.reserveBottom
         width: plaqueRow.implicitWidth + 44
         height: plaqueRow.implicitHeight + 28
         opacity: LockTheme.seg(root.boot, 0.45, 1)

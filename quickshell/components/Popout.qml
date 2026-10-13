@@ -10,6 +10,12 @@ Item {
     property int alignment: 0
     property int radius: 50
     property color color: Colors.background
+    // The content's inset from each side: the radius by default, which
+    // clears the flares and the bar the popout hangs from.
+    property real leftPadding: root.radius
+    property real rightPadding: root.radius
+    property real topPadding: root.radius
+    property real bottomPadding: root.radius
 
     default property alias content: contentWrapper.data
 
@@ -67,7 +73,10 @@ Item {
     Item {
         id: contentWrapper
         anchors.fill: parent
-        anchors.margins: root.radius
+        anchors.leftMargin: root.leftPadding
+        anchors.rightMargin: root.rightPadding
+        anchors.topMargin: root.topPadding
+        anchors.bottomMargin: root.bottomPadding
     }
 
     component BubbleShape: Shape {
