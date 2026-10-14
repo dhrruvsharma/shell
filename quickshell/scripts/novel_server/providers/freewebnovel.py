@@ -52,7 +52,14 @@ def _load_list(novel_id: str) -> list:
     try:
         with open(_list_path(novel_id)) as f:
             data = json.load(f)
-        return data if isinstance(data, list) else []
+        if not isinstance(data, list):
+            return []
+        # Lists saved before clean_text decoded every entity kept titles like
+        # "Search &amp; Rescue"; cleaning already-clean text is a no-op.
+        for c in data:
+            if isinstance(c, dict) and isinstance(c.get("title"), str):
+                c["title"] = clean_text(c["title"])
+        return data
     except (OSError, ValueError):
         return []
 
@@ -357,10 +364,10 @@ class FreeWebNovelProvider(NovelProvider):
         genres = []
         imgtxt_m = re.search(r'<div class="m-imgtxt">([\s\S]*?)</div>\s*</div>', html)
         if imgtxt_m:
-            genres = re.findall(
+            genres = [clean_text(g) for g in re.findall(
                 r'<a href="/genre/[^"]*"[^>]*title="[^"]*">([^<]+)</a>',
                 imgtxt_m.group(1)
-            )
+            )]
 
         # Description — <div class="inner"> … <p>…</p> … </div>
         description = ""

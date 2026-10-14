@@ -68,7 +68,6 @@ Singleton {
 
     function _saveLibrary() {
         libraryWriter.setText(JSON.stringify(root.libraryList, null, 2))
-        libraryWriter.save()
     }
 
     function addToLibrary(anime) {

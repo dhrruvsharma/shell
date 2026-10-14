@@ -65,7 +65,9 @@ Singleton {
     property string activeProvider: "freewebnovel"
     property bool isSwitchingProvider: false
     readonly property var availableProviders: [
-        { name: "freewebnovel", label: "FreeWebNovel" }
+        { name: "freewebnovel", label: "FreeWebNovel" },
+        { name: "chikari",      label: "Chikari" },
+        { name: "novelarrow",   label: "NovelArrow" }
     ]
 
     function switchProvider(name) {
@@ -117,7 +119,6 @@ Singleton {
 
     function _saveLibrary() {
         libraryWriter.setText(JSON.stringify(root.libraryList, null, 2))
-        libraryWriter.save()
     }
 
     // NovelBin shut down; its slugs match FreeWebNovel's, so old entries are
@@ -255,7 +256,14 @@ Singleton {
             root.serverReady = true
             console.log("[ServiceNovel] Backend ready at", root.apiUrl)
             if (root._migratedIds.length > 0) root._refreshMigratedEntries()
-            fetchHot()
+            // A restarted server comes back on its default source; put it back
+            // on the one the browser is showing before loading the grid.
+            if (root.activeProvider !== "freewebnovel") {
+                Http.post(root.apiUrl + "/provider/switch", { provider: root.activeProvider },
+                          function(err, body) { fetchHot() })
+            } else {
+                fetchHot()
+            }
         }
     }
 

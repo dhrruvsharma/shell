@@ -22,6 +22,8 @@ Helper functions strip/add the prefix transparently.
 import threading
 
 from .freewebnovel import FreeWebNovelProvider
+from .chikari import ChikariProvider
+from .novelarrow import NovelArrowProvider
 
 from .base import NovelProvider
 
@@ -29,6 +31,8 @@ from .base import NovelProvider
 # Add new providers here: name → class
 _REGISTRY: dict[str, type[NovelProvider]] = {
     "freewebnovel": FreeWebNovelProvider,
+    "chikari":      ChikariProvider,
+    "novelarrow":   NovelArrowProvider,
 }
 
 _lock   = threading.Lock()

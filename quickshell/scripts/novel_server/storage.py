@@ -115,6 +115,32 @@ _dl_jobs: dict = {}
 _dl_lock = threading.Lock()
 
 
+# Download folders: DOWNLOADS_DIR/<novel>/<chapter>. Novels from different
+# sources share slugs ("shadow-slave" is on all of them), so every provider but
+# the original freewebnovel (whose folders predate this) gets its name in
+# front: "chikari-shadow-slave". A chapter id carries its novel's slug just
+# before its own last segment ("novel/<slug>/chapter-5", "<slug>/5").
+
+def _safe(part: str) -> str:
+    return re.sub(r"[^a-zA-Z0-9_-]", "_", part)
+
+
+def _split_id(prefixed_id: str) -> tuple[str, list]:
+    provider, _, raw = prefixed_id.rpartition(":")
+    return provider or "freewebnovel", raw.split("/")
+
+
+def _novel_dir_name(provider: str, slug: str) -> str:
+    name = _safe(slug)
+    return name if provider == "freewebnovel" else f"{_safe(provider)}-{name}"
+
+
+def _chapter_dir(chapter_id: str) -> str:
+    provider, parts = _split_id(chapter_id)
+    slug = parts[-2] if len(parts) >= 2 else ""
+    return os.path.join(DOWNLOADS_DIR, _novel_dir_name(provider, slug), _safe(parts[-1]))
+
+
 def dl_list(proxy_fn) -> list:
     result = []
     if not os.path.exists(DOWNLOADS_DIR):
@@ -176,12 +202,9 @@ def _dl_worker(novel_id, chapter_id, chapter_num, chapter_title,
                novel_title, raw_cover_url, fetch_chapter_fn):
     from providers.utils import fetch_bytes
 
-    # Safe filesystem names — strip prefix too
-    raw_nid  = novel_id.split(":")[-1]   # "freewebnovel:novel/slug" → "novel/slug"
-    raw_cid  = chapter_id.split(":")[-1]
-    safe_nid = re.sub(r"[^a-zA-Z0-9_-]", "_", raw_nid.split("/")[-1])
-    safe_cid = re.sub(r"[^a-zA-Z0-9_-]", "_", raw_cid.split("/")[-1])
-    ch_dir   = os.path.join(DOWNLOADS_DIR, safe_nid, safe_cid)
+    provider, parts = _split_id(novel_id)
+    safe_nid = _novel_dir_name(provider, parts[-1])
+    ch_dir   = _chapter_dir(chapter_id)
     os.makedirs(ch_dir, exist_ok=True)
 
     try:
@@ -235,28 +258,22 @@ def _dl_worker(novel_id, chapter_id, chapter_num, chapter_title,
 
 def dl_chapter_offline(chapter_id: str):
     """Return offline chapter dict from disk, or None if not downloaded."""
-    raw_cid  = chapter_id.split(":")[-1]
-    safe_cid = re.sub(r"[^a-zA-Z0-9_-]", "_", raw_cid.split("/")[-1])
-    for nid in os.listdir(DOWNLOADS_DIR):
-        content_path = os.path.join(DOWNLOADS_DIR, nid, safe_cid, "content.json")
-        if os.path.exists(content_path):
-            with open(content_path, encoding="utf-8") as f:
-                return json.load(f)
+    content_path = os.path.join(_chapter_dir(chapter_id), "content.json")
+    if os.path.exists(content_path):
+        with open(content_path, encoding="utf-8") as f:
+            return json.load(f)
     return None
 
 
 def dl_remove(chapter_id: str) -> dict:
-    raw_cid  = chapter_id.split(":")[-1]
-    safe_cid = re.sub(r"[^a-zA-Z0-9_-]", "_", raw_cid.split("/")[-1])
-    for nid in os.listdir(DOWNLOADS_DIR):
-        ch_dir = os.path.join(DOWNLOADS_DIR, nid, safe_cid)
-        if os.path.isdir(ch_dir):
-            shutil.rmtree(ch_dir)
-            novel_dir = os.path.join(DOWNLOADS_DIR, nid)
-            remaining = [d for d in os.listdir(novel_dir) if os.path.isdir(os.path.join(novel_dir, d))]
-            if not remaining:
-                shutil.rmtree(novel_dir)
-            with _dl_lock:
-                _dl_jobs.pop(chapter_id, None)
-            return {"ok": True}
+    ch_dir = _chapter_dir(chapter_id)
+    if os.path.isdir(ch_dir):
+        shutil.rmtree(ch_dir)
+        novel_dir = os.path.dirname(ch_dir)
+        remaining = [d for d in os.listdir(novel_dir) if os.path.isdir(os.path.join(novel_dir, d))]
+        if not remaining:
+            shutil.rmtree(novel_dir)
+        with _dl_lock:
+            _dl_jobs.pop(chapter_id, None)
+        return {"ok": True}
     return {"ok": False, "error": "not found"}

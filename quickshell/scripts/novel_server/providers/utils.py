@@ -3,10 +3,12 @@ Shared utilities: HTTP session, fetch helpers, TTL cache, text cleaning.
 Imported by providers — never by server.py directly.
 """
 
+import html as _html
+import json
 import re
 import time
 import threading
-from urllib.parse import quote
+from urllib.parse import quote, urlsplit
 
 # ── HTTP session (curl_cffi preferred for Cloudflare bypass) ───────────────
 # Sessions are checked out of a pool, one per request in flight: the server
@@ -88,30 +90,29 @@ AJAX_HEADERS = {
 # dozen or more requests back to back, so every page request waits for its
 # slot, and a 429 that slips through (other clients, a browser on the same IP)
 # is waited out and retried rather than failing the whole call.
+# Slots are kept per host, so one source's pacing never delays another's.
 
 PAGE_INTERVAL = 0.8
 _RATE_WAIT    = 6.0
 _RATE_TRIES   = 4
 
-_pace_lock = threading.Lock()
-_next_slot = 0.0
+_pace_lock  = threading.Lock()
+_next_slot: dict = {}
 
 
-def _pace():
-    global _next_slot
+def _pace(host: str):
     with _pace_lock:
         now  = time.monotonic()
-        slot = max(now, _next_slot)
-        _next_slot = slot + PAGE_INTERVAL
+        slot = max(now, _next_slot.get(host, 0.0))
+        _next_slot[host] = slot + PAGE_INTERVAL
     if slot > now:
         time.sleep(slot - now)
 
 
-def _backoff(seconds: float):
+def _backoff(host: str, seconds: float):
     """Push every waiting page request back, not just the one that tripped."""
-    global _next_slot
     with _pace_lock:
-        _next_slot = max(_next_slot, time.monotonic() + seconds)
+        _next_slot[host] = max(_next_slot.get(host, 0.0), time.monotonic() + seconds)
 
 
 def fetch(url: str, extra_headers: dict | None = None, timeout: int = 30,
@@ -121,8 +122,9 @@ def fetch(url: str, extra_headers: dict | None = None, timeout: int = 30,
     headers = {**BASE_HEADERS, **(extra_headers or {})}
     if form is not None:
         headers["Content-Type"] = "application/x-www-form-urlencoded"
+    host = urlsplit(url).netloc
     for attempt in range(_RATE_TRIES):
-        _pace()
+        _pace(host)
         r = _get(url, headers, timeout, data=form)
         if r.status_code != 429 or attempt == _RATE_TRIES - 1:
             break
@@ -132,9 +134,15 @@ def fetch(url: str, extra_headers: dict | None = None, timeout: int = 30,
             wait = 0
         wait = max(wait, _RATE_WAIT * (attempt + 1))
         print(f"[novel-utils] 429 from site, waiting {wait:.0f}s: {url}")
-        _backoff(wait)
+        _backoff(host, wait)
     r.raise_for_status()
     return r.text
+
+
+def fetch_json(url: str, extra_headers: dict | None = None, timeout: int = 30):
+    """GET url and decode its JSON body. Raises on non-2xx or bad JSON."""
+    return json.loads(fetch(url, {"Accept": "application/json",
+                                  **(extra_headers or {})}, timeout))
 
 
 def fetch_bytes(url: str, timeout: int = 30) -> tuple[bytes, str]:
@@ -173,12 +181,15 @@ def cache_invalidate(key: str):
 # ── Text cleaning ──────────────────────────────────────────────────────────
 
 def clean_text(html: str) -> str:
-    """Strip all HTML tags and normalise whitespace."""
+    """Strip all HTML tags, decode entities and normalise whitespace.
+    Entities are decoded after the tags are gone, so an escaped "&lt;b&gt;"
+    in the text survives as literal "<b>" instead of being stripped. The site
+    double-encodes some text ("&amp;amp;", "&amp;#39;"), so decoding repeats
+    until nothing changes."""
     text = re.sub(r"<[^>]+>", " ", html)
-    text = re.sub(r"&nbsp;",  " ",  text)
-    text = re.sub(r"&amp;",   "&",  text)
-    text = re.sub(r"&lt;",    "<",  text)
-    text = re.sub(r"&gt;",    ">",  text)
-    text = re.sub(r"&quot;",  '"',  text)
-    text = re.sub(r"&#\d+;",  "",   text)
+    for _ in range(3):
+        decoded = _html.unescape(text)
+        if decoded == text:
+            break
+        text = decoded
     return re.sub(r"\s+", " ", text).strip()
