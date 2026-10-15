@@ -263,7 +263,14 @@ Popup calendar with a full clock display.
 
 ### OSD
 
-`Osd/OsdWindow.qml` — On-screen display for volume and brightness changes.
+`Osd/OsdWindow.qml` + `Osd/OsdPill.qml` + `services/Osd.qml`
+
+The volume and brightness OSD, at the bottom centre (above a bottom bar) on the overlay layer, so it shows over fullscreen video too. It drops in as a bead holding its sign, opens into a pill, and folds back into the bead when it goes.
+
+- **Brightness** — a drawn sun whose rays grow and turn with the level and whose glow lights the pill; below a fifth it wanes to a crescent moon. The meter is a strip of night sky that the daylight floods, putting out the stars as it reaches them. Every step sends a glint along the light.
+- **Volume** — a speaker whose three waves light in turn, over a waveform that stands taller the louder it is. Every step sends a wavefront out of the speaker that bounces the bars as it rolls past. It names the output (headphones, speaker, HDMI) and shows when a new one takes over. Muted, the waveform goes flat. Past 100% (wpctl lets the keys run on), the bars clip and run hot.
+- Brightness changes arrive through inotify on the backlight (the kernel notifies every write), so the OSD shows at once without polling. A key pressed at either end of the range shows it too.
+- The desktop theme gives it its corners, frame, type and colours.
 
 ### Keybinds Manager
 

@@ -5,6 +5,8 @@ import Quickshell.Services.Pipewire
 import qs.services as Services
 
 Singleton {
+    id: root
+
     PwObjectTracker {
         objects: [
             Pipewire.defaultAudioSource,
@@ -23,19 +25,45 @@ Singleton {
     property real volume: (defaultSink?.audio?.volume > 1 ? 1 : defaultSink?.audio?.volume) ?? 0
     property bool muted: defaultSink?.audio?.muted ?? false
 
+    // The OSD stays quiet while the shell starts: the default output and its
+    // level only arrive then.
+    property bool _armed: false
+
+    Timer {
+        running: true
+        interval: 2500
+        onTriggered: root._armed = true
+    }
+
     Connections {
         id: audioConn
-        target: defaultSink && defaultSink.audio ? defaultSink.audio : null
+        target: root.defaultSink && root.defaultSink.audio ? root.defaultSink.audio : null
 
         function onVolumeChanged() {
-            let vol = Math.min(defaultSink.audio.volume * 100, 100)  // Clamp to 100
-            Services.Osd.show("volume", vol)
+            root.report();
         }
 
         function onMutedChanged() {
-            let vol = defaultSink.audio.muted ? 0 : Math.min(defaultSink.audio.volume * 100, 100)
-            Services.Osd.show("volume", vol)
+            root.report();
         }
+    }
+
+    // A new output (headphones plugged in, buds connected, a pick in the
+    // control center) shows its name and level once it has settled.
+    onDefaultSinkChanged: if (_armed) sinkSettle.restart()
+
+    Timer {
+        id: sinkSettle
+        interval: 400
+        onTriggered: root.report()
+    }
+
+    // The output's own level for the OSD, past 100% too (the keys can push
+    // it there; `volume` above stops at 1 for the sliders). Muted, it keeps
+    // the level and the OSD shows it muted.
+    function report(): void {
+        if (_armed && defaultSink?.audio)
+            Services.Osd.show("volume", defaultSink.audio.volume * 100);
     }
 
     function setVolume(to: real): void {
@@ -52,7 +80,6 @@ Singleton {
             defaultSource.audio.muted = false;
             let val = Math.max(0, Math.min(1, to));
             defaultSource.audio.volume = val
-            Services.Osd.show("volume", val * 100)
         }
     }
 

@@ -2,148 +2,78 @@ import QtQuick
 import Quickshell
 import Quickshell.Wayland
 import qs.services as Services
-import qs.colors
-import qs.Core
-import QtQuick.Layouts
-import qs.components
 
-// The volume / brightness OSD, in a small click-through surface of its own
-// that exists only while it shows. (It used to live in the full-screen panel
-// surface, which then had to stay mapped and repaint whole for it.)
+// The volume / brightness OSD (OsdPill) in a small click-through surface of
+// its own, mapped only while the pill is up or on its way out. It sits on
+// the overlay layer, so it shows over a fullscreen video too, and keeps one
+// size throughout (the pill moves inside it): Hyprland would animate a
+// layer's size changes, and hypr/quickshell.lua turns its layer animation
+// off for this namespace.
 PanelWindow {
-    id: root
-    visible: Services.Osd.visible
+    id: win
+
+    readonly property bool wanted: Services.Osd.visible
+    // Set once the freshly mapped surface has drawn its first frame, so the
+    // pill's entrance starts on screen rather than partway through.
+    property bool live: false
+    readonly property var sink: Services.Volume.defaultSink
+
+    visible: wanted || pill.pop > 0
+    onVisibleChanged: if (!visible) live = false
 
     anchors.bottom: true
-    margins.bottom: 60
+    margins.bottom: 36 + Services.BarLayout.reserveBottom
     exclusionMode: ExclusionMode.Ignore
-    // No layer animation from Hyprland (hypr/quickshell.lua): the card fades
-    // itself in, and used to vanish at once.
+    WlrLayershell.layer: WlrLayer.Overlay
     WlrLayershell.namespace: "quickshell:osd"
     WlrLayershell.keyboardFocus: WlrKeyboardFocus.None
     color: "transparent"
     mask: Region {}
 
-    implicitWidth: 360
-    implicitHeight: 100
+    // Room round the pill for its shadow and its bead's overshoot.
+    implicitWidth: pill.pillWidth + 64
+    implicitHeight: pill.pillHeight + 56
 
-    Card {
+    OsdPill {
+        id: pill
+
         anchors.fill: parent
-        radius: Services.DesktopTheme.rad(20)
+        shown: win.wanted && win.live
+        kind: Services.Osd.type || "volume"
+        volume: Services.Osd.volume
+        brightness: Services.Osd.brightness
+        muted: Services.Volume.muted
+        device: win.sink ? (win.sink.nickname || win.sink.description || "Output") : "Volume"
+        deviceIcon: win.iconFor(win.sink)
+        pulse: Services.Osd.pulse
+    }
 
-        PanelDecor {
-            radius: Services.DesktopTheme.rad(20)
-        }
-        color: Colors.surface_container_high
-        opacity: Services.Osd.visible ? 1.0 : 0.0
+    Connections {
+        target: pill.Window.window
+        enabled: win.visible && !win.live
 
-        layer.enabled: true
-        layer.smooth: true
-
-        Behavior on opacity {
-            NumberAnimation {
-                duration: 200
-                easing.type: Easing.InOutQuad
-            }
-        }
-
-        Row {
-            anchors {
-                fill: parent
-                margins: 24
-            }
-            spacing: 20
-
-            // Icon column
-            Rectangle {
-                width: 52
-                height: 52
-                radius: Services.DesktopTheme.rad(12)
-                color: Colors.primary_container
-                anchors.verticalCenter: parent.verticalCenter
-
-                MaterialIcon {
-                    anchors.centerIn: parent
-                    text: Services.Osd.type === "volume" ? getVolumeIcon() : Icons.brightness
-                    font.pixelSize: 28
-                    color: Colors.on_primary_container
-                }
-            }
-
-            // Content column
-            Column {
-                anchors.verticalCenter: parent.verticalCenter
-                spacing: 8
-                width: parent.width - 52 - 20
-
-                // Title and percentage row
-                Row {
-                    width: parent.width
-                    spacing: 8
-
-                    StyledText {
-                        text: Services.Osd.type === "volume" ? "Volume" : "Brightness"
-                        font.pixelSize: 16
-                        font.weight: Font.Medium
-                        anchors.verticalCenter: parent.verticalCenter
-                    }
-
-                    Item {
-                        width: parent.width - 180
-                        height: 1
-                    }
-
-                    StyledText {
-                        text: Math.min(Math.round(Services.Osd.value), 100) + "%"
-                        color: Colors.on_surface_variant
-                        font.pixelSize: 15
-                        font.weight: Font.DemiBold
-                        anchors.verticalCenter: parent.verticalCenter
-                    }
-                }
-
-                // Progress bar
-                Rectangle {
-                    width: parent.width
-                    height: 8
-                    radius: Services.DesktopTheme.rad(4)
-                    color: Colors.surface_container_highest
-
-                    Rectangle {
-                        height: parent.height
-                        radius: Services.DesktopTheme.rad(4)
-                        width: parent.width * Math.min(Math.max(Services.Osd.value, 0), 100) / 100
-                        color: Colors.primary
-
-                        Behavior on width {
-                            NumberAnimation {
-                                duration: 150
-                                easing.type: Easing.OutCubic
-                            }
-                        }
-
-                        // Shimmer effect on the fill
-                        Rectangle {
-                            anchors.fill: parent
-                            radius: parent.radius
-                            gradient: Gradient {
-                                GradientStop { position: 0.0; color: "transparent" }
-                                GradientStop { position: 0.5; color: Qt.rgba(1, 1, 1, 0.1) }
-                                GradientStop { position: 1.0; color: "transparent" }
-                            }
-                        }
-                    }
-                }
-            }
+        function onFrameSwapped() {
+            win.live = true;
         }
     }
 
-    function getVolumeIcon() {
-        let vol = Services.Osd.value
-        if (Services.Audio && Services.Audio.muted) return Icons.volumeMuted
-        if (vol === 0) return Icons.volumeZero
-        if (vol < 33) return Icons.volumeLow
-        if (vol < 66) return Icons.volumeMedium
-        return Icons.volumeHigh
+    // In case no frame comes, start anyway.
+    Timer {
+        interval: 150
+        running: win.visible && !win.live
+        onTriggered: win.live = true
+    }
+
+    // Headphones for Bluetooth and headphone outputs, a screen for HDMI and
+    // DisplayPort, a speaker otherwise.
+    function iconFor(node) {
+        if (!node)
+            return "";
+        const s = (node.name + " " + node.nickname + " " + node.description).toLowerCase();
+        if (node.name.startsWith("bluez_") || s.includes("headphone") || s.includes("headset"))
+            return "󰋋";
+        if (s.includes("hdmi") || s.includes("displayport"))
+            return "󰍹";
+        return "󰓃";
     }
 }

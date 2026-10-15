@@ -28,6 +28,12 @@ Item {
     id: decor
 
     property real radius: 0
+    // Corners that differ (a surface shaped like Wabi-sabi's pebbles, as the
+    // OSD is); each is `radius` unless given.
+    property real topLeftRadius: radius
+    property real topRightRadius: radius
+    property real bottomRightRadius: radius
+    property real bottomLeftRadius: radius
     // Mainframe's tab and Neon Noir's tag; empty for none.
     property string title: ""
     property string seal: "印"
@@ -45,7 +51,10 @@ Item {
     Rectangle {
         anchors.fill: parent
         visible: decor.shape !== "deco" && decor.shape !== "cusp"
-        radius: decor.radius
+        topLeftRadius: decor.topLeftRadius
+        topRightRadius: decor.topRightRadius
+        bottomRightRadius: decor.bottomRightRadius
+        bottomLeftRadius: decor.bottomLeftRadius
         color: "transparent"
         border.width: 1
         border.color: decor.shape === "print" ? Colors.withAlpha(decor.accent2, 0.45)

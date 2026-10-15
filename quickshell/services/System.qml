@@ -18,7 +18,8 @@ Singleton {
     property string uptime: "0h 0m"
 
     property int brightness: 0
-    property int lastBrightness: -1
+    // A step came in (the backlight was written) and awaits the OSD.
+    property bool _stepped: false
 
     // Resolved once at startup (see pathProbe); empty until then / if absent.
     property string backlightDir: ""
@@ -48,13 +49,6 @@ Singleton {
         repeat: true
         triggeredOnStart: true
         onTriggered: diskProc.running = true
-    }
-
-    Timer {
-        interval: 500
-        running: stats.backlightDir !== ""
-        repeat: true
-        onTriggered: brightnessFile.reload()
     }
 
     // First backlight device (what `brightnessctl` picks by default) and the
@@ -142,6 +136,19 @@ Singleton {
         }
     }
 
+    // The kernel notifies actual_brightness on every write to the backlight
+    // (a key, brightnessctl, the slider; even one that leaves it where it
+    // was, at either end of the range) and on firmware hotkey changes, so
+    // inotify brings each step the moment it happens, with no polling.
+    FileView {
+        path: stats.backlightDir !== "" ? stats.backlightDir + "/actual_brightness" : ""
+        watchChanges: true
+        onFileChanged: {
+            stats._stepped = true
+            brightnessFile.reload()
+        }
+    }
+
     // Percentage rounded the way `brightnessctl -m` reports it.
     FileView {
         id: brightnessFile
@@ -150,14 +157,11 @@ Singleton {
             if (stats.maxBrightness <= 0)
                 return
             stats.brightness = Math.round((parseInt(text()) || 0) * 100 / stats.maxBrightness)
+            if (stats._stepped) {
+                stats._stepped = false
+                Osd.show("brightness", stats.brightness)
+            }
         }
-    }
-
-    onBrightnessChanged: {
-        if (lastBrightness !== -1 && brightness !== lastBrightness) {
-            Osd.show("brightness", brightness)
-        }
-        lastBrightness = brightness
     }
 
     function setBrightness(v) {
