@@ -31,16 +31,48 @@ Item {
     readonly property color accent: Services.DesktopTheme.accent
     readonly property var adapter: Services.Bluetooth.defaultAdapter
 
+    // Waiting for the panels surface before sliding in. It grows from a
+    // pixel to the screen as the panel is made, and its first frame at full
+    // size comes 30-90 ms later; an animation running through that would
+    // jump most of the way in at once (OutCubic covers half the travel in
+    // the first fifth), so it starts on that frame.
+    property bool waiting: false
+
     onOpenedChanged: {
         if (opened) {
             visible = true
+            closeAnim.stop()
             panel.x = networkPanel.closedX
             scrim.opacity = 0
-            openAnim.restart()
-            Services.Network.refresh()
+            waiting = true
+            startAnyway.restart()
         } else {
+            waiting = false
+            startAnyway.stop()
             closeAnim.restart()
         }
+    }
+
+    function slideIn() {
+        waiting = false
+        startAnyway.stop()
+        openAnim.restart()
+    }
+
+    Connections {
+        target: networkPanel.Window.window
+        enabled: networkPanel.waiting
+        function onFrameSwapped() {
+            if (networkPanel.Window.window.width >= networkPanel.width)
+                networkPanel.slideIn()
+        }
+    }
+
+    // in case that frame never comes
+    Timer {
+        id: startAnyway
+        interval: 250
+        onTriggered: networkPanel.slideIn()
     }
 
     function close() {
@@ -330,6 +362,9 @@ Item {
             to: networkPanel.openX
             duration: 320; easing.type: Easing.OutCubic
         }
+        // Fresh state once it's in: the nmcli runs (forks of this whole
+        // process) and the lists they rebuild would stall the slide.
+        onFinished: if (networkPanel.opened) Services.Network.refresh()
     }
 
     ParallelAnimation {
