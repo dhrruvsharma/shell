@@ -847,7 +847,8 @@ Singleton {
 
         function onDataChanged() {
             const n = Notification.data.length;
-            if (root._notifications >= 0 && n > root._notifications)
+            // (not while do not disturb is on)
+            if (root._notifications >= 0 && n > root._notifications && !Notification.dnd)
                 root.act("notice");
             root._notifications = n;
         }

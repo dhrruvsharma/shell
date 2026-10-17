@@ -2,6 +2,7 @@ import QtQuick
 import Quickshell
 import Quickshell.Io
 import Quickshell.Wayland
+import qs.components
 import qs.modules.anime
 import qs.modules.manga
 import qs.modules.novel
@@ -58,6 +59,23 @@ ShellRoot {
                     unloadTimer.start();
             }
         }
+    }
+
+    // Minimized panels wait as tabs on the edge they open from; a click
+    // brings one back. Declared first so an open panel covers them.
+    MinimizedDock {
+        side: "left"
+        entries: [
+            { item: mangaSlot.item, icon: "󰗚", restore: () => mangaSlot.toggle() },
+            { item: animeSlot.item, icon: "󰻏", restore: () => animeSlot.toggle() }
+        ]
+    }
+
+    MinimizedDock {
+        side: "right"
+        entries: [
+            { item: novelSlot.item, icon: "󰘝", restore: () => novelSlot.toggle() }
+        ]
     }
 
     PanelWindow {

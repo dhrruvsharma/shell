@@ -164,12 +164,34 @@ Singleton {
         }
     }
 
+    // One brightnessctl at a time: a level asked for while one runs (a drag
+    // of the control centre's slider) waits, and only the latest is set.
+    property int _pendingBrightness: -1
+
     function setBrightness(v) {
-        setBrightnessProc.command = ["brightnessctl","set", v + "%"]
-        setBrightnessProc.running = true
         stats.brightness = v
         Osd.show("brightness", v)  // Show OSD when user changes brightness
+        if (setBrightnessProc.running) {
+            stats._pendingBrightness = v
+            return
+        }
+        setBrightnessProc.command = ["brightnessctl", "set", v + "%"]
+        setBrightnessProc.running = true
     }
 
-    Process { id: setBrightnessProc }
+    // (sent from a fresh call: inside its own `exited` a Process still
+    // counts as running)
+    function _sendPendingBrightness() {
+        const v = stats._pendingBrightness
+        if (v < 0 || setBrightnessProc.running)
+            return
+        stats._pendingBrightness = -1
+        setBrightnessProc.command = ["brightnessctl", "set", v + "%"]
+        setBrightnessProc.running = true
+    }
+
+    Process {
+        id: setBrightnessProc
+        onExited: Qt.callLater(stats._sendPendingBrightness)
+    }
 }

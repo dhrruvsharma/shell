@@ -85,6 +85,14 @@ Singleton {
 
     function setDefaultSink(sink: PwNode): void {
         Pipewire.preferredDefaultAudioSink = sink;
+        // (and through pulse, which streams already playing follow)
+        if (sink?.name)
+            Quickshell.execDetached(["pactl", "set-default-sink", sink.name]);
+    }
+
+    function toggleMute(): void {
+        if (defaultSink?.ready && defaultSink?.audio)
+            defaultSink.audio.muted = !defaultSink.audio.muted;
     }
 
     function setDefaultSource(source: PwNode): void {

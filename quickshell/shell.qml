@@ -44,6 +44,26 @@ ShellRoot {
     Component.onCompleted: {
         Services.DesktopTheme.manage = true
         Services.FirefoxTheme.manage = true
+        // A night light left on comes back with the shell.
+        Services.NightLight.checkAvailable()
+    }
+
+    // The control centre's ways into the other panels.
+    function openFromControlCenter(which) {
+        if (which === "wifi" || which === "bluetooth") {
+            if (!networkPanelLoader.active)
+                networkPanelLoader.active = true
+            const panel = networkPanelLoader.item
+            if (!panel)
+                return
+            panel.currentTab = which === "wifi" ? 0 : 1
+            panel.opened = true
+        } else if (which === "themes") {
+            lockThemes.openTab("desktop")
+        } else if (which === "avatar") {
+            if (!avatarPicker.opened)
+                avatarPicker.open()
+        }
     }
 
     // The wallpaper, with the desktop theme's layer over it.
@@ -143,6 +163,32 @@ ShellRoot {
     }
 
     OsdWindow {}
+
+    // Minimized readers wait as tabs on the edge they open from; a click
+    // brings one back as it was left. Declared before rootPanel so an open
+    // panel on the same edge covers them.
+    function restoreReader(loader) {
+        if (!loader.item)
+            return
+        // closing it next time unloads it
+        loader.item.minimized = false
+        loader.item.visible = true
+    }
+
+    MinimizedDock {
+        side: "left"
+        entries: [
+            { item: mangaLoader.item, icon: "󰗚", restore: () => root.restoreReader(mangaLoader) },
+            { item: animeLoader.item, icon: "󰻏", restore: () => root.restoreReader(animeLoader) }
+        ]
+    }
+
+    MinimizedDock {
+        side: "right"
+        entries: [
+            { item: novelLoader.item, icon: "󰘝", restore: () => root.restoreReader(novelLoader) }
+        ]
+    }
 
     PanelWindow {
         id: rootPanel
@@ -261,6 +307,7 @@ ShellRoot {
                 anchors.fill: parent
                 sourceComponent: ControlCenter {
                     id: controlCenter
+                    onPanelRequested: which => root.openFromControlCenter(which)
                 }
                 focus: true
             }
@@ -467,7 +514,6 @@ ShellRoot {
             || (Services.BarLayout.vertical && networkPanelLoader.item !== null && networkPanelLoader.item.visible)
             || (Services.BarLayout.atRight && ghPopout.visible)
             || (wallpaperLoader.item !== null && wallpaperLoader.item.visible)
-            || (controlCenterLoader.item !== null && controlCenterLoader.item.visible)
             || chatLoader.active
             || (mangaLoader.item !== null && mangaLoader.item.visible)
             || (novelLoader.item !== null && novelLoader.item.visible)
@@ -649,9 +695,7 @@ ShellRoot {
             } else if (mangaLoader.item.visible) {
                 mangaLoader.item.visible = false
             } else {
-                // restoring a minimized panel; closing it next time unloads it
-                mangaLoader.item.minimized = false
-                mangaLoader.item.visible = true
+                root.restoreReader(mangaLoader)
             }
         }
     }
@@ -666,9 +710,7 @@ ShellRoot {
             } else if (novelLoader.item.visible) {
                 novelLoader.item.visible = false
             } else {
-                // restoring a minimized panel; closing it next time unloads it
-                novelLoader.item.minimized = false
-                novelLoader.item.visible = true
+                root.restoreReader(novelLoader)
             }
         }
     }
@@ -683,9 +725,7 @@ ShellRoot {
             } else if (animeLoader.item.visible) {
                 animeLoader.item.visible = false
             } else {
-                // restoring a minimized panel; closing it next time unloads it
-                animeLoader.item.minimized = false
-                animeLoader.item.visible = true
+                root.restoreReader(animeLoader)
             }
         }
     }
@@ -727,6 +767,32 @@ ShellRoot {
             } else {
                 controlCenterLoader.item.opened = !controlCenterLoader.item.opened
             }
+        }
+    }
+
+    // Do not disturb: toasts held back (all but critical ones), the
+    // notifications still kept for the control centre.
+    IpcHandler {
+        target: "notifications"
+        function toggleDnd(): void {
+            Services.Notification.toggleDnd()
+        }
+        function setDnd(on: bool): void {
+            Services.Notification.setDnd(on)
+        }
+        function clear(): void {
+            Services.Notification.clearAll()
+        }
+    }
+
+    // Night light (hyprsunset): toggle, or a temperature in kelvin (2500-6500).
+    IpcHandler {
+        target: "nightLight"
+        function toggle(): void {
+            Services.NightLight.toggle()
+        }
+        function setTemperature(kelvin: int): void {
+            Services.NightLight.setTemperature(kelvin)
         }
     }
 

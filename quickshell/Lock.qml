@@ -20,11 +20,16 @@ import qs.services as Services
 //
 // Locking never waits more than ~450 ms: without a capture a theme fades in
 // from black, without loaded settings the default theme is used.
+//
+// With QS_LOCK_THEN=suspend (the control centre's Sleep) it suspends the
+// machine once every screen is locked, never before.
 ShellRoot {
     id: root
 
     property bool engaged: false
     property bool releasing: false
+    readonly property bool suspendAfter: Quickshell.env("QS_LOCK_THEN") === "suspend"
+    property bool suspended: false
     property string themeId: ""
     readonly property bool settingsReady: Services.LockScreen.ready && Services.DesktopTheme.ready
 
@@ -86,6 +91,10 @@ ShellRoot {
         // Then there's nothing left to guard. (`locked` can't be watched for
         // this: Quickshell doesn't notify it when the compositor unlocks.)
         onSecureChanged: {
+            if (secure && root.suspendAfter && !root.suspended) {
+                root.suspended = true;
+                Quickshell.execDetached(["systemctl", "suspend"]);
+            }
             if (!secure && root.engaged && !root.releasing) {
                 console.warn("lock: session lock refused or ended by the compositor, exiting");
                 Qt.quit();

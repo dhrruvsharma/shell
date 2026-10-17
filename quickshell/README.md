@@ -185,19 +185,20 @@ Services that own a Python process launch it on startup; no separate daemon mana
 
 ## Control Center
 
-`modules/control/ControlCenter.qml` — slides in from the left edge (450 px wide).
+`modules/control/ControlCenter.qml` — a full-height panel on the left (468 px wide), hanging clear of the bar on whichever edge it stands. It's made like the desktop theme's widgets (`ControlStyle.qml` reads `WidgetStyle`): the theme's widget frame is its surface (a scrap plate in Wasteland, a war banner in Siege, a lancet window in Cathedral, a newspaper column in Broadsheet…), with the theme's type, wording, meters and art throughout. Without a theme it's a plain rounded card.
 
-Contains:
-- **Header** — user info / overview
-- **Quick Settings** — toggle tiles (Wi-Fi, Bluetooth, Night Light, …)
-- **Sliders** — volume and brightness
-- **Stats** — CPU / memory / temp graphs
-- **Info Section** — uptime, kernel, etc.
-- **Power Section** — shutdown, reboot, suspend shortcuts
-- **Notifications** — persistent notification list
-- **Sink Selector** — PipeWire audio output switcher
+From the top:
+- **Masthead** (`Masthead.qml`) — the time in the theme's display face and the day as the theme keeps it (the watch of the siege, the canonical hour, the tithi and nakshatra, the boat's depth, the edition on the street…), and your avatar in the theme's frame (click it to pick another).
+- **Switches** (`Toggles.qml`) — Wi-Fi and Bluetooth as wide tiles (the chevron opens the network panel on that tab; Bluetooth shows the connected device and its battery), then do not disturb, night light, airplane mode, the power profile (a click steps through them) and the desktop theme (opens the Themes panel).
+- **Levels** (`Levels.qml`) — volume (the glyph mutes, the chevron lists the outputs by their short names), brightness, and the night light's warmth while it's on. Tracks are drawn in the theme's meter style (hazard tape, prayer beads, a sword drawn from its scabbard…). The volume/brightness OSD stays quiet while the panel is open.
+- **Now playing** (`NowPlaying.qml`) — art, track, progress (click to seek) and controls, while a player is around.
+- **Notifications** (`NotificationList.qml`) — newest first under the theme's name for them ("Radio chatter", "Dispatches", "Stop press"…), with a count and *Clear all*; they take whatever height is left. A click runs the app's default action; the cross dismisses one (the app is told). With none, the theme's line for the quiet.
+- **Machine** (`Vitals.qml`) — CPU, memory, temperature and disk on the theme's meters, and the uptime.
+- **Power** (`PowerRow.qml`) — lock, sleep (locks first, then suspends once every screen is covered), log out, restart, shut down; the last three ask for a second click.
 
-**IPC:** `qs ipc call controlCenter changeVisible`
+**Do not disturb** (`services/Notification.qml`) holds back every toast but critical ones; the notifications still land in the list, and the setting is kept in `notifications.json`. **Night light** (`services/NightLight.qml`) runs `hyprsunset` (install it with `sudo pacman -S hyprsunset`); the choice and warmth are kept in `nightlight.json` and restored when the shell starts. **Airplane mode** (`services/Radios.qml`) blocks every radio with `rfkill`.
+
+**IPC:** `qs ipc call controlCenter changeVisible` · `qs ipc call notifications toggleDnd|setDnd <bool>|clear` · `qs ipc call nightLight toggle|setTemperature <kelvin>`
 
 ---
 
@@ -598,6 +599,8 @@ All panels are controlled through Quickshell's `IpcHandler` system. Use `qs ipc 
 | `novelReader` | `qs ipc call novelReader toggle` | Right-anchored panel |
 | `mediaPanel` | `qs ipc call mediaPanel toggle` | Centered panel |
 | `controlCenter` | `qs ipc call controlCenter changeVisible` | Left slide-in |
+| `notifications` | `qs ipc call notifications toggleDnd` | Do not disturb (`setDnd <bool>`, `clear`) |
+| `nightLight` | `qs ipc call nightLight toggle` | Night light via hyprsunset (`setTemperature <kelvin>`) |
 | `networkPanel` | `qs ipc call networkPanel changeVisible [wifi\|bluetooth]` | Bottom-right panel |
 | `clipboardManager` | `qs ipc call clipboardManager changeVisible` | Centered overlay |
 | `powerMenu` | `qs ipc call powerMenu toggle` | Centered overlay |

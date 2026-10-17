@@ -19,6 +19,14 @@ Singleton {
     // it was (a key pressed at the end of the range).
     property int pulse: 0
     readonly property real value: type === "volume" ? volume : brightness
+    // Held back while the control centre is open: its own sliders show
+    // the levels (the steps are still recorded).
+    property bool quiet: false
+
+    onQuietChanged: if (quiet) {
+        hideTimer.stop();
+        visible = false;
+    }
 
     Timer {
         id: hideTimer
@@ -31,6 +39,8 @@ Singleton {
             volume = v;
         else
             brightness = v;
+        if (quiet)
+            return;
         type = t;
         pulse++;
         visible = true;

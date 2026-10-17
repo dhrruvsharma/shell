@@ -34,7 +34,7 @@ ORIG_ARGS=("$@")
 PACMAN_PKGS=(
     hyprland qt6-5compat qt6-imageformats qt6-multimedia qt6-multimedia-ffmpeg
     pipewire wireplumber libpulse networkmanager bluez bluez-utils
-    brightnessctl playerctl cava cliphist wl-clipboard grim slurp wf-recorder
+    brightnessctl playerctl cava cliphist wl-clipboard grim slurp wf-recorder hyprsunset power-profiles-daemon
     matugen libnotify pacman-contrib jq curl lm_sensors python python-gobject mpv kitty
     ttf-jetbrains-mono-nerd ttf-iosevka-nerd ttf-nerd-fonts-symbols
     noto-fonts noto-fonts-emoji

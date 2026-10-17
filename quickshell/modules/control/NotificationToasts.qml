@@ -83,11 +83,13 @@ PanelWindow {
                             height: index > 0 ? 10 : 0
                         }
 
-                        // timer progress track
+                        // timer progress track (a critical one stays until it's
+                        // dealt with, so it has none)
                         Rectangle {
                             id: timerTrack
+                            visible: !modelData.critical
                             width: parent.width
-                            height: 3
+                            height: visible ? 3 : 0
                             radius: 1.5
                             color: Colors.outline_variant
                             clip: true
@@ -101,6 +103,8 @@ PanelWindow {
                                 width: timerTrack.width
 
                                 Component.onCompleted: {
+                                    if (modelData.critical)
+                                        return
                                     const totalDuration = modelData.notification.expireTimeout > 0
                                         ? modelData.notification.expireTimeout
                                         : 5000
@@ -136,30 +140,19 @@ PanelWindow {
                                 color: "transparent"
                                 clip: true
 
+                                // The app's icon, else the picture it sent (a
+                                // screenshot, album art), else the generic one.
                                 Image {
                                     anchors.fill: parent
                                     fillMode: Image.PreserveAspectFit
                                     smooth: true
-                                    // Decoded small: the "icon" is sometimes a
+                                    // Decoded small: the picture is sometimes a
                                     // whole screenshot (grimblast's, say).
                                     sourceSize: Qt.size(56, 56)
 
-                                    source: {
-                                        const icon = modelData.appIcon;
-                                        if (icon) {
-                                            if (icon.startsWith("/"))
-                                                return "file://" + icon;
-                                            if (icon.includes("://"))
-                                                return icon;
-                                            return "image://icon/" + icon;
-                                        }
-                                        return "image://icon/dialog-information";
-                                    }
-
-                                    onStatusChanged: {
-                                        if (status === Image.Error)
-                                            source = "image://icon/dialog-information";
-                                    }
+                                    source: Services.Notification.iconOf(modelData)
+                                        || Services.Notification.pictureOf(modelData)
+                                        || Quickshell.iconPath("dialog-information", true)
                                 }
                             }
 
@@ -194,15 +187,13 @@ PanelWindow {
                         anchors.fill: parent
                         cursorShape: Qt.PointingHandCursor
 
+                        // The app's default action, if it has one (an action's
+                        // name is `identifier`; the first action isn't it).
                         onClicked: {
-                            if (modelData.actions.length > 0) {
-                                let defaultAction = modelData.actions.find(a => a.id === "default");
-                                if (defaultAction)
-                                    defaultAction.invoke();
-                                else
-                                    modelData.actions[0].invoke();
-                            }
                             modelData.popup = false;
+                            const action = Services.Notification.defaultAction(modelData);
+                            if (action)
+                                action.invoke();
                         }
                     }
                 }

@@ -30,7 +30,7 @@ case $PKG in
             modules/anime modules/manga modules/novel
             services/{Anime,Manga,Novel,Http,HealthPoller}.qml
             components/{ClickableRect,CoverCard,CoverPlaceholder,CoverProgressBar,Divider}.qml
-            components/{EmptyState,IconButton,LoadingBar,LoadingState,MaterialIcon}.qml
+            components/{EmptyState,IconButton,LoadingBar,LoadingState,MaterialIcon,MinimizedDock}.qml
             components/{SkeletonGrid,SkeletonList,SkeletonPulse,SkeletonText,Spinner}.qml
             components/{StyledScrollBar,StyledText}.qml
             scripts/anime_server.py scripts/manga_server.py scripts/novel_server
