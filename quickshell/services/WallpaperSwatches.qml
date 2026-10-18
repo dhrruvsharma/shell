@@ -38,6 +38,10 @@ Singleton {
     property var _files: null
     property bool _again: false
     property var _batch: ({})
+    // Failed reads retried this session: a failure may have been matugen's
+    // (e.g. a config it refused) rather than the image's, so each one gets
+    // another go once per shell start instead of staying grey for good.
+    property var _retried: ({})
 
     function entry(name) {
         return entries[name] ?? null;
@@ -148,6 +152,10 @@ Singleton {
             const m = f.modified ? Math.floor(f.modified.getTime() / 1000) : -1;
             if (!e || (m >= 0 && e.m !== m))
                 missing.push(f.fileName);
+            else if (e.e && !_retried[f.fileName]) {
+                _retried[f.fileName] = true;
+                missing.push(f.fileName);
+            }
         }
         if (missing.length === 0)
             return;

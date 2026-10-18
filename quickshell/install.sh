@@ -223,6 +223,13 @@ seed_state() {
 register_matugen_template() {
     local name=$1 input=$2 output=$3
     local mg_conf="$CONFIG_HOME/matugen/config.toml"
+    # matugen 4 refuses a config without a [config] table ("missing field
+    # `config`"), even for --dry-run, which leaves the picker's cards grey
+    # and every wallpaper change uncoloured.
+    if ! grep -qs '^\[config\]' "$mg_conf"; then
+        info "Adding the [config] table matugen needs to $mg_conf"
+        printf '\n[config]\n' >>"$mg_conf"
+    fi
     grep -qs "^\[templates\.$name\]" "$mg_conf" && return
     info "Registering matugen template $name"
     printf '\n[templates.%s]\ninput_path  = "%s"\noutput_path = "%s"\n' \

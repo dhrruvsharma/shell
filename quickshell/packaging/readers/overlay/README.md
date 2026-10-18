@@ -92,6 +92,8 @@ wallpaper with [matugen](https://github.com/InioX/matugen), add the bundled temp
 to `~/.config/matugen/config.toml`:
 
 ```toml
+[config]   # matugen 4 won't run without this table; keep one if it's already there
+
 [templates.qs-novelmangareader]
 input_path  = "~/.config/qs-novelmangareader/extras/matugen/quickshell.json.hbs"
 output_path = "~/.config/qs-novelmangareader/colors/Colors.json"

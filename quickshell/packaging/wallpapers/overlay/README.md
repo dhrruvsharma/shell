@@ -173,6 +173,8 @@ default when it's missing. To have the picker follow your wallpaper too, add the
 bundled template to `~/.config/matugen/config.toml`:
 
 ```toml
+[config]   # matugen 4 won't run without this table; keep one if it's already there
+
 [templates.qs-wallpaperpicker]
 input_path  = "~/.config/qs-wallpaperpicker/extras/matugen/quickshell.json.hbs"
 output_path = "~/.config/qs-wallpaperpicker/colors/Colors.json"
