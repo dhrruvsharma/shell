@@ -48,7 +48,6 @@ Item {
             // Cut to the room it has while it rests there.
             width: root.overflowing && !root.moving ? root.width : implicitWidth
             elide: root.overflowing && !root.moving ? Text.ElideRight : Text.ElideNone
-            maximumLineCount: 1
             color: root.color
         }
 
@@ -60,7 +59,6 @@ Item {
                 text: label.text
                 font: label.font
                 color: root.color
-                maximumLineCount: 1
             }
         }
     }
