@@ -1,5 +1,4 @@
 import qs.components
-import qs.colors
 import qs.services as Services
 
 // Bar atom: an update glyph plus the pending-update count. Clicking toggles the
@@ -7,7 +6,7 @@ import qs.services as Services
 BarPill {
     readonly property int n: Services.Updates.count
     text: n > 0 ? "󰚰 " + n : "󰄬"
-    textColor: n > 0 ? Colors.primary : Colors.on_surface
+    textColor: n > 0 ? Services.BarSettings.highlight : Services.BarSettings.ink
     horizontalPadding: 20
     command: ["qs", "ipc", "call", "updatesPanel", "toggle"]
 }

@@ -28,14 +28,16 @@ QtObject {
 
     // The widgets that may be rearranged. Anything else is dropped on load,
     // and any of these missing from the saved layout is re-appended so a newly
-    // added widget still shows up instead of silently vanishing.
+    // added widget still shows up instead of silently vanishing. Each also
+    // has an entry in BarSettings.widgets (its file, and what the settings
+    // panel calls it); hidden ones keep their place here.
     readonly property var knownIds: [
         "cpu", "battery", "clock", "bluetooth",
-        "network", "volume", "temp", "memory", "updates"
+        "network", "volume", "temp", "memory", "updates", "settings"
     ]
 
     readonly property var defaultLeft: [["cpu"], ["battery"], ["clock"], ["bluetooth"]]
-    readonly property var defaultRight: [["updates"], ["network"], ["volume"], ["temp"], ["memory"]]
+    readonly property var defaultRight: [["updates"], ["network"], ["volume"], ["temp"], ["memory"], ["settings"]]
 
     property var left: root.defaultLeft
     property var right: root.defaultRight

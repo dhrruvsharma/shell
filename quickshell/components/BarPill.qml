@@ -18,8 +18,16 @@ import qs.services as Services
 // Siege's are cut into battlements along the top (CrenelMask). Widget
 // colours are kept either way.
 //
-// `maxWidth` (0 = unbounded) turns on the truncating behaviour — clip + elide —
-// that only the pills with variable-length labels used.
+// Its colours are the bar settings' (services/BarSettings): the wallpaper's
+// container surface by default, or a tone or colour picked there, faded by
+// the transparency set there, with an outline round it when that's on and
+// the theme draws none of its own.
+//
+// Its width is its text's, or the width set for its widget (`barId`) in
+// the bar settings; `maxWidth` (0 = unbounded) caps the first, for the
+// pills with variable-length labels. Text that doesn't fit is cut short
+// and scrolled through like the media pill's (components/MarqueeText), on
+// hover, always or never as the settings say.
 //
 // On a standing bar (left or right screen edge) the bar sets `vertical`: the
 // pill keeps its thickness and shows a compact upright face instead, `vIcon`
@@ -30,11 +38,22 @@ Rectangle {
     id: root
 
     property alias text: label.text
-    property color textColor: Colors.on_surface
+    property color textColor: Services.BarSettings.ink
     property int fontPixelSize: 17
     property int horizontalPadding: 16
     property int maxWidth: 0
     property bool vertical: false
+    // Which of the bar's widgets this is (TopBar and the settings' preview
+    // set it), for the width set for it.
+    property string barId: ""
+    // Hovered, as far as scrolling goes, when something over the pill takes
+    // the pointer (the settings' preview).
+    property bool forceHover: false
+    // The width set for it (0: as wide as its text), on a lying bar: a
+    // standing one keeps its upright face.
+    readonly property real setWidth: root.vertical ? 0 : Services.BarSettings.widthOf(root.barId)
+    // As wide as its text, with its padding.
+    readonly property real naturalWidth: label.implicitWidth + root.horizontalPadding
     readonly property var _parts: {
         const t = root.text;
         const i = t.indexOf(" ");
@@ -64,9 +83,9 @@ Rectangle {
     topRightRadius: Services.DesktopTheme.corner(root.look, radius, 1)
     bottomRightRadius: Services.DesktopTheme.corner(root.look, radius, 2)
     bottomLeftRadius: Services.DesktopTheme.corner(root.look, radius, 3)
-    color: Colors.surface_container
-    border.width: root.neon || root.deco || root.cusp || root.crenel || root.look.shape === "print" ? 0 : root.look.border
-    border.color: Services.DesktopTheme.borderColor(root.look)
+    color: Services.BarSettings.pill
+    border.width: root.neon || root.deco || root.cusp || root.crenel || root.look.shape === "print" ? 0 : root.look.border || (Services.BarSettings.outline ? 1 : 0)
+    border.color: root.look.border ? Services.DesktopTheme.borderColor(root.look) : Services.BarSettings.outlineColor
     layer.enabled: root.masked
     layer.effect: MultiEffect {
         maskEnabled: true
@@ -75,11 +94,14 @@ Rectangle {
         maskSpreadAtMin: 1.0
     }
     implicitHeight: root.vertical ? upright.implicitHeight + 12 : 28
-    clip: root.maxWidth > 0
     implicitWidth: root.vertical ? 28
-        : root.maxWidth > 0
-        ? Math.min(label.implicitWidth + root.horizontalPadding, root.maxWidth)
-        : label.implicitWidth + root.horizontalPadding
+        : root.setWidth > 0 ? root.setWidth
+        : root.maxWidth > 0 ? Math.min(root.naturalWidth, root.maxWidth)
+        : root.naturalWidth
+
+    HoverHandler {
+        id: hover
+    }
 
     MouseArea {
         id: mouse
@@ -92,9 +114,10 @@ Rectangle {
         }
     }
 
-    StyledText {
+    MarqueeText {
         id: label
         anchors.centerIn: parent
+        width: Math.max(0, root.width - root.horizontalPadding)
         visible: !root.vertical
         color: root.textColor
         font.pixelSize: root.fontPixelSize + root.look.sizeDelta
@@ -102,8 +125,9 @@ Rectangle {
         font.weight: root.look.weight
         font.letterSpacing: root.look.letterSpacing
         font.capitalization: root.look.caps === "small" ? Font.SmallCaps : root.look.caps ? Font.AllUppercase : Font.MixedCase
-        elide: root.maxWidth > 0 ? Text.ElideRight : Text.ElideNone
-        maximumLineCount: 1
+        mode: Services.BarSettings.overflow
+        speed: Services.BarSettings.scrollPxPerSecond
+        hovered: hover.hovered || root.forceHover
     }
 
     // The upright face, on a standing bar.

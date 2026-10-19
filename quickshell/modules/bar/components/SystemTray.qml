@@ -6,17 +6,19 @@ import qs.Core
 import qs.Widgets
 import qs.colors
 import qs.components
+import qs.services as Services
 
 // The tray at the bar's far end: a button that slides a card of tray icons
 // out beside it. On a standing bar (`vertical`) the two stack, the card
-// opening upwards.
+// opening upwards. Coloured like the rest of the bar (services/BarSettings),
+// which can also hide it.
 GridLayout {
     id: root
 
     property bool trayOpen: false
     property bool vertical: false
 
-    visible: SystemTray.items.values.length > 0
+    visible: SystemTray.items.values.length > 0 && Services.BarSettings.shown("tray")
     flow: root.vertical ? GridLayout.TopToBottom : GridLayout.LeftToRight
     rowSpacing: 4
     columnSpacing: 4
@@ -24,6 +26,7 @@ GridLayout {
     Card {
         clip: true
         radius: Math.min(width, height) / 2
+        color: Services.BarSettings.pill
 
         // 26 thick across the bar; along it, as long as its icons when open.
         Layout.preferredWidth: root.vertical ? 26 : root.trayOpen ? (trayInner.implicitWidth + 16) : 0
@@ -83,14 +86,14 @@ GridLayout {
         Layout.preferredHeight: 26
         radius: height / 2
 
-        color: Colors.background
+        color: Services.BarSettings.capsule
 
         Icon {
             anchors.centerIn: parent
             icon: Icons.arrowLeft
             font.pixelSize: 14
 
-            color: Colors.on_surface
+            color: Services.BarSettings.ink
             // Points the way the card opens, then back to close it.
             rotation: root.vertical ? (root.trayOpen ? 270 : 90) : (root.trayOpen ? 180 : 0)
 

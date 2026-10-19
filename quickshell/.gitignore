@@ -1,6 +1,7 @@
 # State the shell writes at runtime: each install keeps its own. New installs
 # start from defaults/ (install.sh copies over whatever is missing).
 /barlayout.conf
+/barsettings.json
 /cavawidget.json
 /colors/Colors.json
 /config/workspacedisc.json

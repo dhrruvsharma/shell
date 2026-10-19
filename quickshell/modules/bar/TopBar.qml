@@ -47,19 +47,25 @@ Item {
         return topBar.vertical ? item.height : item.width;
     }
 
-    // id -> widget source for the draggable atoms. Media and tray are fixed and
-    // intentionally excluded from this map.
-    readonly property var atomSources: ({
-            "cpu": "components/Cpu.qml",
-            "battery": "components/Battery.qml",
-            "clock": "components/Clock.qml",
-            "bluetooth": "components/Bluetooth.qml",
-            "network": "components/Network.qml",
-            "volume": "components/Volume.qml",
-            "temp": "components/Temp.qml",
-            "memory": "components/Memory.qml",
-            "updates": "components/Updates.qml"
-        })
+    // id -> widget source for the draggable atoms (listed with the rest of
+    // what the bar can show in services/BarSettings). Media and tray are
+    // fixed and not among them.
+    readonly property var atomSources: Services.BarSettings.atomSources
+
+    // A region's islands as the bar shows them: without the widgets hidden
+    // in the bar settings, and without islands left empty by that. Hidden
+    // widgets keep their place in BarLayout, so they come back where they
+    // were; drops still land right, as BarLayout finds islands and
+    // neighbours by the ids shown.
+    function shownIslands(region) {
+        const out = [];
+        for (const island of region) {
+            const ids = island.filter(id => Services.BarSettings.shown(id));
+            if (ids.length > 0)
+                out.push(ids);
+        }
+        return out;
+    }
 
     // ---- drag state -------------------------------------------------------
     property string dragAtomId: ""       // atom being dragged ("" = none)
@@ -209,8 +215,14 @@ Item {
             id: atomLoader
             anchors.centerIn: parent
             source: Qt.resolvedUrl(topBar.atomSources[slot.atomId] || "")
-            // Widgets show their upright face on a standing bar.
-            onLoaded: if ("vertical" in item) item["vertical"] = Qt.binding(() => topBar.vertical)
+            // Widgets show their upright face on a standing bar, and take the
+            // width set for them in the bar settings.
+            onLoaded: {
+                if ("vertical" in item)
+                    item["vertical"] = Qt.binding(() => topBar.vertical);
+                if ("barId" in item)
+                    item["barId"] = slot.atomId;
+            }
         }
 
         // Drag capture modelled on the window switcher's working MouseArea: it
@@ -293,9 +305,11 @@ Item {
         topRightRadius: Services.DesktopTheme.corner(island.look, radius, 1)
         bottomRightRadius: Services.DesktopTheme.corner(island.look, radius, 2)
         bottomLeftRadius: Services.DesktopTheme.corner(island.look, radius, 3)
-        color: island.grouped && !island.framed ? Colors.surface_container_high : "transparent"
-        border.width: island.framed ? 0 : island.isMergeTarget ? 2 : island.grouped && island.look.shape !== "print" ? island.look.border : 0
-        border.color: island.isMergeTarget ? Services.DesktopTheme.accent : Services.DesktopTheme.borderColor(island.look)
+        color: island.grouped && !island.framed ? Services.BarSettings.group : "transparent"
+        // The theme's hairline, or the outline the bar settings can put
+        // round every container.
+        border.width: island.framed ? 0 : island.isMergeTarget ? 2 : island.grouped && island.look.shape !== "print" ? (island.look.border || (Services.BarSettings.outline ? 1 : 0)) : 0
+        border.color: island.isMergeTarget ? Services.DesktopTheme.accent : island.look.border ? Services.DesktopTheme.borderColor(island.look) : Services.BarSettings.outlineColor
         opacity: island.beingDragged ? 0.4 : 1
 
         // The chrome of a group (or of a drop target) in the theme's look,
@@ -323,7 +337,7 @@ Item {
             id: hudChrome
 
             HudFrame {
-                fill: island.grouped ? Colors.surface_container_high : "transparent"
+                fill: island.grouped ? Services.BarSettings.group : "transparent"
                 stroke: island.isMergeTarget ? Colors.primary : Colors.withAlpha(Colors.on_surface, 0.12)
                 strokeWidth: island.isMergeTarget ? 2 : 1
                 tick: island.grouped
@@ -335,7 +349,7 @@ Item {
 
             NeonFrame {
                 cut: 10
-                fill: island.grouped ? Colors.surface_container_high : "transparent"
+                fill: island.grouped ? Services.BarSettings.group : "transparent"
                 stroke: island.isMergeTarget ? Services.DesktopTheme.accent2Of("cyberpunk") : Services.DesktopTheme.accentOf("cyberpunk")
                 strokeWidth: island.isMergeTarget ? 2 : 1
                 glow: island.grouped ? 0.5 : 0
@@ -348,7 +362,7 @@ Item {
             DecoFrame {
                 cut: 4
                 steps: 2
-                fill: island.grouped ? Colors.surface_container_high : "transparent"
+                fill: island.grouped ? Services.BarSettings.group : "transparent"
                 stroke: island.isMergeTarget ? Services.DesktopTheme.accent2Of("artdeco") : Services.DesktopTheme.borderColor(island.look)
                 strokeWidth: island.isMergeTarget ? 2 : 1
             }
@@ -359,7 +373,7 @@ Item {
 
             CuspFrame {
                 cut: 8
-                fill: island.grouped ? Colors.surface_container_high : "transparent"
+                fill: island.grouped ? Services.BarSettings.group : "transparent"
                 stroke: island.isMergeTarget ? Services.DesktopTheme.accent2Of("gothic") : Services.DesktopTheme.borderColor(island.look)
                 strokeWidth: island.isMergeTarget ? 2 : 1
             }
@@ -371,7 +385,7 @@ Item {
             CrenelFrame {
                 merlon: 9
                 depth: 4
-                fill: island.grouped ? Colors.surface_container_high : "transparent"
+                fill: island.grouped ? Services.BarSettings.group : "transparent"
                 stroke: island.isMergeTarget ? Services.DesktopTheme.accent2Of("siege") : Services.DesktopTheme.borderColor(island.look)
                 strokeWidth: island.isMergeTarget ? 2 : 1
             }
@@ -608,7 +622,7 @@ Item {
 
             Repeater {
                 id: leftRepeater
-                model: Services.BarLayout.left
+                model: topBar.shownIslands(Services.BarLayout.left)
                 IslandContainer {
                     required property var modelData
                     required property int index
@@ -646,7 +660,7 @@ Item {
 
             Repeater {
                 id: rightRepeater
-                model: Services.BarLayout.right
+                model: topBar.shownIslands(Services.BarLayout.right)
                 IslandContainer {
                     required property var modelData
                     required property int index

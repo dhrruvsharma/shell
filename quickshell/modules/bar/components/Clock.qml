@@ -20,8 +20,8 @@ BarPill {
 
     // Blend toward primary_container while the calendar is open so the pill and
     // its popup read as one connected surface.
-    color: pill.active ? Colors.primary_container : Colors.surface_container
-    textColor: pill.active ? Colors.on_primary_container : Colors.on_surface
+    color: pill.active ? Colors.primary_container : Services.BarSettings.pill
+    textColor: pill.active ? Colors.on_primary_container : Services.BarSettings.ink
 
     Behavior on color { ColorAnimation { duration: 180; easing.type: Easing.OutCubic } }
     Behavior on textColor { ColorAnimation { duration: 180; easing.type: Easing.OutCubic } }

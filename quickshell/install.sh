@@ -77,6 +77,8 @@ THEME_FONTS=(
     ofl/germaniaone/GermaniaOne-Regular.ttf
     "ofl/texturina/Texturina[opsz,wght].ttf"
     "ofl/texturina/Texturina-Italic[opsz,wght].ttf"
+    ofl/mashanzheng/MaShanZheng-Regular.ttf
+    ofl/yujisyuku/YujiSyuku-Regular.ttf
 )
 
 # venv path : pip packages (the paths are set in services/ReaderEnv.qml)

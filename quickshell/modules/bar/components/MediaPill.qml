@@ -10,10 +10,14 @@ import qs.components
 Item {
     id: root
 
-    property int maxWidth: 200
+    // Its width: as set in the bar settings while the bar lies along the
+    // top or bottom, else 200. A title that doesn't fit scrolls through
+    // (components/MarqueeText) on hover, always or never, as set there too.
+    property int maxWidth: (!BarLayout.vertical && BarSettings.widthOf("media")) || BarSettings.autoWidths.media
 
     property var media: Media
-    visible: media.activePlayer !== null
+    // While something plays, unless it's hidden in the bar settings.
+    visible: media.activePlayer !== null && BarSettings.shown("media")
 
     // The capsule lies along the bar. On a standing bar it is turned on its
     // side (reading up a left bar and down a right one, the tops of the
@@ -52,9 +56,11 @@ Item {
             topRightRadius: DesktopTheme.corner(look, radius, 1)
             bottomRightRadius: DesktopTheme.corner(look, radius, 2)
             bottomLeftRadius: DesktopTheme.corner(look, radius, 3)
-            border.width: framed || look.shape === "print" ? 0 : look.border
-            border.color: DesktopTheme.borderColor(look)
-            color: framed ? "transparent" : Colors.background
+            // Its colours are the bar settings' (services/BarSettings), as
+            // the widgets' are.
+            border.width: framed || look.shape === "print" ? 0 : look.border || (BarSettings.outline ? 1 : 0)
+            border.color: look.border ? DesktopTheme.borderColor(look) : BarSettings.outlineColor
+            color: framed ? "transparent" : BarSettings.capsule
 
             clip: true
 
@@ -80,7 +86,7 @@ Item {
                 id: hudCapsule
 
                 HudFrame {
-                    fill: Colors.background
+                    fill: BarSettings.capsule
                 }
             }
 
@@ -89,7 +95,7 @@ Item {
 
                 NeonFrame {
                     cut: 9
-                    fill: Colors.background
+                    fill: BarSettings.capsule
                     glow: 0.5
                 }
             }
@@ -100,7 +106,7 @@ Item {
                 DecoFrame {
                     cut: 4
                     steps: 2
-                    fill: Colors.background
+                    fill: BarSettings.capsule
                     stroke: DesktopTheme.borderColor(pill.look)
                 }
             }
@@ -110,7 +116,7 @@ Item {
 
                 CuspFrame {
                     cut: 8
-                    fill: Colors.background
+                    fill: BarSettings.capsule
                     stroke: DesktopTheme.borderColor(pill.look)
                 }
             }
@@ -121,7 +127,7 @@ Item {
                 CrenelFrame {
                     merlon: 8
                     depth: 3.5
-                    fill: Colors.background
+                    fill: BarSettings.capsule
                     stroke: DesktopTheme.borderColor(pill.look)
                 }
             }
@@ -228,70 +234,25 @@ Item {
                 spacing: 8
                 z: 1
 
-                Item {
+                MarqueeText {
                     Layout.fillWidth: true
                     Layout.preferredWidth: root.maxWidth - 20
-                    Layout.preferredHeight: mediaText.height
-                    clip: true
-
-                    Row {
-                        id: marqueeRow
-                        spacing: 50
-
-                        StyledText {
-                            id: mediaText
-                            text: media.artist
-                                ? media.title + " — " + media.artist
-                                : media.title
-
-                            font.pixelSize: 17
-                        }
-
-                        StyledText {
-                            visible: mouseArea.containsMouse
-                            text: mediaText.text
-                            font.pixelSize: 17
-                        }
-
-                        SequentialAnimation {
-                            id: marqueeAnimation
-                            running: mouseArea.containsMouse
-                            loops: Animation.Infinite
-
-                            PauseAnimation { duration: 2000 }
-
-                            NumberAnimation {
-                                target: marqueeRow
-                                property: "x"
-                                from: 0
-                                to: -(mediaText.implicitWidth + marqueeRow.spacing)
-                                duration: (mediaText.implicitWidth + marqueeRow.spacing) * 20
-                                easing.type: Easing.Linear
-                            }
-
-                            PropertyAction {
-                                target: marqueeRow
-                                property: "x"
-                                value: 0
-                            }
-                        }
-
-                        // Reset position when mouse leaves
-                        Behavior on x {
-                            enabled: !mouseArea.containsMouse
-                            NumberAnimation {
-                                duration: 300
-                                easing.type: Easing.OutCubic
-                            }
-                        }
-                    }
+                    Layout.preferredHeight: implicitHeight
+                    text: media.artist
+                        ? media.title + " — " + media.artist
+                        : media.title
+                    color: BarSettings.ink
+                    font.pixelSize: 17
+                    gap: 50
+                    mode: BarSettings.overflow
+                    speed: BarSettings.scrollPxPerSecond
+                    hovered: mouseArea.containsMouse
                 }
             }
 
             MouseArea {
                 id: mouseArea
                 onClicked: toggleProc.running = true
-                onExited: marqueeRow.x = 0  // Reset position when mouse leaves
                 anchors.fill: parent
                 z: 2
                 hoverEnabled: true

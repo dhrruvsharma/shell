@@ -54,7 +54,7 @@ cd ~/dotfiles/quickshell
 The installer:
 
 1. Installs the packages with `pacman` (Quickshell, Qt6 extras, PipeWire, NetworkManager, BlueZ + `python-gobject` for the pairing agent, `cava`, `cliphist`, `grim`/`slurp`, `matugen`, Nerd Fonts, …) plus `ttf-material-symbols-variable-git` from the AUR via `paru`/`yay`
-2. Fetches the Google Fonts used by the Art Deco, Gothic, Newspaper, Wasteland, Observatory, Abyss, Devaloka and Siege themes into `~/.local/share/fonts/quickshell-themes`
+2. Fetches the Google Fonts used by the Art Deco, Gothic, Newspaper, Wasteland, Observatory, Abyss, Devaloka and Siege themes (and the brush faces of the Cave Abode and Wabi-sabi power menus) into `~/.local/share/fonts/quickshell-themes`
 3. Symlinks the config to `~/.config/quickshell` (an existing one is backed up to `quickshell.bak-<timestamp>`)
 4. Creates the data directories (`~/Pictures/wallpapers`, `~/Pictures/Screenshots`, `~/Videos/recordings`, …), links `setwall` into `~/.local/bin`, and registers the matugen template; creates your settings files from `defaults/` (see [Your settings](#your-settings))
 5. Copies `hypr/quickshell.lua` (keybinds, blur, animations, scale) into `~/.config/hypr` and adds `require("quickshell")` to your `hyprland.lua` — after asking
@@ -95,6 +95,7 @@ What you change in the shell is saved to files inside the config folder, which g
 | File | Holds |
 |---|---|
 | `barlayout.conf` | Bar edge and widget order |
+| `barsettings.json` | Bar widgets shown or hidden, container colours, transparency, outline and widths |
 | `desktoptheme.json` | Desktop theme and screen effect |
 | `desktopwidgets.json` | Desktop widgets and their positions |
 | `lockscreen.json` | Lock screen themes |
@@ -173,13 +174,14 @@ Services that own a Python process launch it on startup; no separate daemon mana
 
 **Start:** CPU · Battery · Clock · Bluetooth  
 **Middle:** Media pill (track info + controls, shown when something is playing)  
-**End:** Updates · Network · Volume · Temperature · Memory · System Tray
+**End:** Updates · Network · Volume · Temperature · Memory · Settings · System Tray
 
 - **Widgets:** drag one onto another to group them, or into a gap to move it. `qs ipc call barLayout reset` restores the default order.
+- **Settings** (`modules/barsettings/`, `services/BarSettings.qml`): the gear on the bar or **SUPER + B** opens them. Show or hide any widget (the gear, media pill, tray and pet too; hidden ones keep their place), from switches or by clicking them in a live preview of the bar over your wallpaper. Colour the containers from the wallpaper (a tone of matugen's scheme, *Default* being the usual look) or with a picker (saturation/brightness square, hue strip, hex code, swatches), and the text the same way, with a readability check. Transparency fades the containers but never the text; an outline helps them read when they're faint. Also the bar's edge and its widgets back in order. The **Width** tab sets each container's width (Auto fits its text; − / + nudge it 4 px, the slider sets any width, *All widgets* sets them all at once); text that no longer fits is cut short with "…" and scrolls through like the media pill's title, on hover, all the time or never, slow, normal or fast. Widths apply while the bar lies along the top or bottom. Everything applies live and is saved to `barsettings.json`.
 - **Edge:** drag an empty stretch of the bar towards another edge and let go to move it there. On the left or right edge it stands on end and each widget shows a compact upright face. Panels that hang from the bar follow it.
 - **Workspace disc** (`modules/workspacedisc/`): peeks out of a screen corner beside the bar. Hover it to open it out, click a chamber to switch workspace, drag it to another corner.
 
-**IPC:** `qs ipc call barLayout setEdge top|bottom|left|right`, `toggleEdge`, `edge`
+**IPC:** `qs ipc call barLayout setEdge top|bottom|left|right`, `toggleEdge`, `edge`; `qs ipc call barSettings toggle|open|close`, `toggleWidget <cpu|memory|temp|battery|clock|network|bluetooth|volume|updates|settings|media|tray|pet>`, `setColor <#rrggbb>` (`""` for the wallpaper's), `setTransparency <0-100>`, `resetLook`, `setWidth <widget> <px>` (`0` for auto), `setOverflow hover|always|cut`, `resetWidths`
 
 ---
 
@@ -324,7 +326,28 @@ Selecting any item copies it to the clipboard.
 
 ## Power Menu
 
-`components/PowerMenu.qml` — centered overlay with shutdown, reboot, suspend, and lock actions.
+`modules/power/` — **SUPER + P**. Lock, sleep, log out, restart and shut down, staged in the desktop theme's own world: one scene per theme (`<Name>Power.qml`, built on `PowerScene`; `PlainPower` without a theme). The screen is grabbed as it opens, so each scene grows out of the desktop and shrinks back into it.
+
+| Theme | The menu | Shutting down |
+|---|---|---|
+| *(none)* | Five tiles over the frosted desktop, each turning into a circle in its own colour | The tile grows to fill the screen |
+| HUD | A game's pause menu with a blinking cursor, and your player card | GAME OVER (a restart: CONTINUE? 3, 2, 1) |
+| Mainframe | An ncurses dialog on a phosphor CRT, each action beside its real command | The command is typed, systemd's stop log scrolls, the tube collapses to a dot |
+| Astral | An orrery: five worlds on their orbits round a star | The system falls into a singularity (a restart jumps to hyperspace) |
+| Still | One breathing circle and five words; a pebble rolls to the one you point at | A long exhale |
+| Cave Abode | Paper talismans on a cinnabar cord | The talisman burns; its seal hangs in the dark as the world turns to ink |
+| Neon Noir | Vertical katakana neon signs in the rain | The signs short out one by one |
+| Wabi-sabi | Brushed kanji on washi; an ensō drawn round the one you point at | The ensō closes, cracks and is mended with gold |
+| Art Deco | The Express Elevator's floor dial and buttons | The gilded lift doors slide shut |
+| Cathedral | Lancets and candles under the rose window | Compline: the candles are snuffed one by one |
+| Broadsheet | A front page, the desktop as its halftone photograph, five stories | The story is stamped, the page spins away: -30- (a restart spins in an EXTRA) |
+| Wasteland | A breaker panel of levers and caged lamps | A lever thrown, the lamps die, the blast shutter slams down |
+| Observatory | The astrolabe, turned to tonight's sky, ringed by five brass stations | The dome's shutters close: "clear skies" |
+| Abyss | An engine order telegraph, the depth and the boat's readings beside it | ABANDON SHIP is rung and the boat floods (a log out surfaces) |
+| Devaloka | Five diyas on an aarti thali under the Konark wheel and the panchang | The lamps go out; moksha's flame rises away |
+| Siege | War banners on the battlements between torches, your arms above | The host strikes camp: the banners are lowered, the torches go out |
+
+Lock and sleep hand over to the lock screen straight away (sleep suspends once it's locked). Log out, restart and shut down play their ceremony first, and Esc or a click still turns it back; the last frame then stays up while the session ends. If the command is refused (an inhibitor, a password prompt), a notification says why and the menu comes back. Keys: arrows or Tab, Enter, 1–5 or L S O R P, Esc.
 
 **IPC:** `qs ipc call powerMenu toggle`
 
@@ -603,13 +626,14 @@ All panels are controlled through Quickshell's `IpcHandler` system. Use `qs ipc 
 | `nightLight` | `qs ipc call nightLight toggle` | Night light via hyprsunset (`setTemperature <kelvin>`) |
 | `networkPanel` | `qs ipc call networkPanel changeVisible [wifi\|bluetooth]` | Bottom-right panel |
 | `clipboardManager` | `qs ipc call clipboardManager changeVisible` | Centered overlay |
-| `powerMenu` | `qs ipc call powerMenu toggle` | Centered overlay |
+| `powerMenu` | `qs ipc call powerMenu toggle` | Power menu, staged by the desktop theme (SUPER + P) |
 | `ollamaChat` | `qs ipc call ollamaChat changeVisible` | Centered panel |
 | `aikiraChat` | `qs ipc call aikiraChat changeVisible` | Centered panel |
 | `launcherWindow` | `qs ipc call launcherWindow toggle` | Left-edge launcher |
 | `wallpaper` | `qs ipc call wallpaper toggle` | Wallpaper picker (swatch deck) |
 | `visBottom` | `qs ipc call visBottom toggle` | Full-screen CAVA visualizer |
 | `keybinds` | `qs ipc call keybinds toggle` | Keybinds manager (SUPER + /) |
+| `barSettings` | `qs ipc call barSettings toggle` | Bar settings (SUPER + B) |
 
 ### Example Hyprland keybindings
 

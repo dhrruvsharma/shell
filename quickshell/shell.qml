@@ -35,6 +35,7 @@ import qs.modules.desktoptheme
 import qs.modules.desktopwidgets
 import qs.modules.pet
 import qs.modules.keybinds
+import qs.modules.barsettings
 
 ShellRoot {
     id: root
@@ -63,6 +64,20 @@ ShellRoot {
         } else if (which === "avatar") {
             if (!avatarPicker.opened)
                 avatarPicker.open()
+        }
+    }
+
+    // The bar's settings: from the gear on the bar, SUPER+B and IPC.
+    function toggleBarSettings() {
+        if (!barSettingsLoader.active)
+            barSettingsLoader.active = true
+        barSettingsLoader.item.toggle()
+    }
+
+    Connections {
+        target: Services.BarSettings
+        function onPanelRequested() {
+            root.toggleBarSettings()
         }
     }
 
@@ -221,6 +236,7 @@ ShellRoot {
             || avatarPicker.visible
             || lockThemes.visible
             || keybindsLoader.active
+            || barSettingsLoader.active
         readonly property real screenW: screen ? screen.width : 1920
         readonly property real screenH: screen ? screen.height : 1200
 
@@ -242,6 +258,20 @@ ShellRoot {
         Item {
             width: rootPanel.screenW
             height: rootPanel.screenH
+
+            // The bar's settings, built for each opening like the
+            // keybinds. The bar stays above their scrim (it isn't in the
+            // bar's coveredByPanel), so what's set shows on the bar itself
+            // and the bar can still be used; they come first here, so a
+            // panel opened from it meanwhile (system, media, updates…)
+            // comes up over them.
+            Loader {
+                id: barSettingsLoader
+                active: false
+                anchors.fill: parent
+                focus: true
+                sourceComponent: BarSettingsPanel {}
+            }
 
             // The media and system panels hang from the middle of the bar's
             // edge, the updates panel from its far end (the right end, or
@@ -474,6 +504,9 @@ ShellRoot {
             }
             Region {
                 item: keybindsLoader.item && keybindsLoader.item.visible ? keybindsLoader.item : null
+            }
+            Region {
+                item: barSettingsLoader.item && barSettingsLoader.item.visible ? barSettingsLoader.item : null
             }
             // The edge strips stay with their own surfaces below.
             Region {
@@ -1008,6 +1041,65 @@ ShellRoot {
         function onVisibleChanged() {
             if (keybindsLoader.item && !keybindsLoader.item.visible)
                 closeKeybindsTimer.start()
+        }
+    }
+
+    // The bar's settings panel (SUPER+B), and its settings for scripts:
+    // toggleWidget takes one of cpu, memory, temp, battery, clock, network,
+    // bluetooth, volume, updates, settings, media, tray, pet; setColor a
+    // "#rrggbb" ("" for the wallpaper's); setTransparency 0 (solid) to 100;
+    // setWidth a widget (not the tray or pet) and px (0 for auto);
+    // setOverflow hover, always or cut.
+    IpcHandler {
+        target: "barSettings"
+        function toggle(): void {
+            root.toggleBarSettings()
+        }
+        function open(): void {
+            if (!barSettingsLoader.active)
+                barSettingsLoader.active = true
+            if (!barSettingsLoader.item.visible || !Services.BarSettings.panelOpen)
+                barSettingsLoader.item.open()
+        }
+        function close(): void {
+            if (barSettingsLoader.item?.visible)
+                barSettingsLoader.item.close()
+        }
+        function toggleWidget(id: string): void {
+            Services.BarSettings.toggle(id)
+        }
+        function setColor(color: string): void {
+            Services.BarSettings.setCustomColor(color)
+        }
+        function setTransparency(percent: int): void {
+            Services.BarSettings.setTransparency(percent / 100)
+        }
+        function resetLook(): void {
+            Services.BarSettings.resetLook()
+        }
+        function setWidth(id: string, px: int): void {
+            Services.BarSettings.setWidth(id, px)
+        }
+        function setOverflow(mode: string): void {
+            Services.BarSettings.setOverflow(mode)
+        }
+        function resetWidths(): void {
+            Services.BarSettings.resetWidths()
+        }
+    }
+
+    Timer {
+        id: closeBarSettingsTimer
+        interval: 600
+        // unless it was opened again in the meantime
+        onTriggered: if (!barSettingsLoader.item?.visible) barSettingsLoader.active = false
+    }
+
+    Connections {
+        target: barSettingsLoader.item
+        function onVisibleChanged() {
+            if (barSettingsLoader.item && !barSettingsLoader.item.visible)
+                closeBarSettingsTimer.start()
         }
     }
 

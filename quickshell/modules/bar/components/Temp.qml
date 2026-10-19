@@ -16,9 +16,5 @@ BarPill {
         return Icons.temperature
     }
 
-    property color tempColor: {
-        if (t >= 85) return Colors.error
-        if (t >= 70) return Colors.on_surface
-        return Colors.on_surface
-    }
+    property color tempColor: t >= 85 ? Colors.error : Services.BarSettings.ink
 }
