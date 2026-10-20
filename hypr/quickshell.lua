@@ -66,9 +66,12 @@ hl.animation({ leaf = "workspacesOut", enabled = true, speed = 4.5,  bezier = "b
 -- panel opens (and shrinks back once it has closed), and its OSD gets a
 -- surface each time it shows. Both animate themselves; Hyprland's layer
 -- animation on top drew the panels growing out of the top-left corner.
+-- The desktop widgets, cava and the workspace disc grow to full screen
+-- while dragged and shrink back on release; animated, they slid in from
+-- the corner after every drop.
 hl.layer_rule({
     name    = "quickshell-panels-no-anim",
-    match   = { namespace = "^quickshell:(panels|osd)$" },
+    match   = { namespace = "^quickshell:(panels|osd|widget|cava|workspacedisc)$" },
     no_anim = true,
 })
 
@@ -86,6 +89,7 @@ hl.bind(mainMod .. " + N",         hl.dsp.exec_cmd("qs ipc call notepad toggle")
 hl.bind(mainMod .. " + W",         hl.dsp.exec_cmd("qs ipc call wallpaper toggle"))
 hl.bind(mainMod .. " + T",         hl.dsp.exec_cmd("qs ipc call cavaWidget edit"))
 hl.bind(mainMod .. " + space",     hl.dsp.exec_cmd("qs ipc call pet toggle"))
+hl.bind(mainMod .. " + B",         hl.dsp.exec_cmd("qs ipc call barSettings toggle"))
 hl.bind("ALT + TAB",               hl.dsp.exec_cmd("qs ipc call expose toggle"))
 hl.bind("ALT + SHIFT + N",         hl.dsp.exec_cmd("qs ipc call networkPanel changeVisible"))
 hl.bind("ALT + SHIFT + C",         hl.dsp.exec_cmd("qs ipc call controlCenter changeVisible"))

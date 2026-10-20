@@ -95,8 +95,10 @@ die()  { printf '\033[1;31mxx\033[0m %s\n' "$*" >&2; exit 1; }
 confirm() {
     ((ASSUME_YES)) && return 0
     read -rp "$1 [y/N] " reply
-    [[ $reply =~ ^[Yy]$ ]]
+    [[ $reply =~ ^([Yy]|[Yy][Ee][Ss])$ ]]
 }
+
+cancelled() { warn "Cancelled, nothing was changed (answer y to proceed, or pass --yes)"; exit 1; }
 
 usage() { sed -n '2,16p' "$0" | sed 's/^# \{0,1\}//'; exit 0; }
 
@@ -481,7 +483,7 @@ if [[ -n $FINISH_FROM ]]; then
     finish_update "$FINISH_FROM"
     exit
 elif ((UPDATE)); then
-    confirm "Update the Quickshell config in $SRC_DIR?" || exit 1
+    confirm "Update the Quickshell config in $SRC_DIR?" || cancelled
     from=$(pull_updates)
     if [[ $from == "$(git -C "$SRC_DIR" rev-parse HEAD)" ]]; then
         info "Already up to date"
@@ -499,7 +501,7 @@ Quickshell config installer
   packages: $( ((DEPS)) && echo yes || echo skipped )
   extras:   $( ((EXTRAS)) && echo yes || echo no )
 EOF
-confirm "Proceed?" || exit 1
+confirm "Proceed?" || cancelled
 
 ((DEPS)) && install_packages
 ((DEPS)) && install_theme_fonts

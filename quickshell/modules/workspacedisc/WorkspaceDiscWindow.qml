@@ -63,6 +63,9 @@ PanelWindow {
     readonly property bool full: width >= sw - 1 && height >= sh - 1
 
     WlrLayershell.layer: WlrLayer.Top
+    // Hyprland's layer animation is off for this namespace: it slid the
+    // disc in from the screen's corner when a drag gave the surface back.
+    WlrLayershell.namespace: "quickshell:workspacedisc"
     exclusionMode: ExclusionMode.Ignore
     exclusiveZone: -1
     color: "transparent"
@@ -157,6 +160,10 @@ PanelWindow {
 
     Item {
         anchors.fill: parent
+        // The surface's new anchors go out with the next frame, still drawn
+        // at the old size: on press that small frame sits at the screen's
+        // corner, so hide it until the surface covers the screen.
+        opacity: win.held && !win.full ? 0 : 1
 
         // A press that loses the pointer to another surface gets no
         // release; with the surface covering the screen, the pointer leaving
@@ -198,9 +205,11 @@ PanelWindow {
             id: disc
 
             // At the surface's corner normally; on the screen while the
-            // surface covers it (following the drag, then the glide).
-            x: win.full ? win.dragX : 0
-            y: win.full ? win.dragY : 0
+            // surface covers it (following the drag, then the glide). Back
+            // at the corner in the very frame the surface is given back, not
+            // once it has shrunk, or that frame draws it off in the distance.
+            x: win.held && win.full ? win.dragX : 0
+            y: win.held && win.full ? win.dragY : 0
             width: implicitWidth
             height: implicitHeight
             corner: win.corner

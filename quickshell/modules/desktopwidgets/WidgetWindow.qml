@@ -12,9 +12,15 @@ import qs.services as Services
 // Drag it anywhere on the widget that isn't a button. While held, the surface
 // grows to the whole screen, so the widget moves inside it with plain Qt
 // dragging instead of waiting on the compositor for every step; on release
-// it shrinks back to the widget at its new place. `body` only switches to
-// screen coordinates once the surface really is full screen (and back), so
-// nothing jumps while the compositor catches up.
+// it shrinks back to the widget at its new place.
+//
+// The new anchors and margins reach the compositor with the next frame, and
+// that frame's buffer still has the old size, so `body` has to be placed for
+// the new surface already: on release it goes back to 0,0 in that same frame
+// (going by `full` there drew it at twice its offset for a frame or two,
+// as if flying in from elsewhere). On press the small buffer briefly sits
+// at the screen's corner, so the widget is hidden until the surface covers
+// the screen.
 PanelWindow {
     id: win
 
@@ -64,10 +70,11 @@ PanelWindow {
     Item {
         id: body
 
-        x: win.full ? (win.held ? win.dragX : win.restX) : 0
-        y: win.full ? (win.held ? win.dragY : win.restY) : 0
+        x: win.held && win.full ? win.dragX : 0
+        y: win.held && win.full ? win.dragY : 0
         width: win.bw
         height: win.bh
+        opacity: win.held && !win.full ? 0 : 1
 
         MouseArea {
             id: grab

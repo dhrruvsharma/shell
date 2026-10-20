@@ -118,6 +118,9 @@ Scope {
         visible: Services.CavaWidget.enabled && !root.editMode
         color: "transparent"
         WlrLayershell.layer: WlrLayer.Bottom
+        // Hyprland's layer animation is off for this namespace (it slid the
+        // surface in from the corner each time a drag gave it back).
+        WlrLayershell.namespace: "quickshell:cava"
         WlrLayershell.keyboardFocus: WlrKeyboardFocus.None
         exclusionMode: ExclusionMode.Ignore
 
@@ -159,10 +162,14 @@ Scope {
         mask: Region { item: hoverZone }
 
         // Children keep using screen coordinates (posX/posY); this shifts them
-        // into the smaller surface.
+        // into the smaller surface. The shift follows `held` at once on
+        // release (the new margins go out with that frame, at the old size);
+        // on press the small frame briefly sits at the screen's corner, so
+        // it's hidden until the surface covers the screen.
         Item {
-            x: displayWin.full ? 0 : -displayWin.restX
-            y: displayWin.full ? 0 : -displayWin.restY
+            x: displayWin.held && displayWin.full ? 0 : -displayWin.restX
+            y: displayWin.held && displayWin.full ? 0 : -displayWin.restY
+            opacity: displayWin.held && !displayWin.full ? 0 : 1
 
             Item {
                 id: hoverZone
