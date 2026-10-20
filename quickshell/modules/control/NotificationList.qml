@@ -1,6 +1,7 @@
 pragma ComponentBehavior: Bound
 import QtQuick
 import QtQuick.Layouts
+import Quickshell
 import Qt5Compat.GraphicalEffects
 import qs.colors
 import qs.services as Services
@@ -85,7 +86,11 @@ ColumnLayout {
             clip: true
             spacing: 8
             boundsBehavior: Flickable.StopAtBounds
-            model: root.items
+            // (a ScriptModel keeps the cards, and a reply half typed on
+            // one, when another comes or goes)
+            model: ScriptModel {
+                values: root.items
+            }
 
             delegate: NotificationCard {
                 required property var modelData

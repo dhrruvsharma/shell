@@ -1,202 +1,65 @@
+pragma ComponentBehavior: Bound
 import QtQuick
-import QtQuick.Layouts
 import Quickshell
-import qs.services as Services
-import qs.colors
-import "../../components"
-import Qt5Compat.GraphicalEffects
 import Quickshell.Wayland
-import qs.components
+import qs.services as Services
 
+// The toasts: the newest notifications stacked in the top right corner, clear
+// of the bar wherever it stands, each on the theme's frame (NotificationToast).
+// Only the toasts take clicks. The surface takes the keyboard while a reply
+// is being typed on one, and lets it go after.
 PanelWindow {
     id: win
 
-    color: "transparent"
+    readonly property var popups: Services.Notification.popups
+    readonly property real gap: 12
+    readonly property bool replying: popups.some(n => n.replying)
 
+    color: "transparent"
     anchors.top: true
     anchors.right: true
+    margins.top: Services.BarLayout.reserveTop + gap
+    margins.right: Services.BarLayout.reserveRight + gap
 
-    implicitWidth: Services.Notification.popups.length > 0 ? 328 : 0
-    implicitHeight: 600
-    visible: Services.Notification.popups.length > 0
+    implicitWidth: 384
+    implicitHeight: Math.max(1, column.implicitHeight)
+    visible: popups.length > 0
     exclusionMode: ExclusionMode.Ignore
     WlrLayershell.layer: WlrLayer.Overlay
+    WlrLayershell.namespace: "quickshell:notifications"
+    // A mapped layer going to Exclusive takes the keyboard; it never maps
+    // with it (that would take the pointer too).
+    WlrLayershell.keyboardFocus: replying ? WlrKeyboardFocus.Exclusive : WlrKeyboardFocus.None
 
-    Popout {
-        id: mainPopout
-        alignment: 1
-        radius: 14
-        color: Colors.surface_container
+    mask: Region {
+        item: column
+    }
 
-        anchors.top: parent.top
-        anchors.right: parent.right
+    Column {
+        id: column
+        width: parent.width
+        spacing: 10
 
-        visible: Services.Notification.popups.length > 0
-
-        width: 300
-        height: toastColumn.implicitHeight + radius * 2
-
-        Behavior on height {
-            NumberAnimation { duration: 180; easing.type: Easing.OutCubic }
+        move: Transition {
+            NumberAnimation {
+                property: "y"
+                duration: 200
+                easing.type: Easing.OutCubic
+            }
         }
 
-        layer.effect: DropShadow {
-            horizontalOffset: 0
-            verticalOffset: 3
-            radius: Services.DesktopTheme.rad(16)
-            samples: 24
-            color: Colors.shadow
-        }
+        Repeater {
+            id: stack
+            // Newest on top. (A ScriptModel keeps each toast as it is when
+            // another comes or goes: its slide, a reply half typed.)
+            model: ScriptModel {
+                values: win.popups.slice().reverse()
+            }
 
-        Column {
-            id: toastColumn
-            width: mainPopout.width - mainPopout.radius * 2
-            spacing: 0
-
-            Repeater {
-                model: Services.Notification.popups
-
-                delegate: Item {
-                    required property var modelData
-                    required property int index
-
-                    width: toastColumn.width
-                    height: notifCol.implicitHeight
-
-                    Column {
-                        id: notifCol
-                        width: parent.width
-                        spacing: 0
-
-                        // separator above (all except the first notification)
-                        Rectangle {
-                            visible: index > 0
-                            width: parent.width
-                            height: visible ? 1 : 0
-                            color: Colors.outline_variant
-                            opacity: 0.4
-                        }
-
-                        // top spacing
-                        Item {
-                            width: parent.width
-                            height: index > 0 ? 10 : 0
-                        }
-
-                        // timer progress track (a critical one stays until it's
-                        // dealt with, so it has none)
-                        Rectangle {
-                            id: timerTrack
-                            visible: !modelData.critical
-                            width: parent.width
-                            height: visible ? 3 : 0
-                            radius: 1.5
-                            color: Colors.outline_variant
-                            clip: true
-
-                            Rectangle {
-                                id: timerBar
-                                anchors.left: parent.left
-                                height: parent.height
-                                radius: parent.radius
-                                color: Colors.primary
-                                width: timerTrack.width
-
-                                Component.onCompleted: {
-                                    if (modelData.critical)
-                                        return
-                                    const totalDuration = modelData.notification.expireTimeout > 0
-                                        ? modelData.notification.expireTimeout
-                                        : 5000
-                                    const elapsed = Date.now() - modelData.time.getTime()
-                                    const remaining = Math.max(0, totalDuration - elapsed)
-                                    timerAnim.duration = remaining
-                                    timerAnim.from = timerTrack.width * (remaining / totalDuration)
-                                    timerAnim.start()
-                                }
-
-                                NumberAnimation {
-                                    id: timerAnim
-                                    target: timerBar
-                                    property: "width"
-                                    to: 0
-                                    easing.type: Easing.Linear
-                                }
-                            }
-                        }
-
-                        // spacing between bar and content
-                        Item { width: parent.width; height: 8 }
-
-                        // notification row
-                        RowLayout {
-                            width: parent.width
-                            spacing: 10
-
-                            Rectangle {
-                                width: 28
-                                height: 28
-                                radius: Services.DesktopTheme.rad(7)
-                                color: "transparent"
-                                clip: true
-
-                                // The app's icon, else the picture it sent (a
-                                // screenshot, album art), else the generic one.
-                                Image {
-                                    anchors.fill: parent
-                                    fillMode: Image.PreserveAspectFit
-                                    smooth: true
-                                    // Decoded small: the picture is sometimes a
-                                    // whole screenshot (grimblast's, say).
-                                    sourceSize: Qt.size(56, 56)
-
-                                    source: Services.Notification.iconOf(modelData)
-                                        || Services.Notification.pictureOf(modelData)
-                                        || Quickshell.iconPath("dialog-information", true)
-                                }
-                            }
-
-                            ColumnLayout {
-                                Layout.fillWidth: true
-                                spacing: 3
-
-                                StyledText {
-                                    text: modelData.summary
-                                    font.bold: true
-                                    font.pixelSize: 13
-                                    wrapMode: Text.Wrap
-                                    Layout.fillWidth: true
-                                }
-
-                                StyledText {
-                                    visible: modelData.body.length > 0
-                                    text: modelData.body
-                                    font.pixelSize: 12
-                                    color: Colors.on_surface_variant
-                                    wrapMode: Text.Wrap
-                                    Layout.fillWidth: true
-                                }
-                            }
-                        }
-
-                        // bottom spacing
-                        Item { width: parent.width; height: 10 }
-                    }
-
-                    MouseArea {
-                        anchors.fill: parent
-                        cursorShape: Qt.PointingHandCursor
-
-                        // The app's default action, if it has one (an action's
-                        // name is `identifier`; the first action isn't it).
-                        onClicked: {
-                            modelData.popup = false;
-                            const action = Services.Notification.defaultAction(modelData);
-                            if (action)
-                                action.invoke();
-                        }
-                    }
-                }
+            NotificationToast {
+                required property var modelData
+                width: column.width
+                n: modelData
             }
         }
     }

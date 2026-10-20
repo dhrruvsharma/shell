@@ -4,6 +4,7 @@ pragma ComponentBehavior: Bound
 import Quickshell
 import Quickshell.Io
 import Quickshell.Services.Notifications
+import Quickshell.Wayland
 import QtQuick
 
 // The notification server, and what the shell shows of it: `history`, every
@@ -50,14 +51,100 @@ Singleton {
         return n?.actions.find(a => a.identifier === "default") ?? null;
     }
 
-    // A click: the app's default action (invoking closes it, unless it's
-    // resident), else it's just put away.
-    function activate(n): void {
+    // A click: the toast goes, the app's default action runs (invoking
+    // closes it, unless it's resident), and the app's window is brought
+    // forward. Apps can't raise themselves on Wayland without an activation
+    // token, which the notification spec's ActionInvoked doesn't carry, so
+    // a Discord or Firefox would switch to the message but stay behind.
+    // With no default action it's put away from the control centre
+    // (`dismissIdle`); a toast just goes back to the history.
+    function activate(n, dismissIdle = true): void {
+        if (!n)
+            return;
         const action = defaultAction(n);
+        const app = [n.desktopEntry, n.appName];
+        n.popup = false;
         if (action)
             action.invoke();
-        else
+        else if (dismissIdle)
             dismiss(n);
+        focusApp(app);
+    }
+
+    // One of the app's own buttons. The app usually closes it after.
+    function invoke(n, action): void {
+        if (!n || !action)
+            return;
+        const app = [n.desktopEntry, n.appName];
+        n.popup = false;
+        action.invoke();
+        focusApp(app);
+    }
+
+    // Sends the text back to the app (a chat's inline reply). The app
+    // closes or replaces the notification itself.
+    function reply(n, text: string): void {
+        if (!n?.notification || !n.canReply || text.trim().length === 0)
+            return;
+        n.popup = false;
+        n.notification.sendInlineReply(text);
+    }
+
+    // Brings forward the newest window of the app named in `names` (its
+    // desktop entry, its name): matched against window classes, whole or
+    // as the tail of a reverse-DNS id (org.telegram.desktop ↔ telegram).
+    // Skipped when the action itself moved focus to something else (a
+    // download notification opening the file manager, say).
+    function focusApp(names): void {
+        const wanted = names.map(s => (s ?? "").toLowerCase().replace(/\.desktop$/, "")).filter(s => s.length > 1);
+        if (wanted.length === 0)
+            return;
+        focuser.wanted = wanted;
+        focuser.before = String(ToplevelManager.activeToplevel?.appId ?? "").toLowerCase();
+        focusDelay.restart();
+    }
+
+    function _matches(cls: string, wanted): bool {
+        cls = (cls ?? "").toLowerCase();
+        if (!cls)
+            return false;
+        const tail = cls.split(".").pop();
+        return wanted.some(w => cls === w || tail === w || w.split(".").pop() === cls || (w.length >= 4 && cls.includes(w)));
+    }
+
+    // Gives the app a moment to raise its own window first.
+    Timer {
+        id: focusDelay
+        interval: 220
+        onTriggered: focuser.running = true
+    }
+
+    Process {
+        id: focuser
+
+        property var wanted: []
+        property string before
+
+        command: ["hyprctl", "clients", "-j"]
+        stdout: StdioCollector {
+            onStreamFinished: {
+                let clients;
+                try {
+                    clients = JSON.parse(text);
+                } catch (e) {
+                    return;
+                }
+                const active = clients.find(c => c.focusHistoryID === 0);
+                // Already there, or the action opened something else.
+                if (active && (root._matches(active.class, focuser.wanted) || root._matches(active.initialClass, focuser.wanted)))
+                    return;
+                if (active && focuser.before && (active.class ?? "").toLowerCase() !== focuser.before)
+                    return;
+                const target = clients.filter(c => c.mapped !== false && (root._matches(c.class, focuser.wanted) || root._matches(c.initialClass, focuser.wanted))).sort((a, b) => a.focusHistoryID - b.focusHistoryID)[0];
+                if (target)
+                    Hyprland.dispatch("focuswindow address:" + target.address);
+            }
+        }
     }
 
     // The app's icon as an image URL ("" for none): its own icon, an icon
@@ -107,6 +194,7 @@ Singleton {
         bodyImagesSupported: true
         bodyMarkupSupported: true
         imageSupported: true
+        inlineReplySupported: true
 
         onNotification: notif => {
             notif.tracked = true;
@@ -153,11 +241,19 @@ Singleton {
         readonly property int urgency: notification?.urgency ?? NotificationUrgency.Normal
         readonly property bool critical: urgency === NotificationUrgency.Critical
         readonly property list<NotificationAction> actions: notification?.actions ?? []
+        readonly property bool canReply: notification?.hasInlineReply ?? false
+        readonly property string replyPlaceholder: notification?.inlineReplyPlaceholder ?? ""
+
+        // Held while the pointer's on its toast or a reply is being typed:
+        // the countdown stops and starts over once it's let go.
+        property bool held: false
+        // A reply to it is being typed (its toast takes the keyboard).
+        property bool replying: false
 
         // A toast goes after the app's timeout (5 s when it gives none); a
         // critical one stays until it's dealt with.
         readonly property Timer timer: Timer {
-            running: notif.popup && !notif.critical
+            running: notif.popup && !notif.critical && !notif.held
             interval: (notif.notification?.expireTimeout ?? 0) > 0 ? notif.notification.expireTimeout : 5000
             onTriggered: notif.popup = false
         }
