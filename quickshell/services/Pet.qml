@@ -584,7 +584,11 @@ Singleton {
             exec(a.value, inTerminal || a.terminal);
             break;
         case "app":
-            exec(a.value.replace(/%[uUfFdDnNickvm]/g, "").trim(), inTerminal);
+            // As the registry runs it (detached, in a terminal if it asks
+            // for one); an app pinned before it was renamed or removed
+            // runs as the command it was pinned with.
+            if (inTerminal || !AppRegistry.launchExec(a.value))
+                exec(a.value.replace(/%[uUfFdDnNickvm]/g, "").trim(), inTerminal);
             break;
         case "note": {
             const n = (Notes.notes || []).find(x => x.id === a.value);

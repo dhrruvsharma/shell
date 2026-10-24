@@ -1242,7 +1242,8 @@ Card {
 
     function pickApp(app) {
         choose("exec");
-        param = String(app.exec).trim();
+        // (an app that runs in a terminal needs one opened for it)
+        param = (app.terminal ? Services.AppRegistry.terminal + " -e " : "") + String(app.exec).trim();
         appPicker.visible = false;
     }
 

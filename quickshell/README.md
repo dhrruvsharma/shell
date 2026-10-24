@@ -208,9 +208,34 @@ From the top:
 
 ### Launcher
 
-`modules/launcher/LauncherWindow.qml`
+`modules/launcher/` (`LauncherWindow.qml`, `LauncherDial.qml`, `DialApp.qml`, `DialFace.qml` and one `*Face.qml` per theme)
 
-Triggered by hovering the **left 2 px edge** of the screen (bottom 600 px) or via IPC. Shows pinned apps and an application grid; pin state is persisted through `SettingsConfig`.
+Opens with **SUPER+R**, by hovering the **left 2 px edge** of the screen (bottom 600 px), or via IPC. A great wheel rolls out of the left edge with the apps riding its rim. Turning it brings an app to the pointer at three o'clock, where it swells and its name is set large beside it in the theme's display face, with what it is, whether it runs in a terminal, and its actions. The wheel's face is the desktop theme's own object, and its pointer reaches across to the name:
+
+| Theme | Wheel | Pointer |
+|---|---|---|
+| none | tonal dial, minute marks | accent pill and halo |
+| HUD | game selection wheel, bearings | target brackets, `▸ EQUIP` tracer |
+| Mainframe | reel of nine-track tape | read head, tape threading on |
+| Astral | orrery, the sun at the hub | a course plotted in dots |
+| Still | dry garden raked round its stones | a dot and a hairline |
+| Cave Abode | luopan: mountains, trigrams, branches | the red thread |
+| Neon Noir | round neon sign, katakana | a third tube and a chevron |
+| Wabi-sabi | ensō on washi, mended in gold | vermilion seal, seam of gold |
+| Art Deco | elevator dial gone round, gilt rays | gilt needle |
+| Cathedral | rose window in stone | gilded rod, quatrefoil |
+| Broadsheet | rotary telephone dial | finger stop; the name a headline on a clipping |
+| Wasteland | a valve's rusted handwheel | hazard tape |
+| Observatory | astrolabe, the rete turning over the plate | its rule, and a sight |
+| Abyss | sonar scope | the sweep, `CONTACT` |
+| Devaloka | Konark sun wheel | a lotus and a thread of gold, temple border |
+| Siege | war shield in your tincture, hands aimed at the app | a longsword laid out |
+| Sekiro | iron tsuba, the season inlaid in gold | the blade from its habaki; the name over crimson |
+
+- **Turning:** ↑ / ↓, Page Up / Page Down, the scroll wheel (touchpads glide), or drag the wheel round (it runs on with a flick). Click an app on the rim to turn to it, click the one at the pointer (or its name) to launch. With more apps than the rim shows it wraps round from the last to the first; the letter each run of names starts with sits on the band inside the rim.
+- **Search:** just type. It ranks names, initials (`gc` → Google Chrome), what an app is (`browser`), its keywords and command (`nvim`), then its description; the apps you launch most come first (counts in `~/.cache/quickshell/appusage.json`). The best match comes to the pointer.
+- **Tab** steps through the app's actions ("New Private Window"…), **Enter** launches, **Esc** clears the search, then closes.
+- **Apps** come from `services/AppRegistry.qml`: Quickshell's desktop-entry index (it follows installs and removals live, and parses each `Exec` line), with icons from your GTK icon theme via `scripts/app-icons.py`. Apps start detached from the shell (a reload doesn't kill them), in their working directory, and in a terminal (`$TERMINAL`, else kitty) when their entry asks for one — btop, htop, nvim, nvtop, yazi…
 
 **IPC:** `qs ipc call launcherWindow toggle`
 
