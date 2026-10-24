@@ -152,6 +152,15 @@ Singleton {
             source: Qt.resolvedUrl("../modules/lock/themes/siege/SiegeSurface.qml"),
             introMs: 1600, outroMs: 1250, rewardBaseMs: 1450, rewardLevelUpMs: 850, rewardAchievementMs: 400,
             ambient: true
+        },
+        {
+            id: "sekiro",
+            name: "Deathblow",
+            tagline: "Sekiro · 忍殺",
+            description: "Night falls on Ashina, a great moon over the desktop and the silver grass rising. Your passcode is a duel: each keystroke deflects a blow and fills the foe's posture, a wrong one is a perilous attack that strikes out a resurrection node (spend them all and it's 死 until you rise again), and the right one is the deathblow: 忍殺.",
+            source: Qt.resolvedUrl("../modules/lock/themes/sekiro/SekiroSurface.qml"),
+            introMs: 1500, outroMs: 1250, rewardBaseMs: 1600, rewardLevelUpMs: 850, rewardAchievementMs: 400,
+            ambient: true
         }
     ]
 

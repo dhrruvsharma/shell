@@ -38,7 +38,8 @@ Item {
         observatory: observatoryLayer,
         abyss: abyssLayer,
         devaloka: devalokaLayer,
-        siege: siegeLayer
+        siege: siegeLayer,
+        sekiro: sekiroLayer
     })
 
     onThemeIdChanged: replay()
@@ -191,6 +192,15 @@ Item {
     Component {
         id: siegeLayer
         SiegeLayer {
+            boot: root.boot
+            now: clock.date
+            pxScale: root.pxScale
+        }
+    }
+
+    Component {
+        id: sekiroLayer
+        SekiroLayer {
             boot: root.boot
             now: clock.date
             pxScale: root.pxScale

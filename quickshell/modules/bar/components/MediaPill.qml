@@ -43,14 +43,16 @@ Item {
             // frame, Neon Noir's a cut-corner one, Art Deco's steps in at the
             // corners, Cathedral's is cusped, Broadsheet's ruled, Wasteland's
             // riveted, Observatory's graduated, Abyss's lit from below,
-            // Devaloka's bordered like a sari and Siege's cut into battlements.
+            // Devaloka's bordered like a sari, Siege's cut into battlements and
+            // Sekiro's tapered like the posture gauge.
             readonly property var look: DesktopTheme.look
             readonly property bool hud: look.shape === "chamfer"
             readonly property bool neon: look.shape === "neon"
             readonly property bool deco: look.shape === "deco"
             readonly property bool cusp: look.shape === "cusp"
             readonly property bool crenel: look.shape === "crenel"
-            readonly property bool framed: hud || neon || deco || cusp || crenel
+            readonly property bool posture: look.shape === "posture"
+            readonly property bool framed: hud || neon || deco || cusp || crenel || posture
             radius: DesktopTheme.radius(look, height / 2, height)
             topLeftRadius: DesktopTheme.corner(look, radius, 0)
             topRightRadius: DesktopTheme.corner(look, radius, 1)
@@ -74,6 +76,7 @@ Item {
                     deco: decoCapsule,
                     cusp: cuspCapsule,
                     crenel: crenelCapsule,
+                    posture: postureCapsule,
                     print: printCapsule,
                     plate: plateCapsule,
                     scale: scaleCapsule,
@@ -129,6 +132,17 @@ Item {
                     depth: 3.5
                     fill: BarSettings.capsule
                     stroke: DesktopTheme.borderColor(pill.look)
+                }
+            }
+
+            Component {
+                id: postureCapsule
+
+                PostureFrame {
+                    taper: 11
+                    fill: BarSettings.capsule
+                    stroke: DesktopTheme.borderColor(pill.look)
+                    tick: 3
                 }
             }
 

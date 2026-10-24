@@ -1,0 +1,53 @@
+/* Sekiro: Zen Old Mincho, the deathblow's crimson as the accent with the
+ * season's colour beside it, surfaces washed with black lacquer, square
+ * corners, and the selected tab underlined with a posture gauge: gold in
+ * the middle, running to orange and away to nothing at either end, the
+ * white tick at its centre. */
+:root:root {
+  --qs-accent: var(--qs-theme-accent);
+  --qs-on-accent: #fbf3ea;
+  --lwt-accent-color: color-mix(in srgb, var(--qs-bg) 90%, #0c0a0b) !important;
+  --lwt-accent-color-inactive: color-mix(in srgb, var(--qs-bg) 94%, #0c0a0b) !important;
+  --toolbar-bgcolor: color-mix(in srgb, var(--qs-surface-low) 92%, var(--qs-theme-accent)) !important;
+  --tab-border-radius: 0 !important;
+  --toolbarbutton-border-radius: 0 !important;
+  --border-radius-small: 0 !important;
+  --border-radius-medium: 0 !important;
+  --border-radius-large: 1px !important;
+}
+
+#navigator-toolbox, #sidebar-main, menupopup, panel, .urlbarView {
+  font-family: "Zen Old Mincho", serif !important;
+}
+
+.tab-label {
+  font-family: "Zen Old Mincho", serif !important;
+  font-weight: bold !important;
+  letter-spacing: 0.02em !important;
+}
+
+#navigator-toolbox {
+  border-bottom: 1px solid color-mix(in srgb, var(--qs-theme-accent) 40%, transparent) !important;
+}
+
+#urlbar .urlbar-background {
+  border-radius: 0 !important;
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, #c9a55c 35%, transparent) !important;
+}
+
+#urlbar[focused] .urlbar-background {
+  box-shadow: inset 0 0 0 1px var(--qs-theme-accent),
+              inset 0 0 0 4px color-mix(in srgb, var(--qs-theme-accent) 14%, transparent) !important;
+}
+
+/* The posture gauge under the selected tab, and its tick. */
+.tab-background:is([selected], [multiselected]) {
+  border-radius: 0 !important;
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--qs-theme-accent) 45%, transparent) !important;
+  background-image:
+    linear-gradient(#f6f1e6, #f6f1e6),
+    linear-gradient(to right, transparent 4%, #b5561e 18%, #e6b23c 50%, #b5561e 82%, transparent 96%) !important;
+  background-size: 1px 7px, 100% 3px !important;
+  background-position: center bottom 2px, center bottom 4px !important;
+  background-repeat: no-repeat !important;
+}

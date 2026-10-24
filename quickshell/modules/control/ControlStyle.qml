@@ -19,8 +19,8 @@ Singleton {
     readonly property bool paper: st.paper === true
     readonly property bool darkScheme: Qt.color(Colors.background).hslLightness < 0.5
     // Frames painted dark whatever the scheme (lacquer, stone, scrap,
-    // enamel, sea glass, banner cloth).
-    readonly property bool darkFrame: ["gilt", "lancet", "scrap", "brass", "instrument", "patta", "banner"].includes(frame)
+    // enamel, sea glass, banner cloth, black lacquer).
+    readonly property bool darkFrame: ["gilt", "lancet", "scrap", "brass", "instrument", "patta", "banner", "sumi"].includes(frame)
 
     readonly property color ink: paper ? "#1b1a17" : darkFrame && !darkScheme ? Colors.inverse_on_surface : Colors.on_surface
     readonly property color accent: WidgetStyle.accent(themeId)
@@ -46,7 +46,7 @@ Singleton {
 
     // How far the theme's art frame (WidgetArt) reaches past its box: a
     // ring, a porthole's bolts, a prabhavali's flames, tape at the corners.
-    readonly property real artBleed: ({ circle: 6, medallion: 9, porthole: 9, prabha: 13, taped: 6, neon: 3 })[st.art] ?? 0
+    readonly property real artBleed: ({ circle: 6, medallion: 9, porthole: 9, prabha: 13, taped: 6, neon: 3, tsuba: 10 })[st.art] ?? 0
 
     function label(text) {
         return WidgetStyle.label(text, st);
@@ -57,7 +57,7 @@ Singleton {
     }
 
     // A control's corner radius, given the plain design's: square on HUD,
-    // console, neon, gilt and newsprint, a little round on scroll, stone,
+    // console, neon, gilt, newsprint and lacquer, a little round on scroll, stone,
     // brass and lacquer, rounder on glass.
     function radius(normal) {
         switch (frame) {
@@ -66,6 +66,7 @@ Singleton {
         case "neon":
         case "gilt":
         case "clipping":
+        case "sumi":
             return 0;
         case "banner":
             return 1;

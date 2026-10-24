@@ -488,7 +488,10 @@ ShellRoot {
                 item: aikiraLoader.active ? aikiraLoader : null
             }
             Region {
-                item: clipboardLoader.item && clipboardLoader.item.visible ? clipboardLoader.item : null
+                // None while an entry is dragged out, so the drop reaches
+                // the window underneath.
+                item: clipboardLoader.item && clipboardLoader.item.visible && !clipboardLoader.item.dragging
+                    ? clipboardLoader.item : null
             }
             Region {
                 item: notepad.visible ? notepad : null

@@ -16,7 +16,8 @@ import qs.services as Services
 // in a brass ring; Abyss's is seen through a bolted porthole, under water;
 // Devaloka's stands in a round-topped niche inside a prabhavali, the ring
 // of flames behind a temple image; Siege's is painted on a heater shield
-// in a steel rim.
+// in a steel rim; Sekiro's is set in the eye of a sword guard, an iron
+// tsuba with a gold seppa washer round the art.
 Item {
     id: art
 
@@ -24,7 +25,7 @@ Item {
     property string source
     readonly property var st: WidgetStyle.of(themeId)
     readonly property color accent: WidgetStyle.accent(themeId)
-    readonly property bool round: ["circle", "medallion", "porthole"].includes(st.art)
+    readonly property bool round: ["circle", "medallion", "porthole", "tsuba"].includes(st.art)
     readonly property real radius: round ? width / 2 : st.art === "rounded" || st.art === "pebble" ? 14 : st.art === "soft" ? 12 : st.art === "seal" || st.art === "prabha" ? 4 : st.art === "taped" ? 2 : 0
     // Devaloka's niche: a semicircle over square shoulders.
     readonly property bool niche: st.art === "prabha"
@@ -126,7 +127,7 @@ Item {
             maskSource: ({ chamfer: chamferMask, neon: neonMask, deco: decoMask, arch: archMask, heater: heaterMask })[art.st.art] ?? shapeMask
             maskThresholdMin: 0.5
             maskSpreadAtMin: 1.0
-            saturation: art.st.art === "pebble" ? -0.3 : art.st.art === "taped" ? -0.45 : art.st.art === "medallion" ? -0.35 : art.st.art === "porthole" ? -0.2 : art.niche ? -0.08 : art.st.art === "heater" ? -0.15 : 0
+            saturation: art.st.art === "pebble" ? -0.3 : art.st.art === "taped" ? -0.45 : art.st.art === "medallion" ? -0.35 : art.st.art === "porthole" ? -0.2 : art.niche ? -0.08 : art.st.art === "heater" ? -0.15 : art.st.art === "tsuba" ? -0.12 : 0
             colorization: art.st.art === "taped" ? 0.25 : art.st.art === "medallion" ? 0.18 : art.st.art === "porthole" ? 0.3 : art.niche ? 0.14 : art.st.art === "heater" ? 0.1 : 0
             colorizationColor: art.st.art === "porthole" ? "#1d6f82" : art.niche ? "#b86f35" : "#a0784a"
         }
@@ -411,6 +412,51 @@ Item {
         }
     }
 
+    // Sekiro: the eye of a sword guard. An iron plate round the art, dark
+    // and hammered, a gold seppa washer at its rim, and the two hitsu-ana
+    // (the holes for the kozuka and the kogai) cut through it at either
+    // side.
+    Shape {
+        anchors.fill: parent
+        anchors.margins: -9
+        z: -1
+        visible: art.st.art === "tsuba"
+        preferredRendererType: Shape.CurveRenderer
+
+        ShapePath {
+            strokeColor: "#050405"
+            strokeWidth: 1
+            fillGradient: RadialGradient {
+                centerX: art.width / 2 + 9 - 4
+                centerY: art.height / 2 + 9 - 6
+                centerRadius: art.width / 2 + 12
+                focalX: centerX
+                focalY: centerY
+                GradientStop { position: 0; color: "#4b4447" }
+                GradientStop { position: 0.75; color: "#2a2426" }
+                GradientStop { position: 1; color: "#141011" }
+            }
+            PathAngleArc { centerX: art.width / 2 + 9; centerY: art.height / 2 + 9; radiusX: art.width / 2 + 8.5; radiusY: art.height / 2 + 8.5; startAngle: 0; sweepAngle: 360 }
+        }
+    }
+
+    Repeater {
+        model: art.st.art === "tsuba" ? 2 : 0
+
+        Rectangle {
+            required property int index
+            z: -1
+            x: index === 0 ? -7.5 : art.width + 2.5
+            y: art.height / 2 - height / 2
+            width: 5
+            height: 11
+            radius: 2.5
+            color: "#070506"
+            border.width: 0.5
+            border.color: Colors.withAlpha("#c9a55c", 0.4)
+        }
+    }
+
     // Siege: a heater shield in a rolled steel rim, a fine line inside it.
     Shape {
         anchors.fill: parent
@@ -449,5 +495,16 @@ Item {
                 path: ThemeShapes.heater(5, 5, art.width - 10, art.height - 10)
             }
         }
+    }
+
+    // Sekiro: the seppa, a gold washer round the eye.
+    Rectangle {
+        anchors.fill: parent
+        anchors.margins: -1.5
+        visible: art.st.art === "tsuba"
+        radius: width / 2
+        color: "transparent"
+        border.width: 2
+        border.color: "#c9a55c"
     }
 }

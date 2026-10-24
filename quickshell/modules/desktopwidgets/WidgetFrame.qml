@@ -15,9 +15,10 @@ import qs.services as Services
 // lacquer in a stepped gold rule, a leaded lancet window, a newspaper
 // clipping, a plate of scrap with its name on masking tape, an enamelled
 // plate in a graduated brass rim, the dark glass face of a deep-sea
-// instrument, a lacquered temple plaque bordered like a sari, or a war
-// banner hung from its crossbar. Children stack in a Column under the
-// title; set their text in `ink`.
+// instrument, a lacquered temple plaque bordered like a sari, a war
+// banner hung from its crossbar, or black lacquer with the title brushed
+// over a swash of crimson ink. Children stack in a Column under the title;
+// set their text in `ink`.
 Item {
     id: frame
 
@@ -79,7 +80,8 @@ Item {
             brass: brassFrame,
             instrument: instrumentFrame,
             patta: pattaFrame,
-            banner: bannerFrame
+            banner: bannerFrame,
+            sumi: sumiFrame
         })[frame.st.frame] ?? null
     }
 
@@ -666,6 +668,63 @@ Item {
         }
     }
 
+    Component {
+        id: sumiFrame
+
+        // Sekiro: black lacquer under a fine gold line, the title brushed
+        // over a swash of crimson ink as the game strikes its words, and
+        // the posture gauge's chevrons at the head's two ends.
+        Item {
+            Rectangle {
+                anchors.fill: parent
+                border.width: 1
+                border.color: Colors.withAlpha("#c9a55c", 0.2)
+                gradient: Gradient {
+                    GradientStop { position: 0; color: Colors.withAlpha("#1a1415", 0.9) }
+                    GradientStop { position: 1; color: Colors.withAlpha("#0c0a0b", 0.9) }
+                }
+            }
+
+            Rectangle {
+                anchors.fill: parent
+                anchors.margins: 4
+                color: "transparent"
+                border.width: 1
+                border.color: Colors.withAlpha("#c9a55c", 0.3)
+            }
+
+            BrushStroke {
+                visible: frame.hasTitle
+                x: frame.st.pad - 12
+                y: titleText.y + (titleText.height - height) / 2 + 1
+                width: Math.min(frame.width - frame.st.pad + 4, titleText.implicitWidth + 70)
+                height: titleText.implicitHeight + 12
+                ink: Colors.withAlpha(frame.accent, 0.6)
+                seed: frame.title.length * 0.37 + 1
+                dry: 0.75
+                weight: 0.82
+            }
+
+            Shape {
+                anchors.fill: parent
+                preferredRendererType: Shape.CurveRenderer
+
+                ShapePath {
+                    fillColor: "transparent"
+                    strokeColor: Colors.withAlpha("#efe7d6", 0.55)
+                    strokeWidth: 1
+                    startX: 13
+                    startY: 9
+                    PathLine { x: 9; y: 13 }
+                    PathLine { x: 13; y: 17 }
+                    PathMove { x: frame.width - 13; y: 9 }
+                    PathLine { x: frame.width - 9; y: 13 }
+                    PathLine { x: frame.width - 13; y: 17 }
+                }
+            }
+        }
+    }
+
     Text {
         id: titleText
         x: frame.centredTitle ? Math.round((frame.width - implicitWidth) / 2) : frame.st.pad + (frame.st.frame === "neon" ? 4 : frame.st.frame === "instrument" ? 15 : 0)
@@ -674,11 +733,11 @@ Item {
         rotation: frame.st.frame === "scrap" ? -1.5 : 0
         text: (frame.st.frame === "chamfer" ? "▸ " : "") + WidgetStyle.label(frame.title, frame.st)
         font.family: frame.st.frame === "scrap" ? Waste.type : frame.st.ui ?? frame.st.cjk ?? (frame.st.frame === "chamfer" ? frame.st.mono : frame.st.font)
-        font.pixelSize: ({ neon: 15, washi: 12, lancet: 17, clipping: 13, scrap: 13, gilt: 11, brass: 16, instrument: 11, patta: 16, banner: 17 })[frame.st.frame] ?? 11
-        font.weight: frame.st.frame === "chamfer" || frame.st.frame === "clipping" || frame.st.frame === "instrument" ? Font.Bold : frame.st.frame === "neon" || frame.st.frame === "scrap" || frame.st.frame === "brass" || frame.st.frame === "patta" || frame.st.frame === "banner" ? Font.Normal : frame.st.frame === "gilt" ? Font.DemiBold : Font.Medium
+        font.pixelSize: ({ neon: 15, washi: 12, lancet: 17, clipping: 13, scrap: 13, gilt: 11, brass: 16, instrument: 11, patta: 16, banner: 17, sumi: 16 })[frame.st.frame] ?? 11
+        font.weight: frame.st.frame === "chamfer" || frame.st.frame === "clipping" || frame.st.frame === "instrument" || frame.st.frame === "sumi" ? Font.Bold : frame.st.frame === "neon" || frame.st.frame === "scrap" || frame.st.frame === "brass" || frame.st.frame === "patta" || frame.st.frame === "banner" ? Font.Normal : frame.st.frame === "gilt" ? Font.DemiBold : Font.Medium
         font.letterSpacing: frame.st.labelSpacing
         font.capitalization: WidgetStyle.caps(frame.st)
-        color: frame.st.frame === "scrap" ? Waste.tapeInk : WidgetStyle.labelColor(frame.themeId)
+        color: frame.st.frame === "scrap" ? Waste.tapeInk : frame.st.frame === "sumi" ? "#f3ecdf" : WidgetStyle.labelColor(frame.themeId)
     }
 
     Column {

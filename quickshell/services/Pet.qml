@@ -195,7 +195,7 @@ Singleton {
         xianxia: "may your qi flow", cyberpunk: "jacked in and ready", wabisabi: "一期一会", artdeco: "care for a cocktail?",
         gothic: "the bells are ringing", newspaper: "extra! extra!", wasteland: "stay safe out there",
         observatory: "clear skies tonight ✨", abyss: "blub blub… dive, dive!", devaloka: "may the devas smile on you 🪔",
-        siege: "for the realm! ⚔️"
+        siege: "for the realm! ⚔️", sekiro: "hesitation is defeat 🗡️"
     })
 
     function fill(text, vars) {

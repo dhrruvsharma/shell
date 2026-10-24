@@ -14,9 +14,10 @@ import qs.services as Services
 // cusped (CuspMask), Broadsheet's are ruled above and below like a
 // newspaper deck, Wasteland's are riveted plates, Observatory's are
 // graduated along the foot like an instrument's scale, Abyss's are backlit
-// keys with a light strip, Devaloka's stand on a sari's temple border, and
-// Siege's are cut into battlements along the top (CrenelMask). Widget
-// colours are kept either way.
+// keys with a light strip, Devaloka's stand on a sari's temple border,
+// Siege's are cut into battlements along the top (CrenelMask), and Sekiro's
+// taper to a point at each end like the posture gauge (PostureMask).
+// Widget colours are kept either way.
 //
 // Its colours are the bar settings' (services/BarSettings): the wallpaper's
 // container surface by default, or a tone or colour picked there, faded by
@@ -73,8 +74,9 @@ Rectangle {
     readonly property bool deco: look.shape === "deco"
     readonly property bool cusp: look.shape === "cusp"
     readonly property bool crenel: look.shape === "crenel"
+    readonly property bool posture: look.shape === "posture"
     // Shapes whose outline is a mask and a frame drawn over it.
-    readonly property bool masked: hud || neon || deco || cusp || crenel
+    readonly property bool masked: hud || neon || deco || cusp || crenel || posture
 
     signal clicked
 
@@ -84,7 +86,7 @@ Rectangle {
     bottomRightRadius: Services.DesktopTheme.corner(root.look, radius, 2)
     bottomLeftRadius: Services.DesktopTheme.corner(root.look, radius, 3)
     color: Services.BarSettings.pill
-    border.width: root.neon || root.deco || root.cusp || root.crenel || root.look.shape === "print" ? 0 : root.look.border || (Services.BarSettings.outline ? 1 : 0)
+    border.width: root.neon || root.deco || root.cusp || root.crenel || root.posture || root.look.shape === "print" ? 0 : root.look.border || (Services.BarSettings.outline ? 1 : 0)
     border.color: root.look.border ? Services.DesktopTheme.borderColor(root.look) : Services.BarSettings.outlineColor
     layer.enabled: root.masked
     layer.effect: MultiEffect {
@@ -192,7 +194,7 @@ Rectangle {
         id: maskLoader
         anchors.fill: parent
         active: root.masked
-        sourceComponent: root.neon ? neonMask : root.deco ? decoMask : root.cusp ? cuspMask : root.crenel ? crenelMask : hudMask
+        sourceComponent: root.neon ? neonMask : root.deco ? decoMask : root.cusp ? cuspMask : root.crenel ? crenelMask : root.posture ? postureMask : hudMask
     }
 
     Loader {
@@ -203,6 +205,7 @@ Rectangle {
             deco: decoTrim,
             cusp: cuspTrim,
             crenel: crenelTrim,
+            posture: postureTrim,
             print: printTrim,
             plate: plateTrim,
             scale: scaleTrim,
@@ -252,6 +255,15 @@ Rectangle {
             active: true
             merlon: 7
             depth: 3
+        }
+    }
+
+    Component {
+        id: postureMask
+
+        PostureMask {
+            active: true
+            taper: 9
         }
     }
 
@@ -309,6 +321,18 @@ Rectangle {
             CrenelFrame {
                 merlon: 7
                 depth: 3
+                fill: "transparent"
+                stroke: Services.DesktopTheme.borderColor(root.look)
+            }
+        }
+    }
+
+    Component {
+        id: postureTrim
+
+        Item {
+            PostureFrame {
+                taper: 9
                 fill: "transparent"
                 stroke: Services.DesktopTheme.borderColor(root.look)
             }

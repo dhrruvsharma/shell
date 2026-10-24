@@ -168,6 +168,7 @@ Item {
         WidgetBar {
             themeId: ControlStyle.themeId
             value: root.shown
+            fromStart: true
         }
     }
 

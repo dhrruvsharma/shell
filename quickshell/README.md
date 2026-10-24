@@ -54,7 +54,7 @@ cd ~/dotfiles/quickshell
 The installer:
 
 1. Installs the packages with `pacman` (Quickshell, Qt6 extras, PipeWire, NetworkManager, BlueZ + `python-gobject` for the pairing agent, `cava`, `cliphist`, `grim`/`slurp`, `matugen`, Nerd Fonts, …) plus `ttf-material-symbols-variable-git` from the AUR via `paru`/`yay`
-2. Fetches the Google Fonts used by the Art Deco, Gothic, Newspaper, Wasteland, Observatory, Abyss, Devaloka and Siege themes (and the brush faces of the Cave Abode and Wabi-sabi power menus) into `~/.local/share/fonts/quickshell-themes`
+2. Fetches the Google Fonts used by the Art Deco, Gothic, Newspaper, Wasteland, Observatory, Abyss, Devaloka, Siege and Sekiro themes (and the brush faces of the Cave Abode and Wabi-sabi power menus) into `~/.local/share/fonts/quickshell-themes`
 3. Symlinks the config to `~/.config/quickshell` (an existing one is backed up to `quickshell.bak-<timestamp>`)
 4. Creates the data directories (`~/Pictures/wallpapers`, `~/Pictures/Screenshots`, `~/Videos/recordings`, …), links `setwall` into `~/.local/bin`, and registers the matugen template; creates your settings files from `defaults/` (see [Your settings](#your-settings))
 5. Copies `hypr/quickshell.lua` (keybinds, blur, animations, scale) into `~/.config/hypr` and adds `require("quickshell")` to your `hyprland.lua` — after asking
@@ -346,6 +346,7 @@ Selecting any item copies it to the clipboard.
 | Abyss | An engine order telegraph, the depth and the boat's readings beside it | ABANDON SHIP is rung and the boat floods (a log out surfaces) |
 | Devaloka | Five diyas on an aarti thali under the Konark wheel and the panchang | The lamps go out; moksha's flame rises away |
 | Siege | War banners on the battlements between torches, your arms above | The host strikes camp: the banners are lowered, the torches go out |
+| Sekiro | A Sculptor's Idol's menu by moonlight: Rest, Meditate, Return, Resurrect, Immortal Severance | Immortal Severance: a cut of blood across the screen, 不死断ち, darkness (Return closes the night in round 竜の帰郷; Resurrect writes 回生) |
 
 Lock and sleep hand over to the lock screen straight away (sleep suspends once it's locked). Log out, restart and shut down play their ceremony first, and Esc or a click still turns it back; the last frame then stays up while the session ends. If the command is refused (an inhibitor, a password prompt), a notification says why and the menu comes back. Keys: arrows or Tab, Enter, 1–5 or L S O R P, Esc.
 

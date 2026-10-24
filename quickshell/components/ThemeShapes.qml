@@ -5,7 +5,8 @@ import Quickshell
 // Outlines for the desktop themes' cut shapes, as closed point lists for a
 // PathPolyline (Shape): Art Deco's stepped corners, Cathedral's cusped
 // (scooped) corners and its pointed arch, Siege's battlements, heater
-// shield and swallowtailed banner. Every list ends where it starts.
+// shield and swallowtailed banner, Sekiro's posture gauge. Every list ends
+// where it starts.
 // `x`/`y` offset the outline, so the inner line of a double border is the
 // same outline inset.
 Singleton {
@@ -145,6 +146,41 @@ Singleton {
         const pts = [Qt.point(x, y), Qt.point(x + w, y)];
         for (let i = 0; i <= 2 * n; i++)
             pts.push(Qt.point(x + w - i * w / (2 * n), y + h - (i % 2 === 1 ? tail : 0)));
+        pts.push(pts[0]);
+        return pts;
+    }
+
+    // Sekiro's posture gauge: a long box whose ends taper to a point at
+    // half height over `taper`, each side of a tip a curve that leaves the
+    // point at an angle and meets the straight edge without a corner.
+    // `inset` draws the same outline that much inside (a frame's line on
+    // its mask).
+    function spindle(x, y, w, h, taper, inset) {
+        const i = inset ?? 0;
+        const l = x + i, r = x + w - i, t = y + i, b = y + h - i;
+        const cy = y + h / 2;
+        const hh = (b - t) / 2;
+        const tp = Math.max(1, Math.min(taper, (r - l) / 2));
+        const seg = Math.max(4, Math.round(tp / 1.5));
+        // Half the height at a distance `s` in from a tip.
+        const half = s => hh * (1 - Math.pow(1 - s / tp, 2));
+        const pts = [Qt.point(l, cy)];
+        for (let k = 1; k <= seg; k++) {
+            const s = tp * k / seg;
+            pts.push(Qt.point(l + s, cy - half(s)));
+        }
+        for (let k = seg; k >= 0; k--) {
+            const s = tp * k / seg;
+            pts.push(Qt.point(r - s, cy - half(s)));
+        }
+        for (let k = 1; k <= seg; k++) {
+            const s = tp * k / seg;
+            pts.push(Qt.point(r - s, cy + half(s)));
+        }
+        for (let k = seg; k >= 1; k--) {
+            const s = tp * k / seg;
+            pts.push(Qt.point(l + s, cy + half(s)));
+        }
         pts.push(pts[0]);
         return pts;
     }

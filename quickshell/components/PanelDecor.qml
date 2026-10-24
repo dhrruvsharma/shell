@@ -23,7 +23,8 @@ import qs.services as Services
 // hanging from the head and standing along the foot like a sari's, and a
 // lotus at the middle of the head. Siege: iron straps nailed over the
 // corners, battlements along the head and the shield of your arms at its
-// middle.
+// middle. Sekiro: a fine line inside the rim and a posture gauge at the
+// middle of the head, its chevrons at its reach.
 Item {
     id: decor
 
@@ -59,7 +60,7 @@ Item {
         border.width: 1
         border.color: decor.shape === "print" ? Colors.withAlpha(decor.accent2, 0.45)
             : decor.shape === "lume" ? Colors.withAlpha(decor.accent2, 0.4)
-            : Colors.withAlpha(decor.accent, decor.shape === "square" ? 0.5 : decor.shape === "seal" ? 0.55 : decor.shape === "neon" ? 0.6 : decor.shape === "pebble" ? 0.28 : decor.shape === "plate" ? 0.45 : decor.shape === "scale" || decor.shape === "zari" || decor.shape === "crenel" ? 0.6 : 0.32)
+            : Colors.withAlpha(decor.accent, decor.shape === "square" ? 0.5 : decor.shape === "seal" ? 0.55 : decor.shape === "neon" ? 0.6 : decor.shape === "pebble" ? 0.28 : decor.shape === "plate" ? 0.45 : decor.shape === "scale" || decor.shape === "zari" || decor.shape === "crenel" || decor.shape === "posture" ? 0.6 : 0.32)
     }
 
     // Only the theme's own decoration is built (one Loader): every theme's,
@@ -80,7 +81,8 @@ Item {
             scale: scaleDecor,
             lume: lumeDecor,
             zari: zariDecor,
-            crenel: crenelDecor
+            crenel: crenelDecor,
+            posture: postureDecor
         })[decor.shape] ?? null
     }
 
@@ -830,6 +832,33 @@ Item {
                         }
                     }
                 }
+            }
+        }
+    }
+
+    // Sekiro: a finer line inside the rim, and the posture gauge at the
+    // middle of the head (empty: an ornament, not a reading), as it hangs
+    // at the top of the screen in a fight.
+    Component {
+        id: postureDecor
+
+        Item {
+            Rectangle {
+                anchors.fill: parent
+                anchors.margins: 5
+                color: "transparent"
+                border.width: 1
+                border.color: Colors.withAlpha(decor.accent2, 0.16)
+            }
+
+            PostureGauge {
+                x: Math.round((decor.width - width) / 2)
+                y: 3
+                width: Math.min(170, decor.width * 0.4)
+                height: 9
+                value: 0
+                track: Colors.withAlpha("black", 0.4)
+                line: Colors.withAlpha(decor.accent, 0.45)
             }
         }
     }

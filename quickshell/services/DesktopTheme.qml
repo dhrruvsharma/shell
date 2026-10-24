@@ -31,13 +31,13 @@ Singleton {
     //       (`border`: active roles as a gradient, inactive role + hex alpha).
     // bar:  shape (round | chamfer | square | pill | soft | seal | neon |
     //       pebble | deco | cusp | print | plate | scale | lume | zari |
-    //       crenel), font,
+    //       crenel | posture), font,
     //       weight, size delta, letter spacing, `caps` (true: capitals,
     //       "small": small capitals), hairline border; `uiFont` sets panel
     //       text when the bar font is too decorative for it.
     // tone: how the theme colours the wallpaper's accents (see accentOf):
     //       "" as they are, "neon", "muted", "gilt", "jewel", "print",
-    //       "dusty", "brass", "lume", "temple" or "heraldic".
+    //       "dusty", "brass", "lume", "temple", "heraldic" or "shinobi".
     // A colour role is a Colors name, or "accent" / "accent2" for the
     // theme's toned accents.
     readonly property var themes: [
@@ -350,6 +350,27 @@ Singleton {
                 { icon: "shield", text: "Your coat of arms and the day of the siege in the corner of the wallpaper, under smoke and embers" },
                 { icon: "swords", text: "Sword-and-buckler clock that keeps the watches of the siege" }
             ]
+        },
+        {
+            id: "sekiro",
+            name: "Sekiro",
+            tagline: "Shinobi desktop",
+            icon: "sports_martial_arts",
+            lockTheme: "sekiro",
+            tone: "shinobi",
+            description: "Ashina at dusk, after Sekiro: the red of a deathblow beside your wallpaper's colour as the season, the shinobi's HUD in the corners (resurrection nodes, your battery as vitality, the idol you rest at), posture-gauge tags on the bar, and a clock whose posture fills as the hour runs out.",
+            hypr: { rounding: 0, range: 24, power: 3, glow: "accent", glowAlpha: "3c", inactive: "08050488", dim: 0.1, border: { active: ["accent", "accent2"], angle: 135, inactive: "surface_container_high", inactiveAlpha: "cc" } },
+            bar: { shape: "posture", font: "Zen Old Mincho", weight: Font.Bold, sizeDelta: -1, letterSpacing: 0.4, border: 1, borderRole: "accent", borderAlpha: 0.6 },
+            effects: {
+                subtle: "Ashina at dusk: a painterly grade with cool blue-grey shadows and warm light, the reds of maples and blood kept burning, and a dark vignette.",
+                strong: "The path of the Shura: the world as the asura sees it, in blood red and ink black."
+            },
+            changes: [
+                { icon: "crop_square", text: "Square windows edged from blood red to your season's colour" },
+                { icon: "linear_scale", text: "Posture-gauge tags in Zen Old Mincho on the bar" },
+                { icon: "local_florist", text: "The shinobi's HUD and the falling season over the wallpaper" },
+                { icon: "schedule", text: "Posture clock: the gauge fills as the hour runs out" }
+            ]
         }
     ]
 
@@ -380,8 +401,9 @@ Singleton {
     }
 
     // Shapes drawn square (their corners, if any, are cut by masks and
-    // frames: HudMask, NeonMask, DecoMask, CuspMask, CrenelMask).
-    readonly property var squareShapes: ["chamfer", "square", "neon", "deco", "cusp", "print", "crenel"]
+    // frames: HudMask, NeonMask, DecoMask, CuspMask, CrenelMask,
+    // PostureMask).
+    readonly property var squareShapes: ["chamfer", "square", "neon", "deco", "cusp", "print", "crenel", "posture"]
 
     // Corner radius for a bar shape, given the plain design's radius.
     function radius(lk, normal, h) {
@@ -393,6 +415,7 @@ Singleton {
         case "cusp":
         case "print":
         case "crenel":
+        case "posture":
             return 0;
         case "plate":
             return Math.min(normal, 2);
@@ -426,8 +449,8 @@ Singleton {
     }
 
     // Corner radius for a panel's outer surface, given its plain radius:
-    // square for HUD, Mainframe, Neon Noir, Art Deco, Cathedral, Broadsheet
-    // and Siege, a slight round for Cave Abode and Wasteland, an
+    // square for HUD, Mainframe, Neon Noir, Art Deco, Cathedral, Broadsheet,
+    // Siege and Sekiro, a slight round for Cave Abode and Wasteland, an
     // instrument plate's for Observatory, a lacquered plaque's for
     // Devaloka, unchanged for the round themes.
     function panelRadius(normal) {
@@ -488,6 +511,10 @@ Singleton {
     //          azure, purpure or murrey; gules when there is none; see
     //          Heraldry), and argent beside it as burnished steel: a colour
     //          and a metal, as the rule of tincture wants.
+    //   shinobi: the crimson of a deathblow (a breath of the wallpaper in
+    //          it), with the wallpaper's colour beside it as the season on
+    //          the land: maple, sakura, pine, moonlit indigo; never red, and
+    //          the gold of the silver grass at dusk when there is none.
     // accent/accent2 are the active theme's; accentOf/accent2Of any theme's
     // (previews show themes that aren't on).
     readonly property color accent: accentOf(adapter.theme)
@@ -521,6 +548,8 @@ Singleton {
             const t = Heraldry.tincture;
             return Qt.hsla(t.h, t.sat, _dark ? 0.6 : 0.4, 1);
         }
+        case "shinobi":
+            return Qt.tint(Qt.hsla(0.994, 0.74, _dark ? 0.54 : 0.4, 1), Colors.withAlpha(Colors.primary, 0.06));
         default:
             return Qt.color(Colors.primary);
         }
@@ -572,6 +601,14 @@ Singleton {
         }
         case "heraldic":
             return Qt.tint(Qt.hsla(0.6, 0.09, _dark ? 0.8 : 0.34, 1), Colors.withAlpha(Colors.primary, 0.06));
+        case "shinobi": {
+            // The season beside the blood: never red itself.
+            const reddish = h => h > 0.93 || h < 0.05;
+            const p = _hue(Colors.primary, -1);
+            const t = _hue(Colors.tertiary, -1);
+            const h = p >= 0 && !reddish(p) ? p : t >= 0 && !reddish(t) ? t : 0.115;
+            return Qt.hsla(h, 0.5, _dark ? 0.64 : 0.36, 1);
+        }
         default:
             return Qt.color(Colors.tertiary);
         }

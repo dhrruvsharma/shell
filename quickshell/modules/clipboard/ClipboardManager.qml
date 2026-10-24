@@ -6,11 +6,17 @@ import Quickshell
 import Quickshell.Io
 import qs.colors
 import qs.components
+import qs.services as Services
 
 Item {
     id: root
     anchors.fill: parent
     visible: false
+    // Faded out while an entry is dragged out of it: the shell drops the
+    // panel's input region then (shell.qml), so the drop lands on whatever
+    // is underneath.
+    opacity: dragging ? 0 : 1
+    Behavior on opacity { NumberAnimation { duration: 140; easing.type: Easing.OutCubic } }
 
     // 0 = Clipboard  1 = Emoji  2 = Kaomoji
     property int    currentTab: 0
@@ -124,8 +130,11 @@ Item {
                 const tab     = line.indexOf("\t")
                 const preview = tab === -1 ? line : line.substring(tab + 1).replace(/\s+/g, " ").trim()
                 const isImg   = preview.startsWith("[[ binary data") || preview.startsWith("[[ img")
+                const fmt     = isImg ? preview.match(/\b(png|jpe?g|gif|webp|bmp|svg)\b/) : null
                 return {
                     lineIdx:   idx + 1,
+                    clipId:    tab === -1 ? "" : line.substring(0, tab).trim(),
+                    ext:       fmt ? fmt[1].replace("jpeg", "jpg") : "png",
                     preview:   isImg ? "Image" : preview,
                     isImage:   isImg,
                     thumbPath: isImg ? "/tmp/qs_clip_thumb_" + (idx + 1) + ".png" : ""
@@ -168,6 +177,62 @@ Item {
         Quickshell.execDetached(["bash", "-c",
             "cliphist list | sed -n '" + entry.lineIdx + "p' | cliphist decode | wl-copy"])
         root.close()
+    }
+
+    // ── Drag out ──────────────────────────────────────────────────────────────
+    // Pressing an entry decodes it in full (cliphist's list only holds a
+    // 100-character preview, and thumbnails exist for the first 20 images):
+    // an image into a file offered as text/uri-list (a terminal types the
+    // path, browsers and chat apps take the file), text as text/plain. The
+    // drag starts once that's ready, so a quick flick waits for it.
+
+    property bool   dragging:   false
+    property string _dragKey:   ""
+    property bool   _dragReady: false
+    property var    _dragMime:  ({})
+    readonly property string _dragDir: (Quickshell.env("XDG_RUNTIME_DIR") || "/tmp") + "/qs-clip-drag"
+
+    function prepareDrag(entry) {
+        if (!entry || !/^\d+$/.test(entry.clipId)) return
+        const key = entry.clipId
+        if (key === _dragKey && (_dragReady || dragPrep.running)) return
+        _dragKey = key
+        _dragReady = false
+        _dragMime = {}
+        const decode = "printf '%s\\t\\n' " + key + " | cliphist decode"
+        if (entry.isImage) {
+            const f = _dragDir + "/clip-" + key + "." + entry.ext
+            dragPrep.target = f
+            // Files from earlier drags go after an hour: a drop target may
+            // read the file well after the drop (an upload, say).
+            dragPrep.command = ["bash", "-c",
+                "mkdir -p '" + _dragDir + "' && find '" + _dragDir + "' -type f -mmin +60 -delete; "
+                + "[ -s '" + f + "' ] || " + decode + " > '" + f + "'"]
+        } else {
+            dragPrep.target = ""
+            dragPrep.command = ["bash", "-c", decode]
+        }
+        dragPrep.key = key
+        dragPrep.running = true
+    }
+
+    Process {
+        id: dragPrep
+        property string key:    ""
+        property string target: ""
+        running: false
+        stdout: StdioCollector { id: dragPrepOut }
+        onExited: code => {
+            if (key !== root._dragKey || code !== 0) return
+            if (target !== "") {
+                root._dragMime = { "text/uri-list": "file://" + target + "\r\n" }
+            } else {
+                const t = dragPrepOut.text
+                if (t === "") return
+                root._dragMime = { "text/plain": t, "text/plain;charset=utf-8": t }
+            }
+            root._dragReady = true
+        }
     }
 
     function copyText(text) {
@@ -559,6 +624,7 @@ Item {
                         Behavior on height { NumberAnimation { duration: 80 } }
 
                         Rectangle {
+                            id: card
                             anchors.fill: parent
                             radius: Services.DesktopTheme.rad(10)
                             clip: true
@@ -607,10 +673,38 @@ Item {
                                 Behavior on color { ColorAnimation { duration: 100 } }
                             }
 
+                            // What the pointer drags: an invisible stand-in, as
+                            // the card itself must stay put in the list.
+                            Item {
+                                id: dragProxy
+                                width: 1; height: 1
+                                Drag.dragType: Drag.Automatic
+                                Drag.supportedActions: Qt.CopyAction
+                                Drag.proposedAction: Qt.CopyAction
+                                Drag.mimeData: root._dragMime
+                                Drag.active: dragArea.drag.active && root._dragReady
+                                    && entry !== undefined && root._dragKey === entry.clipId
+                                Drag.onDragStarted: root.dragging = true
+                                Drag.onDragFinished: dropAction => {
+                                    root.dragging = false
+                                    dragProxy.x = 0; dragProxy.y = 0
+                                    // Dropped somewhere: done, as after a paste.
+                                    if (dropAction !== Qt.IgnoreAction) root.close()
+                                }
+                            }
+
                             MouseArea {
-                                anchors.fill: parent; hoverEnabled: true; cursorShape: Qt.PointingHandCursor
+                                id: dragArea
+                                anchors.fill: parent; hoverEnabled: true
+                                cursorShape: drag.active ? Qt.ClosedHandCursor : Qt.PointingHandCursor
+                                drag.target: dragProxy
                                 onEntered: { isHov = true; clipList.currentIndex = index }
                                 onExited:  isHov = false
+                                onPressed: {
+                                    root.prepareDrag(entry)
+                                    card.grabToImage(r => { dragProxy.Drag.imageSource = r.url },
+                                        Qt.size(Math.min(card.width, 220), Math.min(card.width, 220) * card.height / card.width))
+                                }
                                 onClicked: root.pasteClipEntry(root.clipFiltered[index])
                             }
                         }

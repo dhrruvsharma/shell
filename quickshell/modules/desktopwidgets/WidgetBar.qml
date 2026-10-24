@@ -12,7 +12,8 @@ import qs.services as Services
 // glass lighting pane by pane, a newspaper's ruled bar, hazard tape in a
 // steel channel, a brass vernier scale with its pointer, a lit tube with a
 // bright head and bubbles rising off it, a string of prayer beads told
-// up to the value, or a sword drawn from its scabbard as far as the value.
+// up to the value, a sword drawn from its scabbard as far as the value, or
+// Sekiro's posture gauge, filling from the middle out.
 //
 // Only the theme's own look is built (one Loader): every look at once, most
 // of them hidden, cost a few hundred items per bar.
@@ -21,6 +22,9 @@ Item {
 
     property string themeId
     property real value: 0
+    // A slider's track: filled from its start even where the theme's meter
+    // fills from its middle (Sekiro's posture).
+    property bool fromStart: false
     readonly property var st: WidgetStyle.of(themeId)
     readonly property color accent: WidgetStyle.accent(themeId)
     readonly property real v: Math.max(0, Math.min(1, value))
@@ -29,7 +33,7 @@ Item {
 
     implicitWidth: st.bar === "ascii" ? look.implicitWidth : 200
     implicitHeight: st.bar === "ascii" ? look.implicitHeight
-        : ({ orbit: 10, segments: 6, neon: 6, ink: 6, hairline: 3, deco: 9, glass: 9, rule: 8, hazard: 9, vernier: 11, sonar: 12, mala: 10, sword: 12 })[st.bar] ?? 4
+        : ({ orbit: 10, segments: 6, neon: 6, ink: 6, hairline: 3, deco: 9, glass: 9, rule: 8, hazard: 9, vernier: 11, sonar: 12, mala: 10, sword: 12, posture: 12 })[st.bar] ?? 4
 
     Loader {
         id: look
@@ -50,7 +54,8 @@ Item {
             vernier: vernierLook,
             sonar: sonarLook,
             mala: malaLook,
-            sword: swordLook
+            sword: swordLook,
+            posture: postureLook
         })[bar.st.bar] ?? null
     }
 
@@ -609,6 +614,24 @@ Item {
                     height: 5 - Math.abs(index - 1)
                     color: mala.meru
                 }
+            }
+        }
+    }
+
+    // posture: Sekiro's posture gauge: filled from the middle outwards,
+    // gold turning orange as it nears breaking, the white tick at its
+    // middle and chevrons at its reach.
+    Component {
+        id: postureLook
+
+        Item {
+            PostureGauge {
+                anchors.fill: parent
+                value: bar.v
+                fromStart: bar.fromStart
+                track: Colors.withAlpha("black", 0.45)
+                line: Colors.withAlpha("#efe7d6", 0.24)
+                mark: Colors.withAlpha("#f6f1e6", 0.85)
             }
         }
     }

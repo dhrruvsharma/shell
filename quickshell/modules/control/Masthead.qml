@@ -12,13 +12,15 @@ import qs.modules.lock.themes.devaloka
 import qs.modules.lock.themes.gothic
 import qs.modules.lock.themes.newspaper
 import qs.modules.lock.themes.observatory
+import qs.modules.lock.themes.sekiro
 import qs.modules.lock.themes.siege
 import qs.modules.lock.themes.wabisabi
 import qs.modules.lock.themes.wasteland
 import qs.modules.lock.themes.xianxia
 
 // The head of the control centre: the time in the theme's display face,
-// the day the way the theme keeps it (the watch of the siege, the canonical
+// the day the way the theme keeps it (the watch of the siege, where the
+// shinobi is in Ashina, the canonical
 // hour, the tithi, the depth of the boat, the edition on the street…) and
 // your picture in the theme's frame (a click picks another). Redrawn once a
 // minute.
@@ -196,6 +198,18 @@ Item {
                     [seg(watch.name + "  ·  " + watch.deed, War.book, 15, { italic: true, tone: "accent" })],
                     [seg(War.date(d), War.book, 14, { tone: "soft" })],
                     [seg(("Day " + War.siegeDay(d) + " of the siege  ·  " + War.year(d)).toUpperCase(), War.display, 11, { spacing: 2, tone: "faint" })]
+                ]
+            };
+        }
+        case "sekiro": {
+            const st = Shinobi.stretch(d);
+            return {
+                time: seg(hm[0], Shinobi.display, 62),
+                suffix: seg(dots, Shinobi.book, 20, { tone: "accent2" }),
+                lines: [
+                    [seg(Shinobi.place(st), Shinobi.book, 15, { weight: Font.Bold, tone: "accent2" })],
+                    [seg(st.deed, Shinobi.book, 14, { tone: "soft" })],
+                    [seg((Shinobi.date(d) + "  ·  " + Shinobi.season(d).name).toUpperCase(), Shinobi.book, 10, { spacing: 2, tone: "faint" })]
                 ]
             };
         }

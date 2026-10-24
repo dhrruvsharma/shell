@@ -444,8 +444,16 @@ Item {
             abyss: abyssScene,
             devaloka: devalokaScene,
             siege: siegeScene,
+            sekiro: sekiroScene,
             xianxia: xianxiaScene
         })[root.themeId] ?? plainScene
+    }
+
+    Component {
+        id: sekiroScene
+        SekiroPower {
+            menu: root
+        }
     }
 
     Component {

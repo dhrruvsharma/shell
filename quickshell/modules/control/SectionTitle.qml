@@ -1,6 +1,7 @@
 pragma ComponentBehavior: Bound
 import QtQuick
 import qs.colors
+import qs.components
 import qs.modules.lock
 import qs.modules.lock.themes.wasteland
 
@@ -8,7 +9,8 @@ import qs.modules.lock.themes.wasteland
 // themselves: on masking tape (Wasteland), as a kicker under a heavy rule
 // (Broadsheet), centred between gilt rules, stars, double dandas or crossed
 // swords (Art Deco, Cathedral, Observatory, Devaloka, Siege), beside a lit
-// lamp (Abyss), with a ghost in the second neon (Neon Noir), or plain.
+// lamp (Abyss), with a ghost in the second neon (Neon Noir), brushed over a
+// swash of crimson ink (Sekiro), or plain.
 // Anything placed inside goes to the right end of the line.
 Item {
     id: root
@@ -68,6 +70,19 @@ Item {
         }
     }
 
+    // Sekiro: a swash of crimson ink behind it.
+    BrushStroke {
+        visible: root.frame === "sumi"
+        x: 0
+        y: label.y + (label.height - height) / 2 + 1
+        width: Math.min(root.freeWidth, label.implicitWidth + 64)
+        height: label.implicitHeight + 10
+        ink: Colors.withAlpha(ControlStyle.accent, 0.55)
+        seed: root.text.length * 0.41 + 2
+        dry: 0.75
+        weight: 0.8
+    }
+
     // Neon Noir: the title doubled like a bad signal.
     Text {
         visible: root.frame === "neon"
@@ -120,18 +135,18 @@ Item {
     Text {
         id: label
         x: root.centred ? Math.round(Math.max(root.flankRoom, Math.min((root.width - implicitWidth) / 2, root.freeWidth - root.flankRoom - implicitWidth)))
-            : root.frame === "instrument" ? 18 : root.taped ? 9 : 0
+            : root.frame === "instrument" ? 18 : root.taped ? 9 : root.frame === "sumi" ? 12 : 0
         y: root.ruleRoom + root.tapeRoom
         rotation: root.taped ? -1.5 : 0
         text: (root.frame === "chamfer" ? "▸ " : "") + ControlStyle.label(root.text)
         font.family: root.taped ? Waste.type : ControlStyle.ui
-        font.pixelSize: ({ card: 14, chamfer: 12, console: 13, glass: 12, bare: 13, scroll: 14, neon: 15, washi: 13, gilt: 12, lancet: 17, clipping: 14, scrap: 13, brass: 16, instrument: 12, patta: 16, banner: 17 })[root.frame] ?? 13
-        font.weight: ["chamfer", "clipping", "instrument"].includes(root.frame) ? Font.Bold
+        font.pixelSize: ({ card: 14, chamfer: 12, console: 13, glass: 12, bare: 13, scroll: 14, neon: 15, washi: 13, gilt: 12, lancet: 17, clipping: 14, scrap: 13, brass: 16, instrument: 12, patta: 16, banner: 17, sumi: 15 })[root.frame] ?? 13
+        font.weight: ["chamfer", "clipping", "instrument", "sumi"].includes(root.frame) ? Font.Bold
             : ["neon", "scrap", "brass", "patta", "banner", "lancet"].includes(root.frame) ? Font.Normal
             : root.frame === "card" ? Font.DemiBold : Font.Medium
         font.letterSpacing: ControlStyle.labelSpacing
         font.capitalization: ControlStyle.caps
-        color: root.taped ? Waste.tapeInk : ControlStyle.labelColor
+        color: root.taped ? Waste.tapeInk : root.frame === "sumi" ? "#f3ecdf" : ControlStyle.labelColor
     }
 
     Row {

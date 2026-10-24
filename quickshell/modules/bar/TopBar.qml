@@ -291,15 +291,16 @@ Item {
         // Deco and Cathedral themes' is a cut-corner frame drawn below the
         // atoms instead, Broadsheet rules it, Wasteland rivets it,
         // Observatory graduates its foot, Abyss lights it from below,
-        // Devaloka stands it on a temple border and Siege cuts it into
-        // battlements.
+        // Devaloka stands it on a temple border, Siege cuts it into
+        // battlements and Sekiro tapers it like the posture gauge.
         readonly property var look: Services.DesktopTheme.look
         readonly property bool hud: look.shape === "chamfer"
         readonly property bool neon: look.shape === "neon"
         readonly property bool deco: look.shape === "deco"
         readonly property bool cusp: look.shape === "cusp"
         readonly property bool crenel: look.shape === "crenel"
-        readonly property bool framed: hud || neon || deco || cusp || crenel
+        readonly property bool posture: look.shape === "posture"
+        readonly property bool framed: hud || neon || deco || cusp || crenel || posture
         radius: Services.DesktopTheme.radius(island.look, 16, Math.min(width, height))
         topLeftRadius: Services.DesktopTheme.corner(island.look, radius, 0)
         topRightRadius: Services.DesktopTheme.corner(island.look, radius, 1)
@@ -325,6 +326,7 @@ Item {
                 deco: decoChrome,
                 cusp: cuspChrome,
                 crenel: crenelChrome,
+                posture: postureChrome,
                 print: printChrome,
                 plate: plateChrome,
                 scale: scaleChrome,
@@ -388,6 +390,18 @@ Item {
                 fill: island.grouped ? Services.BarSettings.group : "transparent"
                 stroke: island.isMergeTarget ? Services.DesktopTheme.accent2Of("siege") : Services.DesktopTheme.borderColor(island.look)
                 strokeWidth: island.isMergeTarget ? 2 : 1
+            }
+        }
+
+        Component {
+            id: postureChrome
+
+            PostureFrame {
+                taper: 13
+                fill: island.grouped ? Services.BarSettings.group : "transparent"
+                stroke: island.isMergeTarget ? Services.DesktopTheme.accent2Of("sekiro") : Services.DesktopTheme.borderColor(island.look)
+                strokeWidth: island.isMergeTarget ? 2 : 1
+                tick: island.grouped ? 3 : 0
             }
         }
 

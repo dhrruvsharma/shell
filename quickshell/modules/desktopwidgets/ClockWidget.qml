@@ -20,7 +20,7 @@ Item {
 
     Loader {
         id: face
-        sourceComponent: ({ hud: hud, terminal: terminal, cosmos: cosmos, zen: zen, xianxia: xianxia, cyberpunk: neon, wabisabi: wabi, artdeco: deco, gothic: gothic, newspaper: broadsheet, wasteland: wasteland, observatory: observatory, abyss: abyss, devaloka: devaloka, siege: siege })[root.themeId] ?? plain
+        sourceComponent: ({ hud: hud, terminal: terminal, cosmos: cosmos, zen: zen, xianxia: xianxia, cyberpunk: neon, wabisabi: wabi, artdeco: deco, gothic: gothic, newspaper: broadsheet, wasteland: wasteland, observatory: observatory, abyss: abyss, devaloka: devaloka, siege: siege, sekiro: sekiro })[root.themeId] ?? plain
     }
 
     Component {
@@ -96,6 +96,11 @@ Item {
     Component {
         id: siege
         SiegeClock { now: clock.date }
+    }
+
+    Component {
+        id: sekiro
+        SekiroClock { now: clock.date }
     }
 
     Component {

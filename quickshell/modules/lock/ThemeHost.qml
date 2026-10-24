@@ -17,6 +17,7 @@ import qs.modules.lock.themes.devaloka as DevalokaTheme
 import qs.modules.lock.themes.gothic as GothicTheme
 import qs.modules.lock.themes.newspaper as NewspaperTheme
 import qs.modules.lock.themes.observatory as ObservatoryTheme
+import qs.modules.lock.themes.sekiro as SekiroTheme
 import qs.modules.lock.themes.siege as SiegeTheme
 import qs.modules.lock.themes.terminal as TerminalTheme
 import qs.modules.lock.themes.wabisabi as WabisabiTheme

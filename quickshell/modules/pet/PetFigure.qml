@@ -318,7 +318,7 @@ Canvas {
 
     // Under the chin: a collar and bell in the theme's accent, or the
     // costume's own neckwear (Art Deco's bow tie, Wasteland's bandana,
-    // Devaloka's garland of marigolds).
+    // Devaloka's garland of marigolds, Sekiro's tattered scarf).
     // Drawn before the head, so only the part below the chin shows.
     function drawNeckwear(ctx, g, c) {
         if (fig.pose === "sleep")
@@ -362,6 +362,31 @@ Canvas {
             ctx.quadraticCurveTo(cx, cy + 8.8, cx + 1.6, cy + 4.6);
             ctx.closePath();
             ink(ctx, "#3f8f3a", "#245c22", 0.7);
+            return;
+        }
+        if (fig.costume === "sekiro") {
+            // Wolf's scarf: a band of faded crimson round the neck, its
+            // tattered end blown back over a shoulder.
+            ctx.beginPath();
+            ctx.moveTo(cx - r * 0.55, cy - 0.2);
+            ctx.quadraticCurveTo(cx - r * 1.1, cy + 1.8, cx - r * 1.62, cy - 0.8);
+            ctx.lineTo(cx - r * 1.44, cy + 1.4);
+            ctx.lineTo(cx - r * 1.66, cy + 2.6);
+            ctx.lineTo(cx - r * 1.4, cy + 3.1);
+            ctx.quadraticCurveTo(cx - r * 1.0, cy + 4.4, cx - r * 0.45, cy + 2.6);
+            ctx.closePath();
+            ink(ctx, "#74241f", "#330d0a", 0.8);
+            ctx.beginPath();
+            ctx.moveTo(cx - r * 0.78, cy - 2.4);
+            ctx.quadraticCurveTo(cx, cy + 1.6, cx + r * 0.78, cy - 2.4);
+            ctx.lineTo(cx + r * 0.7, cy + 1.4);
+            ctx.quadraticCurveTo(cx, cy + 4.8, cx - r * 0.7, cy + 1.4);
+            ctx.closePath();
+            ink(ctx, "#8e2d27", "#330d0a", 0.9);
+            ctx.beginPath();
+            ctx.moveTo(cx - r * 0.5, cy + 0.6);
+            ctx.quadraticCurveTo(cx, cy + 3.2, cx + r * 0.5, cy + 0.6);
+            ink(ctx, null, "rgba(255,255,255,0.18)", 0.6);
             return;
         }
         if (fig.costume === "wasteland") {
@@ -668,6 +693,23 @@ Canvas {
             ink(ctx, "#d8232a", "#8e1216", 0.6);
             oval(ctx, h.cx + 0.3, h.cy - r * 0.54, 0.45, 0.7);
             ink(ctx, "#fff4dc", null);
+            break;
+        }
+        case "sekiro": {
+            // A shinobi's topknot, tied up with a cord of crimson.
+            const ty = h.cy - r * 0.92;
+            oval(ctx, h.cx + 0.8, ty - 1.4, 2.4, 3.2);
+            ink(ctx, "#211a1c", "#0d0a0b", 0.8);
+            ctx.beginPath();
+            ctx.moveTo(h.cx + 1.6, ty - 4.2);
+            ctx.quadraticCurveTo(h.cx + 4.5, ty - 7.5, h.cx + 7.2, ty - 6.2);
+            ctx.quadraticCurveTo(h.cx + 4.2, ty - 5.2, h.cx + 2.6, ty - 2.2);
+            ctx.closePath();
+            ink(ctx, "#211a1c", "#0d0a0b", 0.7);
+            ctx.beginPath();
+            ctx.moveTo(h.cx - 1.4, ty + 0.2);
+            ctx.lineTo(h.cx + 3.2, ty - 0.6);
+            ink(ctx, null, "#c41e2a", 1.4);
             break;
         }
         case "wasteland": {

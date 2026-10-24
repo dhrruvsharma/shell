@@ -32,6 +32,10 @@
 //  15 fire   - the old picture burns away from the bottom up: a ragged
 //              front of glowing embers eats into it, scorching it brown
 //              ahead of the flames, sparks going up (Siege)
+//  16 slash  - a katana cuts the old picture from the top right to the
+//              bottom left in one white-hot stroke; the two halves slide
+//              apart along the cut and fall away, a spray of blood off the
+//              blade, and the new picture is behind them (Sekiro)
 // Only drawn while a transition runs; the wallpaper is a plain Image otherwise.
 
 layout(location = 0) in vec2 qt_TexCoord0;
@@ -310,6 +314,48 @@ void main() {
         vec2 g = vec2(uv.x * ubuf.aspect, uv.y) * 42.0 + vec2(0.0, p * 18.0);
         float spark = step(0.93, hash(floor(g))) * smoothstep(0.24, 0.08, length(fract(g) - 0.5));
         edge += vec3(1.0, 0.6, 0.2) * spark * smoothstep(0.16, 0.02, dd) * step(0.0, dd) * running;
+    } else if (mode == 16) {
+        // The cut runs from the top right to the bottom left.
+        vec2 dir = normalize(vec2(-ubuf.aspect, 0.72));
+        vec2 nrm = vec2(dir.y, -dir.x);
+        float half_len = 0.5 * sqrt(ubuf.aspect * ubuf.aspect + 0.52);
+        float sd = dot(c, nrm);
+        float along = dot(c, dir);
+        float running = step(0.001, p) * step(p, 0.999);
+        // The stroke: drawn along the cut in the first moment.
+        float sweep = smoothstep(0.0, 0.17, p);
+        float reached = smoothstep(0.01, -0.01, along - (-half_len + sweep * 2.0 * half_len));
+        float fadeLine = 1.0 - smoothstep(0.2, 0.42, p);
+        float streak = (exp(-abs(sd) * 1400.0) + exp(-abs(sd) * 140.0) * 0.4) * reached * fadeLine * running;
+        // Then the halves part: each slides away along the cut, one each
+        // way, and drifts off it; they fade as they go.
+        float open = smoothstep(0.14, 1.0, p);
+        open = open * open * (3.0 - 2.0 * open);
+        float shift = open * 0.62;
+        float gap = open * 0.16;
+        float side = sd >= 0.0 ? 1.0 : -1.0;
+        vec2 src = c - side * (dir * shift + nrm * gap * 0.5);
+        float onSide = step(0.0, side * dot(src, nrm));
+        vec2 srcUv = src / vec2(ubuf.aspect, 1.0) + 0.5;
+        float inside = step(0.0, srcUv.x) * step(srcUv.x, 1.0) * step(0.0, srcUv.y) * step(srcUv.y, 1.0);
+        float piece = onSide * inside * (1.0 - smoothstep(0.7, 1.0, p));
+        a = texture(fromTex, ubuf.fromRect.xy + clamp(srcUv, 0.0, 1.0) * ubuf.fromRect.zw);
+        a.rgb *= 1.0 - 0.3 * open;
+        m = 1.0 - piece;
+        // The cut faces of the halves catch the light.
+        float face = exp(-abs(dot(src, nrm)) * 500.0) * piece * running;
+        edge = vec3(1.0, 0.96, 0.9) * streak * 1.6 + ubuf.edgeColor.rgb * exp(-abs(sd) * 60.0) * streak * 0.5
+            + mix(vec3(1.0), ubuf.edgeColor.rgb, 0.5) * face * 0.7;
+        // Blood off the blade: drops flung out from the cut, falling.
+        float spray = smoothstep(0.08, 0.5, p);
+        vec2 g = vec2(along * 64.0, (sd - side * spray * 0.05) * 64.0 + p * 6.0);
+        vec2 id = floor(g);
+        float keep = step(hash(id + 3.1), 0.16) * reached;
+        float band = 0.015 + 0.13 * spray;
+        float near = 1.0 - smoothstep(band * 0.4, band, abs(sd));
+        float drop = smoothstep(0.32, 0.12, length(fract(g) - 0.5 - (vec2(hash(id + 1.7), hash(id + 6.3)) - 0.5) * 0.4));
+        float blood = drop * keep * near * (1.0 - smoothstep(0.55, 0.9, p)) * running;
+        veil = vec4(ubuf.edgeColor.rgb * 0.62, blood * 0.9);
     } else {
         float r = p * maxR * 1.05;
         m = smoothstep(r, r - 0.04, length(c));

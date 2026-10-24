@@ -75,7 +75,7 @@ Item {
                 readonly property bool compact: width < 170
 
                 width: (strip.width - strip.spacing * (strip.columns - 1)) / strip.columns
-                height: 62
+                height: compact ? 66 : 62
                 radius: Services.DesktopTheme.rad(18)
                 color: active ? Colors.primary_container : card.hovered || selected ? Colors.surface_container_high : Colors.surface_container
                 border.width: selected ? 2 : 0
@@ -90,7 +90,7 @@ Item {
                 Glyph {
                     id: cardIcon
                     x: card.compact ? 14 : 16
-                    y: card.compact ? 8 : (card.height - height) / 2
+                    y: card.compact ? 7 : (card.height - height) / 2
                     text: card.modelData ? card.modelData.icon : "do_not_disturb_on"
                     filled: card.active
                     font.pixelSize: card.compact ? 20 : 24
@@ -99,7 +99,7 @@ Item {
 
                 Column {
                     x: card.compact ? 14 : cardIcon.x + cardIcon.width + 12
-                    y: card.compact ? 30 : (card.height - height) / 2
+                    y: card.compact ? 28 : (card.height - height) / 2
                     width: card.width - x - (card.compact ? 10 : 12)
                     spacing: card.compact ? 0 : 2
 
@@ -307,9 +307,16 @@ Item {
                     stroke: desk.dt.borderColor(mock.look, desk.selId)
                 }
 
+                PostureFrame {
+                    visible: mock.look.shape === "posture"
+                    taper: 6
+                    fill: Colors.surface_container
+                    stroke: desk.dt.borderColor(mock.look, desk.selId)
+                }
+
                 Rectangle {
                     anchors.fill: parent
-                    visible: !["chamfer", "neon", "deco", "cusp", "crenel"].includes(mock.look.shape)
+                    visible: !["chamfer", "neon", "deco", "cusp", "crenel", "posture"].includes(mock.look.shape)
                     radius: desk.dt.radius(mock.look, 10, height)
                     topLeftRadius: desk.dt.corner(mock.look, radius, 0)
                     topRightRadius: desk.dt.corner(mock.look, radius, 1)
@@ -408,7 +415,7 @@ Item {
                 spacing: 6
 
                 MockTag {
-                    readonly property string pip: ({ chamfer: "◆", square: "■", neon: "▮", deco: "◆", cusp: "✦", print: "▪", plate: "✕", scale: "☉", lume: "◉", zari: "✿", crenel: "♜" })[mock.look.shape] ?? "●"
+                    readonly property string pip: ({ chamfer: "◆", square: "■", neon: "▮", deco: "◆", cusp: "✦", print: "▪", plate: "✕", scale: "☉", lume: "◉", zari: "✿", crenel: "♜", posture: "忍" })[mock.look.shape] ?? "●"
                     label: pip + " 2 " + pip + " " + pip + " " + pip
                 }
 
