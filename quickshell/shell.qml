@@ -36,6 +36,7 @@ import qs.modules.desktopwidgets
 import qs.modules.pet
 import qs.modules.keybinds
 import qs.modules.barsettings
+import qs.modules.screenshot
 
 ShellRoot {
     id: root
@@ -84,6 +85,9 @@ ShellRoot {
     // The wallpaper, with the desktop theme's layer over it.
     WallpaperLayer {}
     NotificationToasts {}
+    // A screenshot opened from its notification (scripts/screenshot), over
+    // everything while it's open.
+    ScreenshotEditor {}
     CalendarWindow {}
     DesktopWidgetsLayer {}
     WorkspaceDiscWindow {}
@@ -818,6 +822,18 @@ ShellRoot {
         }
         function clear(): void {
             Services.Notification.clearAll()
+        }
+    }
+
+    // The screenshot editor: edit opens any image in it, last the newest
+    // shot in ~/Pictures/screenshots.
+    IpcHandler {
+        target: "screenshot"
+        function edit(path: string): void {
+            Services.Screenshot.edit(path, "", false)
+        }
+        function last(): void {
+            Services.Screenshot.editLast()
         }
     }
 

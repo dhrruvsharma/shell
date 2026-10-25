@@ -1,0 +1,103 @@
+#!/usr/bin/env bash
+# A screenshot, and a notification for it that the shell answers
+# (services/Screenshot.qml): a click on it opens the shot in the editor
+# (modules/screenshot) to draw on it, crop it and name the file, and Copy
+# and Rename work right from the toast.
+#
+#     screenshot save|copysave|copy [output|area|active|screen]
+#     screenshot notify FILE [SUMMARY]
+#
+# save keeps it in ~/Pictures/screenshots ($SCREENSHOT_DIR), copysave puts
+# it on the clipboard as well, and copy only there: the file then waits in
+# the cache as a draft until Save (or Save as) on the toast or in the editor
+# moves it into the folder. An area selection escaped takes nothing. notify
+# announces a file that's already there.
+
+dir=${SCREENSHOT_DIR:-$HOME/Pictures/screenshots}
+drafts=${XDG_CACHE_HOME:-$HOME/.cache}/quickshell/screenshots
+
+usage() {
+    echo "usage: screenshot save|copysave|copy [output|area|active|screen]" >&2
+    echo "       screenshot notify FILE [SUMMARY]" >&2
+    exit 2
+}
+
+# A GVariant string, for gdbus.
+gv() {
+    local s=${1//\\/\\\\}
+    printf "'%s'" "${s//\'/\\\'}"
+}
+
+# A path as a file:// URL.
+url() {
+    local LC_ALL=C s=$1 out= c i
+    for ((i = 0; i < ${#s}; i++)); do
+        c=${s:i:1}
+        case $c in
+            [A-Za-z0-9/._~-]) out+=$c ;;
+            *) printf -v c '%%%02X' "'$c"; out+=$c ;;
+        esac
+    done
+    printf 'file://%s' "$out"
+}
+
+# Text for the notification's body, which is read as markup.
+markup() {
+    local s=${1//'&'/'&amp;'}
+    s=${s//'<'/'&lt;'}
+    printf '%s' "${s//'>'/'&gt;'}"
+}
+
+# The notification: the shot as its picture, the file in its hints, and
+# Edit, Copy and Rename (a draft's Edit, Save and Save as). A click edits.
+announce() {
+    local file=$1 summary=$2 draft=false body actions
+    [[ $file == "$drafts"/* ]] && draft=true
+    if $draft; then
+        body="On the clipboard · not saved yet"
+        actions="['default', 'Edit', 'edit', 'Edit', 'save', 'Save', 'inline-reply', 'Name it']"
+    else
+        body=$(markup "${file/#"$HOME"/\~}")
+        actions="['default', 'Edit', 'edit', 'Edit', 'copy', 'Copy', 'inline-reply', 'New name']"
+    fi
+    gdbus call --session --dest org.freedesktop.Notifications \
+        --object-path /org/freedesktop/Notifications \
+        --method org.freedesktop.Notifications.Notify \
+        "$(gv Screenshot)" 0 "''" "$(gv "$summary")" "$(gv "$body")" "$actions" \
+        "{'category': <'x-quickshell.screenshot'>, 'image-path': <$(gv "$(url "$file")")>, 'x-quickshell-file': <$(gv "$file")>, 'x-quickshell-dir': <$(gv "$dir")>, 'x-quickshell-draft': <$draft>}" \
+        8000 >/dev/null
+}
+
+case $1 in
+    notify)
+        [[ -f $2 ]] || { echo "screenshot: '$2' not found" >&2; exit 1; }
+        announce "$2" "${3:-Screenshot}"
+        exit
+        ;;
+    save) summary="Screenshot saved" ;;
+    copysave) summary="Screenshot saved and copied" ;;
+    copy) summary="Screenshot copied" ;;
+    *) usage ;;
+esac
+
+target=${2:-output}
+[[ $target =~ ^(output|area|active|screen)$ ]] || usage
+
+if [[ $1 == copy ]]; then
+    mkdir -p "$drafts"
+    # Drafts nobody saved go after a day.
+    find "$drafts" -maxdepth 1 -name '*.png' -mmin +1440 -delete 2>/dev/null
+    file=$drafts/screenshot_$(date +%Y-%m-%d_%H-%M-%S).png
+else
+    mkdir -p "$dir"
+    file=$dir/screenshot_$(date +%Y-%m-%d_%H-%M-%S).png
+fi
+# Two in the same second keep both.
+base=${file%.png} i=1
+while [[ -e $file ]]; do
+    file=$base-$((i++)).png
+done
+
+# (copy keeps a file too, for the editor)
+grimblast "$([[ $1 == copy ]] && echo copysave || echo "$1")" "$target" "$file" >/dev/null || exit 0
+announce "$file" "$summary"

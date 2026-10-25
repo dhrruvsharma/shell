@@ -1,4 +1,5 @@
 import QtQuick
+import Quickshell
 import Quickshell.Io
 import qs.components
 import qs.colors
@@ -224,8 +225,9 @@ Item {
         command: ["pkill", "wf-recorder"]
     }
 
+    // Its notification opens it in the editor (scripts/screenshot).
     Process {
         id: screenshotProc
-        command: ["sh", "-c", "qs ipc call systemPanel toggle && grimblast copysave area ~/Pictures/screenshots/screenshot_$(date +%Y%m%d_%H%M%S).png"]
+        command: ["sh", "-c", "qs ipc call systemPanel toggle && \"$0\" copysave area", Quickshell.shellPath("scripts/screenshot")]
     }
 }

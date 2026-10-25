@@ -11,6 +11,10 @@ import qs.modules.lock
 // anywhere else runs the app's default action and brings its window
 // forward; the cross closes it.
 //
+// A screenshot's (scripts/screenshot) shows the shot across the card, and
+// its Reply is Rename (Save as for one only on the clipboard), with the
+// file's name in the field to start from.
+//
 // The control centre lays these on a well of their own; a toast
 // (`toast: true`) sits on the theme's frame (NotificationToast), so it
 // draws no well, and shows the time it has left along its foot. The
@@ -27,6 +31,8 @@ Item {
 
     readonly property string icon: Services.Notification.iconOf(n)
     readonly property string picture: Services.Notification.pictureOf(n)
+    readonly property var shot: Services.Screenshot.info(n)
+    readonly property string replyLabel: shot ? (shot.draft ? "Save as" : "Rename") : "Reply"
     readonly property var extraActions: (n?.actions ?? []).filter(a => a.identifier !== "default" && a.identifier !== "inline-reply")
     readonly property bool canReply: n?.canReply ?? false
     readonly property bool hasButtons: extraActions.length > 0 || canReply
@@ -68,6 +74,10 @@ Item {
 
     function openReply() {
         card.replying = true;
+        if (card.shot) {
+            replyInput.text = Services.Screenshot.stemOf(card.shot.file);
+            replyInput.selectAll();
+        }
         replyInput.forceActiveFocus();
     }
 
@@ -141,7 +151,7 @@ Item {
             Glyph {
                 anchors.centerIn: appIcon
                 visible: !appIcon.visible
-                text: "notifications"
+                text: card.shot ? "screenshot_region" : "notifications"
                 filled: true
                 font.pixelSize: 16
                 color: ControlStyle.accent
@@ -242,7 +252,7 @@ Item {
             Rectangle {
                 id: picture
                 anchors.right: parent.right
-                visible: pic.status === Image.Ready
+                visible: pic.status === Image.Ready && !card.shot
                 width: 54
                 height: 54
                 radius: ControlStyle.radius(10)
@@ -252,11 +262,91 @@ Item {
                 Image {
                     id: pic
                     anchors.fill: parent
-                    source: card.picture
+                    source: card.shot ? "" : card.picture
                     sourceSize: Qt.size(108, 108)
                     fillMode: Image.PreserveAspectCrop
                     asynchronous: true
                     smooth: true
+                }
+            }
+        }
+
+        // A screenshot, across the card (a click opens it in the editor,
+        // as anywhere on the card).
+        Item {
+            id: shotView
+
+            readonly property real aspect: shotImage.status === Image.Ready ? shotImage.implicitHeight / Math.max(1, shotImage.implicitWidth) : 0.5625
+
+            visible: !!card.shot
+            width: parent.width
+            height: visible ? Math.round(Math.max(56, Math.min(150, width * aspect))) : 0
+
+            Rectangle {
+                anchors.fill: parent
+                radius: ControlStyle.radius(10)
+                color: ControlStyle.well
+            }
+
+            Image {
+                id: shotImage
+                anchors.fill: parent
+                anchors.margins: 1
+                source: card.shot ? card.picture : ""
+                sourceSize.width: Math.round(shotView.width * 2)
+                fillMode: Image.PreserveAspectFit
+                asynchronous: true
+                smooth: true
+                mipmap: true
+            }
+
+            // Its edge.
+            Rectangle {
+                anchors.centerIn: shotImage
+                visible: shotImage.status === Image.Ready
+                width: shotImage.paintedWidth + 2
+                height: shotImage.paintedHeight + 2
+                color: "transparent"
+                border.width: 1
+                border.color: ControlStyle.line
+            }
+
+            // What a click does.
+            Rectangle {
+                anchors.centerIn: parent
+                width: editHint.implicitWidth + 24
+                height: 28
+                radius: ControlStyle.radius(14)
+                color: Colors.withAlpha("#000000", 0.6)
+                opacity: area.containsMouse ? 1 : 0
+
+                Behavior on opacity {
+                    NumberAnimation {
+                        duration: 140
+                    }
+                }
+
+                Row {
+                    id: editHint
+                    anchors.centerIn: parent
+                    spacing: 6
+
+                    Glyph {
+                        anchors.verticalCenter: parent.verticalCenter
+                        text: "edit"
+                        font.pixelSize: 15
+                        color: "white"
+                    }
+
+                    Text {
+                        anchors.verticalCenter: parent.verticalCenter
+                        text: ControlStyle.label("Edit")
+                        font.family: ControlStyle.ui
+                        font.pixelSize: 12
+                        font.weight: Font.Medium
+                        font.capitalization: ControlStyle.caps
+                        color: "white"
+                    }
                 }
             }
         }
@@ -268,7 +358,7 @@ Item {
 
             readonly property int count: card.extraActions.length + (card.canReply ? 1 : 0)
             readonly property real even: (width - spacing * (count - 1)) / Math.max(1, count)
-            readonly property bool fits: card.extraActions.every(a => buttons.measure(a.text) <= even) && (!card.canReply || buttons.measure("Reply") <= even)
+            readonly property bool fits: card.extraActions.every(a => buttons.measure(a.text) <= even) && (!card.canReply || buttons.measure(card.replyLabel) <= even)
 
             function measure(s) {
                 return metrics.advanceWidth(ControlStyle.label(s)) + 44;
@@ -297,6 +387,9 @@ Item {
                     required property var modelData
                     width: buttons.fits ? buttons.even : implicitWidth
                     text: modelData.text
+                    // A screenshot's, with Edit first among them.
+                    glyph: card.shot ? ({ edit: "edit", copy: "content_copy", save: "save" })[modelData.identifier] ?? "" : ""
+                    primary: !!card.shot && modelData.identifier === "edit"
                     onClicked: {
                         const n = card.n;
                         const action = modelData;
@@ -309,9 +402,9 @@ Item {
             NotificationButton {
                 visible: card.canReply
                 width: buttons.fits ? buttons.even : implicitWidth
-                glyph: "reply"
-                text: "Reply"
-                primary: true
+                glyph: card.shot ? (card.shot.draft ? "save_as" : "drive_file_rename_outline") : "reply"
+                text: card.replyLabel
+                primary: !card.shot
                 onClicked: card.openReply()
             }
         }
@@ -415,7 +508,7 @@ Item {
 
                 Glyph {
                     anchors.centerIn: parent
-                    text: "send"
+                    text: card.shot ? "check" : "send"
                     filled: true
                     font.pixelSize: 16
                     color: sendButton.enabled ? ControlStyle.inkOn(ControlStyle.accent) : Colors.withAlpha(ControlStyle.ink, 0.35)

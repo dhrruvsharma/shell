@@ -18,6 +18,7 @@ A feature-complete [Quickshell](https://quickshell.outfoxxed.me/) desktop shell 
    - [Calendar](#calendar)
    - [OSD](#osd)
    - [Keybinds Manager](#keybinds-manager)
+   - [Screenshots](#screenshots)
 6. [Notes Drawer](#notes-drawer)
 7. [Clipboard Manager](#clipboard-manager)
 8. [Power Menu](#power-menu)
@@ -315,6 +316,28 @@ Every Hyprland bind in `~/.config/hypr/*.lua` (`hyprland.lua`, `quickshell.lua`,
 Keys: `/` search, `N` new bind, `Enter` edit and `Delete` delete the selected bind, `Ctrl+Z` undo, `Esc` back out. Reading the config runs it in a sandbox (`scripts/keybinds-probe.lua`, with Lua 5.5 like Hyprland): a stand-in `hl` records the binds, and nothing the config does is carried out.
 
 **IPC:** `qs ipc call keybinds toggle` (also `open`, `close`)
+
+### Screenshots
+
+`scripts/screenshot` + `services/Screenshot.qml` + `modules/screenshot/`
+
+Every screenshot is followed by a notification with the shot across it. Click it (or **Edit**) to open it in the editor; **Copy** puts it on the clipboard, and **Rename** takes a new name right on the toast.
+
+| Keys | Takes |
+|---|---|
+| **Print** | the focused screen, saved |
+| **SHIFT + Print** | an area or a window, saved |
+| **CTRL + Print** | an area or a window, only to the clipboard |
+
+Shots are saved in `~/Pictures/screenshots` as `screenshot_<date>_<time>.png` (set `SCREENSHOT_DIR` in Hyprland's environment for another folder). The System panel's *Screenshot* button saves an area and copies it as well. A shot taken only to the clipboard waits in `~/.cache/quickshell/screenshots` until **Save** or **Save as** on its toast, or Save in the editor, moves it into the folder; ones never saved are cleared after a day.
+
+**The editor** covers the screen, on the desktop theme's frame. Above: the folder and the file's name, to change, the size it'll be, and Delete (to the bin), Copy and Save. Below: the tools, the colour, size and fill, and undo/redo.
+- **Tools** — select (V), pen (P), highlighter (H), line (L), arrow (A), box (R), ellipse (O), text (T), numbered steps (N), pixelate (B) and crop (C). Shift keeps a stroke straight, turns a line in steps of 15° and makes a box square. F fills boxes and ellipses and puts text on a label; 1–3 pick the size.
+- **Select** picks a mark to drag about; a colour, size or fill picked then changes it, Delete removes it, and a double-click on text edits it. Typing text, Enter finishes and Shift+Enter starts a new line.
+- **Crop** shows the whole shot again: drag a new crop or pull an edge of the one there; Enter applies it, Esc leaves it as it was.
+- **Save** (Enter or Ctrl+S) writes the marks and the crop into the file under the name in the field, and the old file goes; with nothing drawn, a new name only renames it. A name that's taken is refused. **Copy** (Ctrl+C) puts the shot as it is now on the clipboard. Ctrl+Z and Ctrl+Shift+Z undo and redo, F2 goes to the name, and Esc steps back out, then closes (asking first if there's anything unsaved).
+
+**IPC:** `qs ipc call screenshot edit <file>` opens any image in the editor · `qs ipc call screenshot last` the newest shot
 
 ---
 
@@ -660,6 +683,7 @@ All panels are controlled through Quickshell's `IpcHandler` system. Use `qs ipc 
 | `visBottom` | `qs ipc call visBottom toggle` | Full-screen CAVA visualizer |
 | `keybinds` | `qs ipc call keybinds toggle` | Keybinds manager (SUPER + /) |
 | `barSettings` | `qs ipc call barSettings toggle` | Bar settings (SUPER + B) |
+| `screenshot` | `qs ipc call screenshot last` | The newest screenshot in the editor (`edit <file>` for any image) |
 
 ### Example Hyprland keybindings
 
@@ -711,6 +735,7 @@ Ollama  → chatLoader    (centered)
 | `scripts/manga_server.py` | 48–50 | `~/.local/share/quickshell-manga` | Manga data/downloads dir |
 | `aikira/Api.qml` | 8 | `http://127.0.0.1:7842/api/v1` | Aikira backend port |
 | `aikira/Aikira.qml` | 97 | `~/.config/quickshell/scripts/aikira/aikira-stream.py` | Aikira stream script |
+| `scripts/screenshot`, `services/Screenshot.qml` | 16, 24 | `~/Pictures/screenshots` | Screenshot folder (or set `SCREENSHOT_DIR`) |
 
 ---
 

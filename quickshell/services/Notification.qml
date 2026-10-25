@@ -61,6 +61,12 @@ Singleton {
     function activate(n, dismissIdle = true): void {
         if (!n)
             return;
+        // A screenshot's (scripts/screenshot) is the shell's own: it opens
+        // in the editor.
+        if (Screenshot.owns(n)) {
+            Screenshot.act(n, "default");
+            return;
+        }
         const action = defaultAction(n);
         const app = [n.desktopEntry, n.appName];
         n.popup = false;
@@ -75,6 +81,10 @@ Singleton {
     function invoke(n, action): void {
         if (!n || !action)
             return;
+        if (Screenshot.owns(n)) {
+            Screenshot.act(n, action.identifier);
+            return;
+        }
         const app = [n.desktopEntry, n.appName];
         n.popup = false;
         action.invoke();
@@ -86,6 +96,11 @@ Singleton {
     function reply(n, text: string): void {
         if (!n?.notification || !n.canReply || text.trim().length === 0)
             return;
+        // A screenshot's: the file's new name.
+        if (Screenshot.owns(n)) {
+            Screenshot.reply(n, text);
+            return;
+        }
         n.popup = false;
         n.notification.sendInlineReply(text);
     }
