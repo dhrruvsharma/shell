@@ -87,8 +87,21 @@ PanelWindow {
     // The disc ellipse; no mask at all (the whole surface) while it's held.
     // Hyprland moves the surface as it grows before Qt's next frame brings
     // a mask for the new place, and with no window holding the keyboard a
-    // pointer outside the old mask goes elsewhere, losing the press.
-    mask: win.held && !win.settling ? null : discMask
+    // pointer outside the old mask goes elsewhere, losing the press. Tucked
+    // away, only the very corner (where the pointer can wake it), or nothing.
+    mask: win.held && !win.settling ? null : disc.tucked ? (WorkspaceDiscService.revealOnHover ? revealMask : noMask) : discMask
+
+    Region {
+        id: revealMask
+        x: win.onRight(win.corner) ? win.width - disc.revealSize : 0
+        y: win.onBottom(win.corner) ? win.height - disc.revealSize : 0
+        width: disc.revealSize
+        height: disc.revealSize
+    }
+
+    Region {
+        id: noMask
+    }
 
     Region {
         id: discMask

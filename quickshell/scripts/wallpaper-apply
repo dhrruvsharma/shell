@@ -7,7 +7,9 @@
 #   ~/.cache/current_wallpaper        -> a still of it (scripts/wallpaper-still:
 #                                        FILE itself, or a video's frame), which
 #                                        the lock screens and Themes panel read
-#   and the colour scheme, from matugen on that still (when it's installed).
+#   and the colour scheme, from matugen on that still (when it's installed),
+#   light or dark, of the kind and contrast set in the customizer's book
+#   (~/.config/quickshell/palette.json, services/Scheme.qml).
 #
 # services/WallpaperEngine.qml runs it; scripts/setwall too without the shell.
 
@@ -21,4 +23,14 @@ ln -sfn "$still" "$HOME/.cache/current_wallpaper"
 # takes it most of a second on every core, which would cost the shell's
 # animations (the picker's) their frames.
 command -v matugen >/dev/null || exit 0
-nice -n 19 matugen image "$still" --source-color-index 0
+opts=()
+scheme=$HOME/.config/quickshell/palette.json
+if [[ -f $scheme ]] && command -v jq >/dev/null; then
+    mode=$(jq -r '.mode // empty' "$scheme" 2>/dev/null)
+    type=$(jq -r '.scheme // empty' "$scheme" 2>/dev/null)
+    contrast=$(jq -r '.contrast // empty' "$scheme" 2>/dev/null)
+    [[ $mode == dark || $mode == light ]] && opts+=(-m "$mode")
+    [[ $type == scheme-* ]] && opts+=(-t "$type")
+    [[ $contrast =~ ^-?[0-9]+(\.[0-9]+)?$ ]] && opts+=(--contrast "$contrast")
+fi
+nice -n 19 matugen image "$still" --source-color-index 0 "${opts[@]}"

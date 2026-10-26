@@ -110,6 +110,11 @@ Item {
             radius: panel.radius
             title: "network"
         }
+
+        // A peek (opened on hover) stays while it's in use.
+        PeekWatch {
+            target: "network"
+        }
         width: 400
         height: 680
         anchors.bottom: parent.bottom

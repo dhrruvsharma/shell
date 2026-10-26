@@ -8,5 +8,5 @@ BarPill {
     text: n > 0 ? "󰚰 " + n : "󰄬"
     textColor: n > 0 ? Services.BarSettings.highlight : Services.BarSettings.ink
     horizontalPadding: 20
-    command: ["qs", "ipc", "call", "updatesPanel", "toggle"]
+    opens: "updates"
 }

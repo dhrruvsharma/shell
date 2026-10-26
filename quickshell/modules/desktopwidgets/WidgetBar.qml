@@ -26,9 +26,11 @@ Item {
     // fills from its middle (Sekiro's posture).
     property bool fromStart: false
     readonly property var st: WidgetStyle.of(themeId)
-    readonly property color accent: WidgetStyle.accent(themeId)
+    // The theme's accent and text colour; a page printed in other inks (the
+    // customizer's book on cream stock) sets its own.
+    property color accent: WidgetStyle.accent(themeId)
     readonly property real v: Math.max(0, Math.min(1, value))
-    readonly property color ink: WidgetStyle.ink(themeId)
+    property color ink: WidgetStyle.ink(themeId)
     readonly property color track: Colors.withAlpha(ink, 0.14)
 
     implicitWidth: st.bar === "ascii" ? look.implicitWidth : 200
@@ -121,10 +123,10 @@ Item {
                 readonly property int cells: 22
                 readonly property int filled: Math.round(bar.v * cells)
 
-                Cell { text: "["; color: Colors.withAlpha(Colors.on_surface, 0.6) }
+                Cell { text: "["; color: Colors.withAlpha(bar.ink, 0.6) }
                 Cell { text: "#".repeat(ascii.filled); color: bar.accent }
-                Cell { text: "·".repeat(ascii.cells - ascii.filled); color: Colors.withAlpha(Colors.on_surface, 0.3) }
-                Cell { text: "]"; color: Colors.withAlpha(Colors.on_surface, 0.6) }
+                Cell { text: "·".repeat(ascii.cells - ascii.filled); color: Colors.withAlpha(bar.ink, 0.3) }
+                Cell { text: "]"; color: Colors.withAlpha(bar.ink, 0.6) }
             }
         }
     }
@@ -140,7 +142,7 @@ Item {
                 anchors.verticalCenter: parent.verticalCenter
                 width: parent.width
                 height: 1
-                color: Colors.withAlpha(Colors.on_surface, 0.22)
+                color: Colors.withAlpha(bar.ink, 0.22)
             }
 
             Rectangle {
@@ -179,12 +181,12 @@ Item {
                 anchors.verticalCenter: parent.verticalCenter
                 width: parent.width
                 height: 1
-                color: Colors.withAlpha(Colors.on_surface, 0.16)
+                color: Colors.withAlpha(bar.ink, 0.16)
 
                 Rectangle {
                     width: parent.width * bar.v
                     height: 1
-                    color: Colors.withAlpha(Colors.on_surface, 0.8)
+                    color: Colors.withAlpha(bar.ink, 0.8)
                 }
             }
         }
@@ -282,7 +284,7 @@ Item {
                 anchors.verticalCenter: parent.verticalCenter
                 width: parent.width
                 height: 1
-                color: Colors.withAlpha(Colors.on_surface, 0.14)
+                color: Colors.withAlpha(bar.ink, 0.14)
             }
 
             Rectangle {

@@ -16,3 +16,6 @@
 /ipc-commands.json
 # Left by install.sh --update next to files you've changed in a --copy install
 *.new
+/opening.json
+/windowlook.json
+/palette.json

@@ -290,4 +290,9 @@ Popout {
             }
         }
     }
+
+    // A peek (opened on hover) stays while it's in use.
+    PeekWatch {
+        target: "updates"
+    }
 }

@@ -20,6 +20,12 @@ Singleton {
     readonly property list<Notif> history: data
 
     readonly property bool dnd: adapter.dnd
+    // How long a toast stays when its app doesn't say (the customizer sets it).
+    readonly property int toastSeconds: Math.max(2, Math.min(60, adapter.toastSeconds))
+
+    function setToastSeconds(s: int): void {
+        adapter.toastSeconds = Math.round(Math.max(2, Math.min(60, s)));
+    }
 
     function setDnd(on: bool): void {
         adapter.dnd = on;
@@ -265,11 +271,11 @@ Singleton {
         // A reply to it is being typed (its toast takes the keyboard).
         property bool replying: false
 
-        // A toast goes after the app's timeout (5 s when it gives none); a
-        // critical one stays until it's dealt with.
+        // A toast goes after the app's timeout (toastSeconds when it gives
+        // none); a critical one stays until it's dealt with.
         readonly property Timer timer: Timer {
             running: notif.popup && !notif.critical && !notif.held
-            interval: (notif.notification?.expireTimeout ?? 0) > 0 ? notif.notification.expireTimeout : 5000
+            interval: (notif.notification?.expireTimeout ?? 0) > 0 ? notif.notification.expireTimeout : root.toastSeconds * 1000
             onTriggered: notif.popup = false
         }
 
@@ -318,6 +324,7 @@ Singleton {
         adapter: JsonAdapter {
             id: adapter
             property bool dnd: false
+            property int toastSeconds: 5
         }
     }
 }

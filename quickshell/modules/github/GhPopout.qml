@@ -145,6 +145,11 @@ Popout {
         }
     }
 
+    // A peek (opened on hover) stays while it's in use.
+    PeekWatch {
+        target: "github"
+    }
+
     Component {
         id: ghCalendar
         GhCalendar {}
@@ -153,11 +158,5 @@ Popout {
     Component {
         id: timerComponent
         TimerComponent {}
-    }
-
-    Timer {
-        running: root.autoHide && root.opened
-        interval: root.hideDelay
-        onTriggered: root.opened = false
     }
 }

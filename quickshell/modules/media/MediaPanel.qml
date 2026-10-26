@@ -101,4 +101,9 @@ Rectangle {
             }
         }
     }
+
+    // A peek (opened on hover) stays while it's in use.
+    PeekWatch {
+        target: "media"
+    }
 }

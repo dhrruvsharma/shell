@@ -121,6 +121,11 @@ Item {
         }
     }
 
+    // A peek (opened on hover) stays while it's in use.
+    PeekWatch {
+        target: "system"
+    }
+
     IpcHandler {
         target: "systemPanel"
         function toggle(): void {

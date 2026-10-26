@@ -12,7 +12,8 @@ import qs.colors
 //     window borders, and an optional static screen shader
 //     (shaders/<id>_screen.frag.in, baked with the current colours). Applied
 //     at runtime with `hyprctl eval`; switching themes or turning them off
-//     runs `hyprctl reload` first, which restores the config exactly.
+//     runs `hyprctl reload` first, which restores the config exactly. The
+//     window settings made in the customizer (WindowLook) go on top.
 //   - the desktop: a static layer drawn over the wallpaper
 //     (modules/desktoptheme, one <Name>Layer.qml per theme); desktop widgets
 //     restyle themselves too (modules/desktopwidgets/WidgetStyle)
@@ -765,7 +766,8 @@ Singleton {
                 shader = shaderPath;
             }
         }
-        const lua = _lua(themeFor(id), shader);
+        // What's set in the customizer's book goes on top of the theme.
+        const lua = _lua(themeFor(id), shader) + " " + WindowLook.lua();
         if (adapter.appliedTheme && adapter.appliedTheme !== id) {
             // Another theme's overrides are live: start from the real config.
             _reverting = true;

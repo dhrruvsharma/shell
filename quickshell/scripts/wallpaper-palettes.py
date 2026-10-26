@@ -30,6 +30,30 @@ from collections import deque
 WORKERS = 3
 
 STILL = os.path.join(os.path.dirname(os.path.abspath(__file__)), "wallpaper-still")
+
+
+def scheme_options():
+    """Light or dark, the kind of scheme and its contrast, as set in the
+    customizer's book (services/Scheme.qml), so a card shows what the
+    wallpaper would really give."""
+    try:
+        with open(os.path.expanduser("~/.config/quickshell/palette.json")) as f:
+            p = json.load(f)
+    except (OSError, ValueError):
+        return []
+    opts = []
+    if p.get("mode") in ("dark", "light"):
+        opts += ["-m", p["mode"]]
+    kind = p.get("scheme")
+    if isinstance(kind, str) and kind.startswith("scheme-"):
+        opts += ["-t", kind]
+    c = p.get("contrast")
+    if isinstance(c, (int, float)) and -1 <= c <= 1:
+        opts += ["--contrast", str(c)]
+    return opts
+
+
+OPTIONS = scheme_options()
 VIDEO = (".mp4", ".webm", ".mkv", ".mov", ".m4v")
 
 ROLES = (
@@ -108,7 +132,7 @@ def still(path):
 def scheme(path):
     try:
         out = subprocess.run(
-            ["matugen", "image", path, "--source-color-index", "0", "--dry-run", "-j", "hex", "-q"],
+            ["matugen", "image", path, "--source-color-index", "0", *OPTIONS, "--dry-run", "-j", "hex", "-q"],
             capture_output=True, text=True, timeout=90,
         )
         colors = json.loads(out.stdout)["colors"]

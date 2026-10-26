@@ -9,28 +9,33 @@ import qs.Core
 import qs.modules.lock
 import qs.services as Services
 
-// The bar laid out flat over your wallpaper, as it stands: its widgets in
-// their islands, in the theme's look and the colours and widths set in
-// this panel, the media pill in the middle and the tray at the end. The
-// widgets are the bar's own (modules/bar/components), and text that
-// doesn't fit scrolls under the pointer as it would on the bar. Hidden
-// ones keep their place as dashed ghosts. A click on anything is
-// `picked` (the panel shows or hides it, or picks its width row).
+// The bar laid out flat over your wallpaper, as it stands (a plate in the
+// customizer's book): its widgets in their islands, in the theme's look and
+// the colours and widths set in the book, the media pill in the middle and
+// the tray at the end. The widgets are the bar's own (modules/bar/
+// components), and text that doesn't fit scrolls under the pointer as it
+// would on the bar. Hidden ones keep their place as dashed ghosts. A click
+// on anything is `picked`.
 //
-// It's drawn lying down whichever edge the bar is on, and shrunk to fit
-// when the bar's widgets are longer than the panel is wide.
+// `part` draws one stretch of it (its left end, the middle, its right
+// end), so each can be shown large enough to read; it's drawn lying down
+// whichever edge the bar is on, and shrunk to fit when it's longer than
+// the strip is wide.
 Item {
     id: root
 
-    // What the pointer is over ("" for nothing), for the panel's caption.
+    // "all", or "left", "middle" or "right".
+    property string part: "all"
+    // What the pointer is over ("" for nothing), and a widget lit from the
+    // facing page.
     property string hoveredId: ""
-    // How long the real bar is, to tell when its widgets crowd the media
-    // pill in its middle.
-    property real barLength: 1920
+    property string litId: ""
     // Each widget's width as wide as its text ({ id: px }), from the bar's
     // own widgets here.
     property var naturals: ({})
-    readonly property bool crowded: Math.max(leftRow.width, rightRow.width) + 16 + capsule.width / 2 + 12 > root.barLength / 2
+    readonly property bool hasLeft: root.part === "all" || root.part === "left"
+    readonly property bool hasMiddle: root.part === "all" || root.part === "middle"
+    readonly property bool hasRight: root.part === "all" || root.part === "right"
 
     signal picked(string which)
 
@@ -42,13 +47,13 @@ Item {
         root.naturals = next;
     }
 
-    implicitHeight: 84
+    implicitHeight: 64
 
     // ── Your wallpaper, behind ───────────────────────────────────────────────
     Rectangle {
         id: mask
         anchors.fill: parent
-        radius: Services.DesktopTheme.rad(20)
+        radius: Math.min(12, (BookStyle.b.radius ?? 6) + 4)
         visible: false
         layer.enabled: true
     }
@@ -94,7 +99,10 @@ Item {
     Item {
         id: track
 
-        readonly property real natural: 16 + leftRow.width + 28 + capsule.width + 28 + rightRow.width + 16
+        readonly property real natural: root.part === "left" ? leftRow.width + 32
+            : root.part === "middle" ? capsule.width + 32
+            : root.part === "right" ? rightRow.width + 32
+            : 16 + leftRow.width + 28 + capsule.width + 28 + rightRow.width + 16
         readonly property real s: Math.min(1, root.width / Math.max(1, track.natural))
 
         width: root.width / track.s
@@ -105,12 +113,13 @@ Item {
 
         Row {
             id: leftRow
-            x: 16
+            x: root.part === "left" ? (track.width - width) / 2 : 16
             anchors.verticalCenter: parent.verticalCenter
+            visible: root.hasLeft
             spacing: 8
 
             Repeater {
-                model: Services.BarLayout.left
+                model: root.hasLeft ? Services.BarLayout.left : []
 
                 MapIsland {
                     required property var modelData
@@ -123,7 +132,8 @@ Item {
         MapThing {
             id: capsule
             thingId: "media"
-            x: leftRow.x + leftRow.width + (rightRow.x - leftRow.x - leftRow.width - width) / 2
+            visible: root.hasMiddle
+            x: root.part === "middle" ? (track.width - width) / 2 : leftRow.x + leftRow.width + (rightRow.x - leftRow.x - leftRow.width - width) / 2
             anchors.verticalCenter: parent.verticalCenter
             // As the media pill: as set, else 200.
             width: Services.BarSettings.widthOf("media") || Services.BarSettings.autoWidths.media
@@ -154,12 +164,13 @@ Item {
 
         Row {
             id: rightRow
-            x: track.width - width - 16
+            x: root.part === "right" ? (track.width - width) / 2 : track.width - width - 16
             anchors.verticalCenter: parent.verticalCenter
+            visible: root.hasRight
             spacing: 8
 
             Repeater {
-                model: Services.BarLayout.right
+                model: root.hasRight ? Services.BarLayout.right : []
 
                 MapIsland {
                     required property var modelData
@@ -243,6 +254,9 @@ Item {
                             return e && e.file ? Qt.resolvedUrl("../bar/" + e.file) : "";
                         }
                         onLoaded: {
+                            // A picture of the widget: it opens nothing here.
+                            if ("preview" in item)
+                                item["preview"] = true;
                             if ("barId" in item)
                                 item["barId"] = atom.modelData;
                             if ("forceHover" in item)
@@ -320,15 +334,15 @@ Item {
             }
         }
 
-        // Lit round the edge under the pointer.
+        // Lit round the edge under the pointer, or from the facing page.
         Rectangle {
             anchors.fill: parent
             anchors.margins: -3
             radius: thing.ghostRadius + 3
             color: "transparent"
             border.width: 2
-            border.color: Colors.primary
-            visible: thing.hovered
+            border.color: BookStyle.accent
+            visible: thing.hovered || root.litId === thing.thingId
         }
 
         MouseArea {

@@ -1113,6 +1113,11 @@ Item {
         subtextInput.text = ""
     }
 
+    // A peek (opened on hover) stays while it's in use.
+    PeekWatch {
+        target: "notes"
+    }
+
     CreateCategory{
         id: categoryDialog
     }

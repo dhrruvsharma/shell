@@ -17,6 +17,11 @@ Singleton {
     id: root
 
     readonly property string dir: WallpaperEngine.dir
+    // The scheme options the swatches were read with (light or dark, its
+    // kind, its contrast: services/Scheme): they're read again when those
+    // change. A cache without one was read with the defaults.
+    readonly property string schemeKey: Scheme.mode + "|" + Scheme.scheme + "|" + Scheme.contrast
+    readonly property string defaultSchemeKey: "dark|scheme-tonal-spot|0"
 
     // File name -> { m: mtime (s), s: bytes, w, h, c: { role: "#rrggbb" } };
     // `e` instead of `c` when matugen couldn't read the image.
@@ -165,6 +170,20 @@ Singleton {
         worker.running = true;
     }
 
+    // Another scheme: every card is read again.
+    onSchemeKeyChanged: {
+        if (!_loaded)
+            return;
+        // What the old reading still had in hand is the old scheme's.
+        _batch = ({});
+        worker.running = false;
+        entries = ({});
+        revision++;
+        saveTimer.restart();
+        if (_files)
+            ensure(_files);
+    }
+
     // Moves these names (still waiting to be read) to the front of the queue.
     function prioritize(names) {
         if (worker.running && names.length > 0)
@@ -227,7 +246,7 @@ Singleton {
     Timer {
         id: saveTimer
         interval: 1500
-        onTriggered: cache.setText(JSON.stringify({ version: 1, entries: root.entries }))
+        onTriggered: cache.setText(JSON.stringify({ version: 1, scheme: root.schemeKey, entries: root.entries }))
     }
 
     FileView {
@@ -237,7 +256,7 @@ Singleton {
         onLoaded: {
             try {
                 const d = JSON.parse(text());
-                if (d && d.version === 1 && d.entries)
+                if (d && d.version === 1 && d.entries && (d.scheme ?? root.defaultSchemeKey) === root.schemeKey)
                     root.entries = d.entries;
             } catch (e) {
                 console.warn("wallpaper swatches: unreadable cache,", e);

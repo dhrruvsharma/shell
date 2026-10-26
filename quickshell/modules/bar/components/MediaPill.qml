@@ -3,7 +3,6 @@ import QtQuick.Layouts
 import QtQuick.Controls
 import Quickshell
 import qs.services
-import Quickshell.Io
 import qs.colors
 import qs.components
 
@@ -264,18 +263,16 @@ Item {
                 }
             }
 
+            // The media panel, on a click or on hover (services/Opening).
             MouseArea {
                 id: mouseArea
-                onClicked: toggleProc.running = true
+                onClicked: Opening.clicked("media", null)
+                onEntered: Opening.entered("media", null)
+                onExited: Opening.left("media")
                 anchors.fill: parent
                 z: 2
                 hoverEnabled: true
             }
         }
-    }
-
-    Process {
-        id: toggleProc
-        command: ["qs", "ipc", "call", "mediaPanel", "toggle"]
     }
 }

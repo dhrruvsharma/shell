@@ -35,7 +35,7 @@ import qs.modules.desktoptheme
 import qs.modules.desktopwidgets
 import qs.modules.pet
 import qs.modules.keybinds
-import qs.modules.barsettings
+import qs.modules.customizer
 import qs.modules.screenshot
 
 ShellRoot {
@@ -46,6 +46,7 @@ ShellRoot {
     Component.onCompleted: {
         Services.DesktopTheme.manage = true
         Services.FirefoxTheme.manage = true
+        Services.WindowLook.manage = true
         // A night light left on comes back with the shell.
         Services.NightLight.checkAvailable()
     }
@@ -68,19 +69,117 @@ ShellRoot {
         }
     }
 
-    // The bar's settings: from the gear on the bar, SUPER+B and IPC.
-    function toggleBarSettings() {
-        if (!barSettingsLoader.active)
-            barSettingsLoader.active = true
-        barSettingsLoader.item.toggle()
+    // The customizer's book (SUPER+I; SUPER+B and the gear on the bar open
+    // it at the bar): `where` is a chapter or spread, "" for where it was.
+    function toggleCustomizer(where) {
+        if (!customizerLoader.active)
+            customizerLoader.active = true
+        customizerLoader.item.toggle(where)
+    }
+
+    function openCustomizer(where) {
+        if (!customizerLoader.active)
+            customizerLoader.active = true
+        customizerLoader.item.open(where)
     }
 
     Connections {
-        target: Services.BarSettings
-        function onPanelRequested() {
-            root.toggleBarSettings()
+        target: Services.Customizer
+        function onRequested(where) {
+            root.toggleCustomizer(where)
+        }
+        // The book hands over to another panel, and closes behind it.
+        function onPanelRequested(which) {
+            if (customizerLoader.item)
+                customizerLoader.item.close()
+            if (which === "themes")
+                lockThemes.openTab("desktop")
+            else if (which === "lockscreen")
+                lockThemes.openTab("lock")
+            else if (which === "widgets")
+                lockThemes.openTab("widgets")
+            else if (which === "cava")
+                cavaWidget.edit()
+            else if (which === "wallpaper") {
+                if (!wallpaperLoader.active)
+                    wallpaperLoader.active = true
+                if (!wallpaperLoader.item.visible)
+                    wallpaperLoader.item.open()
+            }
         }
     }
+
+    // How things open, on hover or a click (services/Opening, set in the
+    // customizer): it asks, these do it.
+    function openerAction(target, action, arg) {
+        const want = isOpen => action === "toggle" ? !isOpen : action === "open"
+        if (target === "launcher") {
+            if (want(launcherWindow.isOpen && !launcherWindow.closing))
+                launcherWindow.open()
+            else
+                launcherWindow.close()
+        } else if (target === "notes") {
+            notesDrawer.opened = want(notesDrawer.opened)
+        } else if (target === "github") {
+            ghPopout.opened = want(ghPopout.opened)
+        } else if (target === "calendar") {
+            if (!want(Services.CalendarState.open))
+                Services.CalendarState.close()
+            else if (arg)
+                Services.CalendarState.openAt(arg.pos, arg.length)
+            else
+                Services.CalendarState.open = true
+        } else if (target === "system") {
+            systemPanel.opened = want(systemPanel.opened)
+        } else if (target === "network" || target === "bluetooth") {
+            const tab = target === "network" ? 0 : 1
+            const panel = networkPanelLoader.item
+            const isOpen = panel !== null && panel.opened && panel.currentTab === tab
+            if (want(isOpen)) {
+                if (!networkPanelLoader.active)
+                    networkPanelLoader.active = true
+                networkPanelLoader.item.currentTab = tab
+                networkPanelLoader.item.opened = true
+            } else if (panel) {
+                panel.opened = false
+            }
+        } else if (target === "media") {
+            const isOpen = mediaPanelLoader.item !== null && mediaPanelLoader.item.opened
+            if (want(isOpen)) {
+                closeTimer.stop()
+                if (!mediaPanelLoader.active)
+                    mediaPanelLoader.active = true
+                mediaPanelLoader.item.opened = true
+            } else if (mediaPanelLoader.item) {
+                mediaPanelLoader.item.opened = false
+            }
+        } else if (target === "updates") {
+            updatesPanel.opened = want(updatesPanel.opened)
+            if (updatesPanel.opened)
+                Services.Updates.refresh()
+        }
+    }
+
+    Connections {
+        target: Services.Opening
+        function onRequested(target, action, arg) {
+            root.openerAction(target, action, arg)
+        }
+    }
+
+    // What's open, for Opening (a peek that closes some other way is over).
+    readonly property var openNow: ({
+        launcher: launcherWindow.isOpen && !launcherWindow.closing,
+        notes: notesDrawer.opened,
+        github: ghPopout.opened,
+        calendar: Services.CalendarState.open,
+        system: systemPanel.opened,
+        network: networkPanelLoader.item !== null && networkPanelLoader.item.opened && networkPanelLoader.item.currentTab === 0,
+        bluetooth: networkPanelLoader.item !== null && networkPanelLoader.item.opened && networkPanelLoader.item.currentTab === 1,
+        media: mediaPanelLoader.item !== null && mediaPanelLoader.item.opened,
+        updates: updatesPanel.opened
+    })
+    onOpenNowChanged: Services.Opening.report(root.openNow)
 
     // The wallpaper, with the desktop theme's layer over it.
     WallpaperLayer {}
@@ -104,26 +203,25 @@ ShellRoot {
         anchorBottom: false
         visible: visBottom.visible
     }
-    // Strips along the screen edges that open the launcher (hover the left
-    // edge), the notes drawer (click the bottom edge) and the GitHub popout
-    // (hover the right edge). Each is a tiny surface of its own, so the
-    // full-screen panel surface below can shrink away while no panel is open.
-    // They stay on the screen's very edge, where the pointer stops by
-    // itself; where the bar lies on that edge they take its outermost two
-    // pixels (which the bar leaves them) and open on a click instead, so
-    // reaching for the bar doesn't set them off.
+    // Strips along the screen edges that open the launcher (the left edge),
+    // the notes drawer (the bottom edge) and the GitHub popout (the right
+    // edge), on hover or on a click as services/Opening says. Each is a tiny
+    // surface of its own, so the full-screen panel surface below can shrink
+    // away while no panel is open. They stay on the screen's very edge,
+    // where the pointer stops by itself; where the bar lies on that edge
+    // they take its outermost two pixels (which the bar leaves them) and
+    // open on a click either way, so reaching for the bar doesn't set them
+    // off.
     // Declared before it: surfaces on one layer stack in creation order, and
     // the panels must cover the strips (rootPanel's mask leaves them out, so
     // they keep working while a panel is open, as when they lived inside it).
     component EdgeTrigger: PanelWindow {
         id: trigger
 
-        // Opens on hover (on a click if `hover` is off); over the bar it
-        // opens on a click either way.
-        property bool hover: true
+        // What it opens (an Opening target); over the bar it opens on a
+        // click either way.
+        property string target: ""
         property bool overBar: false
-
-        signal activated
 
         exclusionMode: ExclusionMode.Ignore
         WlrLayershell.keyboardFocus: WlrKeyboardFocus.None
@@ -137,8 +235,9 @@ ShellRoot {
         MouseArea {
             anchors.fill: parent
             hoverEnabled: true
-            onEntered: if (trigger.hover && !trigger.overBar) trigger.activated()
-            onClicked: if (!trigger.hover || trigger.overBar) trigger.activated()
+            onEntered: if (!trigger.overBar) Services.Opening.entered(trigger.target, null)
+            onExited: Services.Opening.left(trigger.target)
+            onClicked: Services.Opening.clicked(trigger.target, null)
 
             Rectangle {
                 anchors.fill: parent
@@ -150,35 +249,34 @@ ShellRoot {
 
     EdgeTrigger {
         id: notesDrawerTrigger
+        target: "notes"
         anchors.bottom: true
-        hover: false
         overBar: Services.BarLayout.atBottom
         implicitWidth: 900
         implicitHeight: 2
-        onActivated: notesDrawer.opened = !notesDrawer.opened
     }
 
     // The side strips stop short of a bottom bar.
     EdgeTrigger {
         id: githubTrigger
+        target: "github"
         anchors.right: true
         anchors.bottom: true
         margins.bottom: Services.BarLayout.reserveBottom
         overBar: Services.BarLayout.atRight
         implicitWidth: 2
         implicitHeight: 500
-        onActivated: ghPopout.opened = !ghPopout.opened
     }
 
     EdgeTrigger {
         id: launcherTrigger
+        target: "launcher"
         anchors.left: true
         anchors.bottom: true
         margins.bottom: Services.BarLayout.reserveBottom
         overBar: Services.BarLayout.atLeft
         implicitWidth: 2
         implicitHeight: 600
-        onActivated: launcherWindow.toggle()
     }
 
     OsdWindow {}
@@ -240,7 +338,7 @@ ShellRoot {
             || avatarPicker.visible
             || lockThemes.visible
             || keybindsLoader.active
-            || barSettingsLoader.active
+            || customizerLoader.active
         readonly property real screenW: screen ? screen.width : 1920
         readonly property real screenH: screen ? screen.height : 1200
 
@@ -263,18 +361,18 @@ ShellRoot {
             width: rootPanel.screenW
             height: rootPanel.screenH
 
-            // The bar's settings, built for each opening like the
-            // keybinds. The bar stays above their scrim (it isn't in the
-            // bar's coveredByPanel), so what's set shows on the bar itself
-            // and the bar can still be used; they come first here, so a
-            // panel opened from it meanwhile (system, media, updates…)
-            // comes up over them.
+            // The customizer's book, built for each opening like the
+            // keybinds. The bar stays above its scrim (it isn't in the bar's
+            // coveredByPanel), so what's set shows on the bar itself and the
+            // bar can still be used; it comes first here, so a panel opened
+            // from it or the bar meanwhile (themes, system, media…) comes up
+            // over it.
             Loader {
-                id: barSettingsLoader
+                id: customizerLoader
                 active: false
                 anchors.fill: parent
                 focus: true
-                sourceComponent: BarSettingsPanel {}
+                sourceComponent: Customizer {}
             }
 
             // The media and system panels hang from the middle of the bar's
@@ -513,7 +611,7 @@ ShellRoot {
                 item: keybindsLoader.item && keybindsLoader.item.visible ? keybindsLoader.item : null
             }
             Region {
-                item: barSettingsLoader.item && barSettingsLoader.item.visible ? barSettingsLoader.item : null
+                item: customizerLoader.item && customizerLoader.item.visible ? customizerLoader.item : null
             }
             // The edge strips stay with their own surfaces below.
             Region {
@@ -1063,7 +1161,60 @@ ShellRoot {
         }
     }
 
-    // The bar's settings panel (SUPER+B), and its settings for scripts:
+    // The customizer's book (SUPER+I): toggle it (where it was left), open
+    // it at a chapter or spread ("opening", "bar", "disc", "gaps", "theme",
+    // "palette", "desktop", "notices", "pet", or a chapter's number; "" for
+    // where it was left), or close it.
+    IpcHandler {
+        target: "customizer"
+        function toggle(): void {
+            root.toggleCustomizer("")
+        }
+        function open(where: string): void {
+            root.openCustomizer(where)
+        }
+        function close(): void {
+            if (customizerLoader.item?.visible)
+                customizerLoader.item.close()
+        }
+    }
+
+    Timer {
+        id: closeCustomizerTimer
+        interval: 600
+        // unless it was opened again in the meantime
+        onTriggered: if (!customizerLoader.item?.visible) customizerLoader.active = false
+    }
+
+    Connections {
+        target: customizerLoader.item
+        function onVisibleChanged() {
+            if (customizerLoader.item && !customizerLoader.item.visible)
+                closeCustomizerTimer.start()
+        }
+    }
+
+    // Hyprland's window settings, as the book's Windows chapter sets them:
+    // set an option ("general.gaps_in", "decoration.rounding",
+    // "decoration.blur.enabled"…) to a value, or give one (or all) back to
+    // the theme's or the config's.
+    IpcHandler {
+        target: "windowLook"
+        function set(key: string, value: string): void {
+            Services.WindowLook.setText(key, value)
+        }
+        function reset(key: string): void {
+            Services.WindowLook.clear(key)
+        }
+        function resetAll(): void {
+            Services.WindowLook.clearAll()
+        }
+        function get(key: string): string {
+            return String(Services.WindowLook.value(key))
+        }
+    }
+
+    // The bar's chapter of the book (SUPER+B), and its settings for scripts:
     // toggleWidget takes one of cpu, memory, temp, battery, clock, network,
     // bluetooth, volume, updates, settings, media, tray, pet; setColor a
     // "#rrggbb" ("" for the wallpaper's); setTransparency 0 (solid) to 100;
@@ -1072,17 +1223,14 @@ ShellRoot {
     IpcHandler {
         target: "barSettings"
         function toggle(): void {
-            root.toggleBarSettings()
+            root.toggleCustomizer("bar")
         }
         function open(): void {
-            if (!barSettingsLoader.active)
-                barSettingsLoader.active = true
-            if (!barSettingsLoader.item.visible || !Services.BarSettings.panelOpen)
-                barSettingsLoader.item.open()
+            root.openCustomizer("bar")
         }
         function close(): void {
-            if (barSettingsLoader.item?.visible)
-                barSettingsLoader.item.close()
+            if (customizerLoader.item?.visible)
+                customizerLoader.item.close()
         }
         function toggleWidget(id: string): void {
             Services.BarSettings.toggle(id)
@@ -1104,21 +1252,6 @@ ShellRoot {
         }
         function resetWidths(): void {
             Services.BarSettings.resetWidths()
-        }
-    }
-
-    Timer {
-        id: closeBarSettingsTimer
-        interval: 600
-        // unless it was opened again in the meantime
-        onTriggered: if (!barSettingsLoader.item?.visible) barSettingsLoader.active = false
-    }
-
-    Connections {
-        target: barSettingsLoader.item
-        function onVisibleChanged() {
-            if (barSettingsLoader.item && !barSettingsLoader.item.visible)
-                closeBarSettingsTimer.start()
         }
     }
 

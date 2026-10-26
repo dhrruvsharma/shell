@@ -114,6 +114,16 @@ PanelWindow {
             id: cal
             y: calendarWindow.edge === "bottom" ? parent.height - height : 0
         }
+
+        // A peek (opened on hover) stays while it's in use.
+        PeekWatch {
+            x: cal.x
+            y: cal.y
+            width: cal.width
+            height: cal.height
+            anchors.fill: undefined
+            target: "calendar"
+        }
     }
 
     IpcHandler {

@@ -30,6 +30,11 @@ import qs.services as Services
 // and scrolled through like the media pill's (components/MarqueeText), on
 // hover, always or never as the settings say.
 //
+// A widget that opens a panel names it in `opens` (a services/Opening
+// target): a click opens it, or the pointer resting on it when the bar's
+// panels are set to open on hover. `opensArg` gives what the panel needs
+// to hang from it (the calendar: where the clock sits).
+//
 // On a standing bar (left or right screen edge) the bar sets `vertical`: the
 // pill keeps its thickness and shows a compact upright face instead, `vIcon`
 // over `vLabel`, each shrunk to fit. By default the text splits at its first
@@ -64,9 +69,15 @@ Rectangle {
     property string vLabel: root._parts[1]
     property int vIconSize: 15
     property int vLabelSize: 11
-    // Optional command to run on click, e.g. ["qs", "ipc", "call", "systemPanel", "toggle"].
+    // Optional command to run on click, e.g. ["qs", "ipc", "call", "controlCenter", "changeVisible"].
     property var command: null
-    property bool interactive: root.command !== null
+    // The panel it opens (see above), and a function giving its argument.
+    property string opens: ""
+    property var opensArg: null
+    // Drawn as a picture of itself (the customizer's plates): it opens
+    // nothing.
+    property bool preview: false
+    property bool interactive: root.command !== null || root.opens !== ""
     property alias cursorShape: mouse.cursorShape
     readonly property var look: Services.DesktopTheme.look
     readonly property bool hud: look.shape === "chamfer"
@@ -101,16 +112,30 @@ Rectangle {
         : root.maxWidth > 0 ? Math.min(root.naturalWidth, root.maxWidth)
         : root.naturalWidth
 
+    function _arg() {
+        return typeof root.opensArg === "function" ? root.opensArg() : root.opensArg;
+    }
+
     HoverHandler {
         id: hover
+        onHoveredChanged: {
+            if (!root.opens || root.preview)
+                return;
+            if (hovered)
+                Services.Opening.entered(root.opens, root._arg());
+            else
+                Services.Opening.left(root.opens);
+        }
     }
 
     MouseArea {
         id: mouse
         anchors.fill: parent
-        enabled: root.interactive
+        enabled: root.interactive && !root.preview
         onClicked: {
-            if (root.command)
+            if (root.opens)
+                Services.Opening.clicked(root.opens, root._arg());
+            else if (root.command)
                 proc.running = true;
             root.clicked();
         }

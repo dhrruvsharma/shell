@@ -5,8 +5,8 @@ import Quickshell.Io
 import QtQuick
 import qs.colors
 
-// The bar's own settings (the panel in modules/barsettings, SUPER+B or the
-// gear on the bar): which of its widgets show, the colour, transparency
+// The bar's own settings (its chapter in the customizer's book, SUPER+B or
+// the gear on the bar): which of its widgets show, the colour, transparency
 // and outline of their containers, and how wide each is. Where the widgets
 // sit is BarLayout's; the pet's showing is the pet's own (Pet.shown).
 //
@@ -50,17 +50,6 @@ Singleton {
 
     function info(id) {
         return root.widgets.find(w => w.id === id) ?? null;
-    }
-
-    // ── The panel ────────────────────────────────────────────────────────────
-    // The gear on the bar asks for it here (shell.qml opens it), and the
-    // panel says while it's open, so the gear can light up like the clock
-    // does for the calendar.
-    property bool panelOpen: false
-    signal panelRequested
-
-    function togglePanel() {
-        root.panelRequested();
     }
 
     // ── Which widgets show ───────────────────────────────────────────────────

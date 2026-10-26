@@ -6,7 +6,8 @@ import qs.components
 import qs.modules.lock
 import qs.services as Services
 
-// A colour picked by hand: a saturation/brightness square and a hue strip
+// A colour picked by hand (on a page of the customizer's book): a
+// saturation/brightness square and a hue strip
 // to drag in, the hex code to type, and swatches to start from (the
 // wallpaper's own colours, and a few classics).
 //
@@ -56,7 +57,7 @@ Item {
         id: sv
         width: root.width - side.width - 18
         height: root.height - hueStrip.height - 12 - root.footer
-        radius: Services.DesktopTheme.rad(14)
+        radius: Math.min(BookStyle.b.radius ?? 6, 8)
         gradient: Gradient {
             orientation: Gradient.Horizontal
             GradientStop { position: 0; color: "white" }
@@ -71,7 +72,7 @@ Item {
                 GradientStop { position: 1; color: "black" }
             }
             border.width: 1
-            border.color: Colors.withAlpha(Colors.outline_variant, 0.9)
+            border.color: BookStyle.line
         }
 
         Knob {
@@ -104,9 +105,9 @@ Item {
         anchors.topMargin: 12
         width: sv.width
         height: 16
-        radius: Services.DesktopTheme.rad(8)
+        radius: Math.min(BookStyle.b.radius ?? 6, 4)
         border.width: 1
-        border.color: Colors.withAlpha(Colors.outline_variant, 0.9)
+        border.color: BookStyle.line
         gradient: Gradient {
             orientation: Gradient.Horizontal
             GradientStop { position: 0 / 6; color: "#ff0000" }
@@ -156,10 +157,10 @@ Item {
         Rectangle {
             width: parent.width
             height: 46
-            radius: Services.DesktopTheme.rad(12)
-            color: Colors.surface_container
+            radius: Math.min(BookStyle.b.radius ?? 6, 8)
+            color: BookStyle.well
             border.width: hexField.activeFocus ? 2 : 1
-            border.color: hexField.activeFocus ? Colors.primary : Colors.withAlpha(Colors.outline_variant, 0.9)
+            border.color: hexField.activeFocus ? BookStyle.accent : BookStyle.line
 
             Rectangle {
                 id: well
@@ -167,13 +168,13 @@ Item {
                 anchors.verticalCenter: parent.verticalCenter
                 width: 32
                 height: 32
-                radius: Services.DesktopTheme.rad(9)
+                radius: Math.min(BookStyle.b.radius ?? 6, 6)
                 color: root.shown
                 border.width: 1
-                border.color: Colors.withAlpha(Colors.on_surface, 0.18)
+                border.color: BookStyle.line
             }
 
-            StyledText {
+            BookText {
                 id: hash
                 anchors.left: well.right
                 anchors.leftMargin: 10
@@ -181,7 +182,7 @@ Item {
                 text: "#"
                 font.pixelSize: 16
                 font.family: "monospace"
-                color: Colors.on_surface_variant
+                color: BookStyle.inkSoft
             }
 
             TextField {
@@ -192,9 +193,9 @@ Item {
                 anchors.verticalCenter: parent.verticalCenter
                 leftPadding: 2
                 background: null
-                color: Colors.on_surface
-                selectionColor: Colors.primary
-                selectedTextColor: Colors.on_primary
+                color: BookStyle.ink
+                selectionColor: BookStyle.accent
+                selectedTextColor: BookStyle.onAccent
                 font.pixelSize: 16
                 font.family: "monospace"
                 font.capitalization: Font.AllUppercase
@@ -254,12 +255,12 @@ Item {
         width: side.width
         spacing: 6
 
-        StyledText {
+        BookText {
             text: swatches.label
             font.pixelSize: 11
             font.weight: Font.Medium
             font.letterSpacing: 0.4
-            color: Colors.on_surface_variant
+            color: BookStyle.inkSoft
         }
 
         Row {
@@ -279,7 +280,7 @@ Item {
                     radius: width / 2
                     color: modelData
                     border.width: dot.current ? 2 : 1
-                    border.color: dot.current ? Colors.primary : dot.hovered ? Colors.outline : Colors.withAlpha(Colors.on_surface, 0.16)
+                    border.color: dot.current ? BookStyle.accent : dot.hovered ? BookStyle.ink : BookStyle.line
                     cursorShape: Qt.PointingHandCursor
                     onClicked: {
                         root.take(dot.modelData);

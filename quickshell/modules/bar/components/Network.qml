@@ -6,7 +6,7 @@ BarPill {
     text: Services.Network.icon + "   " + Services.Network.wifiLabel
     horizontalPadding: 20
     maxWidth: 200
-    command: ["qs", "ipc", "call", "networkPanel", "changeVisible", "wifi"]
+    opens: "network"
     // Upright, the glyph alone: a network name doesn't fit across.
     vLabel: ""
 }

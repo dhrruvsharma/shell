@@ -15,8 +15,10 @@ BarPill {
     vLabel: Services.Time.format("mm")
     vIconSize: 14
     vLabelSize: 14
-    interactive: true
     cursorShape: Qt.PointingHandCursor
+    // The calendar hangs from where the pill sits along the bar.
+    opens: "calendar"
+    opensArg: () => ({ pos: Services.BarLayout.along(pill, 0, 0), length: pill.vertical ? pill.height : pill.width })
 
     // Blend toward primary_container while the calendar is open so the pill and
     // its popup read as one connected surface.
@@ -25,9 +27,4 @@ BarPill {
 
     Behavior on color { ColorAnimation { duration: 180; easing.type: Easing.OutCubic } }
     Behavior on textColor { ColorAnimation { duration: 180; easing.type: Easing.OutCubic } }
-
-    onClicked: {
-        // Where the pill sits along the bar, so the popup can hang from it.
-        Services.CalendarState.toggleAt(Services.BarLayout.along(pill, 0, 0), pill.vertical ? pill.height : pill.width)
-    }
 }

@@ -7,7 +7,7 @@ BarPill {
     text: Icons.bluetooth + " " + bluetoothLabel
     horizontalPadding: 20
     maxWidth: 200
-    command: ["qs", "ipc", "call", "networkPanel", "changeVisible", "bluetooth"]
+    opens: "bluetooth"
     // Upright, the glyph alone: a device name doesn't fit across.
     vLabel: ""
 

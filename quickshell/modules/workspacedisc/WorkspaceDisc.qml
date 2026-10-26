@@ -20,11 +20,18 @@ import qs.components
 // angle; chambers counter-rotate so numbers stay upright. Peeks from the
 // screen corner and expands on hover. Press and drag it to move it to
 // another corner (WorkspaceDiscWindow does the moving).
+//
+// Set to hide when idle (WorkspaceDiscService.visibility "auto"), it tucks
+// itself right into the corner once you've stayed on one workspace a while,
+// and comes back out as you switch, or when the pointer reaches the corner.
 Item {
     id: root
 
     // Being dragged to another corner (set by the window).
     property bool moving: false
+    // Drawn as a picture (the customizer's plates): no pointer, no tucking
+    // away; `corner` and `forceExpanded` set what it shows.
+    property bool still: false
 
     // The press and the drag, in the window's coordinates.
     signal grabbed(point pos)
@@ -83,16 +90,64 @@ Item {
 
     property bool forceExpanded: false
     property bool _hoveredExpanded: false
-    readonly property bool expanded: root.forceExpanded || root._hoveredExpanded
+    // Opened out for a moment as the workspace changes (openOnSwitch).
+    property bool _switchOpen: false
+    readonly property bool expanded: root.forceExpanded || root._hoveredExpanded || root._switchOpen
+
+    // ── Tucked away when idle ────────────────────────────────────────────────
+    readonly property bool autoHide: !root.still && WorkspaceDiscService.visibility === "auto"
+    property bool awake: true
+    property bool _hovered: false
+    readonly property bool tucked: root.autoHide && !root.awake && !root.forceExpanded && !root.moving
+    // The corner the pointer can wake it from while it's tucked away.
+    readonly property int revealSize: Math.round(26 * UIScale.value)
+
+    function wake() {
+        root.awake = true
+        idleTimer.restart()
+    }
+
+    onAutoHideChanged: root.wake()
+
+    onActiveIdChanged: {
+        if (root.autoHide && WorkspaceDiscService.revealOnSwitch)
+            root.wake()
+        if (WorkspaceDiscService.openOnSwitch && !root.still && (!root.autoHide || WorkspaceDiscService.revealOnSwitch)) {
+            root._switchOpen = true
+            switchTimer.restart()
+        }
+    }
+
+    Timer {
+        id: idleTimer
+        interval: WorkspaceDiscService.hideAfter * 1000
+        running: root.autoHide
+        onTriggered: {
+            if (root._hovered || root.forceExpanded || root.moving || root._switchOpen)
+                idleTimer.restart()
+            else
+                root.awake = false
+        }
+    }
+
+    Timer {
+        id: switchTimer
+        interval: 1400
+        onTriggered: root._switchOpen = false
+    }
 
     readonly property real discRotation: disc.rotation
 
     readonly property real discCX: {
+        if (tucked)
+            return root._flipX ? root.width + discRadius + 2 : -discRadius - 2
         if (expanded)
             return root._flipX ? root.width - discRadius - pad : discRadius + pad
         return root._flipX ? root.width - peekOffset : peekOffset
     }
     readonly property real discCY: {
+        if (tucked)
+            return root._flipY ? root.height + discRadius + 2 : -discRadius - 2
         if (expanded)
             return root._flipY ? root.height - discRadius - pad : discRadius + pad
         return root._flipY ? root.height - peekOffset : peekOffset
@@ -111,12 +166,18 @@ Item {
     }
 
     HoverHandler {
+        enabled: !root.still
         onHoveredChanged: {
+            root._hovered = hovered
             if (hovered) {
                 collapseTimer.stop()
+                if (root.autoHide)
+                    root.wake()
                 root._hoveredExpanded = true
             } else {
                 collapseTimer.restart()
+                if (root.autoHide)
+                    idleTimer.restart()
             }
         }
     }
@@ -128,6 +189,9 @@ Item {
 
         x: root.discCX - root.discRadius
         y: root.discCY - root.discRadius
+        opacity: root.tucked ? 0 : 1
+
+        Behavior on opacity { NumberAnimation { duration: Anim.slow; easing.type: Easing.InOutCubic } }
 
         Behavior on x { NumberAnimation { duration: Anim.slow; easing.type: Easing.InOutCubic } }
         Behavior on y { NumberAnimation { duration: Anim.slow; easing.type: Easing.InOutCubic } }
@@ -212,6 +276,7 @@ Item {
                 MouseArea {
                     id: chamberMouseArea
                     anchors.fill: parent
+                    enabled: !root.still
                     hoverEnabled: true
                     cursorShape: Qt.PointingHandCursor
                 }
@@ -326,6 +391,7 @@ Item {
         property bool wasDragged: false
 
         anchors.fill: parent
+        enabled: !root.still
 
         onPressed: mouse => {
             grip.pressPoint = Qt.point(mouse.x, mouse.y);
