@@ -351,6 +351,9 @@ Item {
 
         width: book.pageW * 2
         height: book.pageH
+        // The spread being turned to stays hidden until its leaf takes it
+        // up (slotB lies over slotA, so it would flash over the open one).
+        visible: book.front === slotA || leaf.active
         enabled: !book.turning && book.front === slotA
         onLoaded: {
             book._setUp(slotA);
@@ -366,6 +369,9 @@ Item {
 
         width: book.pageW * 2
         height: book.pageH
+        // The spread being turned to stays hidden until its leaf takes it
+        // up (slotB lies over slotA, so it would flash over the open one).
+        visible: book.front === slotB || leaf.active
         enabled: !book.turning && book.front === slotB
         onLoaded: {
             book._setUp(slotB);
