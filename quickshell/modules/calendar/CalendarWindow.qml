@@ -122,6 +122,7 @@ PanelWindow {
             width: cal.width
             height: cal.height
             anchors.fill: undefined
+            area: cal
             target: "calendar"
         }
     }
