@@ -155,25 +155,22 @@ hl.bind(mainMod .. " + E", hl.dsp.exec_cmd(fileManager))
 hl.bind(mainMod .. " + V", hl.dsp.window.float({ action = "toggle" }))
 hl.bind(mainMod .. " + L", hl.dsp.exec_cmd("~/.config/scripts/change-layout.sh"))
 hl.bind(mainMod .. " + G", hl.dsp.exec_cmd("~/.local/bin/goland"))
-hl.bind(mainMod .. " + K", hl.dsp.exec_cmd("kdeconnect-app"))
 -- App launchers (ALT)
 hl.bind("ALT + D", hl.dsp.exec_cmd("discord"))
 hl.bind("ALT + V", hl.dsp.exec_cmd("prime-run vesktop"))
 hl.bind("ALT + M", hl.dsp.exec_cmd("spotify-launcher"))
 hl.bind("ALT + G", hl.dsp.exec_cmd("google-chrome-stable"))
-hl.bind("ALT + P", hl.dsp.exec_cmd("firefox https://chat.openai.com"))
 hl.bind("ALT + T", hl.dsp.exec_cmd("postman"))
 hl.bind("ALT + S", hl.dsp.exec_cmd("slack"))
 hl.bind("ALT + W", hl.dsp.exec_cmd("~/.local/bin/webstorm"))
 hl.bind("ALT + F", hl.dsp.exec_cmd("firefox"))
 hl.bind("ALT + E", hl.dsp.exec_cmd("ez-fm"))
 hl.bind("ALT + C", hl.dsp.exec_cmd("code"))
-hl.bind("ALT + SHIFT + G", hl.dsp.group.toggle())
 
 -- Screenshots (Print)
-hl.bind("Print",         hl.dsp.exec_cmd([[grimblast save output ~/Pictures/screenshot_$(date +"%Y-%m-%d_%H-%M-%S").png]]))
-hl.bind("SHIFT + Print", hl.dsp.exec_cmd([[grimblast save area ~/Pictures/screenshot_$(date +"%Y-%m-%d_%H-%M-%S").png]]))
-hl.bind("CTRL + Print",  hl.dsp.exec_cmd("grimblast copy area"))
+hl.bind("Print",         hl.dsp.exec_cmd("~/.config/quickshell/scripts/screenshot save output"))
+hl.bind("SHIFT + Print", hl.dsp.exec_cmd("~/.config/quickshell/scripts/screenshot save area"))
+hl.bind("CTRL + Print",  hl.dsp.exec_cmd("~/.config/quickshell/scripts/screenshot copy area"))
 
 -- Screen recording (wf-recorder)
 hl.bind("ALT + R", hl.dsp.exec_cmd([[wf-recorder -o $(hyprctl -j activeworkspace | jq -r '.monitor') -f "$HOME/recordings/record_$(date +%Y-%m-%d_%H-%M-%S).mp4" &]]))
@@ -268,4 +265,10 @@ hl.window_rule({
     name    = "blueman-opacity",
     match   = { class = "^(blueman-manager)$" },
     opacity = "0.9 0.9",
+})
+
+hl.window_rule({
+   name = "vesktop-render-unfocused",
+   match = {class = "vesktop"},
+   render_unfocused = true,
 })

@@ -199,6 +199,7 @@ install_helpers() {
         "$HOME/.cache/quickshell" "$HOME/.local/share/quickshell" "$BIN_DIR"
 
     seed_state
+    seed_dotfiles
 
     info "Linking setwall -> $BIN_DIR/setwall"
     ln -sf "$TARGET/scripts/setwall" "$BIN_DIR/setwall"
@@ -225,6 +226,27 @@ seed_state() {
         mkdir -p "$(dirname "$TARGET/$rel")"
         cp "$src" "$TARGET/$rel"
     done < <(find "$TARGET/defaults" -type f -print0)
+}
+
+# Files outside quickshell/ that each install owns: hyprland.lua and the colour
+# files matugen writes. Created from the repo's dotfiles-defaults/ when
+# missing, never touched again (git ignores them).
+seed_dotfiles() {
+    local base src rel
+    base=$(realpath -m "$SRC_DIR/../dotfiles-defaults")
+    [[ -d $base ]] || return 0
+    while IFS= read -r -d '' src; do
+        rel=${src#"$base/"}
+        [[ -e $CONFIG_HOME/$rel ]] && continue
+        if [[ $rel == hypr/* ]]; then
+            ((HYPR)) || continue
+            # Hyprland prefers hyprland.lua, so a new one would hide your hyprland.conf
+            [[ $rel == hypr/hyprland.lua && -e $CONFIG_HOME/hypr/hyprland.conf ]] && continue
+        fi
+        info "Creating $CONFIG_HOME/$rel from dotfiles-defaults/"
+        mkdir -p "$(dirname "$CONFIG_HOME/$rel")"
+        cp "$src" "$CONFIG_HOME/$rel"
+    done < <(find "$base" -type f -print0)
 }
 
 register_matugen_template() {
@@ -376,13 +398,16 @@ pull_updates() {
         die "your branch has commits of its own; merge or rebase onto $(git -C "$repo" rev-parse --abbrev-ref '@{u}') yourself"
 
     # Local edits: settings are set aside and put back; other files only
-    # survive if the update doesn't touch them.
-    local -a changed incoming blocked=()
+    # survive if the update doesn't touch them. Files the update stops
+    # tracking (now gitignored, e.g. hyprland.lua) stay yours.
+    local -a changed incoming dropped blocked=()
     local f
     mapfile -t changed < <(git -C "$repo" diff --name-only HEAD)
     mapfile -t incoming < <(git -C "$repo" diff --name-only "$old" "$new")
+    mapfile -t dropped < <(git -C "$repo" diff --name-only --no-renames --diff-filter=D "$old" "$new")
     for f in "${changed[@]}"; do
         is_settings_file "$f" && continue
+        printf '%s\n' "${dropped[@]}" | grep -qxF -- "$f" && continue
         # Already the updated version (e.g. install.sh checked out by hand).
         git -C "$repo" diff --quiet "$new" -- "$f" 2>/dev/null && continue
         printf '%s\n' "${incoming[@]}" | grep -qxF -- "$f" && blocked+=("$f")
@@ -395,7 +420,7 @@ pull_updates() {
 
     local saved
     saved=$(mktemp -d)
-    for f in "${changed[@]}"; do
+    for f in "${changed[@]}" "${dropped[@]}"; do
         if [[ -e $repo/$f ]]; then
             mkdir -p "$saved/$(dirname "$f")"
             cp -a "$repo/$f" "$saved/$f"
@@ -405,6 +430,15 @@ pull_updates() {
 
     local merged=1
     git -C "$repo" merge --ff-only --quiet "$new" || merged=0
+
+    # Untracked now: put back the ones git ignores from here on (yours to keep).
+    # Edited ones come back in the loop below anyway.
+    for f in "${dropped[@]}"; do
+        if ((merged)) && [[ -e $saved/$f && ! -e $repo/$f ]] && git -C "$repo" check-ignore -q -- "$f"; then
+            mkdir -p "$repo/$(dirname "$f")"
+            cp -a "$saved/$f" "$repo/$f"
+        fi
+    done
 
     # Put your versions back (also when the merge failed).
     for f in "${changed[@]}"; do

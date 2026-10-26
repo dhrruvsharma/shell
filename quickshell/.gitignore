@@ -19,3 +19,5 @@
 /opening.json
 /windowlook.json
 /palette.json
+__pycache__/
+/.idea/

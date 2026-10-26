@@ -58,7 +58,7 @@ The installer:
 1. Installs the packages with `pacman` (Quickshell, Qt6 extras, PipeWire, NetworkManager, BlueZ + `python-gobject` for the pairing agent, `cava`, `cliphist`, `grim`/`slurp`, `matugen`, Nerd Fonts, …) plus `ttf-material-symbols-variable-git` from the AUR via `paru`/`yay`
 2. Fetches the Google Fonts used by the Art Deco, Gothic, Newspaper, Wasteland, Observatory, Abyss, Devaloka, Siege and Sekiro themes (and the brush faces of the Cave Abode and Wabi-sabi power menus) into `~/.local/share/fonts/quickshell-themes`
 3. Symlinks the config to `~/.config/quickshell` (an existing one is backed up to `quickshell.bak-<timestamp>`)
-4. Creates the data directories (`~/Pictures/wallpapers`, `~/Pictures/Screenshots`, `~/Videos/recordings`, …), links `setwall` into `~/.local/bin`, and registers the matugen template; creates your settings files from `defaults/` (see [Your settings](#your-settings))
+4. Creates the data directories (`~/Pictures/wallpapers`, `~/Pictures/Screenshots`, `~/Videos/recordings`, …), links `setwall` into `~/.local/bin`, and registers the matugen template; creates your settings files from `defaults/` (see [Your settings](#your-settings)), and any missing `hyprland.lua` or matugen colour file in `~/.config` from `../dotfiles-defaults/` (a `hyprland.lua` only if you have no `hyprland.conf`)
 5. Copies `hypr/quickshell.lua` (keybinds, blur, animations, scale) into `~/.config/hypr` and adds `require("quickshell")` to your `hyprland.lua` — after asking
 6. Generates the notes drawer's IPC command list and asks for a GitHub username for the contributions widget
 
@@ -112,6 +112,13 @@ What you change in the shell is saved to files inside the config folder, which g
 
 A new install starts from the copies in `defaults/`: the installer creates any of these files that's missing from there, so deleting one resets that setting on the next `./install.sh --update`.
 
+The same goes for the files outside `quickshell/` that each install owns. They're created once from `dotfiles-defaults/` in the repo and never updated afterwards:
+
+| File | Holds |
+|---|---|
+| `hypr/hyprland.lua` | Your Hyprland config (the repo's copy is only a starting point) |
+| `hypr/colors.lua`, `hypr/colors.conf`, `kitty/colors.conf`, `rofi/colors.rasi`, `cava/config` | Colours written by matugen on every wallpaper change |
+
 #### If you've changed code
 
 Edits to files the update doesn't touch are left as they are. If you've edited a file the update also changes, the update stops before changing anything and lists the files. Commit or stash them, update, then bring your edits back:
@@ -128,18 +135,18 @@ If your branch has commits of its own, the update won't merge them for you: `git
 
 The checkout is updated as above, and then the copy in `~/.config/quickshell` is brought up to date file by file. Files you've changed in the copy are kept, and the new version is put next to them as `<file>.new` for you to compare.
 
-#### Updating an install from before `--update` existed
+#### Updating an older install
 
-Older checkouts don't have `--update` yet, and still track the settings files, so a plain `git pull` stops on them. Get the new installer first, then update:
+Older checkouts still track the settings files, `hyprland.lua` and the matugen colour files, so a plain `git pull` (or an older `--update`) stops on them, or deletes your `hyprland.lua`. Get the new installer first, then update:
 
 ```bash
 cd ~/dotfiles/quickshell
 git fetch
-git checkout origin/main -- install.sh
+git checkout '@{u}' -- install.sh
 ./install.sh --update
 ```
 
-Your settings carry over: the files you'd changed are kept as they are, and the ones you hadn't are recreated from `defaults/`.
+Your settings carry over: the files you'd changed, `hyprland.lua` and your colours included, are kept as they are, and the ones you hadn't are recreated from `defaults/` and `dotfiles-defaults/`.
 
 ### After installing
 
