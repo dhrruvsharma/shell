@@ -62,10 +62,11 @@ ShellRoot {
             panel.currentTab = which === "wifi" ? 0 : 1
             panel.opened = true
         } else if (which === "themes") {
-            lockThemes.openTab("desktop")
+            lockThemesLoader.ensure().openTab("desktop")
         } else if (which === "avatar") {
-            if (!avatarPicker.opened)
-                avatarPicker.open()
+            const picker = avatarLoader.ensure()
+            if (!picker.opened)
+                picker.open()
         }
     }
 
@@ -93,11 +94,11 @@ ShellRoot {
             if (customizerLoader.item)
                 customizerLoader.item.close()
             if (which === "themes")
-                lockThemes.openTab("desktop")
+                lockThemesLoader.ensure().openTab("desktop")
             else if (which === "lockscreen")
-                lockThemes.openTab("lock")
+                lockThemesLoader.ensure().openTab("lock")
             else if (which === "widgets")
-                lockThemes.openTab("widgets")
+                lockThemesLoader.ensure().openTab("widgets")
             else if (which === "cava")
                 cavaWidget.edit()
             else if (which === "wallpaper") {
@@ -119,7 +120,10 @@ ShellRoot {
             else
                 launcherWindow.close()
         } else if (target === "notes") {
-            notesDrawer.opened = want(notesDrawer.opened)
+            if (want(notesLoader.item !== null && notesLoader.item.opened))
+                notesLoader.ensure().opened = true
+            else if (notesLoader.item)
+                notesLoader.item.opened = false
         } else if (target === "github") {
             ghPopout.opened = want(ghPopout.opened)
         } else if (target === "calendar") {
@@ -154,9 +158,16 @@ ShellRoot {
                 mediaPanelLoader.item.opened = false
             }
         } else if (target === "updates") {
-            updatesPanel.opened = want(updatesPanel.opened)
-            if (updatesPanel.opened)
-                Services.Updates.refresh()
+            root.setUpdatesOpen(want(updatesLoader.item !== null && updatesLoader.item.opened))
+        }
+    }
+
+    function setUpdatesOpen(open) {
+        if (open) {
+            updatesLoader.ensure().opened = true
+            Services.Updates.refresh()
+        } else if (updatesLoader.item) {
+            updatesLoader.item.opened = false
         }
     }
 
@@ -170,16 +181,47 @@ ShellRoot {
     // What's open, for Opening (a peek that closes some other way is over).
     readonly property var openNow: ({
         launcher: launcherWindow.isOpen && !launcherWindow.closing,
-        notes: notesDrawer.opened,
+        notes: notesLoader.item !== null && notesLoader.item.opened,
         github: ghPopout.opened,
         calendar: Services.CalendarState.open,
         system: systemPanel.opened,
         network: networkPanelLoader.item !== null && networkPanelLoader.item.opened && networkPanelLoader.item.currentTab === 0,
         bluetooth: networkPanelLoader.item !== null && networkPanelLoader.item.opened && networkPanelLoader.item.currentTab === 1,
         media: mediaPanelLoader.item !== null && mediaPanelLoader.item.opened,
-        updates: updatesPanel.opened
+        updates: updatesLoader.item !== null && updatesLoader.item.opened
     })
     onOpenNowChanged: Services.Opening.report(root.openNow)
+
+    // A panel built when it opens and dropped once it has closed and
+    // animated out, like the clipboard and keybinds: ensure() builds it and
+    // returns the panel. The rest of the time it costs nothing.
+    component LazyPanel: Loader {
+        id: lazy
+        active: false
+
+        function ensure() {
+            active = true
+            return item
+        }
+        // For a call that may never show it (the lock themes' "lock now").
+        function release() {
+            unloadTimer.restart()
+        }
+
+        Timer {
+            id: unloadTimer
+            interval: 600
+            // unless it was opened again in the meantime
+            onTriggered: if (!lazy.item?.visible) lazy.active = false
+        }
+        Connections {
+            target: lazy.item
+            function onVisibleChanged() {
+                if (lazy.item && !lazy.item.visible)
+                    unloadTimer.restart()
+            }
+        }
+    }
 
     // The wallpaper, with the desktop theme's layer over it.
     WallpaperLayer {}
@@ -187,7 +229,22 @@ ShellRoot {
     // A screenshot opened from its notification (scripts/screenshot), over
     // everything while it's open.
     ScreenshotEditor {}
-    CalendarWindow {}
+    // Built for each opening, and dropped once it has animated out.
+    LazyLoader {
+        active: Services.CalendarState.open || calendarLinger.running
+        CalendarWindow {}
+    }
+    Timer {
+        id: calendarLinger
+        interval: 400
+    }
+    Connections {
+        target: Services.CalendarState
+        function onOpenChanged() {
+            if (!Services.CalendarState.open)
+                calendarLinger.restart()
+        }
+    }
     DesktopWidgetsLayer {}
     WorkspaceDiscWindow {}
     Expose {}
@@ -321,9 +378,9 @@ ShellRoot {
         readonly property bool needed: mediaPanelLoader.active
             || ghPopout.visible
             || systemPanel.visible
-            || updatesPanel.visible
+            || (updatesLoader.item !== null && updatesLoader.item.visible)
             || networkPanelLoader.active
-            || notesDrawer.opened || notesDrawer.implicitHeight > 0
+            || (notesLoader.item !== null && notesLoader.item.visible)
             || launcherWindow.isOpen
             || wallpaperLoader.active
             || controlCenterLoader.active
@@ -333,10 +390,10 @@ ShellRoot {
             || (animeLoader.item !== null && animeLoader.item.visible)
             || aikiraLoader.active
             || clipboardLoader.active
-            || notepad.visible
+            || (notepadLoader.item !== null && notepadLoader.item.visible)
             || powerMenu.visible
-            || avatarPicker.visible
-            || lockThemes.visible
+            || (avatarLoader.item !== null && avatarLoader.item.visible)
+            || (lockThemesLoader.item !== null && lockThemesLoader.item.visible)
             || keybindsLoader.active
             || customizerLoader.active
         readonly property real screenW: screen ? screen.width : 1920
@@ -403,10 +460,12 @@ ShellRoot {
                 x: Services.BarLayout.atLeft ? 0 : Services.BarLayout.atRight ? parent.width - width : (parent.width - width) / 2
                 y: Services.BarLayout.atBottom ? parent.height - height : Services.BarLayout.vertical ? (parent.height - height) / 2 : 0
             }
-            UpdatesPanel {
-                id: updatesPanel
+            LazyPanel {
+                id: updatesLoader
                 x: Services.BarLayout.atLeft ? 0 : parent.width - width
                 y: Services.BarLayout.atTop ? 0 : parent.height - height
+                focus: true
+                sourceComponent: UpdatesPanel {}
             }
             Loader {
                 id: networkPanelLoader
@@ -417,8 +476,11 @@ ShellRoot {
                 }
             }
 
-            NotesDrawer{
-                id: notesDrawer
+            LazyPanel {
+                id: notesLoader
+                anchors.fill: parent
+                focus: true
+                sourceComponent: NotesDrawer {}
             }
 
             LauncherWindow{
@@ -516,20 +578,26 @@ ShellRoot {
                 }
             }
 
-            NotepadPanel {
-                id: notepad
+            LazyPanel {
+                id: notepadLoader
+                anchors.fill: parent
+                sourceComponent: NotepadPanel {}
             }
 
             PowerMenu {
                 id: powerMenu
             }
 
-            AvatarPicker {
-                id: avatarPicker
+            LazyPanel {
+                id: avatarLoader
+                anchors.fill: parent
+                sourceComponent: AvatarPicker {}
             }
 
-            LockThemesPanel {
-                id: lockThemes
+            LazyPanel {
+                id: lockThemesLoader
+                anchors.fill: parent
+                sourceComponent: LockThemesPanel {}
             }
 
             // Built for each opening, like the clipboard: the keyboard, the
@@ -557,7 +625,7 @@ ShellRoot {
                 item: networkPanelLoader.item && networkPanelLoader.item.visible ? networkPanelLoader.item : null
             }
             Region{
-                item: notesDrawer.opened ? notesDrawer : null
+                item: notesLoader.item !== null && notesLoader.item.opened ? notesLoader.item : null
             }
             Region{
                 item: controlCenterLoader.item && controlCenterLoader.item.visible ? controlCenterLoader.item : null
@@ -566,7 +634,7 @@ ShellRoot {
                 item: ghPopout
             }
             Region {
-                item: updatesPanel.opened ? updatesPanel : null
+                item: updatesLoader.item !== null && updatesLoader.item.opened ? updatesLoader.item : null
             }
             Region {
                 item: launcherWindow.isOpen ? launcherWindow : null
@@ -596,16 +664,16 @@ ShellRoot {
                     ? clipboardLoader.item : null
             }
             Region {
-                item: notepad.visible ? notepad : null
+                item: notepadLoader.item !== null && notepadLoader.item.visible ? notepadLoader.item : null
             }
             Region {
                 item: powerMenu.visible ? powerMenu : null
             }
             Region {
-                item: avatarPicker
+                item: avatarLoader.item
             }
             Region {
-                item: lockThemes.visible ? lockThemes : null
+                item: lockThemesLoader.item !== null && lockThemesLoader.item.visible ? lockThemesLoader.item : null
             }
             Region {
                 item: keybindsLoader.item && keybindsLoader.item.visible ? keybindsLoader.item : null
@@ -647,7 +715,7 @@ ShellRoot {
     // it stands on the right, where they come out over the bar.
     Bar {
         id: bar
-        coveredByPanel: notesDrawer.opened
+        coveredByPanel: (notesLoader.item !== null && notesLoader.item.opened)
             || launcherWindow.isOpen
             || (Services.BarLayout.vertical && networkPanelLoader.item !== null && networkPanelLoader.item.visible)
             || (Services.BarLayout.atRight && ghPopout.visible)
@@ -658,10 +726,10 @@ ShellRoot {
             || (animeLoader.item !== null && animeLoader.item.visible)
             || aikiraLoader.active
             || (clipboardLoader.item !== null && clipboardLoader.item.visible)
-            || notepad.visible
+            || (notepadLoader.item !== null && notepadLoader.item.visible)
             || powerMenu.visible
-            || avatarPicker.visible
-            || lockThemes.visible
+            || (avatarLoader.item !== null && avatarLoader.item.visible)
+            || (lockThemesLoader.item !== null && lockThemesLoader.item.visible)
             || (keybindsLoader.item !== null && keybindsLoader.item.visible)
     }
 
@@ -1038,7 +1106,7 @@ ShellRoot {
     IpcHandler {
         target: "notepad"
         function toggle(): void {
-            notepad.toggle()
+            notepadLoader.ensure().toggle()
         }
     }
 
@@ -1076,26 +1144,27 @@ ShellRoot {
     IpcHandler {
         target: "themes"
         function toggle(): void {
-            lockThemes.toggle()
+            lockThemesLoader.ensure().toggle()
         }
         function desktop(): void {
-            lockThemes.openTab("desktop")
+            lockThemesLoader.ensure().openTab("desktop")
         }
         function lockscreen(): void {
-            lockThemes.openTab("lock")
+            lockThemesLoader.ensure().openTab("lock")
         }
         function widgets(): void {
-            lockThemes.openTab("widgets")
+            lockThemesLoader.ensure().openTab("widgets")
         }
     }
 
     IpcHandler {
         target: "widgets"
         function toggle(): void {
-            if (lockThemes.visible && lockThemes.tab === "widgets")
-                lockThemes.close()
+            const panel = lockThemesLoader.item
+            if (panel && panel.visible && panel.tab === "widgets")
+                panel.close()
             else
-                lockThemes.openTab("widgets")
+                lockThemesLoader.ensure().openTab("widgets")
         }
         function enable(id: string): void {
             Services.DesktopWidgets.setEnabled(id, true)
@@ -1111,19 +1180,22 @@ ShellRoot {
     IpcHandler {
         target: "lockscreen"
         function toggle(): void {
-            lockThemes.toggle()
+            lockThemesLoader.ensure().toggle()
         }
         function open(): void {
-            lockThemes.open()
+            lockThemesLoader.ensure().open()
         }
         function close(): void {
-            lockThemes.close()
+            if (lockThemesLoader.item?.visible)
+                lockThemesLoader.item.close()
         }
         function lock(): void {
-            lockThemes.lockNow()
+            lockThemesLoader.ensure().lockNow()
+            lockThemesLoader.release()
         }
         function preview(theme: string): void {
-            lockThemes.preview(theme)
+            lockThemesLoader.ensure().preview(theme)
+            lockThemesLoader.release()
         }
     }
 
@@ -1258,10 +1330,11 @@ ShellRoot {
     IpcHandler {
         target: "avatarPicker"
         function toggle(): void {
-            if (!avatarPicker.opened) {
-                avatarPicker.open()
+            const picker = avatarLoader.ensure()
+            if (!picker.opened) {
+                picker.open()
             } else {
-                avatarPicker.close()
+                picker.close()
             }
         }
     }
@@ -1285,11 +1358,16 @@ ShellRoot {
     }
 
     IpcHandler {
+        target: "calendarWindow"
+        function toggle(): void {
+            Services.CalendarState.open = !Services.CalendarState.open
+        }
+    }
+
+    IpcHandler {
         target: "updatesPanel"
         function toggle(): void {
-            updatesPanel.opened = !updatesPanel.opened
-            if (updatesPanel.opened)
-                Services.Updates.refresh()
+            root.setUpdatesOpen(!(updatesLoader.item !== null && updatesLoader.item.opened))
         }
         function refresh(): void {
             Services.Updates.refresh()

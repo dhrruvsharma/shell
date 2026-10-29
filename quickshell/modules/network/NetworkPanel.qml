@@ -167,8 +167,8 @@ Item {
                             on: Services.Network.wifiEnabled
                             status: !Services.Network.wifiEnabled ? "Off"
                                 : Services.Network.connecting ? "Connecting to " + Services.Network.lastNetworkAttempt + "…"
-                                : Services.Network.active?.type === "wifi" ? Services.Network.active.name
-                                : Services.Network.active ? Services.Network.active.name + " (wired)"
+                                : Services.Network.activeWifi ? Services.Network.activeWifi.name
+                                : Services.Network.primary ? Services.Network.primary.title + " (wired)"
                                 : "Not connected"
                             linked: Services.Network.active !== null
                             onSwitched: Services.Network.toggleWifi()

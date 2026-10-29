@@ -5,14 +5,24 @@ import QtQuick
 
 // Wi-Fi and wired connections through nmcli. `connections` holds one entry
 // per SSID (the access point in use, else its strongest) plus the wired and
-// tethered profiles; `accessPoints` is every radio nmcli hears, hidden ones
-// included, which the network panel sets out on its fan.
+// tethered profiles (read by scripts/network-links.py); `accessPoints` is
+// every radio nmcli hears, hidden ones included, which the network panel
+// sets out on its fan. NetworkManager's own changes (a phone plugged in, a
+// cable pulled) are followed through `nmcli monitor`.
 Singleton {
     id: root
 
     readonly property list<Connection> connections: []
     readonly property list<string> savedNetworks: []
     readonly property Connection active: connections.find(c => c.active) ?? null
+    readonly property Connection activeWifi: connections.find(c => c.active && c.type === "wifi") ?? null
+    // the wired, USB-tethered, Bluetooth-tethered and mobile profiles, the
+    // ones up first
+    readonly property var wiredLinks: connections.filter(c => c.type !== "wifi")
+    // the device the default route goes through (what carries the traffic),
+    // and the connection on it
+    property string primaryDevice: ""
+    readonly property Connection primary: connections.find(c => c.active && c.device !== "" && c.device === primaryDevice) ?? active
     // Every access point in the last scan: { ssid, bssid, signal, frequency,
     // band ("2.4" | "5" | "6"), channel, bandwidth (MHz), rate (Mbit/s),
     // security, device, active, saved }. Hidden networks have no ssid.
@@ -21,6 +31,8 @@ Singleton {
     property bool wifiEnabled: true
     readonly property bool scanning: rescanProc.running
     readonly property bool connecting: connectProc.running
+    // a wired or tethered link being brought up or taken down
+    readonly property bool linking: ethConnectProc.running || ethDisconnectProc.running
     // When the last scan finished (ms since the epoch); 0 before the first.
     property real lastScan: 0
 
@@ -48,23 +60,23 @@ Singleton {
     property var _lastTraffic: null
 
     readonly property string icon: {
-        if (!active) return "󰤭";
-        if (active.type === "ethernet") return "󰈀";
+        const p = primary;
+        if (!p) return "󰤭";
+        if (p.type !== "wifi") return kindIcon(p.kind);
 
-        if (active.strength >= 75) return "󰤨";
-        else if (active.strength >= 50) return "󰤥";
-        else if (active.strength >= 25) return "󰤢";
+        if (p.strength >= 75) return "󰤨";
+        else if (p.strength >= 50) return "󰤥";
+        else if (p.strength >= 25) return "󰤢";
         else return "󰤟";
     }
 
     readonly property string wifiLabel: {
-        const activeWifi = connections.find(c => c.active && c.type === "wifi");
+        if (primary && primary.type !== "wifi") return primary.title;
         if (activeWifi) return activeWifi.name;
         return "Wi-Fi";
     }
 
     readonly property string wifiStatus: {
-        const activeWifi = connections.find(c => c.active && c.type === "wifi");
         if (activeWifi) return "Connected";
         if (wifiEnabled) return "On";
         return "Off";
@@ -84,6 +96,14 @@ Singleton {
 
     onWifiDeviceChanged: refreshAddress()
     onActiveChanged: refreshAddress()
+
+    // A link's glyph by its kind ("ethernet" | "usb" | "bluetooth" | "mobile").
+    function kindIcon(kind: string): string {
+        if (kind === "usb") return "󰕓";
+        if (kind === "bluetooth") return "󰂯";
+        if (kind === "mobile") return "󰄜";
+        return "󰈀";
+    }
 
     function enableWifi(enabled: bool): void {
         enableWifiProc.exec(["nmcli", "radio", "wifi", enabled ? "on" : "off"]);
@@ -162,7 +182,10 @@ Singleton {
                 root._unpin = connection.name;
             }
             connectProc.exec(command);
-        } else if (connection.type === "ethernet") {
+        } else {
+            root.lastNetworkAttempt = connection.name;
+            root.lastBandAttempt = "";
+            root.lastErrorMessage = "";
             ethConnectProc.exec(["nmcli", "connection", "up", connection.uuid]);
         }
     }
@@ -200,7 +223,8 @@ Singleton {
         const same = (a, b) => connType === "wifi"
             ? (a.frequency === b.frequency && a.name === b.name && a.bssid === b.bssid)
             : a.uuid === b.uuid;
-        const destroyed = rConns.filter(rc => rc.type === connType && !newConns.find(nc => same(nc, rc)));
+        const ofType = c => connType === "wifi" ? c.type === "wifi" : c.type !== "wifi";
+        const destroyed = rConns.filter(rc => ofType(rc) && !newConns.find(nc => same(nc, rc)));
 
         for (const conn of destroyed)
             rConns.splice(rConns.indexOf(conn), 1).forEach(c => c.destroy());
@@ -292,6 +316,13 @@ Singleton {
 
     Process {
         id: ethConnectProc
+        stderr: StdioCollector {
+            onStreamFinished: {
+                if (text.includes("Error"))
+                    root.lastErrorMessage = /no suitable device|not available|carrier/i.test(text)
+                        ? "Not plugged in" : "Couldn't connect";
+            }
+        }
         onExited: updateConnections()
     }
 
@@ -411,29 +442,52 @@ Singleton {
     Process {
         id: getEthConnections
         running: true
-        command: ["nmcli", "-g", "NAME,UUID,TYPE,DEVICE,STATE", "connection", "show"]
-        environment: ({ LANG: "C.UTF-8", LC_ALL: "C.UTF-8" })
+        command: [Quickshell.shellPath("scripts/network-links.py")]
         stdout: StdioCollector {
             onStreamFinished: {
-                const lines = text.trim().split("\n");
-                const ethConns = lines
-                    .map(line => line.split(":"))
-                    .filter(parts => parts[2] === "802-3-ethernet" || parts[2] === "gsm" || parts[2] === "bluetooth")
-                    .map(parts => ({
-                        type: "ethernet",
-                        name: parts[0],
-                        uuid: parts[1],
-                        device: parts[3],
-                        active: parts[4] === "activated",
-                        strength: 100,
-                        frequency: 0,
-                        bssid: "",
-                        security: "",
-                        saved: true
-                    }));
-
-                mergeConnections(ethConns, "ethernet");
+                let out;
+                try {
+                    out = JSON.parse(text);
+                } catch (e) {
+                    return;
+                }
+                root.primaryDevice = out.primary ?? "";
+                mergeConnections(out.links.map(l => ({
+                    type: l.type,
+                    kind: l.kind,
+                    name: l.name,
+                    title: l.title,
+                    uuid: l.uuid,
+                    device: l.device,
+                    active: l.active,
+                    available: l.available,
+                    address: l.address,
+                    strength: 100,
+                    frequency: 0,
+                    bssid: "",
+                    security: "",
+                    saved: true
+                })), "wired");
             }
+        }
+    }
+
+    // NetworkManager's changes, a moment after they settle
+    Process {
+        running: true
+        command: ["nmcli", "monitor"]
+        environment: ({ LANG: "C.UTF-8", LC_ALL: "C.UTF-8" })
+        stdout: SplitParser {
+            onRead: settle.restart()
+        }
+    }
+
+    Timer {
+        id: settle
+        interval: 600
+        onTriggered: {
+            root.updateConnections();
+            root.refreshAddress();
         }
     }
 
@@ -496,6 +550,12 @@ Singleton {
         readonly property int channel: lastIpcObject.channel ?? 0
         readonly property int bandwidth: lastIpcObject.bandwidth ?? 0
         readonly property int rate: lastIpcObject.rate ?? 0
+        // wired and tethered links: what it is, a name to show for it,
+        // whether it can come up (a cable is in) and its address while up
+        readonly property string kind: lastIpcObject.kind ?? "wifi"
+        readonly property string title: lastIpcObject.title ?? name
+        readonly property bool available: lastIpcObject.available ?? true
+        readonly property string address: lastIpcObject.address ?? ""
     }
 
     Component { id: connComp; Connection { } }

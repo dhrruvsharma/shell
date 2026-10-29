@@ -14,7 +14,7 @@ Column {
 
     spacing: 16
 
-    readonly property var wifi: Services.Network.active && Services.Network.active.type === "wifi" ? Services.Network.active : null
+    readonly property var wifi: Services.Network.activeWifi
     readonly property var adapter: Services.Bluetooth.defaultAdapter
     readonly property var device: Services.Bluetooth.activeDevice
 

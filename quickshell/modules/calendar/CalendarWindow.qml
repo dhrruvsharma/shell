@@ -2,11 +2,21 @@ import QtQuick
 import Quickshell
 import qs.components
 import qs.services as Services
-import Quickshell.Io
 import Quickshell.Wayland
 
 PanelWindow {
     id: calendarWindow
+
+    // shell.qml builds this window for each opening (a LazyLoader) and
+    // drops it once closed. `shown` follows the open state from one tick
+    // after creation, so a fresh window still animates in.
+    property bool ready: false
+    readonly property bool shown: ready && Services.CalendarState.open
+    Component.onCompleted: Qt.callLater(() => {
+        calendarWindow.ready = true
+        if (Services.CalendarState.open)
+            keyboardDelay.restart()
+    })
 
     // Stay mapped while the close animation plays out, then unmap.
     visible: Services.CalendarState.open || wrapper.opacity > 0.001
@@ -95,10 +105,10 @@ PanelWindow {
         height: calendarWindow.vertical ? cal.height : parent.height
         transformOrigin: ({ top: Item.Top, bottom: Item.Bottom, left: Item.Left, right: Item.Right })[calendarWindow.edge]
 
-        opacity: Services.CalendarState.open ? 1 : 0
-        scale: Services.CalendarState.open ? 1 : 0.94
+        opacity: calendarWindow.shown ? 1 : 0
+        scale: calendarWindow.shown ? 1 : 0.94
         // Slides in from the bar.
-        property real slide: Services.CalendarState.open ? 0 : 8
+        property real slide: calendarWindow.shown ? 0 : 8
         transform: Translate {
             x: calendarWindow.edge === "left" ? -wrapper.slide : calendarWindow.edge === "right" ? wrapper.slide : 0
             y: calendarWindow.edge === "top" ? -wrapper.slide : calendarWindow.edge === "bottom" ? wrapper.slide : 0
@@ -124,13 +134,6 @@ PanelWindow {
             anchors.fill: undefined
             area: cal
             target: "calendar"
-        }
-    }
-
-    IpcHandler {
-        target: "calendarWindow"
-        function toggle(): void {
-            Services.CalendarState.open = !Services.CalendarState.open
         }
     }
 }

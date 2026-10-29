@@ -17,6 +17,10 @@ import qs.components
 // NetworkManager likes, and clicking it on the fan joins on the band it's
 // on there. The connection's chips show the band in use; the other chip
 // moves it over.
+//
+// Under the connection, the wired and tethered links (a cable, a phone on
+// USB or Bluetooth, mobile broadband), each brought up or down from its
+// row; the one carrying the traffic says so.
 Item {
     id: wifiRoot
 
@@ -30,11 +34,13 @@ Item {
     readonly property color accent: Services.DesktopTheme.accent
     readonly property color accent2: Services.DesktopTheme.accent2
     readonly property bool on: Services.Network.wifiEnabled
-    // the connection: Wi-Fi's, else a wired one
-    readonly property var link: Services.Network.connections.find(c => c.active && c.type === "wifi") ?? Services.Network.active
-    readonly property bool wired: link !== null && link.type !== "wifi"
+    // the Wi-Fi connection
+    readonly property var link: Services.Network.activeWifi
     // the bands the connection's network is on
-    readonly property var linkReach: link && !wired ? Services.Network.reachOf(link.name) : []
+    readonly property var linkReach: link ? Services.Network.reachOf(link.name) : []
+    // the traffic goes another way (a cable, a tethered phone)
+    readonly property bool standby: link !== null && Services.Network.primary !== null
+        && Services.Network.primary.type !== "wifi"
     readonly property var networks: Services.Network.connections
         .filter(c => c.type === "wifi" && !c.active)
         .sort((a, b) => b.strength - a.strength)
@@ -48,14 +54,14 @@ Item {
 
     // The traffic is sampled only while it's on screen. (Set by hand: a
     // Binding doesn't give the value back when it's destroyed.)
-    readonly property bool showsTraffic: visible && link !== null && !wired
+    readonly property bool showsTraffic: visible && link !== null
     onShowsTrafficChanged: Services.Network.watchTraffic = showsTraffic
     Component.onCompleted: Services.Network.watchTraffic = showsTraffic
     Component.onDestruction: Services.Network.watchTraffic = false
 
     // A network clicked on the fan, on the band it was clicked on.
     function pick(ssid, band) {
-        if (link && !wired && link.name === ssid) {
+        if (link && link.name === ssid) {
             activate(link, band)
             return
         }
@@ -230,8 +236,8 @@ Item {
         Card {
             id: linkCard
             Layout.fillWidth: true
-            Layout.preferredHeight: wifiRoot.wired ? 62 : 100
-            visible: wifiRoot.link !== null && wifiRoot.on || wifiRoot.wired
+            Layout.preferredHeight: 100
+            visible: wifiRoot.link !== null && wifiRoot.on
             radius: Services.DesktopTheme.rad(16)
             color: Qt.tint(Colors.surface_container, Colors.withAlpha(wifiRoot.accent, 0.07))
             border.color: Colors.withAlpha(wifiRoot.accent, 0.3)
@@ -249,7 +255,7 @@ Item {
                 anchors.bottom: parent.bottom
                 anchors.margins: 1
                 height: 24
-                visible: !wifiRoot.wired && linkCard.history.length > 1
+                visible: linkCard.history.length > 1
                 preferredRendererType: Shape.CurveRenderer
 
                 function points(samples, closed) {
@@ -303,17 +309,9 @@ Item {
                 anchors.verticalCenter: linkActions.verticalCenter
                 width: 30
                 height: 24
-                visible: !wifiRoot.wired
                 level: (wifiRoot.link?.strength ?? 0) / 100
                 tone: wifiRoot.accent
                 lit: true
-            }
-            MaterialIcon {
-                anchors.centerIn: linkSign
-                visible: wifiRoot.wired
-                text: "󰈀"
-                font.pixelSize: 22
-                color: wifiRoot.accent
             }
 
             Row {
@@ -331,7 +329,6 @@ Item {
                     readonly property bool shown: linkMouse.containsMouse || forgetLink.hovered || dcRect.hovered
                     width: 26
                     height: 26
-                    visible: !wifiRoot.wired
                     opacity: shown ? 1 : 0
                     interactive: shown
                     Behavior on opacity { NumberAnimation { duration: 120 } }
@@ -415,8 +412,6 @@ Item {
                         const l = wifiRoot.link
                         if (!l)
                             return ""
-                        if (wifiRoot.wired)
-                            return "Wired" + (l.device ? "  ·  " + l.device : "")
                         const twoBands = wifiRoot.linkReach.length > 1
                         const parts = twoBands ? [] : [l.band + " GHz"]
                         parts.push("ch " + l.channel)
@@ -438,12 +433,12 @@ Item {
                 anchors.top: linkMeta.bottom
                 anchors.topMargin: 3
                 height: 16
-                visible: !wifiRoot.wired
 
                 StyledText {
                     anchors.left: parent.left
                     anchors.verticalCenter: parent.verticalCenter
-                    text: Services.Network.ipAddress || "No address yet"
+                    text: (Services.Network.ipAddress || "No address yet")
+                        + (wifiRoot.standby ? "  ·  standby" : "")
                     font.pixelSize: 11
                     font.features: ({ "tnum": 1 })
                     color: Colors.withAlpha(Colors.on_surface, 0.85)
@@ -465,6 +460,49 @@ Item {
                         font.features: ({ "tnum": 1 })
                         color: wifiRoot.accent2
                     }
+                }
+            }
+        }
+
+        // ── Wired & tethered ──
+        RowLayout {
+            Layout.fillWidth: true
+            Layout.topMargin: 4
+            Layout.leftMargin: 4
+            visible: Services.Network.wiredLinks.length > 0
+            spacing: 6
+
+            StyledText {
+                text: "Wired & tethered"
+                font.pixelSize: 10
+                font.weight: Font.DemiBold
+                font.letterSpacing: 1.4
+                font.capitalization: Font.AllUppercase
+                color: Colors.withAlpha(Colors.on_surface_variant, 0.8)
+            }
+            StyledText {
+                text: Services.Network.wiredLinks.length
+                font.pixelSize: 10
+                font.features: ({ "tnum": 1 })
+                color: Colors.withAlpha(Colors.on_surface_variant, 0.5)
+            }
+            Rectangle {
+                Layout.fillWidth: true
+                Layout.preferredHeight: 1
+                Layout.leftMargin: 4
+                color: Colors.withAlpha(Colors.outline_variant, 0.6)
+            }
+        }
+
+        ColumnLayout {
+            Layout.fillWidth: true
+            visible: Services.Network.wiredLinks.length > 0
+            spacing: 2
+
+            Repeater {
+                model: Services.Network.wiredLinks
+                delegate: LinkRow {
+                    Layout.fillWidth: true
                 }
             }
         }
@@ -517,6 +555,140 @@ Item {
             Layout.fillWidth: true
             Layout.fillHeight: true
             visible: !wifiRoot.on
+        }
+    }
+
+    // A wired or tethered link: what it is, its name, how it stands. Click
+    // (or the button) to bring it up or take it down.
+    component LinkRow: Rectangle {
+        id: lrow
+
+        required property var modelData
+
+        readonly property var l: modelData
+        readonly property bool carrying: l.active && l.device !== "" && l.device === Services.Network.primaryDevice
+        readonly property bool busy: Services.Network.linking && Services.Network.lastNetworkAttempt === l.name
+        readonly property bool failed: !busy && Services.Network.lastErrorMessage !== ""
+            && Services.Network.lastNetworkAttempt === l.name
+        readonly property bool usable: l.active || l.available
+        readonly property bool lit: lrowMouse.containsMouse || toggle.hovered
+
+        implicitHeight: 44
+        radius: Services.DesktopTheme.rad(12)
+        color: l.active ? Qt.tint(Colors.surface_container, Colors.withAlpha(wifiRoot.accent, lit ? 0.12 : 0.07))
+            : lit && usable ? Colors.surface_container_high : "transparent"
+        border.width: l.active ? 1 : 0
+        border.color: Colors.withAlpha(wifiRoot.accent, 0.3)
+        Behavior on color { ColorAnimation { duration: 140 } }
+
+        function toggleLink() {
+            if (busy || !usable)
+                return
+            if (l.active)
+                Services.Network.disconnect(l)
+            else
+                Services.Network.connect(l, "", "")
+        }
+
+        MouseArea {
+            id: lrowMouse
+            anchors.fill: parent
+            hoverEnabled: true
+            cursorShape: lrow.usable ? Qt.PointingHandCursor : Qt.ArrowCursor
+            onClicked: lrow.toggleLink()
+        }
+
+        RowLayout {
+            anchors.fill: parent
+            anchors.leftMargin: 10
+            anchors.rightMargin: 8
+            spacing: 12
+
+            MaterialIcon {
+                Layout.preferredWidth: 24
+                horizontalAlignment: Text.AlignHCenter
+                text: Services.Network.kindIcon(lrow.l.kind)
+                font.pixelSize: 19
+                color: lrow.l.active ? wifiRoot.accent
+                    : lrow.lit && lrow.usable ? wifiRoot.accent2 : Colors.on_surface_variant
+                opacity: lrow.usable ? 1 : 0.45
+            }
+
+            ColumnLayout {
+                Layout.fillWidth: true
+                spacing: 1
+
+                StyledText {
+                    Layout.fillWidth: true
+                    text: lrow.l.title
+                    textFormat: Text.PlainText
+                    elide: Text.ElideRight
+                    font.pixelSize: 14
+                    font.weight: lrow.l.active ? Font.DemiBold : Font.Normal
+                    color: Colors.on_surface
+                    opacity: lrow.usable ? 1 : 0.55
+                }
+                StyledText {
+                    Layout.fillWidth: true
+                    elide: Text.ElideRight
+                    text: {
+                        if (lrow.busy)
+                            return lrow.l.active ? "Disconnecting…" : "Connecting…"
+                        if (lrow.failed)
+                            return Services.Network.lastErrorMessage
+                        const what = lrow.l.kind === "usb" ? "USB tether"
+                            : lrow.l.kind === "bluetooth" ? "Bluetooth tether"
+                            : lrow.l.kind === "mobile" ? "Mobile broadband"
+                            : "Ethernet"
+                        const parts = [what]
+                        if (lrow.l.active) {
+                            if (lrow.l.address)
+                                parts.push(lrow.l.address)
+                            parts.push(lrow.carrying ? "in use" : "standby")
+                        } else if (!lrow.l.available) {
+                            parts.push(lrow.l.kind === "ethernet" ? "no cable" : "not plugged in")
+                        } else if (lrow.l.device) {
+                            parts.push(lrow.l.device)
+                        }
+                        return parts.join("  ·  ")
+                    }
+                    font.pixelSize: 11
+                    color: lrow.busy ? wifiRoot.accent
+                        : lrow.failed ? Colors.error
+                        : lrow.carrying ? wifiRoot.accent
+                        : Colors.withAlpha(Colors.on_surface_variant, 0.8)
+                }
+            }
+
+            Spinner {
+                visible: lrow.busy
+                Layout.preferredWidth: 16
+                Layout.preferredHeight: 16
+                border.width: 1.5
+                arcColor: wifiRoot.accent
+            }
+
+            ClickableRect {
+                id: toggle
+                visible: lrow.usable && !lrow.busy && lrow.lit
+                Layout.preferredWidth: toggleText.implicitWidth + 24
+                Layout.preferredHeight: 26
+                radius: Services.DesktopTheme.rad(13)
+                color: toggle.hovered ? wifiRoot.accent : "transparent"
+                border.width: 1
+                border.color: Colors.withAlpha(wifiRoot.accent, 0.7)
+
+                StyledText {
+                    id: toggleText
+                    anchors.centerIn: parent
+                    text: lrow.l.active ? "Disconnect" : "Connect"
+                    font.pixelSize: 11
+                    font.weight: Font.Medium
+                    color: toggle.hovered ? Colors.on_primary : wifiRoot.accent
+                }
+                cursorShape: Qt.PointingHandCursor
+                onClicked: lrow.toggleLink()
+            }
         }
     }
 
