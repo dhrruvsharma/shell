@@ -1,13 +1,17 @@
 import QtQuick
-import Quickshell.Io
+import Quickshell.Services.UPower
 pragma Singleton
 
 Item {
     id: root
 
-    property real percentage: 0
-    property bool charging: false
-    property bool full: percentage >= 100
+    // UPower's display device aggregates whatever batteries the machine has
+    // (no hardcoded BAT0) and updates over D-Bus signals, so nothing polls.
+    readonly property var device: UPower.displayDevice
+    readonly property bool ready: device.ready && device.isLaptopBattery
+    property real percentage: ready ? Math.round(device.percentage * 100) : 0
+    property bool charging: ready && device.state === UPowerDeviceState.Charging
+    property bool full: percentage >= 100 || (ready && device.state === UPowerDeviceState.FullyCharged)
 
     function getIcon(percent, charging, isReady) {
         if (!isReady)
@@ -73,31 +77,6 @@ Item {
             return hours + "h " + minutes + "m";
 
         return minutes + "m";
-    }
-
-    // Read sysfs directly rather than spawning sh + cat every poll.
-    FileView {
-        id: capacityFile
-        path: "/sys/class/power_supply/BAT0/capacity"
-        printErrors: false
-        onLoaded: root.percentage = parseInt(text()) || 0
-    }
-
-    FileView {
-        id: statusFile
-        path: "/sys/class/power_supply/BAT0/status"
-        printErrors: false
-        onLoaded: root.charging = text().trim() === "Charging"
-    }
-
-    Timer {
-        interval: 5000
-        running: true
-        repeat: true
-        onTriggered: {
-            capacityFile.reload();
-            statusFile.reload();
-        }
     }
 
 }
