@@ -478,7 +478,10 @@ ShellRoot {
 
             LazyPanel {
                 id: notesLoader
-                anchors.fill: parent
+                // Not anchors.fill: a filling Loader resizes the drawer to the
+                // whole screen; this way it keeps its own 900×600 slide-up size.
+                anchors.bottom: parent.bottom
+                anchors.horizontalCenter: parent.horizontalCenter
                 focus: true
                 sourceComponent: NotesDrawer {}
             }
