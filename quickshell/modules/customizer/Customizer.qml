@@ -12,7 +12,7 @@ import qs.services as Services
 //
 // It lies in the room the bar leaves and stays under the bar, so what's
 // set on the bar shows on the bar itself as well. Keys: ←→ (or PgUp/PgDn)
-// turn a page, Home the contents, 1–8 a chapter, Esc closes.
+// turn a page, Home the contents, 1–9 a chapter, Esc closes.
 Item {
     id: root
 
@@ -72,7 +72,7 @@ Item {
             bookItem.prev();
         } else if (event.key === Qt.Key_Home) {
             bookItem.go(0);
-        } else if (event.key >= Qt.Key_1 && event.key <= Qt.Key_8) {
+        } else if (event.key >= Qt.Key_1 && event.key <= Qt.Key_9) {
             bookItem.go(BookContents.chapterStart(event.key - Qt.Key_0));
         } else {
             return;

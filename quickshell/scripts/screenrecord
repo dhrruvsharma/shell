@@ -1,0 +1,185 @@
+#!/usr/bin/env bash
+# Recording the screen, with the system's sound or without, for the shell's
+# screen tools (services/ScreenRecord.qml: the edge line's pill, the system
+# panel's Screen tab) and for keybinds.
+#
+#     screenrecord start [sound|mute]   the focused monitor from now until
+#                                       stop; with `sound` (the default)
+#                                       also what the default output plays
+#     screenrecord stop
+#     screenrecord toggle [sound|mute]
+#
+# wf-recorder only records sound when it's handed a source (-a), and the
+# system's sound is the default output's monitor source: without one the
+# video is silent (as the shell's Record button used to make them).
+#
+# While it records, $XDG_RUNTIME_DIR/quickshell-screenrecord.json holds
+# {"recording": true, "pid", "file", "since" (ms), "sound", "source"}; once
+# it's done, {"recording": false, "file" (the last), "error"}. The video
+# goes to ~/Videos/recordings ($RECORDING_DIR), and a notification says
+# where (a click on it plays it), or why nothing was recorded.
+# $RECORDING_GEOMETRY ("x,y wxh", as slurp gives it) records that part of
+# the screen only.
+
+dir=${RECORDING_DIR:-$HOME/Videos/recordings}
+state=${XDG_RUNTIME_DIR:-/tmp}/quickshell-screenrecord.json
+log=${XDG_CACHE_HOME:-$HOME/.cache}/quickshell/screenrecord.log
+
+usage() {
+    echo "usage: screenrecord start|toggle [sound|mute]" >&2
+    echo "       screenrecord stop" >&2
+    exit 2
+}
+
+# A JSON string.
+jstr() {
+    local s=${1//\\/\\\\}
+    s=${s//\"/\\\"}
+    printf '"%s"' "$s"
+}
+
+# A GVariant string, for gdbus.
+gv() {
+    local s=${1//\\/\\\\}
+    printf "'%s'" "${s//\'/\\\'}"
+}
+
+# Text for the notification's body, which is read as markup.
+markup() {
+    local s=${1//'&'/'&amp;'}
+    s=${s//'<'/'&lt;'}
+    printf '%s' "${s//'>'/'&gt;'}"
+}
+
+# 83 → 1:23
+clock() {
+    local s=$1
+    if ((s >= 3600)); then
+        printf '%d:%02d:%02d' $((s / 3600)) $((s % 3600 / 60)) $((s % 60))
+    else
+        printf '%d:%02d' $((s / 60)) $((s % 60))
+    fi
+}
+
+# The wf-recorder this script started, if it's still going.
+current_pid() {
+    local pid
+    pid=$(sed -n 's/.*"pid": *\([0-9][0-9]*\).*/\1/p' "$state" 2>/dev/null)
+    [[ -n $pid && $(cat "/proc/$pid/comm" 2>/dev/null) == wf-recorder ]] && echo "$pid"
+}
+
+running() {
+    pgrep -x wf-recorder >/dev/null
+}
+
+# The notification for a finished recording: Play (a click too) and Show in
+# folder, answered by the shell (services/ScreenRecord.qml).
+announce() {
+    local file=$1 secs=$2 how=$3 body
+    body="$(markup "${file/#"$HOME"/\~}") · $(clock "$secs")${how:+ · $how}"
+    gdbus call --session --dest org.freedesktop.Notifications \
+        --object-path /org/freedesktop/Notifications \
+        --method org.freedesktop.Notifications.Notify \
+        "$(gv 'Screen recording')" 0 "'video-x-generic'" "$(gv 'Recording saved')" "$(gv "$body")" \
+        "['default', 'Play', 'play', 'Play', 'folder', 'Show in folder']" \
+        "{'category': <'x-quickshell.recording'>, 'x-quickshell-file': <$(gv "$file")>, 'x-quickshell-dir': <$(gv "$dir")>}" \
+        8000 >/dev/null 2>&1 \
+        || notify-send -a 'Screen recording' -i video-x-generic 'Recording saved' "$body"
+}
+
+# What wf-recorder said last, as the reason it stopped.
+reason() {
+    grep -v '^\s*$' "$log" 2>/dev/null | grep -iv 'libx264\|^\[aac\|frame=\|kb/s' | tail -n 1 | cut -c1-200
+}
+
+# Runs one wf-recorder: sets `pid` and `since`, and writes the state.
+launch() {
+    local src=$1 file=$2 out= area=()
+    if [[ -n $RECORDING_GEOMETRY ]]; then
+        area=(-g "$RECORDING_GEOMETRY")
+    else
+        out=$(hyprctl monitors -j 2>/dev/null | jq -r '.[] | select(.focused) | .name' 2>/dev/null | head -n 1)
+    fi
+    wf-recorder -y "${area[@]}" ${out:+-o "$out"} ${src:+--audio="$src"} -f "$file" >"$log" 2>&1 </dev/null &
+    pid=$!
+    since=$(date +%s%3N)
+    printf '{"recording": true, "pid": %d, "file": %s, "since": %s, "sound": %s, "source": %s}\n' \
+        "$pid" "$(jstr "$file")" "$since" "$([[ -n $src ]] && echo true || echo false)" "$(jstr "$src")" >"$state"
+}
+
+# (in the background: start's own copy, until wf-recorder stops)
+record() {
+    local mode=$1 src= sink file base i=1 pid since rc secs how= why
+    mkdir -p "$dir" "${log%/*}"
+    file=$dir/recording_$(date +%Y%m%d_%H%M%S).mp4
+    base=${file%.mp4}
+    while [[ -e $file ]]; do
+        file=$base-$((i++)).mp4
+    done
+    if [[ $mode == mute ]]; then
+        how="without sound"
+    else
+        # (a source that isn't there, PipeWire swaps for the microphone)
+        sink=$(pactl get-default-sink 2>/dev/null)
+        if [[ -n $sink ]] && pactl list short sources 2>/dev/null | cut -f2 | grep -qxF "$sink.monitor"; then
+            src=$sink.monitor
+            how="with system sound"
+        else
+            how="no sound (no output to record it from)"
+        fi
+    fi
+
+    launch "$src" "$file"
+    wait "$pid"
+    rc=$?
+    # It gave up straight away with the sound: once more without it.
+    if [[ -n $src && ! -s $file ]] && (($(date +%s%3N) - since < 2500)); then
+        why=$(reason)
+        [[ -n $why ]] || why="its source wouldn't open"
+        how="no sound ($why)"
+        launch "" "$file"
+        wait "$pid"
+        rc=$?
+    fi
+    secs=$((($(date +%s%3N) - since) / 1000))
+
+    if [[ -s $file ]]; then
+        printf '{"recording": false, "file": %s, "error": ""}\n' "$(jstr "$file")" >"$state"
+        announce "$file" "$secs" "$how"
+    else
+        why=$(reason)
+        rm -f "$file"
+        printf '{"recording": false, "file": "", "error": %s}\n' "$(jstr "${why:-wf-recorder stopped (code $rc)}")" >"$state"
+        notify-send -a 'Screen recording' -i dialog-warning "Couldn't record the screen" "${why:-wf-recorder stopped (code $rc).}"
+    fi
+}
+
+start() {
+    running && exit 0
+    command -v wf-recorder >/dev/null || {
+        notify-send -a 'Screen recording' -i dialog-warning "Couldn't record the screen" "wf-recorder isn't installed."
+        exit 1
+    }
+    setsid -f "$0" __record "${1:-sound}" >/dev/null 2>&1 </dev/null
+}
+
+stop() {
+    local pid
+    pid=$(current_pid)
+    if [[ -n $pid ]]; then
+        kill -INT "$pid"
+    else
+        pkill -INT -x wf-recorder
+        # (a state left saying it records, by a recording that died with
+        # its script)
+        grep -q '"recording": true' "$state" 2>/dev/null && printf '{"recording": false, "file": "", "error": ""}\n' >"$state"
+    fi
+}
+
+case $1 in
+    start) start "$2" ;;
+    stop) stop ;;
+    toggle) if running; then stop; else start "$2"; fi ;;
+    __record) record "$2" ;;
+    *) usage ;;
+esac

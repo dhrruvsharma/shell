@@ -7,10 +7,18 @@ import qs.colors
 import qs.components
 import qs.services as Services
 
+// A tray app's menu, rolled out of the bar by its icon (Tray.qml opens it).
+// While it shows, the whole screen is its: a click anywhere else closes it
+// (rather than going through to what's under it), and so does Esc. A
+// submenu opens in its place, with Back at its top; each level keeps an
+// opener of its own (pointing one opener at a submenu lets go of the menu
+// the submenu belongs to, entries and all).
 PanelWindow {
     id: root
 
-    property var menuHandle: null
+    // The menus gone into: the app's, then each submenu.
+    property var chain: []
+    readonly property var current: [opener0, opener1, opener2, opener3][Math.max(0, Math.min(3, root.chain.length - 1))]
     // Where the tray icon's middle lies along the bar (screen x on a lying
     // bar, y on a standing one).
     property real menuPos: 0
@@ -19,7 +27,7 @@ PanelWindow {
     property var animCurve: [0.05, 0, 0.133, 0.06, 0.166, 0.4, 0.208, 0.82, 0.25, 1, 1, 1]
 
     function open(handle, pos) {
-        menuHandle = handle;
+        chain = [handle];
         menuPos = pos;
         hasCurrent = true;
     }
@@ -28,11 +36,31 @@ PanelWindow {
         hasCurrent = false;
     }
 
+    // A second right click on the same icon closes it.
+    function toggle(handle, pos) {
+        if (hasCurrent && chain[0] === handle)
+            close();
+        else
+            open(handle, pos);
+    }
+
+    function enter(submenu) {
+        if (chain.length < 4)
+            chain = chain.concat([submenu]);
+    }
+
+    function back() {
+        if (chain.length > 1)
+            chain = chain.slice(0, -1);
+    }
+
+    onChainChanged: highlight.active = false
+
     // Full-screen surface: mapped only while a menu is showing or closing.
     visible: hasCurrent || wrapper.unroll > 0
     color: "transparent"
     WlrLayershell.layer: WlrLayer.Overlay
-    WlrLayershell.keyboardFocus: wrapper.visible ? WlrKeyboardFocus.Exclusive : WlrKeyboardFocus.None
+    WlrLayershell.keyboardFocus: root.hasCurrent ? WlrKeyboardFocus.Exclusive : WlrKeyboardFocus.None
 
     anchors {
         top: true
@@ -41,14 +69,41 @@ PanelWindow {
         right: true
     }
 
+    // Anywhere but the menu: closes it.
     MouseArea {
         anchors.fill: parent
-        enabled: wrapper.visible
-        onClicked: root.close()
+        enabled: root.hasCurrent
+        acceptedButtons: Qt.LeftButton | Qt.RightButton | Qt.MiddleButton
+        onPressed: root.close()
+    }
+
+    QsMenuOpener {
+        id: opener0
+        menu: root.chain[0] ?? null
+    }
+    QsMenuOpener {
+        id: opener1
+        menu: root.chain[1] ?? null
+    }
+    QsMenuOpener {
+        id: opener2
+        menu: root.chain[2] ?? null
+    }
+    QsMenuOpener {
+        id: opener3
+        menu: root.chain[3] ?? null
     }
 
     Item {
         id: wrapper
+
+        focus: true
+        Keys.onEscapePressed: {
+            if (root.chain.length > 1)
+                root.back();
+            else
+                root.close();
+        }
 
         readonly property real contentHeight: menuColumn.implicitHeight + 16
         readonly property string edge: Services.BarLayout.edge
@@ -82,12 +137,6 @@ PanelWindow {
             topRightRadius: wrapper.edge === "top" || wrapper.edge === "right" ? 0 : 14
             bottomLeftRadius: wrapper.edge === "bottom" || wrapper.edge === "left" ? 0 : 14
             bottomRightRadius: wrapper.edge === "bottom" || wrapper.edge === "right" ? 0 : 14
-
-            QsMenuOpener {
-                id: opener
-
-                menu: root.menuHandle
-            }
 
             Rectangle {
                 id: highlight
@@ -132,8 +181,55 @@ PanelWindow {
                 anchors.rightMargin: 8
                 spacing: 2
 
+                // In a submenu: the way back up.
+                Item {
+                    id: backRow
+
+                    visible: root.chain.length > 1
+                    width: menuColumn.width
+                    height: 36
+
+                    RowLayout {
+                        anchors.fill: parent
+                        anchors.leftMargin: 12
+                        anchors.rightMargin: 12
+                        spacing: 12
+
+                        StyledText {
+                            Layout.preferredWidth: 20
+                            horizontalAlignment: Text.AlignHCenter
+                            text: ""
+                            font.family: "Symbols Nerd Font"
+                            font.pixelSize: 12
+                            color: Colors.primary
+                        }
+
+                        StyledText {
+                            Layout.fillWidth: true
+                            text: "Back"
+                            color: backMouse.containsMouse ? Colors.on_surface : Colors.on_surface_variant
+                            font.pixelSize: 13
+                            font.bold: true
+                            verticalAlignment: Text.AlignVCenter
+                        }
+                    }
+
+                    MouseArea {
+                        id: backMouse
+
+                        anchors.fill: parent
+                        hoverEnabled: true
+                        cursorShape: Qt.PointingHandCursor
+                        onEntered: {
+                            highlight.targetY = backRow.y;
+                            highlight.active = true;
+                        }
+                        onClicked: root.back()
+                    }
+                }
+
                 Repeater {
-                    model: opener.children
+                    model: root.current.children
 
                     delegate: Item {
                         id: menuItem
@@ -249,7 +345,7 @@ PanelWindow {
                             onClicked: {
                                 if (!menuItem.isSeparator) {
                                     if (modelData.hasChildren) {
-                                        root.menuHandle = modelData;
+                                        root.enter(modelData);
                                     } else {
                                         modelData.triggered();
                                         root.close();
@@ -277,8 +373,12 @@ PanelWindow {
 
     }
 
-    mask: Region {
-        item: wrapper.visible ? wrapper : null
+    // While it shows, all of the screen (see above); while it rolls back up,
+    // none of it, so the next click goes where it's meant to.
+    mask: root.hasCurrent ? null : noInput
+
+    Region {
+        id: noInput
     }
 
 }

@@ -89,7 +89,12 @@ PanelWindow {
     // a mask for the new place, and with no window holding the keyboard a
     // pointer outside the old mask goes elsewhere, losing the press. Tucked
     // away, only the very corner (where the pointer can wake it), or nothing.
-    mask: win.held && !win.settling ? null : disc.tucked ? (WorkspaceDiscService.revealOnHover ? revealMask : noMask) : discMask
+    mask: win.away ? noMask : win.held && !win.settling ? null : disc.tucked ? (WorkspaceDiscService.revealOnHover ? revealMask : noMask) : discMask
+
+    // The edge line's minimal mode: the line shows the workspaces. The
+    // surface stays (unmapped and mapped again it would stack over the
+    // panels), empty and out of the pointer's way.
+    readonly property bool away: EdgeLine.minimal
 
     Region {
         id: revealMask
@@ -173,6 +178,7 @@ PanelWindow {
 
     Item {
         anchors.fill: parent
+        visible: !win.away
         // The surface's new anchors go out with the next frame, still drawn
         // at the old size: on press that small frame sits at the screen's
         // corner, so hide it until the surface covers the screen.

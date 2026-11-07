@@ -19,5 +19,9 @@
 /opening.json
 /windowlook.json
 /palette.json
+/edgeline.json
+/dns.json
+/edgecommands.json
+/screenrecord.json
 __pycache__/
 /.idea/

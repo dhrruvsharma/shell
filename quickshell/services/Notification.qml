@@ -68,9 +68,13 @@ Singleton {
         if (!n)
             return;
         // A screenshot's (scripts/screenshot) is the shell's own: it opens
-        // in the editor.
+        // in the editor. A screen recording's (scripts/screenrecord) plays.
         if (Screenshot.owns(n)) {
             Screenshot.act(n, "default");
+            return;
+        }
+        if (ScreenRecord.owns(n)) {
+            ScreenRecord.act(n, "default");
             return;
         }
         const action = defaultAction(n);
@@ -89,6 +93,10 @@ Singleton {
             return;
         if (Screenshot.owns(n)) {
             Screenshot.act(n, action.identifier);
+            return;
+        }
+        if (ScreenRecord.owns(n)) {
+            ScreenRecord.act(n, action.identifier);
             return;
         }
         const app = [n.desktopEntry, n.appName];

@@ -84,7 +84,7 @@ Scope {
         target: Services.Cava
         property: "running"
         value: true
-        when: Services.CavaWidget.enabled || root.editMode
+        when: (Services.CavaWidget.enabled && !Services.EdgeLine.minimal) || root.editMode
     }
 
     // Just the skewed spectrum, no interaction. Used by both windows.
@@ -115,7 +115,8 @@ Scope {
     // ---- display (desktop, click-through) --------------------------------
     PanelWindow {
         id: displayWin
-        visible: Services.CavaWidget.enabled && !root.editMode
+        // (put away in the edge line's minimal mode)
+        visible: Services.CavaWidget.enabled && !root.editMode && !Services.EdgeLine.minimal
         color: "transparent"
         WlrLayershell.layer: WlrLayer.Bottom
         // Hyprland's layer animation is off for this namespace (it slid the

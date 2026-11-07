@@ -202,7 +202,7 @@ Spread {
             anchors.bottom: parent.bottom
             width: parent.width
             horizontalAlignment: Text.AlignHCenter
-            text: "Turn a page at its lower corner, or by the tabs on the book's edges. The ribbon brings you back here. ← → turn pages, 1–8 open a chapter, Esc closes."
+            text: "Turn a page at its lower corner, or by the tabs on the book's edges. The ribbon brings you back here. ← → turn pages, 1–9 open a chapter, Esc closes."
             wrapMode: Text.WordWrap
             font.italic: true
             font.pixelSize: BookStyle.bodySize - 2

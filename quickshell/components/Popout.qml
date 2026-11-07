@@ -10,6 +10,11 @@ Item {
     property int alignment: 0
     property int radius: 50
     property color color: Colors.background
+    // The far corners' radius (the flares keep `radius`), for a popout
+    // attached along a whole edge (alignments 0, 2, 4, 6).
+    property real cornerRadius: root.radius
+    // The bubble even in the square themes, which otherwise get a box.
+    property bool alwaysBubble: false
     // The content's inset from each side: the radius by default, which
     // clears the flares and the bar the popout hangs from.
     property real leftPadding: root.radius
@@ -33,10 +38,13 @@ Item {
     readonly property real _clampedRW: Math.min(root._r, root._halfW)
     readonly property real _clampedRH: Math.min(root._r, root._halfH)
     readonly property real _clampedRH3: Math.min(root._r, root._thirdH)
+    readonly property real _c: Math.max(1, root.cornerRadius)
+    readonly property real _cornerW: Math.min(root._c, root._halfW)
+    readonly property real _cornerH: Math.min(root._c, root._halfH)
 
     // Square desktop themes (HUD, Mainframe, Cave Abode, Neon Noir) swap the
     // bubble for a box in their style. Round themes keep the bubble.
-    readonly property bool themed: Services.DesktopTheme.controlRadius >= 0
+    readonly property bool themed: !root.alwaysBubble && Services.DesktopTheme.controlRadius >= 0
     // The bubble's body runs the full depth of the popout and is inset by
     // the radius only at the ends of the edge(s) it's attached to (where the
     // flares are); the box covers exactly that.
@@ -114,24 +122,24 @@ Item {
             }
             PathLine {
                 x: root._r
-                y: Math.max(topShape.height - root._r, root._halfH)
+                y: topShape.height - root._cornerH
             }
             PathArc {
-                x: root._r2
+                x: root._r + root._c
                 y: topShape.height
-                radiusX: root._r
-                radiusY: root._clampedRH
+                radiusX: root._c
+                radiusY: root._cornerH
                 direction: PathArc.Counterclockwise
             }
             PathLine {
-                x: topShape.width - root._r2
+                x: topShape.width - root._r - root._c
                 y: topShape.height
             }
             PathArc {
                 x: topShape.width - root._r
-                y: Math.max(topShape.height - root._r, root._halfH)
-                radiusX: root._r
-                radiusY: root._clampedRH
+                y: topShape.height - root._cornerH
+                radiusX: root._c
+                radiusY: root._cornerH
                 direction: PathArc.Counterclockwise
             }
             PathLine {
@@ -213,24 +221,24 @@ Item {
                 direction: PathArc.Counterclockwise
             }
             PathLine {
-                x: root._clampedRW
+                x: root._cornerW
                 y: rightShape.height - root._r
             }
             PathArc {
                 x: 0
-                y: rightShape.height - root._r2
-                radiusX: root._clampedRW
-                radiusY: root._r
+                y: rightShape.height - root._r - root._c
+                radiusX: root._cornerW
+                radiusY: root._c
             }
             PathLine {
                 x: 0
-                y: root._r2
+                y: root._r + root._c
             }
             PathArc {
-                x: root._clampedRW
+                x: root._cornerW
                 y: root._r
-                radiusX: root._clampedRW
-                radiusY: root._r
+                radiusX: root._cornerW
+                radiusY: root._c
             }
             PathLine {
                 x: Math.max(rightShape.width - root._r, root._halfW)
@@ -314,23 +322,23 @@ Item {
             }
             PathLine {
                 x: root._r
-                y: root._clampedRH
+                y: root._cornerH
             }
             PathArc {
-                x: root._r2
+                x: root._r + root._c
                 y: 0
-                radiusX: root._r
-                radiusY: root._clampedRH
+                radiusX: root._c
+                radiusY: root._cornerH
             }
             PathLine {
-                x: bottomShape.width - root._r2
+                x: bottomShape.width - root._r - root._c
                 y: 0
             }
             PathArc {
                 x: bottomShape.width - root._r
-                y: root._clampedRH
-                radiusX: root._r
-                radiusY: root._clampedRH
+                y: root._cornerH
+                radiusX: root._c
+                radiusY: root._cornerH
             }
             PathLine {
                 x: bottomShape.width - root._r
@@ -412,24 +420,24 @@ Item {
                 direction: PathArc.Counterclockwise
             }
             PathLine {
-                x: Math.max(leftShape.width - root._r, root._halfW)
+                x: leftShape.width - root._cornerW
                 y: root._r
             }
             PathArc {
                 x: leftShape.width
-                y: root._r2
-                radiusX: root._clampedRW
-                radiusY: root._r
+                y: root._r + root._c
+                radiusX: root._cornerW
+                radiusY: root._c
             }
             PathLine {
                 x: leftShape.width
-                y: leftShape.height - root._r2
+                y: leftShape.height - root._r - root._c
             }
             PathArc {
-                x: Math.max(leftShape.width - root._r, root._halfW)
+                x: leftShape.width - root._cornerW
                 y: leftShape.height - root._r
-                radiusX: root._clampedRW
-                radiusY: root._r
+                radiusX: root._cornerW
+                radiusY: root._c
             }
             PathLine {
                 x: root._clampedRW

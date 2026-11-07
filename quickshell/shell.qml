@@ -37,6 +37,8 @@ import qs.modules.pet
 import qs.modules.keybinds
 import qs.modules.customizer
 import qs.modules.screenshot
+import qs.modules.sharepicker
+import qs.modules.edgeline
 
 ShellRoot {
     id: root
@@ -49,6 +51,9 @@ ShellRoot {
         Services.WindowLook.manage = true
         // A night light left on comes back with the shell.
         Services.NightLight.checkAvailable()
+        // DNS set from the edge line is kept an eye on (a notification if
+        // it stops answering).
+        Services.Dns.watch = true
     }
 
     // The control centre's ways into the other panels.
@@ -67,6 +72,46 @@ ShellRoot {
             const picker = avatarLoader.ensure()
             if (!picker.opened)
                 picker.open()
+        }
+    }
+
+    // The edge line's ways into the other panels (its spine and the
+    // system tile: in minimal mode there's no bar to reach them from).
+    function openFromEdgeLine(what) {
+        if (what === "launcher") {
+            launcherWindow.open()
+        } else if (what === "power") {
+            if (!powerMenu.visible)
+                powerMenu.open()
+        } else if (what === "controlCenter") {
+            if (!controlCenterLoader.active)
+                controlCenterLoader.active = true
+            controlCenterLoader.item.opened = true
+        } else if (what === "wallpaper") {
+            if (!wallpaperLoader.active)
+                wallpaperLoader.active = true
+            if (!wallpaperLoader.item.visible)
+                wallpaperLoader.item.open()
+        } else if (what === "themes") {
+            lockThemesLoader.ensure().openTab("desktop")
+        } else if (what === "customizer" || what.startsWith("customizer:")) {
+            root.openCustomizer(what.slice("customizer:".length))
+        } else if (what === "clipboard") {
+            if (!clipboardLoader.active)
+                clipboardLoader.active = true
+            if (!clipboardLoader.item.visible)
+                clipboardLoader.item.open()
+        } else if (what === "keybinds") {
+            if (!keybindsLoader.active)
+                keybindsLoader.active = true
+            if (!keybindsLoader.item.visible)
+                keybindsLoader.item.open()
+        } else if (what === "notepad") {
+            notepadLoader.ensure().open()
+        } else if (what === "network" || what === "bluetooth") {
+            root.openFromControlCenter(what === "network" ? "wifi" : "bluetooth")
+        } else if (what === "updates") {
+            root.setUpdatesOpen(true)
         }
     }
 
@@ -229,6 +274,8 @@ ShellRoot {
     // A screenshot opened from its notification (scripts/screenshot), over
     // everything while it's open.
     ScreenshotEditor {}
+    // The screen-share picker, while an app is asking (scripts/share-picker).
+    SharePicker {}
     // Built for each opening, and dropped once it has animated out.
     LazyLoader {
         active: Services.CalendarState.open || calendarLinger.running
@@ -245,7 +292,13 @@ ShellRoot {
                 calendarLinger.restart()
         }
     }
-    DesktopWidgetsLayer {}
+    // Minimal mode (the edge line's) puts the desktop widgets away with the
+    // bar. The disc hides itself instead of going: built again, it would
+    // stack over the panels.
+    LazyLoader {
+        active: !Services.EdgeLine.minimal
+        DesktopWidgetsLayer {}
+    }
     WorkspaceDiscWindow {}
     Expose {}
     CavaWidget { id: cavaWidget }
@@ -308,7 +361,7 @@ ShellRoot {
         id: notesDrawerTrigger
         target: "notes"
         anchors.bottom: true
-        overBar: Services.BarLayout.atBottom
+        overBar: Services.BarLayout.atBottom && Services.BarLayout.shown
         implicitWidth: 900
         implicitHeight: 2
     }
@@ -320,7 +373,7 @@ ShellRoot {
         anchors.right: true
         anchors.bottom: true
         margins.bottom: Services.BarLayout.reserveBottom
-        overBar: Services.BarLayout.atRight
+        overBar: Services.BarLayout.atRight && Services.BarLayout.shown
         implicitWidth: 2
         implicitHeight: 500
     }
@@ -331,7 +384,7 @@ ShellRoot {
         anchors.left: true
         anchors.bottom: true
         margins.bottom: Services.BarLayout.reserveBottom
-        overBar: Services.BarLayout.atLeft
+        overBar: Services.BarLayout.atLeft && Services.BarLayout.shown
         implicitWidth: 2
         implicitHeight: 600
     }
@@ -716,24 +769,48 @@ ShellRoot {
     // open the bar drops beneath them; the network panel joins them when
     // the bar stands on the left or right, and the GitHub/timer popout when
     // it stands on the right, where they come out over the bar.
-    Bar {
-        id: bar
-        coveredByPanel: (notesLoader.item !== null && notesLoader.item.opened)
-            || launcherWindow.isOpen
-            || (Services.BarLayout.vertical && networkPanelLoader.item !== null && networkPanelLoader.item.visible)
-            || (Services.BarLayout.atRight && ghPopout.visible)
-            || (wallpaperLoader.item !== null && wallpaperLoader.item.visible)
-            || chatLoader.active
-            || (mangaLoader.item !== null && mangaLoader.item.visible)
-            || (novelLoader.item !== null && novelLoader.item.visible)
-            || (animeLoader.item !== null && animeLoader.item.visible)
-            || aikiraLoader.active
-            || (clipboardLoader.item !== null && clipboardLoader.item.visible)
-            || (notepadLoader.item !== null && notepadLoader.item.visible)
-            || powerMenu.visible
-            || (avatarLoader.item !== null && avatarLoader.item.visible)
-            || (lockThemesLoader.item !== null && lockThemesLoader.item.visible)
-            || (keybindsLoader.item !== null && keybindsLoader.item.visible)
+    // A panel is up over the bar's part of the screen: the bar drops
+    // beneath it, and so does the edge line (unless it's open).
+    readonly property bool panelOver: (notesLoader.item !== null && notesLoader.item.opened)
+        || launcherWindow.isOpen
+        || (Services.BarLayout.vertical && networkPanelLoader.item !== null && networkPanelLoader.item.visible)
+        || (Services.BarLayout.atRight && ghPopout.visible)
+        || (wallpaperLoader.item !== null && wallpaperLoader.item.visible)
+        || chatLoader.active
+        || (mangaLoader.item !== null && mangaLoader.item.visible)
+        || (novelLoader.item !== null && novelLoader.item.visible)
+        || (animeLoader.item !== null && animeLoader.item.visible)
+        || aikiraLoader.active
+        || (clipboardLoader.item !== null && clipboardLoader.item.visible)
+        || (notepadLoader.item !== null && notepadLoader.item.visible)
+        || powerMenu.visible
+        || (avatarLoader.item !== null && avatarLoader.item.visible)
+        || (lockThemesLoader.item !== null && lockThemesLoader.item.visible)
+        || (keybindsLoader.item !== null && keybindsLoader.item.visible)
+
+    LazyLoader {
+        active: !Services.EdgeLine.minimal
+        Bar {
+            coveredByPanel: root.panelOver
+        }
+    }
+
+    // The edge line (modules/edgeline): a line on a screen border that opens
+    // into a strip of the shell's things and their tiles; in minimal mode
+    // it's all there is. After the bar, so it stays above it.
+    LazyLoader {
+        active: Services.EdgeLine.enabled
+        EdgeLineWindow {
+            covered: root.panelOver
+        }
+    }
+
+    // What the edge line opens that lives elsewhere.
+    Connections {
+        target: Services.EdgeLine
+        function onRequested(what) {
+            root.openFromEdgeLine(what)
+        }
     }
 
     // The bar pet's hub and speech bubble (the pet itself lives in TopBar).
@@ -1006,6 +1083,39 @@ ShellRoot {
         }
     }
 
+    // The screen-share picker, called by scripts/share-picker with the path
+    // of the socket it's listening on (see services/ScreenShare.qml).
+    IpcHandler {
+        target: "sharePicker"
+        function open(path: string): string {
+            return Services.ScreenShare.open(path)
+        }
+    }
+
+    // Recording the screen (scripts/screenrecord): toggle, start, stop;
+    // sound true|false for whether the next one has the system's sound;
+    // status says what it's doing.
+    IpcHandler {
+        target: "screenRecord"
+        function toggle(): void {
+            Services.ScreenRecord.toggle()
+        }
+        function start(): void {
+            Services.ScreenRecord.start()
+        }
+        function stop(): void {
+            Services.ScreenRecord.stop()
+        }
+        function sound(on: bool): void {
+            Services.ScreenRecord.setSound(on)
+        }
+        function status(): string {
+            const r = Services.ScreenRecord
+            return r.recording ? "recording " + r.clock + (r.current.recording ? (r.soundNow ? " with system sound" : " without sound") : "")
+                : "idle, next " + (r.withSound ? "with" : "without") + " system sound"
+        }
+    }
+
     // Night light (hyprsunset): toggle, or a temperature in kelvin (2500-6500).
     IpcHandler {
         target: "nightLight"
@@ -1238,8 +1348,8 @@ ShellRoot {
 
     // The customizer's book (SUPER+I): toggle it (where it was left), open
     // it at a chapter or spread ("opening", "bar", "disc", "gaps", "theme",
-    // "palette", "desktop", "notices", "pet", or a chapter's number; "" for
-    // where it was left), or close it.
+    // "palette", "desktop", "notices", "pet", "edgeline", "edgeTabs", or a
+    // chapter's number; "" for where it was left), or close it.
     IpcHandler {
         target: "customizer"
         function toggle(): void {
@@ -1339,6 +1449,50 @@ ShellRoot {
             } else {
                 picker.close()
             }
+        }
+    }
+
+    // The edge line: open or fold it (toggle/open/close), open it on a tab
+    // (its number, from 1) or on the tab with a panel (workspaces, calendar,
+    // media, wifi, bluetooth, sound, system, notes, notifications, tray),
+    // minimal mode (only the line), move it (an edge and how far along it,
+    // 0 to 1), or hide it altogether. Its tabs are set in the customizer
+    // (chapter IX).
+    IpcHandler {
+        target: "edgeLine"
+        function toggle(): void {
+            Services.EdgeLine.toggle()
+        }
+        function open(): void {
+            Services.EdgeLine.setOpen(true)
+        }
+        function close(): void {
+            Services.EdgeLine.setOpen(false)
+        }
+        function tab(n: int): void {
+            Services.EdgeLine.setActiveTab(n - 1)
+            Services.EdgeLine.setOpen(true)
+        }
+        function panel(id: string): void {
+            Services.EdgeLine.showPanel(id)
+        }
+        function minimal(): void {
+            Services.EdgeLine.toggleMinimal()
+        }
+        function setMinimal(on: bool): void {
+            Services.EdgeLine.setMinimal(on)
+        }
+        function place(edge: string, pos: real): void {
+            Services.EdgeLine.place(edge, pos)
+        }
+        function enable(): void {
+            Services.EdgeLine.setEnabled(true)
+        }
+        function disable(): void {
+            Services.EdgeLine.setEnabled(false)
+        }
+        function reset(): void {
+            Services.EdgeLine.reset()
         }
     }
 

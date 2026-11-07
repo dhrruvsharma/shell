@@ -41,6 +41,9 @@ Singleton {
     property string lastBandAttempt: ""
     property string lastErrorMessage: ""
     property string message: ""
+    // NetworkManager changed something, and it's settled (others follow
+    // this rather than watching `nmcli monitor` again: services/Vpn).
+    signal settled
     // a profile just made on one access point, to be let go of it once up
     property string _unpin: ""
 
@@ -273,15 +276,33 @@ Singleton {
         }
     }
 
+    // What nmcli said went wrong, in words ("" when it said nothing).
+    function failureReason(text: string): string {
+        if (/secrets were required|incorrect|password|psk|802-?1x supplicant/i.test(text))
+            return "Incorrect password";
+        if (/no network with ssid|could not be found|not found/i.test(text))
+            return "It's out of reach";
+        if (/ip configuration could not be reserved|no available address|dhcp/i.test(text))
+            return "It gave no address";
+        if (/timeout|timed out/i.test(text))
+            return "It took too long to answer";
+        if (/no suitable device|not available|carrier/i.test(text))
+            return "Not plugged in";
+        return text.includes("Error") ? "Couldn't connect" : "";
+    }
+
+    function notifyFailure(name: string, reason: string): void {
+        Quickshell.execDetached(["notify-send", "-a", "Network", "-i", "dialog-warning", "Couldn't connect to " + name, reason || "NetworkManager couldn't bring it up."]);
+    }
+
     Process {
         id: connectProc
         stdout: StdioCollector { }
         stderr: StdioCollector {
             onStreamFinished: {
-                if (/secrets were required|incorrect|password|psk/i.test(text))
-                    root.lastErrorMessage = "Incorrect password";
-                else if (text.includes("Error"))
-                    root.lastErrorMessage = "Couldn't connect";
+                const why = root.failureReason(text);
+                if (why !== "")
+                    root.lastErrorMessage = why;
             }
         }
         onExited: {
@@ -289,7 +310,9 @@ Singleton {
                 root.message = "ok";
                 root.lastErrorMessage = "";
             } else {
-                root.message = root.lastErrorMessage !== "" ? root.lastErrorMessage : "Connection failed";
+                // (said once nmcli's reason, which can come after the exit,
+                // is in)
+                connectFailed.restart();
             }
             // (also after a failure, in case the new profile was kept)
             if (root._unpin !== "")
@@ -320,10 +343,36 @@ Singleton {
             onStreamFinished: {
                 if (text.includes("Error"))
                     root.lastErrorMessage = /no suitable device|not available|carrier/i.test(text)
-                        ? "Not plugged in" : "Couldn't connect";
+                        ? "Not plugged in" : root.failureReason(text);
             }
         }
-        onExited: updateConnections()
+        onExited: {
+            if (exitCode !== 0)
+                linkFailed.restart();
+            updateConnections();
+        }
+    }
+
+    Timer {
+        id: connectFailed
+        interval: 250
+        onTriggered: {
+            if (root.lastErrorMessage === "")
+                root.lastErrorMessage = "Couldn't connect";
+            root.message = root.lastErrorMessage;
+            root.notifyFailure(root.lastNetworkAttempt, root.lastErrorMessage);
+        }
+    }
+
+    Timer {
+        id: linkFailed
+        interval: 250
+        onTriggered: {
+            if (root.lastErrorMessage === "")
+                root.lastErrorMessage = "Couldn't connect";
+            const link = root.connections.find(c => c.name === root.lastNetworkAttempt);
+            root.notifyFailure(link ? link.title : root.lastNetworkAttempt, root.lastErrorMessage);
+        }
     }
 
     Process {
@@ -488,6 +537,7 @@ Singleton {
         onTriggered: {
             root.updateConnections();
             root.refreshAddress();
+            root.settled();
         }
     }
 

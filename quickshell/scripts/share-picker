@@ -1,0 +1,293 @@
+#!/usr/bin/env python3
+"""The screen-share picker: what xdg-desktop-portal-hyprland runs when an app
+asks to share the screen (custom_picker_binary in ~/.config/hypr/xdph.conf).
+
+The portal hands over the choices in environment variables and reads the
+answer from stdout: one `[SELECTION]<flags>/<choice>` line, or nothing for no.
+This adds where everything is (hyprctl), passes it all to the shell over a
+socket of its own (services/ScreenShare.qml, modules/sharepicker) and prints
+what comes back.
+
+The portal stops everything it does while a picker runs, shares already going
+included, so nothing here waits for long. If the shell can't be reached, or
+goes away mid-pick (a reload, a crash), the stock hyprland-share-picker takes
+over: it reads the same variables.
+
+    share-picker [--allow-token]    as the portal runs it
+    share-picker --preview          on the desktop as it is, with no portal:
+                                    prints what the portal would have been told
+
+The portal drops what this says on stderr, so what each request came to goes
+in $XDG_RUNTIME_DIR/quickshell-share-picker.log as well.
+"""
+import json
+import math
+import os
+import re
+import socket
+import subprocess
+import sys
+import tempfile
+import time
+
+# How long the shell gets to pick up, to have the picker on screen, and the
+# user to choose.
+CONNECT_SECONDS = 2.0
+SHOW_SECONDS = 4.0
+PICK_SECONDS = 180.0
+
+WINDOW = re.compile(rb"(\d+)\[HC>\](.*?)\[HT>\](.*?)\[HE>\](\d+)\[HA>\]", re.S)
+
+
+class ShellGone(Exception):
+    """The shell didn't take the request, or dropped it."""
+
+
+def note(what):
+    folder = os.environ.get("XDG_RUNTIME_DIR") or tempfile.gettempdir()
+    try:
+        with open(os.path.join(folder, "quickshell-share-picker.log"), "a") as log:
+            log.write(f"{time.strftime('%H:%M:%S')} {what}\n")
+    except OSError:
+        pass
+
+
+def text(raw):
+    return raw.decode("utf-8", "replace")
+
+
+def take(raw, at):
+    """A `<length>:<bytes>` field at `at`: its bytes and where it ends."""
+    colon = raw.index(b":", at)
+    end = colon + 1 + int(raw[at:colon])
+    if end > len(raw):
+        raise ValueError("a field runs past the end of the list")
+    return raw[colon + 1:end], end
+
+
+def parse_windows(raw):
+    """<id>[HC>]<class>[HT>]<title>[HE>]<address>[HA>], one after another."""
+    return [{
+        "id": int(handle),
+        "class": text(cls),
+        "title": text(title),
+        "address": format(int(address), "x"),
+    } for handle, cls, title, address in WINDOW.findall(raw)]
+
+
+def parse_outputs(raw):
+    """<name length>:<name>:<x>:<y>:<width>:<height>; one after another."""
+    outputs, at = [], 0
+    while at < len(raw):
+        name, at = take(raw, at)
+        end = raw.index(b";", at)
+        x, y, w, h = (int(v) for v in raw[at + 1:end].split(b":"))
+        outputs.append({"name": text(name), "x": x, "y": y, "w": w, "h": h})
+        at = end + 1
+    return outputs
+
+
+def parse_workspaces(raw):
+    """<id>[HN>]<name>[HM>]<count>:<outputs>[HE>], names and outputs as fields.
+
+    Gives the portal's id for each workspace name. It isn't Hyprland's.
+    """
+    ids, at = {}, 0
+    while at < len(raw):
+        mark = raw.index(b"[HN>]", at)
+        workspace = int(raw[at:mark])
+        name, at = take(raw, mark + 5)
+        if raw[at:at + 5] != b"[HM>]":
+            raise ValueError("a workspace has no outputs")
+        colon = raw.index(b":", at + 5)
+        count = int(raw[at + 5:colon])
+        at = colon + 1
+        for _ in range(count):
+            _, at = take(raw, at)
+        if raw[at:at + 5] != b"[HE>]":
+            raise ValueError("a workspace doesn't end")
+        at += 5
+        ids[text(name)] = workspace
+    return ids
+
+
+def hyprctl(*args):
+    done = subprocess.run(["hyprctl", "-j", *args], stdin=subprocess.DEVNULL,
+                          capture_output=True, timeout=3, check=True)
+    return json.loads(done.stdout)
+
+
+def logical(monitor):
+    """A monitor's place in layout coordinates."""
+    w = monitor["width"] / monitor["scale"]
+    h = monitor["height"] / monitor["scale"]
+    if monitor.get("transform", 0) % 2:
+        w, h = h, w
+    return {"name": monitor["name"], "x": monitor["x"], "y": monitor["y"],
+            "w": round(w), "h": round(h)}
+
+
+def elsewhere(windows, output):
+    """Windows Hyprland can't place: tiled on a shelf card of their own."""
+    columns = math.ceil(math.sqrt(len(windows)))
+    rows = math.ceil(len(windows) / columns)
+    w, h = output["w"] // columns, output["h"] // rows
+    for i, window in enumerate(windows):
+        window.update(workspace=None, showing=False, output=output["name"],
+                      x=output["x"] + i % columns * w + w // 20,
+                      y=output["y"] + i // columns * h + h // 20,
+                      w=w * 9 // 10, h=h * 9 // 10, stack=0)
+
+
+def describe(windows, outputs, capture_ids, remember, preview):
+    """All the shell needs: what can be shared, and where it all is."""
+    monitors = hyprctl("monitors")
+    clients = hyprctl("clients")
+    workspaces = hyprctl("workspaces")
+    outputs = outputs or [logical(m) for m in monitors]
+
+    showing = set()
+    names = {}
+    for monitor in monitors:
+        names[monitor["id"]] = monitor["name"]
+        showing.add(monitor["activeWorkspace"]["id"])
+        special = monitor.get("specialWorkspace", {}).get("id", 0)
+        if special:
+            showing.add(special)
+    for output in outputs:
+        known = next((m for m in monitors if m["name"] == output["name"]), None)
+        output["description"] = known.get("description", "") if known else ""
+
+    # Bottom to top: tiled under floating under fullscreen, then by last focus.
+    stacked = sorted(clients, key=lambda c: (c["fullscreen"] != 0, c["floating"], -c["focusHistoryID"]))
+    stack = {c["address"]: i for i, c in enumerate(stacked)}
+    by_address = {c["address"].removeprefix("0x").lower(): c for c in clients}
+    by_look = {(c["class"], c["title"]): c for c in clients}
+
+    placed, lost = [], []
+    for window in windows:
+        client = by_address.get(window["address"]) or by_look.get((window["class"], window["title"]))
+        if client is None or not client.get("mapped", True):
+            lost.append(window)
+            continue
+        window.update(address=client["address"].removeprefix("0x").lower(),
+                      workspace=client["workspace"]["id"],
+                      showing=client["workspace"]["id"] in showing,
+                      output=names.get(client["monitor"], ""),
+                      x=client["at"][0], y=client["at"][1],
+                      w=client["size"][0], h=client["size"][1],
+                      stack=stack[client["address"]])
+        placed.append(window)
+    placed.sort(key=lambda w: w["stack"])
+
+    focused = next((m["name"] for m in monitors if m["focused"]), outputs[0]["name"])
+    here = next((o for o in outputs if o["name"] == focused), outputs[0])
+
+    # Workspaces with something on them. One on screen is only worth a place
+    # if it can be shared whole: its windows are all up there already.
+    shelf = []
+    for workspace in sorted(workspaces, key=lambda w: (w["id"] < 0, w["id"])):
+        count = sum(1 for w in placed if w["workspace"] == workspace["id"])
+        capture = capture_ids.get(workspace["name"], 0)
+        on_screen = workspace["id"] in showing
+        if count and (capture or not on_screen):
+            shelf.append({"workspace": workspace["id"], "name": workspace["name"],
+                          "output": workspace["monitor"], "windows": count,
+                          "showing": on_screen, "capture": capture})
+    if lost:
+        elsewhere(lost, here)
+        shelf.append({"workspace": None, "name": "", "output": here["name"],
+                      "windows": len(lost), "showing": False, "capture": 0})
+
+    return {
+        "remember": remember,
+        "preview": preview,
+        "focused": focused,
+        "rounding": hyprctl("getoption", "decoration:rounding").get("int", 0),
+        "outputs": outputs,
+        "windows": placed + lost,
+        "shelf": shelf,
+    }
+
+
+def from_portal(remember):
+    env = os.environb
+    return describe(parse_windows(env.get(b"XDPH_WINDOW_SHARING_LIST", b"")),
+                    parse_outputs(env.get(b"XDPH_OUTPUT_SHARING_LIST", b"")),
+                    parse_workspaces(env.get(b"XDPH_WORKSPACE_SHARING_LIST_V3", b"")),
+                    remember, False)
+
+
+def from_desktop():
+    """The same, without a portal: every window, ids that mean nothing."""
+    windows = [{"id": i + 1, "class": c["class"], "title": c["title"],
+                "address": c["address"].removeprefix("0x").lower()}
+               for i, c in enumerate(hyprctl("clients"))]
+    workspaces = {w["name"]: w["id"] for w in hyprctl("workspaces") if w["id"] > 0}
+    return describe(windows, [], workspaces, False, True)
+
+
+def ask_shell(request):
+    """The shell's answer: a [SELECTION] line, or anything else for no."""
+    folder = os.environ.get("XDG_RUNTIME_DIR") or tempfile.gettempdir()
+    path = os.path.join(folder, f"quickshell-share-picker.{os.getpid()}.sock")
+    with socket.socket(socket.AF_UNIX, socket.SOCK_STREAM) as server:
+        server.bind(path)
+        try:
+            os.chmod(path, 0o600)
+            server.listen(1)
+            server.settimeout(CONNECT_SECONDS)
+            # It exits 0 whatever happened: a shell that has the picker says so.
+            said = subprocess.run(["qs", "ipc", "call", "sharePicker", "open", path],
+                                  stdin=subprocess.DEVNULL, capture_output=True,
+                                  timeout=CONNECT_SECONDS)
+            if said.stdout.strip() != b"ok":
+                raise ShellGone(text(said.stdout + said.stderr).strip() or "no answer")
+            link, _ = server.accept()
+        finally:
+            os.unlink(path)
+
+    with link, link.makefile("rb") as replies:
+        link.settimeout(SHOW_SECONDS)
+        link.sendall(json.dumps(request).encode() + b"\n")
+        # A shell that took the request can still fail to show it.
+        try:
+            if replies.readline().strip() != b"up":
+                raise ShellGone("the picker didn't come up")
+        except TimeoutError:
+            raise ShellGone("the picker didn't come up") from None
+        link.settimeout(PICK_SECONDS)
+        try:
+            answer = replies.readline()
+        except TimeoutError:
+            # Closing the link takes the picker down with it.
+            return ""
+    if not answer:
+        raise ShellGone("the shell went away")
+    return text(answer).strip()
+
+
+def main():
+    flags = sys.argv[1:]
+    preview = "--preview" in flags
+    note("asked" + (" (preview)" if preview else ""))
+    try:
+        request = from_desktop() if preview else from_portal("--allow-token" in flags)
+        answer = ask_shell(request)
+    except (OSError, ValueError, KeyError, IndexError, subprocess.SubprocessError, ShellGone) as why:
+        print(f"share-picker: {why}", file=sys.stderr)
+        note(f"couldn't use the shell: {why}")
+        if preview:
+            return 1
+        note("handing over to hyprland-share-picker")
+        os.execvp("hyprland-share-picker", ["hyprland-share-picker", *flags])
+
+    note(answer or "nothing chosen in time")
+    if answer.startswith("[SELECTION]"):
+        print(answer, flush=True)
+        return 0
+    return 1
+
+
+if __name__ == "__main__":
+    sys.exit(main())

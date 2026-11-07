@@ -30,8 +30,10 @@ Scope {
         target: Services.Pet
 
         function onBubbleSerialChanged() {
-            // With the hub open, it speaks in the hub instead.
-            if (!Services.Pet.shown || Services.Pet.hubOpen)
+            // With the hub open, it speaks in the hub instead; with the bar
+            // put away (the edge line's minimal mode) there's no pet to
+            // speak from.
+            if (!Services.Pet.shown || Services.Pet.hubOpen || !Services.BarLayout.shown)
                 return;
             root.text = Services.Pet.bubbleText;
             root.anchorPos = Services.Pet.barPos;

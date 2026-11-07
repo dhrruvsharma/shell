@@ -10,8 +10,9 @@ A feature-complete [Quickshell](https://quickshell.outfoxxed.me/) desktop shell 
 2. [Architecture](#architecture)
 3. [Customizer](#customizer)
 4. [Bar](#bar)
-5. [Control Center](#control-center)
-6. [Panels & Overlays](#panels--overlays)
+5. [Edge Line & Minimal Mode](#edge-line--minimal-mode)
+6. [Control Center](#control-center)
+7. [Panels & Overlays](#panels--overlays)
    - [Launcher](#launcher)
    - [Window Switcher](#window-switcher)
    - [Network Panel](#network-panel)
@@ -20,26 +21,28 @@ A feature-complete [Quickshell](https://quickshell.outfoxxed.me/) desktop shell 
    - [OSD](#osd)
    - [Keybinds Manager](#keybinds-manager)
    - [Screenshots](#screenshots)
-7. [Notes Drawer](#notes-drawer)
-8. [Clipboard Manager](#clipboard-manager)
-9. [Power Menu](#power-menu)
-10. [GitHub Contributions](#github-contributions)
-11. [Wallpaper](#wallpaper)
+   - [Screen recording](#screen-recording)
+   - [Screen sharing](#screen-sharing)
+8. [Notes Drawer](#notes-drawer)
+9. [Clipboard Manager](#clipboard-manager)
+10. [Power Menu](#power-menu)
+11. [GitHub Contributions](#github-contributions)
+12. [Wallpaper](#wallpaper)
     - [Swatch Deck Picker](#swatch-deck-picker)
     - [Wallhaven Browser](#wallhaven-browser)
-12. [Media Features](#media-features)
+13. [Media Features](#media-features)
     - [Anime](#anime)
     - [Manga](#manga)
     - [Novel](#novel)
     - [Spotify Lyrics](#spotify-lyrics)
-13. [AI Chat](#ai-chat)
+14. [AI Chat](#ai-chat)
     - [Aikira (Character Chat)](#aikira-character-chat)
     - [Ollama Chat](#ollama-chat)
-14. [Theming & Colors](#theming--colors)
-15. [Settings](#settings)
-16. [IPC Reference](#ipc-reference)
-17. [Hardcoded Paths](#hardcoded-paths)
-18. [Standalone Packages](#standalone-packages)
+15. [Theming & Colors](#theming--colors)
+16. [Settings](#settings)
+17. [IPC Reference](#ipc-reference)
+18. [Hardcoded Paths](#hardcoded-paths)
+19. [Standalone Packages](#standalone-packages)
 
 ---
 
@@ -104,6 +107,10 @@ What you change in the shell is saved to files inside the config folder, which g
 | `cavawidget.json` | Cava visualizer widget |
 | `config/workspacedisc.json` | Workspace disc corner, look and hiding |
 | `opening.json` | Hover or click for the edges and the bar's panels |
+| `edgeline.json` | Edge line: its border and place, tabs and how each is arranged, minimal mode |
+| `dns.json` | Names given to your own DNS servers (the servers themselves are set on the connection, in NetworkManager) |
+| `edgecommands.json` | The IPC commands pinned to the edge line's commands tile |
+| `screenrecord.json` | Whether screen recordings take the system's sound |
 | `windowlook.json` | Hyprland window settings set in the Customizer |
 | `palette.json` | Colour scheme: light or dark, kind, contrast |
 | `colors/Colors.json` | Colour scheme (written by matugen via `setwall`) |
@@ -184,7 +191,7 @@ Services that own a Python process launch it on startup; no separate daemon mana
 
 `modules/customizer/` — **SUPER + I** (or `qs ipc call customizer toggle`). Everything that can be set, bound as a book in the desktop theme's own manner: Sekiro's black lacquer with red-edged pages, Cathedral's vellum Book of Hours, Broadsheet's style book on newsprint, a man page for Mainframe, a palm-leaf shastra for Devaloka… It opens on its cover, which swings over as the book comes to the middle of the screen. Each spread pairs a **plate** on the left, a live figure of what's being set (the real bar, the real workspace disc, your windows tiled with your gaps, the themes on a shelf…) that lights whatever the pointer is on opposite, with the **settings** on the right; pages are numbered in Roman numerals at their foot.
 
-Turn pages at their lower corners, by the thumb-index tabs on the book's edges (chapters you've passed stand out on the left, those ahead on the right), from the contents, or with ← → / PgUp PgDn, 1–8 for a chapter and Home for the contents; the ribbon brings you back to the contents and Esc closes the book. A jump of several pages riffles through them.
+Turn pages at their lower corners, by the thumb-index tabs on the book's edges (chapters you've passed stand out on the left, those ahead on the right), from the contents, or with ← → / PgUp PgDn, 1–9 for a chapter and Home for the contents; the ribbon brings you back to the contents and Esc closes the book. A jump of several pages riffles through them.
 
 | Chapter | What it sets |
 |---|---|
@@ -196,6 +203,7 @@ Turn pages at their lower corners, by the thumb-index tabs on the book's edges (
 | VI. The Desktop | Desktop widgets and the visualizer, and whether a chosen wallpaper grows in |
 | VII. Notices | Do not disturb, how long a toast stays, the night light and its warmth |
 | VIII. The Companion | The bar pet: shown, kind, coat, name, how much it talks, where it roams, whether it sleeps at night |
+| IX. The Edge Line | Whether it's there, minimal mode, its border (or click along one on the plate), length, its glance on hover and how it folds up; its tabs: which panels go together in each (carried between them on the page), their names, glyphs and order, and the panels left out, with the popout drawn on the plate as it lays a tab out |
 
 Window settings are applied with `hyprctl eval` after the desktop theme's own overrides, so they survive theme changes and reloads (`windowlook.json`); the colour scheme is read by `scripts/wallpaper-apply` for every new wallpaper (`palette.json`).
 
@@ -218,6 +226,43 @@ Window settings are applied with `hyprctl eval` after the desktop theme's own ov
 - **Workspace disc** (`modules/workspacedisc/`): peeks out of a screen corner beside the bar. Hover it to open it out, click a chamber to switch workspace, drag it to another corner. Set to hide when idle (Customizer, chapter III) it tucks itself away once you've stayed on one workspace for a while, and comes back as you switch or when the pointer reaches its corner.
 
 **IPC:** `qs ipc call barLayout setEdge top|bottom|left|right`, `toggleEdge`, `edge`; `qs ipc call barSettings toggle|open|close`, `toggleWidget <cpu|memory|temp|battery|clock|network|bluetooth|volume|updates|settings|media|tray|pet>`, `setColor <#rrggbb>` (`""` for the wallpaper's), `setTransparency <0-100>`, `resetLook`, `setWidth <widget> <px>` (`0` for auto), `setOverflow hover|always|cut`, `resetWidths`
+
+---
+
+## Edge Line & Minimal Mode
+
+`modules/edgeline/` + `services/EdgeLine.qml` — the whole shell folded into a thin line on a border of the screen. Drag it anywhere along a border, or across to another one: it slides after the pointer and lands on the nearest. On the bar's edge it lives along the bar's inner side. Its brighter stretch is the workspace you're on, among the ones there are; it lights up once when a notification comes in, turns red when the battery runs low, and breathes red while the screen's being recorded.
+
+- **Peek:** rest the pointer on it and it swells into a pill showing the time, the date (or what's playing), the battery while it's running on it, and how many notifications there are. At its end are the **screen tools**: a screenshot of an area, record (stop, with how long it's been, while it records) and whether the next recording has the system's sound; the pointer on one names it beside the pill. A click on a tool uses it, anywhere else on the pill opens the popout. (See [Screen recording](#screen-recording).)
+- **Open:** click it and it opens into **one popout**. On the screen's bare border it comes out of the border: flush with the edge and flared into it (the bubble of `components/Popout`, whose new `alwaysBubble` and `cornerRadius` keep it a bubble in every theme, with the theme's own far corners), sliding out from under the edge. Along the bar's inner side it's a box in the desktop theme's frame instead. The line stretches along the border into its **strip** — the workspaces (click a dot, or scroll), the time, the **tabs**, and at the far end *Arrange the tabs*, the launcher, the power menu and minimal mode — and the tab that's chosen stands beside it with all of its panels open at once, laid out together like a collage: side by side, or one over another, whichever wastes least room for the panels' usual sizes and stays low along a flat border or narrow up a standing one. Worked out from their usual sizes, it keeps its shape while what they show comes and goes (a panel just grows or shrinks in its place). Another tab (a click, the wheel over the strip, Tab, or 1–9) and the popout takes that tab's shape.
+- **Arranging a tab:** the strip's *Arrange* button puts a card over each panel. Carry one onto another panel's edge and it goes beside that one, on that side; onto the edge of the whole collage, and it goes beside all of them. Where it would land lights up as you carry it (red, and refused, when the popout wouldn't fit on the screen that way). The arrangement stays with the tab, in `edgeline.json`; *Automatic* gives the tab back the one worked out for it, and *Done* or Esc finishes. A panel added to an arranged tab later joins at its end; one taken out leaves it.
+- **Folding up:** a moment after the pointer leaves it (not while you're typing in it), on Esc, or with a click on the strip's bare stretch. Opened from the keyboard, it waits for the pointer a while longer. Dragging the strip's bare stretch moves it and opens it again where it lands.
+- **Minimal mode** (the last button on the strip, or **SUPER + SHIFT + \`**, the key under Esc): the bar, the workspace disc, the desktop widgets and the visualizer go away, windows take the bar's room, and the line does all of it. Its button brings them back.
+
+**Tabs** are groups of panels, set in the [Customizer](#customizer), chapter IX: carry a panel to another tab, onto the dotted line for a tab of its own, or onto the shelf to leave it out (five to a tab); rename a tab, change its glyph, reorder or remove it. They start as *Overview* (workspaces, calendar, notifications), *Connect* (Wi-Fi, Bluetooth, DNS, VPN), *Listen* (media, sound), *System* (system, tray, commands) and *Notes*; a panel added later joins the tab of the one it goes with (DNS and VPN: Wi-Fi's; Commands: System's) if there's room, or gets a tab of its own, rather than waiting unseen on the shelf. The panels are fixed, and made like the [Control Center](#control-center) (the theme's type, meters and wording: Cave Abode's jade slips and flying letters, Siege's dispatches and war drums, Neon Noir's `NET // ネット`…):
+
+| Panel | What it does |
+|---|---|
+| Workspaces | A card for each workspace with its windows' icons; click to go there. The focused window's title underneath |
+| Calendar | The time, the day and the month; days with calendar notes are marked. Arrows page through months, the month's name brings today back |
+| Media | What's playing, as in the control center; the theme's line for the quiet while nothing is |
+| Wi-Fi | The radio, wired and tethered links, the networks around. A click joins a saved or open network, or asks for the password; the end button disconnects or forgets. A join that fails says why (wrong password, out of reach, no address) under the list and in a notification. *All networks* opens the network panel |
+| Bluetooth | The adapter and its paired devices (connected first, with their battery); a click connects or disconnects. *Pair a device* opens the orbit map |
+| VPN | WireGuard tunnels through NetworkManager (`services/Vpn.qml`): *Import* (or drop the file on the panel) takes the `.conf` your provider gives you, under its own name, without connecting it; a click connects one (one at a time) or disconnects it, with a spinner meanwhile; its end button removes one (asked first). Once up, the tunnel's own DNS server is asked something: no answer, and it says nothing comes back through it (server down, keys out of date). Couldn't connect, and why, shows under the list and in a notification. The pill shows a lock while one's up. OpenVPN and other kinds show up too once NetworkManager has their plugin (`networkmanager-openvpn`, …) |
+| DNS | Who answers the lookups on the connection in use: *Automatic* (the network's own), AdGuard, Cloudflare, Quad9, Google, or a server of your own typed under them (`dns.adguard.com`, `tls://…`, `https://…/dns-query`, addresses, `address#name`). A server is tried before it's used, and lookups through it once it is (it goes back to what was there if they fail); one that can't be reached says why under the list and in a notification, and so does DNS set here that stops answering later. Each network keeps its own |
+| Sound | Volume and outputs, brightness, the night light's warmth |
+| System | CPU, memory, heat, disk, uptime and the battery; buttons for the control center, wallpapers, themes, the Customizer, the clipboard, keybinds, the notepad and updates |
+| Notes | The notepad's notes (the ones **SUPER + N** pins on its board): write in one right there, start one, delete one |
+| Notifications | The list, with each app's buttons and replies, *Clear all* and do not disturb |
+| Tray | The tray's icons; a right click opens the app's menu inside the panel, submenus too |
+| Commands | The shell's IPC commands you pin, a tile each: a click runs it (`qs ipc call …`, as a keybind would) and the edge line folds; what a command gives back (`barLayout edge` → `top`) or why it couldn't run shows under the tiles. *Add* lists every command the running shell takes (`qs ipc show`, plus any the installer found whose part of the shell isn't loaded just now), searchable and grouped by target; a click pins one, and one that takes arguments asks for them (checked against their types) and a name for its tile first. Carry a tile to reorder, right-click to rename it, its × unpins it. Kept in `edgecommands.json` |
+
+**DNS** (`services/Dns.qml`, `scripts/dns-probe.py`) goes through NetworkManager, on the connection itself. While NetworkManager hands DNS to systemd-resolved, servers are used encrypted: DNS over TLS to port 853, strictly, each certificate checked against the server's name (what Android calls Private DNS). Otherwise they're plain DNS on port 53, and an address that can't exist (192.0.2.53) is asked alongside: a network that answers it answers every DNS question itself (some routers and ISPs intercept port 53), so the panel says the server can't be reached that way instead of claiming one it never reached, and checks whether encrypted DNS gets through. If it does, *Copy the setup* copies the one-time setup as root: `systemctl enable --now systemd-resolved`, `/etc/resolv.conf` linked to systemd-resolved's stub, NetworkManager restarted. Names given to your own servers are kept in `dns.json`.
+
+Settings are kept in `edgeline.json`: where it is, its tabs, the tab it opens on, minimal mode, `peek` (the pill on hover), `closeOnLeave` and `closeDelay` (ms), `length` (px).
+
+**Keys:** **SUPER + \`** opens or folds it, **SUPER + SHIFT + \`** toggles minimal mode.  
+**IPC:** `qs ipc call edgeLine toggle|open|close`, `tab <n>` (from 1), `panel <workspaces|calendar|media|wifi|bluetooth|dns|vpn|sound|system|notes|notifications|tray|commands>` (the tab it's in), `minimal`, `setMinimal <bool>`, `place <top|bottom|left|right> <0-1>`, `enable|disable`, `reset`
 
 ---
 
@@ -373,6 +418,49 @@ Shots are saved in `~/Pictures/screenshots` as `screenshot_<date>_<time>.png` (s
 - **Save** (Enter or Ctrl+S) writes the marks and the crop into the file under the name in the field, and the old file goes; with nothing drawn, a new name only renames it. A name that's taken is refused. **Copy** (Ctrl+C) puts the shot as it is now on the clipboard. Ctrl+Z and Ctrl+Shift+Z undo and redo, F2 goes to the name, and Esc steps back out, then closes (asking first if there's anything unsaved).
 
 **IPC:** `qs ipc call screenshot edit <file>` opens any image in the editor · `qs ipc call screenshot last` the newest shot
+
+### Screen recording
+
+`scripts/screenrecord` + `services/ScreenRecord.qml`
+
+Record from the edge line's pill or the System panel's *Screen* tab: the focused monitor until you stop it, saved to `~/Videos/recordings` as `recording_<date>_<time>.mp4` (or set `RECORDING_DIR`). Both have the **system sound** switch: on (the default), the recording takes what the default output plays, through its monitor source; off, it's silent. It's for the next recording, and is kept in `screenrecord.json`. A notification says where the video went (click it, or **Play**, to watch it; **Show in folder**), or why nothing was recorded; one whose sound source can't be opened is recorded without it, and says so.
+
+wf-recorder only records sound it's given a source for (`-a`), which is why recordings from the old Record button had no sound at all.
+
+The recording runs on its own, so a reload of the shell doesn't stop it; the shell follows it through `$XDG_RUNTIME_DIR/quickshell-screenrecord.json`. From a terminal or a keybind: `scripts/screenrecord start [sound|mute]`, `stop`, `toggle [sound|mute]` (`RECORDING_GEOMETRY="x,y wxh"` records only that part of the screen).
+
+**IPC:** `qs ipc call screenRecord toggle` (`start`, `stop`, `sound <true|false>`, `status`)
+
+### Screen sharing
+
+`scripts/share-picker` + `services/ScreenShare.qml` + `modules/sharepicker/`
+
+When an app asks to share the screen, the desktop itself is the picker. It opens on a grab of the screen and pulls back: the screen shrinks to a picture of itself with its windows alive in their places, a scrolling layout's off-screen columns showing past its edges, and the workspaces line up on a shelf underneath. The bar and labels are on the desktop theme's frame, in its words.
+
+Bright means shared: what's under the pointer stays lit and the rest goes down.
+
+| To share | Do |
+|---|---|
+| a window | click it, on the screen or on a workspace's card |
+| the whole screen | click the desktop (anywhere that isn't a window) |
+| a workspace | click its card between the windows, or its name. It stays on that workspace when you go elsewhere, so a call can keep watching one while you work in another |
+| a region | drag on the screen, even across windows. Pull its edges or drag it about, then **Share this region** or Enter |
+
+Tab or the arrows step through everything, Enter or Space shares, and **R** (or the box on the bar) lets the app remember the choice. Esc or a right click lets go of a region, then cancels; a click on nothing cancels too. The wheel slides the screens sideways when windows reach past the view.
+
+It's set in `~/.config/hypr/xdph.conf`, which new installs get from `dotfiles-defaults/`:
+
+```
+screencopy {
+    custom_picker_binary = $HOME/.config/quickshell/scripts/share-picker
+}
+```
+
+The portal reads that when it starts, so after adding it run `systemctl --user restart xdg-desktop-portal-hyprland` (this ends any share in progress) or log in again. To try the picker without the portal, run `scripts/share-picker --preview`: it opens on the desktop as it is and prints what it would have answered.
+
+If the shell can't be reached, or reloads mid-pick, Hyprland's own picker takes over; `$XDG_RUNTIME_DIR/quickshell-share-picker.log` says what each request came to, and why it fell back. The portal stands still while a picker is open, shares already running included, so one left unanswered gives up after three minutes. The picker isn't told which app is asking, and an app with a remembered choice doesn't ask at all.
+
+**IPC:** `qs ipc call sharePicker open <socket>` is how the script reaches the shell; there's nothing to bind
 
 ---
 
@@ -717,10 +805,13 @@ All panels are controlled through Quickshell's `IpcHandler` system. Use `qs ipc 
 | `wallpaper` | `qs ipc call wallpaper toggle` | Wallpaper picker (swatch deck) |
 | `visBottom` | `qs ipc call visBottom toggle` | Full-screen CAVA visualizer |
 | `keybinds` | `qs ipc call keybinds toggle` | Keybinds manager (SUPER + /) |
-| `customizer` | `qs ipc call customizer toggle` | The Customizer (SUPER + I); `open <chapter>`, `close` |
+| `customizer` | `qs ipc call customizer toggle` | The Customizer (SUPER + I); `open <chapter>` (`edgeline`, `edgeTabs`, …), `close` |
 | `windowLook` | `qs ipc call windowLook set <option> <value>` | Hyprland window settings (`reset <option>`, `resetAll`, `get <option>`) |
 | `barSettings` | `qs ipc call barSettings toggle` | The Customizer at the bar (SUPER + B) |
 | `screenshot` | `qs ipc call screenshot last` | The newest screenshot in the editor (`edit <file>` for any image) |
+| `screenRecord` | `qs ipc call screenRecord toggle` | Records the screen, with the system sound if it's on (`start`, `stop`, `sound <true\|false>`, `status`) |
+| `sharePicker` | `qs ipc call sharePicker open <socket>` | The screen-share picker, for `scripts/share-picker` (to try it: `scripts/share-picker --preview`) |
+| `edgeLine` | `qs ipc call edgeLine toggle` | The edge line (SUPER + \`); `open`, `close`, `tab <n>`, `panel <id>`, `minimal`, `setMinimal <bool>`, `place <edge> <0-1>`, `enable`, `disable`, `reset` |
 
 ### Example Hyprland keybindings
 
@@ -775,6 +866,8 @@ Ollama  → chatLoader    (centered)
 | `aikira/Api.qml` | 8 | `http://127.0.0.1:7842/api/v1` | Aikira backend port |
 | `aikira/Aikira.qml` | 97 | `~/.config/quickshell/scripts/aikira/aikira-stream.py` | Aikira stream script |
 | `scripts/screenshot`, `services/Screenshot.qml` | 16, 24 | `~/Pictures/screenshots` | Screenshot folder (or set `SCREENSHOT_DIR`) |
+| `scripts/screenrecord` | 24 | `~/Videos/recordings` | Recordings folder (or set `RECORDING_DIR`) |
+| `hypr/xdph.conf` | 7 | `$HOME/.config/quickshell/scripts/share-picker` | Where the portal finds the screen-share picker |
 
 ---
 

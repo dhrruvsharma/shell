@@ -1,34 +1,29 @@
 import QtQuick
 import Quickshell
-import Quickshell.Io
 import qs.components
 import qs.colors
+import qs.services as Services
+import qs.modules.lock
 
 // Record and screenshot buttons, side by side; stacked beside a standing
-// bar (`vertical`).
+// bar (`vertical`). Recording goes through services/ScreenRecord (the edge
+// line's pill has the same tools): over the buttons, whether it records
+// and for how long, and whether the system's sound goes in (a click
+// switches it for the next recording; wf-recorder only records sound it's
+// given a source for).
 Item {
     id: root
 
     property bool vertical: false
 
     width: root.vertical ? 188 : 340
-    height: root.vertical ? 190 : 110
-    property bool recording: false
+    height: root.vertical ? 214 : 110
+    readonly property var rec: Services.ScreenRecord
+    readonly property bool recording: root.rec.recording
     property bool hoveredRecord: false
     property bool hoveredScreenshot: false
 
-    Component.onCompleted: {
-        checkRecordingProc.running = true
-    }
-
-    Process {
-        id: checkRecordingProc
-        command: ["pgrep", "-x", "wf-recorder"]
-
-        onExited: (exitCode, exitStatus) => {
-            recording = (exitCode === 0)
-        }
-    }
+    Component.onCompleted: root.rec.look()
 
     Card {
         anchors.fill: parent
@@ -37,7 +32,7 @@ Item {
 
         Rectangle {
             id: recordingIndicator
-            visible: recording
+            visible: root.recording
             width: 8
             height: 8
             radius: 4
@@ -56,15 +51,71 @@ Item {
 
         Column {
             anchors.centerIn: parent
-            spacing: 12
+            spacing: root.vertical ? 10 : 9
 
-            StyledText {
+            // What it's doing, and the sound: side by side, or one over
+            // the other beside a standing bar.
+            Grid {
                 anchors.horizontalCenter: parent.horizontalCenter
-                text: recording ? "● Recording" : "Capture"
-                color: recording ? Colors.error : Colors.on_surface_variant
-                font.pixelSize: 11
-                font.weight: Font.Medium
-                opacity: 0.7
+                columns: root.vertical ? 1 : 3
+                columnSpacing: 8
+                rowSpacing: 6
+                horizontalItemAlignment: Grid.AlignHCenter
+                verticalItemAlignment: Grid.AlignVCenter
+
+                StyledText {
+                    text: root.recording ? "● Recording " + root.rec.clock : root.rec.starting ? "Starting…" : "Capture"
+                    color: root.recording ? Colors.error : Colors.on_surface_variant
+                    font.pixelSize: 11
+                    font.weight: Font.Medium
+                    opacity: root.recording ? 1 : 0.7
+                }
+
+                StyledText {
+                    visible: !root.vertical
+                    text: "·"
+                    color: Colors.on_surface_variant
+                    font.pixelSize: 11
+                    opacity: 0.5
+                }
+
+                // The system's sound in the recording: for the next one (a
+                // click), or what the one going on has.
+                ClickableRect {
+                    id: soundChip
+                    readonly property bool on: root.recording ? root.rec.soundNow : root.rec.withSound
+                    width: soundRow.implicitWidth + 16
+                    height: 22
+                    radius: 11
+                    interactive: !root.recording && !root.rec.starting
+                    color: soundChip.hovered && soundChip.interactive ? Colors.withAlpha(Colors.primary, 0.16) : "transparent"
+                    border.width: 1
+                    border.color: soundChip.on ? Colors.withAlpha(Colors.primary, 0.6) : Colors.withAlpha(Colors.outline, 0.5)
+                    opacity: soundChip.interactive ? 1 : 0.6
+                    cursorShape: soundChip.interactive ? Qt.PointingHandCursor : Qt.ArrowCursor
+                    onClicked: root.rec.toggleSound()
+
+                    Row {
+                        id: soundRow
+                        anchors.centerIn: parent
+                        spacing: 4
+
+                        Glyph {
+                            anchors.verticalCenter: parent.verticalCenter
+                            text: soundChip.on ? "volume_up" : "volume_off"
+                            font.pixelSize: 14
+                            color: soundChip.on ? Colors.primary : Colors.on_surface_variant
+                        }
+
+                        StyledText {
+                            anchors.verticalCenter: parent.verticalCenter
+                            text: soundChip.on ? "System sound" : "No sound"
+                            color: soundChip.on ? Colors.primary : Colors.on_surface_variant
+                            font.pixelSize: 11
+                            font.weight: Font.Medium
+                        }
+                    }
+                }
             }
 
             Grid {
@@ -76,11 +127,12 @@ Item {
                     width: root.vertical ? 156 : 140
                     height: 52
                     radius: 10
-                    color: recording
+                    color: root.recording
                         ? (hoveredRecord ? Qt.lighter(Colors.error_container, 1.15) : Colors.error_container)
                         : (hoveredRecord ? Qt.lighter(Colors.primary_container, 1.2) : Colors.primary_container)
-                    border.color: recording ? Colors.error : Colors.primary
+                    border.color: root.recording ? Colors.error : Colors.primary
                     border.width: hoveredRecord ? 1.5 : 1
+                    opacity: root.rec.starting ? 0.6 : 1
 
                     Behavior on color { ColorAnimation { duration: 180 } }
                     Behavior on border.width { NumberAnimation { duration: 120 } }
@@ -94,8 +146,8 @@ Item {
                         Rectangle {
                             width: 18
                             height: 18
-                            radius: recording ? 3 : 9
-                            color: recording ? Colors.error : Colors.primary
+                            radius: root.recording ? 3 : 9
+                            color: root.recording ? Colors.error : Colors.primary
                             anchors.verticalCenter: parent.verticalCenter
 
                             Behavior on radius { NumberAnimation { duration: 180 } }
@@ -103,8 +155,8 @@ Item {
 
                         StyledText {
                             anchors.verticalCenter: parent.verticalCenter
-                            text: recording ? "Stop" : "Record"
-                            color: recording ? Colors.on_error_container : Colors.on_primary_container
+                            text: root.recording ? "Stop" : "Record"
+                            color: root.recording ? Colors.on_error_container : Colors.on_primary_container
                             font.pixelSize: 13
                             font.weight: Font.DemiBold
                         }
@@ -113,15 +165,7 @@ Item {
                     cursorShape: Qt.PointingHandCursor
                     onEntered: hoveredRecord = true
                     onExited: hoveredRecord = false
-                    onClicked: {
-                            if (!recording) {
-                                recordProc.running = true
-                                recording = true
-                            } else {
-                                stopProc.running = true
-                                recording = false
-                            }
-                        }
+                    onClicked: root.rec.toggle()
                 }
 
                 ClickableRect {
@@ -191,7 +235,8 @@ Item {
                     onEntered: hoveredScreenshot = true
                     onExited: hoveredScreenshot = false
                     onClicked: {
-                            screenshotProc.running = true
+                            // (the panel goes first, out of the shot)
+                            Quickshell.execDetached(["sh", "-c", "qs ipc call systemPanel toggle && \"$0\" copysave area", Quickshell.shellPath("scripts/screenshot")])
                             screenshotFlash.opacity = 1.0
                         }
                 }
@@ -213,21 +258,5 @@ Item {
                 }
             }
         }
-    }
-
-    Process {
-        id: recordProc
-        command: ["sh", "-c", "nohup wf-recorder -f ~/Videos/recordings/recording_$(date +%Y%m%d_%H%M%S).mp4 >/dev/null 2>&1 &"]
-    }
-
-    Process {
-        id: stopProc
-        command: ["pkill", "wf-recorder"]
-    }
-
-    // Its notification opens it in the editor (scripts/screenshot).
-    Process {
-        id: screenshotProc
-        command: ["sh", "-c", "qs ipc call systemPanel toggle && \"$0\" copysave area", Quickshell.shellPath("scripts/screenshot")]
     }
 }

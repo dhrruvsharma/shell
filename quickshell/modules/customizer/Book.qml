@@ -59,7 +59,9 @@ Item {
         palette: paletteC,
         desktop: desktopC,
         notices: noticesC,
-        pet: petC
+        pet: petC,
+        edgeline: edgelineC,
+        edgeTabs: edgeTabsC
     })
 
     Component { id: contentsC; ContentsSpread {} }
@@ -76,6 +78,8 @@ Item {
     Component { id: desktopC; DesktopSpread {} }
     Component { id: noticesC; NoticesSpread {} }
     Component { id: petC; PetSpread {} }
+    Component { id: edgelineC; EdgeLineSpread {} }
+    Component { id: edgeTabsC; EdgeTabsSpread {} }
 
     // Two slots: the open spread, and the one being turned to.
     property Loader front: slotA

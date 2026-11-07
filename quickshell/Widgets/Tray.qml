@@ -84,7 +84,7 @@ GridLayout {
                     else if (mouse.button === Qt.MiddleButton)
                         modelData.secondaryActivate()
                     else if (mouse.button === Qt.RightButton && modelData.hasMenu)
-                        contextMenu.open(modelData.menu, Services.BarLayout.along(this, width / 2, height / 2))
+                        contextMenu.toggle(modelData.menu, Services.BarLayout.along(this, width / 2, height / 2))
                 }
             }
         }

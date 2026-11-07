@@ -16,6 +16,10 @@ Item {
 
     Shape {
         anchors.fill: parent
+        // The default geometry renderer draws without antialiasing, which
+        // left the arcs' curved edges stair-stepped; CurveRenderer
+        // antialiases them analytically.
+        preferredRendererType: Shape.CurveRenderer
 
         // Background arc
         ShapePath {

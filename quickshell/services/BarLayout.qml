@@ -56,18 +56,21 @@ QtObject {
     // On the left or right edge the bar stands on end: its islands stack
     // and the widgets show a compact, upright face.
     readonly property bool vertical: root.atLeft || root.atRight
+    // Whether there's a bar at all: the edge line's minimal mode puts it
+    // away, and then nothing keeps clear of it.
+    readonly property bool shown: !EdgeLine.minimal
     // The bar's thickness, and the room it takes on its edge (none on the
     // others).
     readonly property int size: 42
-    readonly property int reserveTop: root.atTop ? root.size : 0
-    readonly property int reserveBottom: root.atBottom ? root.size : 0
-    readonly property int reserveLeft: root.atLeft ? root.size : 0
-    readonly property int reserveRight: root.atRight ? root.size : 0
+    readonly property int reserveTop: root.atTop && root.shown ? root.size : 0
+    readonly property int reserveBottom: root.atBottom && root.shown ? root.size : 0
+    readonly property int reserveLeft: root.atLeft && root.shown ? root.size : 0
+    readonly property int reserveRight: root.atRight && root.shown ? root.size : 0
     // The room the desktop theme's frames leave it, a hair more.
-    readonly property int clearTop: root.atTop ? root.size + 2 : 0
-    readonly property int clearBottom: root.atBottom ? root.size + 2 : 0
-    readonly property int clearLeft: root.atLeft ? root.size + 2 : 0
-    readonly property int clearRight: root.atRight ? root.size + 2 : 0
+    readonly property int clearTop: root.atTop && root.shown ? root.size + 2 : 0
+    readonly property int clearBottom: root.atBottom && root.shown ? root.size + 2 : 0
+    readonly property int clearLeft: root.atLeft && root.shown ? root.size + 2 : 0
+    readonly property int clearRight: root.atRight && root.shown ? root.size + 2 : 0
     // Popout (components/Popout) alignments for panels hanging from the
     // bar: from its middle (media, system), and from its far end (updates):
     // the right end of a lying bar, the bottom end of a standing one.
