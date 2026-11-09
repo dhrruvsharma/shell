@@ -4,7 +4,7 @@
 #   ./install.sh                 install packages, link config, set up helpers
 #   ./install.sh --copy          copy the config instead of symlinking it
 #   ./install.sh --no-deps       skip package installation
-#   ./install.sh --extras        also install optional tools (ollama, gh)
+#   ./install.sh --extras        also install optional tools (ollama, gh, go)
 #                                and the Python venvs for anime/manga/novel
 #   ./install.sh --no-hypr       don't add the Quickshell keybinds/blur/animations/scale
 #                                to ~/.config/hypr
@@ -40,7 +40,7 @@ PACMAN_PKGS=(
     noto-fonts noto-fonts-emoji
 )
 AUR_PKGS=(ttf-material-symbols-variable-git)
-EXTRA_PKGS=(ollama github-cli)
+EXTRA_PKGS=(ollama github-cli go)
 
 # Type for the Art Deco, Cathedral, Broadsheet, Wasteland, Observatory,
 # Abyss, Devaloka and Siege desktop themes (Google Fonts, OFL/Apache),
@@ -225,6 +225,8 @@ seed_state() {
         info "Creating $rel from defaults/"
         mkdir -p "$(dirname "$TARGET/$rel")"
         cp "$src" "$TARGET/$rel"
+        # It's for your Spotify cookie: only yours to read
+        if [[ $rel == lyrics.json ]]; then chmod 600 "$TARGET/$rel"; fi
     done < <(find "$TARGET/defaults" -type f -print0)
 }
 

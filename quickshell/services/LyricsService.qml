@@ -1,63 +1,125 @@
 pragma Singleton
 import Quickshell
+import Quickshell.Io
 import Quickshell.Services.Mpris
 import QtQuick
 import qs.services
 
-QtObject {
+// Time-synced lyrics for what Spotify is playing. scripts/spotify-lyrics, a
+// small Go program, fetches them with the sp_dc cookie of your Spotify web
+// session, kept in lyrics.json next to shell.qml (git ignores it):
+//
+//     { "sp_dc": "AQ…" }
+//
+// The media panel sets it (the key by the track's name), or edit the file;
+// either way it applies without a restart. The program runs with `go run`,
+// which builds it the first time (a few seconds) and reuses that build after.
+// Until there's a cookie Spotify takes, `available` stays false and the media
+// panel shows no lyrics.
+Singleton {
     id: root
 
-    // Local spotify-lyrics-api server (https://github.com/akashrchandran/spotify-lyrics-api).
-    // It is optional: until it answers, `available` stays false and the media
-    // panel hides the lyrics instead of showing "Loading lyrics..." forever.
-    readonly property string apiUrl: "http://localhost:8080/"
-    property bool available: false
+    readonly property string spDc: config.sp_dc.trim()
+    // What Spotify made of the cookie: "" (not asked yet), "checking", "ok",
+    // "refused", "unreachable" (couldn't ask it) or "nogo" (Go isn't
+    // installed). A refused cookie waits for a new one.
+    property string cookieStatus: ""
+    readonly property bool available: spDc !== "" && cookieStatus !== "refused"
 
     property var lines: []
     property bool loaded: false
     property string status
     property string trackid
 
-    // Look for the server once a minute until it shows up
-    property Timer probeTimer: Timer {
-        interval: 60000
-        running: !root.available
-        repeat: true
-        triggeredOnStart: true
-        onTriggered: root.probe()
-    }
+    onSpDcChanged: cookieStatus = ""
 
     onAvailableChanged: {
         if (available) {
-            // Refetch the current track even if it didn't change while offline
+            // Refetch the current track even if it didn't change meanwhile
             trackid = ""
             root.poll()
         }
     }
 
+    FileView {
+        id: cookieFile
+        path: Quickshell.shellPath("lyrics.json")
+        watchChanges: true
+        printErrors: false
+        onFileChanged: reload()
+        // However the file was made, only you can read it once it's saved here
+        onSaved: lockDown.exec(["chmod", "600", path])
+
+        adapter: JsonAdapter {
+            id: config
+            property string sp_dc: ""
+        }
+    }
+
+    Process {
+        id: lockDown
+    }
+
     // Poll Spotify status every 2 seconds
-    property Timer statusPoller: Timer {
+    Timer {
         interval: 2000
         running: root.available
         repeat: true
         onTriggered: root.poll()
     }
 
-    // Without a trackid the API answers 400 with {"error": true, "usage": ...},
-    // which is enough to tell it apart from anything else on the port
-    function probe() {
-        let xhr = new XMLHttpRequest();
-        xhr.open("GET", apiUrl);
-        xhr.onreadystatechange = function() {
-            if (xhr.readyState !== XMLHttpRequest.DONE)
-                return
-            try {
-                root.available = typeof JSON.parse(xhr.responseText).error === "boolean"
-            } catch (e) {
-                root.available = false
-            }
+    // A fetch that failed (offline, rate limited, …) is tried again in a
+    // minute, then twice as long after each failure, up to 15 minutes.
+    Timer {
+        id: retryTimer
+        interval: 60000
+        onTriggered: {
+            interval = Math.min(interval * 2, 900000)
+            root.trackid = ""
+            root.poll()
         }
-        xhr.send();
+    }
+
+    Process {
+        id: fetcher
+        // The track and cookie this run is for, and whether it ran to an exit
+        property string forId
+        property string forCookie
+        property bool ended
+
+        workingDirectory: Quickshell.shellPath("scripts/spotify-lyrics")
+        stdout: StdioCollector { id: fetchOut }
+        stderr: StdioCollector { id: fetchErr }
+
+        onExited: {
+            ended = true
+            root.finishFetch(fetchOut.text, fetchErr.text)
+        }
+        // Stopped without exiting: `go` never started
+        onRunningChanged: {
+            if (!running && !ended)
+                root.finishFetch("", "couldn't run `go`; is Go installed?")
+        }
+    }
+
+    // Asks Spotify whether it takes a cookie set in the media panel
+    Process {
+        id: checker
+        property string forCookie
+        property bool ended
+
+        workingDirectory: Quickshell.shellPath("scripts/spotify-lyrics")
+        stdout: StdioCollector { id: checkOut }
+        stderr: StdioCollector { id: checkErr }
+
+        onExited: {
+            ended = true
+            root.finishCheck(checkOut.text, checkErr.text, true)
+        }
+        onRunningChanged: {
+            if (!running && !ended)
+                root.finishCheck("", "", false)
+        }
     }
 
     // Reads Spotify's MPRIS state directly (formerly two playerctl processes
@@ -79,45 +141,124 @@ QtObject {
         if (id && root.trackid !== id) {
             root.trackid = id
             root.loaded = false // Reset while fetching
-            root.fetchLyrics(id)
+            root.fetchLyrics()
             console.log("Track ID:", id)
         }
     }
 
-    function fetchLyrics(trackId) {
-        if (!trackId || trackId === "")
-            return;
+    // Saves a cookie to lyrics.json and asks Spotify whether it takes it. An
+    // empty one removes it.
+    function setCookie(value) {
+        let cookie = String(value).trim()
+        // Copied as part of a Cookie header ("sp_dc=AQ…; sp_key=…")
+        const named = cookie.match(/(?:^|;)\s*sp_dc=([^;\s]+)/)
+        if (named)
+            cookie = named[1]
+        config.sp_dc = cookie
+        cookieFile.writeAdapter()
+        root.checkCookie()
+    }
 
-        let xhr = new XMLHttpRequest();
-        xhr.open("GET", apiUrl + "?trackid=" + trackId);
+    // Asks Spotify whether it takes the cookie, one run at a time: a run that
+    // ends after the cookie changed starts the next. The token it buys is
+    // cached for the lyrics.
+    function checkCookie() {
+        if (!root.spDc) {
+            root.cookieStatus = ""
+            return
+        }
+        root.cookieStatus = "checking"
+        if (checker.running)
+            return
+        checker.forCookie = root.spDc
+        checker.ended = false
+        checker.exec({
+            command: ["go", "run", ".", "-check"],
+            environment: { SP_DC: root.spDc }
+        })
+    }
 
-        xhr.onreadystatechange = function() {
-            if (xhr.readyState !== XMLHttpRequest.DONE)
-                return
-            // Ignore answers for a track that is no longer playing
-            if (trackId !== root.trackid)
-                return
+    function finishCheck(out, err, started) {
+        if (checker.forCookie !== root.spDc) {
+            Qt.callLater(root.checkCookie)
+            return
+        }
+        if (!started) {
+            console.warn("LyricsService: couldn't run `go`; is Go installed?")
+            root.cookieStatus = "nogo"
+            return
+        }
+        const res = root.answer(out, err)
+        if (res && !res.error) {
+            root.cookieStatus = "ok"
+        } else if (res && res.kind === "auth") {
+            console.warn("LyricsService:", res.message)
+            root.cookieStatus = "refused"
+        } else {
+            if (res)
+                console.warn("LyricsService:", res.message)
+            root.cookieStatus = "unreachable"
+        }
+    }
 
-            if (xhr.status === 0) {
-                // Server went away; hide lyrics and go back to probing
-                root.available = false
-                root.loaded = false
-                return
-            }
+    // Fetches the current track's lyrics, one run at a time: a run that ends
+    // after the track or the cookie changed starts the next.
+    function fetchLyrics() {
+        if (!root.available || !root.trackid || fetcher.running)
+            return
+        fetcher.forId = root.trackid
+        fetcher.forCookie = root.spDc
+        fetcher.ended = false
+        // The cookie goes in the environment, which unlike the command line
+        // isn't open to every process. It's passed here rather than bound on
+        // the Process, which could still hold the old one when a new cookie
+        // sets off this fetch.
+        fetcher.exec({
+            command: ["go", "run", ".", root.trackid],
+            environment: { SP_DC: root.spDc }
+        })
+    }
 
-            try {
-                let data = JSON.parse(xhr.responseText);
-                // Error answers (e.g. 404 "lyrics not available") mean no lyrics
-                root.lines = xhr.status === 200 ? (data.lines || []) : [];
-                console.log("Lyrics loaded:", root.lines.length, "lines");
-            } catch(e) {
-                console.log("Lyrics parse error:", e);
-                root.lines = [];
-            }
-            root.loaded = true;
+    // Takes in what a run printed: the lyrics, or why there are none.
+    function finishFetch(out, err) {
+        if (fetcher.forId !== root.trackid || fetcher.forCookie !== root.spDc) {
+            // The track or the cookie changed while it ran
+            Qt.callLater(root.fetchLyrics)
+            return
         }
 
-        xhr.send();
+        const res = root.answer(out, err) || { error: true, kind: "failed" }
+
+        retryTimer.stop()
+        if (!res.error) {
+            retryTimer.interval = 60000
+            root.cookieStatus = "ok"
+            root.lines = res.lines || []
+            root.loaded = true
+            console.log("Lyrics loaded:", root.lines.length, "lines")
+        } else if (res.kind === "auth") {
+            console.warn("LyricsService:", res.message, "- no lyrics until the cookie changes")
+            root.cookieStatus = "refused"
+        } else {
+            if (res.kind !== "notfound") {
+                if (res.message)
+                    console.warn("LyricsService:", res.message)
+                retryTimer.restart()
+            }
+            root.lines = []
+            root.loaded = true
+        }
+    }
+
+    // A run's JSON answer, or null (with a warning) when it printed none
+    function answer(out, err) {
+        try {
+            const res = JSON.parse(out)
+            if (typeof res.error === "boolean")
+                return res
+        } catch (e) {}
+        console.warn("LyricsService: spotify-lyrics failed:", (err || out).trim())
+        return null
     }
 
     function currentLine(positionSeconds) {

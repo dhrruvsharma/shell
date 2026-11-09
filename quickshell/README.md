@@ -71,7 +71,7 @@ Run it as your normal user, not root; it calls `sudo` itself.
 |---|---|
 | `--copy` | Copy the config instead of symlinking it |
 | `--no-deps` | Skip package and font installation |
-| `--extras` | Also install `ollama` and `github-cli`, and create the Python venvs for Anime/Manga/Novel |
+| `--extras` | Also install `ollama`, `github-cli` and `go` (for the Spotify lyrics), and create the Python venvs for Anime/Manga/Novel |
 | `--no-hypr` | Leave `~/.config/hypr` untouched |
 | `--github USER` | GitHub user for the contributions widget (blank disables it) |
 | `-y`, `--yes` | Don't prompt for confirmation |
@@ -168,7 +168,7 @@ Your settings carry over: the files you'd changed, `hyprland.lua` and your colou
 2. Put a wallpaper in `~/Pictures/wallpapers` and run `setwall <file>` — it sets the wallpaper and generates the colour scheme with matugen.
 3. Panels are sized for monitor scale `1`; the installer warns if a monitor uses another scale.
 4. Change the GitHub widget's user later with `qs ipc call github setUser <name>` (an empty string disables it).
-5. Anime, Manga, Novel, Aikira and Spotify Lyrics need their backends set up — see [Media Features](#media-features) and [AI Chat](#ai-chat), or run the installer with `--extras` for the venvs.
+5. Anime, Manga, Novel, Aikira and Spotify Lyrics need their backends set up — see [Media Features](#media-features) and [AI Chat](#ai-chat), or run the installer with `--extras` for the venvs and Go.
 
 ---
 
@@ -666,24 +666,31 @@ python -m venv ~/novel-env
 ### Spotify Lyrics
 
 - **Service:** `services/LyricsService.qml`
+- **Helper:** `scripts/spotify-lyrics/` (Go, standard library only)
 
-Polls `playerctl -p spotify status` every 2 seconds. On track change, fetches time-synced lyrics from a local **[spotify-lyrics-api](https://github.com/akashrchandran/spotify-lyrics-api)** server using the Spotify track ID.
+Watches Spotify over MPRIS. On a track change, runs the helper with `go run`; it asks Spotify for the track's time-synced lyrics the way the web player does (as [spotify-lyrics-api](https://github.com/akashrchandran/spotify-lyrics-api) does), so there's no server to keep running. It signs in with your Spotify web session's `sp_dc` cookie; the access token that buys lasts an hour and is cached in `~/.cache/quickshell/spotify-token.json`.
 
 **Setup:**
 
-1. Clone and run the lyrics API server (requires a Spotify `sp_dc` cookie — see its README):
+1. Install Go (`./install.sh --extras` does too):
    ```bash
-   git clone https://github.com/akashrchandran/spotify-lyrics-api
-   cd spotify-lyrics-api
-   # follow upstream setup instructions
+   sudo pacman -S go
    ```
+   The first fetch builds the helper, which takes a few seconds; later ones reuse the build.
 
-2. Ensure `playerctl` is installed:
-   ```bash
-   sudo pacman -S playerctl
+2. Log into [open.spotify.com](https://open.spotify.com) and copy the value of its `sp_dc` cookie (browser dev tools → Application/Storage → Cookies). Then, with Spotify playing, open the media panel and click the key next to the track's name (or the "add it" hint where the lyrics go), paste the cookie and press Enter. The panel asks Spotify whether it takes the cookie and says so; once it does, the lyrics show.
+
+   The cookie is saved in `~/.config/quickshell/lyrics.json`, which git ignores and only you can read. You can also edit that file by hand; the shell picks up changes by itself:
+   ```json
+   { "sp_dc": "AQ..." }
    ```
+   While there's no cookie, or Spotify refuses it, the media panel shows a hint instead of lyrics; `qs log` says why.
 
-3. The service expects the API at `http://localhost:8080` (hardcoded in `services/LyricsService.qml` line 60). Change that line if your server runs on a different port.
+To try the helper by hand:
+```bash
+cd ~/.config/quickshell/scripts/spotify-lyrics
+SP_DC=$(jq -r .sp_dc ../../lyrics.json) go run . <track id>   # or -check, to test only the cookie
+```
 
 ---
 
@@ -858,7 +865,6 @@ Ollama  → chatLoader    (centered)
 | File | Line(s) | Hardcoded path | What to change |
 |---|---|---|---|
 | `services/ReaderEnv.qml` | 10–12 | `~/ani-env`, `~/.venv/manga`, `~/novel-env` | Anime/manga/novel Python venvs |
-| `services/LyricsService.qml` | 60 | `http://localhost:8080` | Lyrics API port |
 | `services/Anime.qml` | 39–40 | `~/.local/share/quickshell/anime_library.json` | Anime library file |
 | `services/Manga.qml` | 47–48 | `~/.local/share/quickshell/manga_library.json` | Manga library file |
 | `services/Novel.qml` | 59–60 | `~/.local/share/quickshell/new_novel_library.json` | Novel library file |

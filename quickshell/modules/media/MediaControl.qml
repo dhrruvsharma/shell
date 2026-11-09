@@ -5,6 +5,7 @@ import qs.services as Services
 import qs.colors
 import Qt5Compat.GraphicalEffects
 import qs.components
+import qs.modules.lock
 import Quickshell.Io
 
 Item {
@@ -96,31 +97,63 @@ Item {
                         Layout.fillWidth: true
                     }
 
-                    Button {
-                        id: visToggleBtn
-                        implicitWidth: 28
-                        implicitHeight: 20
-                        hoverEnabled: true
+                    RowLayout {
+                        spacing: 4
 
-                        onClicked: toggleVisProc.running = true
+                        Button {
+                            id: visToggleBtn
+                            implicitWidth: 28
+                            implicitHeight: 20
+                            hoverEnabled: true
 
-                        background: Rectangle {
-                            radius: Services.DesktopTheme.rad(4)
-                            color: visToggleBtn.hovered
-                                ? Colors.surface_container_highest
-                                : "transparent"
+                            onClicked: toggleVisProc.running = true
 
-                            Behavior on color {
-                                ColorAnimation { duration: 150 }
+                            background: Rectangle {
+                                radius: Services.DesktopTheme.rad(4)
+                                color: visToggleBtn.hovered
+                                    ? Colors.surface_container_highest
+                                    : "transparent"
+
+                                Behavior on color {
+                                    ColorAnimation { duration: 150 }
+                                }
+                            }
+
+                            contentItem: StyledText {
+                                text: "♪"
+                                font.pixelSize: 12
+                                color: Colors.on_surface_variant
+                                horizontalAlignment: Text.AlignHCenter
+                                verticalAlignment: Text.AlignVCenter
                             }
                         }
 
-                        contentItem: StyledText {
-                            text: "♪"
-                            font.pixelSize: 12
-                            color: Colors.on_surface_variant
-                            horizontalAlignment: Text.AlignHCenter
-                            verticalAlignment: Text.AlignVCenter
+                        // The Spotify cookie the lyrics are fetched with
+                        Button {
+                            id: cookieBtn
+                            visible: mediaControl.isSpotify
+                            implicitWidth: 28
+                            implicitHeight: 20
+                            hoverEnabled: true
+
+                            onClicked: mediaControl.editingCookie = !mediaControl.editingCookie
+
+                            background: Rectangle {
+                                radius: Services.DesktopTheme.rad(4)
+                                color: cookieBtn.hovered || mediaControl.editingCookie
+                                    ? Colors.surface_container_highest
+                                    : "transparent"
+
+                                Behavior on color {
+                                    ColorAnimation { duration: 150 }
+                                }
+                            }
+
+                            contentItem: Glyph {
+                                text: "key"
+                                font.pixelSize: 14
+                                color: Colors.on_surface_variant
+                            }
                         }
                     }
 
@@ -308,14 +341,15 @@ Item {
                     enableShadow: false
                     barCount: 25
                     clip: true
+                    visible: !mediaControl.editingCookie
                 }
 
-                // Lyrics only when the optional lyrics server is running
+                // Lyrics only once a Spotify cookie is set (see LyricsService)
                 ColumnLayout {
                     anchors.fill: parent
                     anchors.margins: 12
                     spacing: 6
-                    visible: Services.LyricsService.available
+                    visible: Services.LyricsService.available && !mediaControl.editingCookie
 
                     Repeater {
                         id: lyricsRepeater
@@ -350,11 +384,44 @@ Item {
                         }
                     }
                 }
+
+                // Without a cookie Spotify takes, the way to set one
+                StyledText {
+                    id: cookieHint
+                    readonly property bool refused: Services.LyricsService.cookieStatus === "refused"
+
+                    anchors.centerIn: parent
+                    width: parent.width - 24
+                    visible: !Services.LyricsService.available && !mediaControl.editingCookie
+                    text: refused ? "Spotify refused your cookie · set a new one"
+                        : "♪ Lyrics need your Spotify cookie · add it ♪"
+                    horizontalAlignment: Text.AlignHCenter
+                    wrapMode: Text.WordWrap
+                    font.pixelSize: 12
+                    color: refused ? Colors.error : Colors.on_surface_variant
+                    opacity: hintArea.containsMouse ? 1 : 0.75
+
+                    MouseArea {
+                        id: hintArea
+                        anchors.fill: parent
+                        hoverEnabled: true
+                        cursorShape: Qt.PointingHandCursor
+                        onClicked: mediaControl.editingCookie = true
+                    }
+                }
+
+                LyricsCookie {
+                    anchors.fill: parent
+                    visible: mediaControl.editingCookie
+                    onCloseRequested: mediaControl.editingCookie = false
+                }
             }
         }
     }
 
     property bool isSpotify: Services.Media.currentPlayerName.toLowerCase().indexOf("spotify") !== -1
+    // The lyrics' place shows the Spotify cookie's field
+    property bool editingCookie: false
     property var lyricsModel: []
     property int _lastPosition: -1
 

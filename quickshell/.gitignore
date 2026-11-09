@@ -25,3 +25,5 @@
 /screenrecord.json
 __pycache__/
 /.idea/
+# Your Spotify sp_dc cookie, for the lyrics (services/LyricsService.qml)
+/lyrics.json
