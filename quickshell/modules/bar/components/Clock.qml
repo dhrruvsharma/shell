@@ -21,9 +21,11 @@ BarPill {
     opensArg: () => ({ pos: Services.BarLayout.along(pill, 0, 0), length: pill.vertical ? pill.height : pill.width })
 
     // Blend toward primary_container while the calendar is open so the pill and
-    // its popup read as one connected surface.
-    color: pill.active ? Colors.primary_container : Services.BarSettings.pill
-    textColor: pill.active ? Colors.on_primary_container : Services.BarSettings.ink
+    // its popup read as one connected surface. On the bar as one strip the
+    // calendar is a drawer of the strip itself: the clock is only washed
+    // with the glyph colour there.
+    color: !pill.active ? Services.BarSettings.atom : pill.strip ? Services.BarSettings.lit : Colors.primary_container
+    textColor: pill.active && !pill.strip ? Colors.on_primary_container : Services.BarSettings.ink
 
     Behavior on color { ColorAnimation { duration: 180; easing.type: Easing.OutCubic } }
     Behavior on textColor { ColorAnimation { duration: 180; easing.type: Easing.OutCubic } }

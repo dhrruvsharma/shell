@@ -16,10 +16,33 @@ Popout {
     // under a top bar, bottom right over a bottom one or beside a right one,
     // bottom left beside a left one.
     alignment: Services.BarLayout.endAlignment
+    // Out of the bar as one strip it's a drawer of the strip (Popout's
+    // fromBar), unfolding from it (`unfold`) rather than sliding in from
+    // the screen's side.
+    fromBar: "updates"
     // Hidden once fully collapsed so its spinner (and any repaint) stops;
     // a zero-width but visible panel still drives frames of the whole shell.
-    visible: root.opened || root.implicitWidth > 0
+    visible: root.opened || (root.joined ? root.unfold > 0 : root.implicitWidth > 0)
     focus: true
+
+    readonly property string edge: Services.BarLayout.edge
+    readonly property bool lying: !Services.BarLayout.vertical
+    readonly property real fullWidth: 460
+    readonly property real fullHeight: 520
+    property real unfold: opened ? 1 : 0
+
+    Behavior on unfold {
+        enabled: root.joined
+        NumberAnimation { duration: 320; easing.type: Easing.OutCubic }
+    }
+
+    // As a drawer: the strip's thickness on its side, the radius (the
+    // room for the fillet into the screen's side) on the far one, the
+    // radius at its inner end along the bar and none at the bar's end.
+    leftPadding: !root.joined ? radius : root.edge === "left" ? Services.BarLayout.size : radius
+    rightPadding: !root.joined ? radius : root.edge === "right" ? Services.BarLayout.size : root.lying ? 0 : radius
+    topPadding: !root.joined ? radius : root.edge === "top" ? Services.BarLayout.size : radius
+    bottomPadding: !root.joined ? radius : root.edge === "bottom" ? Services.BarLayout.size : root.lying ? radius : 0
 
     property bool opened: false
 
@@ -57,16 +80,24 @@ Popout {
         function onLastCheckedChanged() { root.clearSelection(); }
     }
 
-    implicitHeight: 520
-    implicitWidth: opened ? 460 : 0
+    implicitHeight: root.joined && root.lying ? root.fullHeight * root.unfold : root.fullHeight
+    implicitWidth: root.joined ? (root.lying ? root.fullWidth : root.fullWidth * root.unfold) : (opened ? root.fullWidth : 0)
 
     Behavior on implicitWidth {
+        enabled: !root.joined
         NumberAnimation { duration: 300; easing.type: Easing.OutCubic }
     }
 
+    // The panel's surface; as a drawer, the drawer is, and this keeps its
+    // full size against the strip while the drawer unfolds round it.
     Rectangle {
-        anchors.fill: parent
-        color: Colors.surface
+        readonly property real fullW: root.fullWidth - root.leftPadding - root.rightPadding
+        readonly property real fullH: root.fullHeight - root.topPadding - root.bottomPadding
+        x: root.joined && root.edge === "right" ? parent.width - width : 0
+        y: root.joined && root.edge === "bottom" ? parent.height - height : 0
+        width: root.joined ? fullW : parent.width
+        height: root.joined ? fullH : parent.height
+        color: root.joined ? "transparent" : Colors.surface
         radius: Services.DesktopTheme.rad(14)
         clip: true
 

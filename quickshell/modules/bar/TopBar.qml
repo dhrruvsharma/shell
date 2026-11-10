@@ -25,6 +25,12 @@ import qs.components
 // top and bottom, islands and their atoms stack, and dragging works along
 // the bar's length. Positions and lengths along the bar (x lying, y
 // standing) go through _along()/_pos()/_len().
+//
+// It has two forms (services/BarSettings.style): pills, each island its own
+// container over the wallpaper; or one strip, a band the length of the bar
+// (components/StripBand) with the islands laid flat along it, a mark
+// between each (components/StripDivider) and none round a group, and the
+// panels that hang from it drawers of it (components/StripDrawer).
 Item {
     id: topBar
 
@@ -33,8 +39,14 @@ Item {
     focus: true
 
     readonly property bool vertical: Services.BarLayout.vertical
+    readonly property bool strip: Services.BarSettings.strip
     // An island's thickness across the bar.
     readonly property real islandHeight: 34
+    // The room between islands, and between the ends and the first ones:
+    // on the strip, with no containers to tell them apart, a little more
+    // between islands than inside one.
+    readonly property real gap: topBar.strip ? 14 : 8
+    readonly property real endMargin: topBar.strip ? 14 : 20
 
     // A point's or an item's position along the bar, and an item's length.
     function _along(p) {
@@ -277,7 +289,9 @@ Item {
 
         readonly property string firstId: island.atomIds.length > 0 ? island.atomIds[0] : ""
         readonly property bool grouped: island.atomIds.length > 1
-        readonly property real pad: island.grouped ? 5 : 0
+        // On the strip a group has no tray to pad: its atoms just keep
+        // together, with no mark between them.
+        readonly property real pad: island.grouped && !topBar.strip ? 5 : 0
         property alias atomRep: atomRep
 
         readonly property bool isMergeTarget: topBar.dragActive && topBar.dropKind === 1 && topBar.dropRegion === island.regionKey && topBar.dropIslandFirstId === island.firstId
@@ -306,20 +320,22 @@ Item {
         topRightRadius: Services.DesktopTheme.corner(island.look, radius, 1)
         bottomRightRadius: Services.DesktopTheme.corner(island.look, radius, 2)
         bottomLeftRadius: Services.DesktopTheme.corner(island.look, radius, 3)
-        color: island.grouped && !island.framed ? Services.BarSettings.group : "transparent"
+        color: island.grouped && !island.framed && !topBar.strip ? Services.BarSettings.group : "transparent"
         // The theme's hairline, or the outline the bar settings can put
-        // round every container.
-        border.width: island.framed ? 0 : island.isMergeTarget ? 2 : island.grouped && island.look.shape !== "print" ? (island.look.border || (Services.BarSettings.outline ? 1 : 0)) : 0
+        // round every container. On the strip, only a drop target's ring.
+        border.width: topBar.strip ? (island.isMergeTarget ? 2 : 0)
+            : island.framed ? 0 : island.isMergeTarget ? 2 : island.grouped && island.look.shape !== "print" ? (island.look.border || (Services.BarSettings.outline ? 1 : 0)) : 0
         border.color: island.isMergeTarget ? Services.DesktopTheme.accent : island.look.border ? Services.DesktopTheme.borderColor(island.look) : Services.BarSettings.outlineColor
         opacity: island.beingDragged ? 0.4 : 1
 
         // The chrome of a group (or of a drop target) in the theme's look,
         // built only for the theme in use and only while there's a group or
         // target to show: every theme's, hidden, came to half a dozen shapes
-        // per island, re-traced whenever an island changed width.
+        // per island, re-traced whenever an island changed width. The
+        // strip wears the theme's look instead.
         Loader {
             anchors.fill: parent
-            active: island.grouped || island.isMergeTarget
+            active: !topBar.strip && (island.grouped || island.isMergeTarget)
             sourceComponent: ({
                 chamfer: hudChrome,
                 neon: neonChrome,
@@ -506,6 +522,15 @@ Item {
             }
         }
 
+        // On the strip, the mark parting it from the island before it, in
+        // the middle of the gap between them.
+        StripDivider {
+            visible: topBar.strip && island.islandIndex > 0 && !island.isBeforeTarget
+            vertical: topBar.vertical
+            x: topBar.vertical ? island.width / 2 : -topBar.gap / 2
+            y: topBar.vertical ? -topBar.gap / 2 : island.height / 2
+        }
+
         // Insertion caret shown just before this island: left of it, or above
         // it on a standing bar.
         Rectangle {
@@ -579,6 +604,14 @@ Item {
         }
     }
 
+    // ---- the strip ----------------------------------------------------------
+    // As one strip, the band under everything on the bar.
+    Loader {
+        anchors.fill: parent
+        active: topBar.strip
+        sourceComponent: StripBand {}
+    }
+
     // ---- bar content ------------------------------------------------------
     Item {
         id: content
@@ -601,8 +634,24 @@ Item {
             y: petTrack.upward ? content.height : 0
 
             BarPet {
+                id: barPet
+
+                // Whether all of it is in a free stretch, not crossing an
+                // island (BarPet keeps 8 px clear of them).
+                readonly property bool clear: barPet.gaps.some(s => barPet.px >= s[0] + barPet.figW / 2 && barPet.px <= s[1] - barPet.figW / 2)
+
                 anchors.fill: parent
                 reversed: petTrack.upward
+                // On the strip there's no container to hide it as it passes
+                // behind an island: it's ghosted there instead, unless held.
+                opacity: topBar.strip && barPet.placed && !barPet.clear && !barPet.dragging && !barPet.falling ? 0.22 : 1
+
+                Behavior on opacity {
+                    NumberAnimation {
+                        duration: 160
+                    }
+                }
+
                 gaps: {
                     const pad = 8;
                     const v = topBar.vertical;
@@ -626,11 +675,11 @@ Item {
         // for good.)
         Grid {
             id: leftRow
-            x: topBar.vertical ? (parent.width - width) / 2 : 20
-            y: topBar.vertical ? 20 : (parent.height - height) / 2
+            x: topBar.vertical ? (parent.width - width) / 2 : topBar.endMargin
+            y: topBar.vertical ? topBar.endMargin : (parent.height - height) / 2
             // One column standing, else one per item shown (see atomRow).
             columns: topBar.vertical ? 1 : Math.max(1, leftRepeater.count + (leftCaret.visible ? 1 : 0))
-            spacing: 8
+            spacing: topBar.gap
             horizontalItemAlignment: Grid.AlignHCenter
             verticalItemAlignment: Grid.AlignVCenter
 
@@ -665,10 +714,10 @@ Item {
         // The end region, up to the tray: to the right end, or the bottom.
         Grid {
             id: rightRow
-            x: topBar.vertical ? (parent.width - width) / 2 : parent.width - width - 20
-            y: topBar.vertical ? parent.height - height - 20 : (parent.height - height) / 2
+            x: topBar.vertical ? (parent.width - width) / 2 : parent.width - width - topBar.endMargin
+            y: topBar.vertical ? parent.height - height - topBar.endMargin : (parent.height - height) / 2
             columns: topBar.vertical ? 1 : Math.max(1, rightRepeater.count + (rightCaret.visible ? 1 : 0) + (tray.visible ? 1 : 0))
-            spacing: 8
+            spacing: topBar.gap
             horizontalItemAlignment: Grid.AlignHCenter
             verticalItemAlignment: Grid.AlignVCenter
 
@@ -699,6 +748,14 @@ Item {
                 vertical: topBar.vertical
             }
         }
+
+        // On the strip, the mark between the last island and the tray.
+        StripDivider {
+            visible: topBar.strip && tray.visible && rightRepeater.count > 0 && !rightCaret.visible
+            vertical: topBar.vertical
+            x: topBar.vertical ? rightRow.x + rightRow.width / 2 : rightRow.x + tray.x - topBar.gap / 2
+            y: topBar.vertical ? rightRow.y + tray.y - topBar.gap / 2 : rightRow.y + rightRow.height / 2
+        }
     }
 
     // ---- drag ghost overlay ----------------------------------------------
@@ -719,15 +776,19 @@ Item {
         visible: topBar.dragActive
 
         Rectangle {
-            // Placeholder until the grabbed image is ready.
-            visible: topBar.dragActive && (!topBar.dragGrab || ghost.status !== Image.Ready)
+            // Placeholder until the grabbed image is ready; on the strip,
+            // where the widgets have no container of their own, the band's
+            // colour behind the ghost all along, ringed in the accent.
+            visible: topBar.dragActive && (topBar.strip || !topBar.dragGrab || ghost.status !== Image.Ready)
             x: ghostLayer.ghostX
             y: ghostLayer.ghostY
             width: topBar.dragW
             height: topBar.dragH
-            radius: 14
-            color: Colors.surface_container
-            opacity: 0.85
+            radius: topBar.strip ? Services.DesktopTheme.radius(Services.DesktopTheme.look, 14, Math.min(width, height)) : 14
+            color: topBar.strip ? Services.BarSettings.fill : Colors.surface_container
+            border.width: topBar.strip ? 1 : 0
+            border.color: Colors.withAlpha(Services.DesktopTheme.accent, 0.7)
+            opacity: topBar.strip ? 0.95 : 0.85
         }
 
         Image {

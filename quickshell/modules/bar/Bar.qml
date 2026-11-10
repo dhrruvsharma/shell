@@ -22,6 +22,11 @@ import qs.services as Services
 //
 // The bar's outermost two pixels don't take the mouse, so the hover strips
 // on the screen's edges (shell.qml) still work where the bar lies over them.
+//
+// As one strip (services/StripShape) its surface reaches a little past the
+// strip (`overhang`), for the fillets that turn its ends down into the
+// screen's sides and its inner edge down into the panels coming out of it;
+// only the strip takes the mouse.
 Scope {
     id: root
 
@@ -31,6 +36,7 @@ Scope {
     readonly property string edge: Services.BarLayout.edge
     readonly property bool vertical: Services.BarLayout.vertical
     readonly property int size: Services.BarLayout.size
+    readonly property int overhang: Services.StripShape.overhang
 
     PanelWindow {
         id: zone
@@ -92,8 +98,8 @@ Scope {
             left: bar.held || root.edge !== "right"
             right: bar.held || root.edge !== "left"
         }
-        implicitWidth: root.size
-        implicitHeight: root.size
+        implicitWidth: root.size + root.overhang
+        implicitHeight: root.size + root.overhang
 
         // The strip, less its outer two pixels (the edge strips' line), and
         // nothing while the workspace disc is dragged past it. While held,
@@ -103,10 +109,10 @@ Scope {
 
         Region {
             id: stripMask
-            x: root.edge === "left" ? 2 : 0
-            y: root.edge === "top" ? 2 : 0
-            width: Services.WorkspaceDiscService.moving ? 0 : bar.width - (root.vertical ? 2 : 0)
-            height: bar.height - (root.vertical ? 0 : 2)
+            x: root.edge === "left" ? 2 : root.edge === "right" ? root.overhang : 0
+            y: root.edge === "top" ? 2 : root.edge === "bottom" ? root.overhang : 0
+            width: Services.WorkspaceDiscService.moving ? 0 : root.vertical ? root.size - 2 : bar.width
+            height: root.vertical ? bar.height : root.size - 2
         }
 
         // The nearest edge to a point on the screen: the screen split along
@@ -139,12 +145,13 @@ Scope {
                 onHoveredChanged: if (!hovered && bar.held && bar.full) bar.release()
             }
 
-            // The bar's strip: at the surface's corner normally, at its own
-            // place on the screen while the surface covers it.
+            // The bar's strip: against the screen's edge of the surface
+            // normally (past the overhang, on the bottom and right edges),
+            // at its own place on the screen while the surface covers it.
             Item {
                 id: strip
-                x: bar.full ? bar.stripX : 0
-                y: bar.full ? bar.stripY : 0
+                x: bar.full ? bar.stripX : root.edge === "right" ? root.overhang : 0
+                y: bar.full ? bar.stripY : root.edge === "bottom" ? root.overhang : 0
                 width: root.vertical ? root.size : bar.screenW
                 height: root.vertical ? bar.screenH : root.size
 

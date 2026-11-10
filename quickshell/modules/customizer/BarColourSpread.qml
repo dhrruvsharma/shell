@@ -3,7 +3,8 @@ import QtQuick
 import qs.colors
 import qs.services as Services
 
-// The bar, § 2: the colour of its containers and of their text (a tone of
+// The bar, § 2: its form (a pill for each widget, or one strip the length
+// of the bar), the colour of its containers and of their text (a tone of
 // the wallpaper's scheme, or one picked by hand), their transparency and
 // an outline, with how well the text reads on them.
 Spread {
@@ -20,7 +21,8 @@ Spread {
         opening: false
         section: "Colour and finish"
         figure: "Fig. 3."
-        caption: "The bar in the colours set opposite; below, its containers over a chequer, to show how clear they are."
+        caption: spread.bs.strip ? "The bar as one strip, in the colours set opposite; below, the strip over a chequer, to show how clear it is."
+            : "The bar in the colours set opposite; below, its containers over a chequer, to show how clear they are."
 
         Item {
             anchors.fill: parent
@@ -67,14 +69,25 @@ Spread {
                     }
                 }
 
+                // A container, or as one strip a stretch of the band, edge
+                // to edge.
                 Rectangle {
                     anchors.centerIn: parent
-                    width: Math.min(parent.width - 60, 420)
+                    width: spread.bs.strip ? parent.width : Math.min(parent.width - 60, 420)
                     height: 74
-                    radius: Services.DesktopTheme.radius(Services.DesktopTheme.look, 37, 74)
+                    radius: spread.bs.strip ? 0 : Services.DesktopTheme.radius(Services.DesktopTheme.look, 37, 74)
                     color: spread.bs.pill
-                    border.width: spread.bs.outline ? 2 : 0
+                    border.width: spread.bs.outline && !spread.bs.strip ? 2 : 0
                     border.color: spread.bs.outlineColor
+
+                    // The strip's inner edge, with its hairline.
+                    Rectangle {
+                        visible: spread.bs.strip
+                        anchors.bottom: parent.bottom
+                        width: parent.width
+                        height: 2
+                        color: Services.DesktopTheme.look.border ? Services.DesktopTheme.borderColor(Services.DesktopTheme.look) : spread.bs.outline ? spread.bs.outlineColor : "transparent"
+                    }
 
                     Text {
                         anchors.centerIn: parent
@@ -91,8 +104,22 @@ Spread {
     Leaf {
         kicker: "§ 2"
         title: "Colour and finish"
-        intro: "The containers' colour and their text's: a tone of the wallpaper's own scheme, which follows it when it changes, or a colour of your own. Transparency fades the containers, never the text."
+        intro: "The bar's form, and its containers' colour and their text's: a tone of the wallpaper's own scheme, which follows it when it changes, or a colour of your own. Transparency fades the containers, never the text."
         spacing: 20
+
+        Entry {
+            width: parent.width
+            key: "form"
+            label: "Its form"
+            note: spread.bs.strip ? "One strip the length of the bar, flush to its edge, in the theme's trim; the widgets lie flat along it."
+                : "Each widget in a pill of its own, a group of them in a tray."
+
+            InkChoice {
+                options: spread.bs.styles.map(s => ({ id: s.id, label: s.name }))
+                current: spread.bs.style
+                onChosen: id => spread.bs.setStyle(id)
+            }
+        }
 
         Entry {
             width: parent.width
@@ -235,7 +262,8 @@ Spread {
             width: parent.width
             key: "outline"
             label: "An outline"
-            note: "A hairline in the text's colour round each container (a theme with a border of its own keeps that)."
+            note: spread.bs.strip ? "A hairline in the text's colour along the strip's inner edge (a theme with a border of its own keeps that)."
+                : "A hairline in the text's colour round each container (a theme with a border of its own keeps that)."
 
             InkSwitch {
                 checked: spread.bs.outline

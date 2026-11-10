@@ -88,12 +88,15 @@ Item {
                     Rectangle {
                         required property int index
                         readonly property real at: [0.06, 0.13, 0.2, 0.36, 0.72, 0.8, 0.88][index]
-                        x: Services.BarLayout.vertical ? 2 : fig.sw * at
-                        y: Services.BarLayout.vertical ? fig.sh * at : 2
-                        width: Services.BarLayout.vertical ? fig.barT - 4 : (index === 3 ? 30 : 18)
-                        height: Services.BarLayout.vertical ? (index === 3 ? 30 : 18) : fig.barT - 4
-                        radius: 3
-                        color: index === 3 && fig.pointing === "bar" ? BookStyle.accent : Services.BarSettings.pill
+                        readonly property bool lit: index === 3 && fig.pointing === "bar"
+                        // A pill, or as one strip a line of text on it.
+                        readonly property real across: Services.BarSettings.strip && !lit ? 3 : fig.barT - 4
+                        x: Services.BarLayout.vertical ? (fig.barT - across) / 2 : fig.sw * at
+                        y: Services.BarLayout.vertical ? fig.sh * at : (fig.barT - across) / 2
+                        width: Services.BarLayout.vertical ? across : (index === 3 ? 30 : 18)
+                        height: Services.BarLayout.vertical ? (index === 3 ? 30 : 18) : across
+                        radius: Services.BarSettings.strip && !lit ? across / 2 : 3
+                        color: lit ? BookStyle.accent : Services.BarSettings.strip ? Colors.withAlpha(Services.BarSettings.ink, 0.6) : Services.BarSettings.pill
                     }
                 }
             }

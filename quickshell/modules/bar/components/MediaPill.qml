@@ -5,6 +5,7 @@ import Quickshell
 import qs.services
 import qs.colors
 import qs.components
+import qs.Core
 
 Item {
     id: root
@@ -52,6 +53,9 @@ Item {
             readonly property bool crenel: look.shape === "crenel"
             readonly property bool posture: look.shape === "posture"
             readonly property bool framed: hud || neon || deco || cusp || crenel || posture
+            // On the bar as one strip it lies flat on the band, washed with
+            // its text's colour under the pointer, as the widgets are.
+            readonly property bool strip: BarSettings.strip
             radius: DesktopTheme.radius(look, height / 2, height)
             topLeftRadius: DesktopTheme.corner(look, radius, 0)
             topRightRadius: DesktopTheme.corner(look, radius, 1)
@@ -59,9 +63,16 @@ Item {
             bottomLeftRadius: DesktopTheme.corner(look, radius, 3)
             // Its colours are the bar settings' (services/BarSettings), as
             // the widgets' are.
-            border.width: framed || look.shape === "print" ? 0 : look.border || (BarSettings.outline ? 1 : 0)
+            border.width: strip || framed || look.shape === "print" ? 0 : look.border || (BarSettings.outline ? 1 : 0)
             border.color: look.border ? DesktopTheme.borderColor(look) : BarSettings.outlineColor
-            color: framed ? "transparent" : BarSettings.capsule
+            color: strip ? (mouseArea.containsMouse ? BarSettings.wash : Colors.withAlpha(BarSettings.wash, 0)) : framed ? "transparent" : BarSettings.capsule
+
+            Behavior on color {
+                enabled: pill.strip
+                ColorAnimation {
+                    duration: 140
+                }
+            }
 
             clip: true
 
@@ -69,6 +80,7 @@ Item {
             // were half a dozen shapes re-traced as the title changed width.
             Loader {
                 anchors.fill: parent
+                active: !pill.strip
                 sourceComponent: ({
                     chamfer: hudCapsule,
                     neon: neonCapsule,
@@ -247,9 +259,20 @@ Item {
                 spacing: 8
                 z: 1
 
+                // On the strip, a note before the title in the glyph colour,
+                // as the widgets have their glyphs.
+                StyledText {
+                    id: note
+                    visible: pill.strip
+                    text: Icons.music
+                    color: BarSettings.glyph
+                    font.pixelSize: 16
+                    Layout.alignment: Qt.AlignVCenter
+                }
+
                 MarqueeText {
                     Layout.fillWidth: true
-                    Layout.preferredWidth: root.maxWidth - 20
+                    Layout.preferredWidth: root.maxWidth - 20 - (note.visible ? note.implicitWidth + row.spacing : 0)
                     Layout.preferredHeight: implicitHeight
                     text: media.artist
                         ? media.title + " — " + media.artist

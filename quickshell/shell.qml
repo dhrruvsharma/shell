@@ -1400,6 +1400,7 @@ ShellRoot {
     }
 
     // The bar's chapter of the book (SUPER+B), and its settings for scripts:
+    // setStyle pills or strip (toggleStyle: the other one; style: which);
     // toggleWidget takes one of cpu, memory, temp, battery, clock, network,
     // bluetooth, volume, updates, settings, media, tray, pet; setColor a
     // "#rrggbb" ("" for the wallpaper's); setTransparency 0 (solid) to 100;
@@ -1416,6 +1417,15 @@ ShellRoot {
         function close(): void {
             if (customizerLoader.item?.visible)
                 customizerLoader.item.close()
+        }
+        function setStyle(style: string): void {
+            Services.BarSettings.setStyle(style)
+        }
+        function toggleStyle(): void {
+            Services.BarSettings.toggleStyle()
+        }
+        function style(): string {
+            return Services.BarSettings.style
         }
         function toggleWidget(id: string): void {
             Services.BarSettings.toggle(id)

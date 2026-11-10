@@ -13,6 +13,9 @@ Item {
 
     property alias text: label.text
     property alias font: label.font
+    // Plain, or StyledText for a line with a part in a colour of its own
+    // (the bar's glyphs on the strip).
+    property alias textFormat: label.textFormat
     property color color: Colors.on_surface
     property string mode: "hover"
     property bool hovered: false
@@ -44,6 +47,7 @@ Item {
 
         StyledText {
             id: label
+            textFormat: Text.PlainText
             x: root.overflowing ? 0 : root.alignment === Qt.AlignLeft ? 0 : root.alignment === Qt.AlignRight ? root.width - implicitWidth : (root.width - implicitWidth) / 2
             // Cut to the room it has while it rests there.
             width: root.overflowing && !root.moving ? root.width : implicitWidth
@@ -57,6 +61,7 @@ Item {
             active: root.moving
             sourceComponent: StyledText {
                 text: label.text
+                textFormat: label.textFormat
                 font: label.font
                 color: root.color
             }

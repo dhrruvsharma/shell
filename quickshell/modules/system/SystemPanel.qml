@@ -26,8 +26,15 @@ Item {
     readonly property real barPad: Services.BarLayout.size + 14
     readonly property real outerPad: 28
     readonly property real endPad: popout.radius + 14
+    // Out of the bar as one strip, lying, it's laid out from the strip:
+    // its content as far clear of the strip as of its own far edge, so
+    // nothing runs under the strip whichever edge it's on.
+    readonly property bool joinedLying: popout.joined && !vertical
+    readonly property real stripPad: Services.BarLayout.size + 16
+    readonly property real farPad: 16
     implicitWidth: vertical ? (barPad + content.implicitWidth + outerPad) * unfold : 550
-    implicitHeight: vertical ? content.implicitHeight + 2 * endPad : 200 * unfold
+    implicitHeight: vertical ? content.implicitHeight + 2 * endPad
+        : (joinedLying ? stripPad + content.implicitHeight + farPad : 200) * unfold
     visible: opened || unfold > 0
 
     Behavior on unfold {
@@ -67,10 +74,15 @@ Item {
             id: popout
             anchors.fill: parent
             alignment: Services.BarLayout.middleAlignment
+            fromBar: "system"
             leftPadding: !systemPanel.vertical ? radius : Services.BarLayout.atLeft ? systemPanel.barPad : systemPanel.outerPad
             rightPadding: !systemPanel.vertical ? radius : Services.BarLayout.atRight ? systemPanel.barPad : systemPanel.outerPad
-            topPadding: systemPanel.vertical ? systemPanel.endPad : radius
-            bottomPadding: systemPanel.vertical ? systemPanel.endPad : radius
+            topPadding: systemPanel.vertical ? systemPanel.endPad
+                : !systemPanel.joinedLying ? radius
+                : Services.BarLayout.atBottom ? systemPanel.farPad : systemPanel.stripPad
+            bottomPadding: systemPanel.vertical ? systemPanel.endPad
+                : !systemPanel.joinedLying ? radius
+                : Services.BarLayout.atBottom ? systemPanel.stripPad : systemPanel.farPad
 
             Column {
                 id: content

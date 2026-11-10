@@ -111,6 +111,31 @@ Item {
         transformOrigin: Item.TopLeft
         y: (root.height - height * track.s) / 2
 
+        // As one strip, the band (components/StripBand), lying as on a top
+        // bar (or a bottom one); a stretch of it runs on past the plate's
+        // edge where the bar goes on, so only its own ends show.
+        Item {
+            anchors.fill: parent
+            visible: Services.BarSettings.strip
+            clip: true
+
+            Loader {
+                id: band
+
+                readonly property real past: 80
+
+                x: root.part === "middle" || root.part === "right" ? -band.past : 0
+                width: parent.width + (root.part === "middle" ? 2 * band.past : root.part === "all" ? 0 : band.past)
+                height: parent.height
+                active: Services.BarSettings.strip
+                sourceComponent: StripBand {
+                    edge: Services.BarLayout.atBottom ? "bottom" : "top"
+                    // A picture of it: no panels out of it.
+                    joins: []
+                }
+            }
+        }
+
         Row {
             id: leftRow
             x: root.part === "left" ? (track.width - width) / 2 : 16
@@ -123,7 +148,9 @@ Item {
 
                 MapIsland {
                     required property var modelData
+                    required property int index
                     ids: modelData
+                    first: index === 0
                 }
             }
         }
@@ -143,8 +170,8 @@ Item {
             Rectangle {
                 anchors.fill: parent
                 radius: capsule.ghostRadius
-                color: Services.BarSettings.capsule
-                border.width: Services.DesktopTheme.look.border || (Services.BarSettings.outline ? 1 : 0)
+                color: Services.BarSettings.strip ? "transparent" : Services.BarSettings.capsule
+                border.width: Services.BarSettings.strip ? 0 : Services.DesktopTheme.look.border || (Services.BarSettings.outline ? 1 : 0)
                 border.color: Services.DesktopTheme.look.border ? Services.DesktopTheme.borderColor(Services.DesktopTheme.look) : Services.BarSettings.outlineColor
                 clip: true
 
@@ -174,7 +201,9 @@ Item {
 
                 MapIsland {
                     required property var modelData
+                    required property int index
                     ids: modelData
+                    first: index === 0
                 }
             }
 
@@ -186,11 +215,18 @@ Item {
                 height: 26
                 ghostRadius: 13
 
+                // As one strip, the mark before it.
+                StripDivider {
+                    visible: Services.BarSettings.strip && Services.BarLayout.right.length > 0
+                    x: -4
+                    y: 13
+                }
+
                 Rectangle {
                     anchors.fill: parent
                     radius: 13
-                    color: Services.BarSettings.capsule
-                    border.width: 1
+                    color: Services.BarSettings.strip ? "transparent" : Services.BarSettings.capsule
+                    border.width: Services.BarSettings.strip ? 0 : 1
                     border.color: Colors.outline_variant
 
                     Text {
@@ -206,23 +242,32 @@ Item {
     }
 
     // An island of the bar, as the bar groups it: in a tray when two or more
-    // of its widgets show. Hidden ones sit in it as ghosts.
+    // of its widgets show, or as one strip, flat with a mark before it (but
+    // the first). Hidden ones sit in it as ghosts.
     component MapIsland: Rectangle {
         id: island
 
         required property var ids
+        property bool first: false
+        readonly property bool strip: Services.BarSettings.strip
         readonly property int shownCount: island.ids.filter(id => Services.BarSettings.shown(id)).length
         readonly property bool grouped: island.shownCount > 1
-        readonly property real pad: island.grouped ? 5 : 0
+        readonly property real pad: island.grouped && !island.strip ? 5 : 0
         readonly property var look: Services.DesktopTheme.look
 
         anchors.verticalCenter: parent ? parent.verticalCenter : undefined
         width: atoms.width + 2 * island.pad
         height: 34
         radius: Services.DesktopTheme.radius(island.look, 16, Math.min(width, height))
-        color: island.grouped ? Services.BarSettings.group : "transparent"
-        border.width: island.grouped && island.look.shape !== "print" ? (island.look.border || (Services.BarSettings.outline ? 1 : 0)) : 0
+        color: island.grouped && !island.strip ? Services.BarSettings.group : "transparent"
+        border.width: island.grouped && !island.strip && island.look.shape !== "print" ? (island.look.border || (Services.BarSettings.outline ? 1 : 0)) : 0
         border.color: island.look.border ? Services.DesktopTheme.borderColor(island.look) : Services.BarSettings.outlineColor
+
+        StripDivider {
+            visible: island.strip && !island.first
+            x: -4
+            y: island.height / 2
+        }
 
         Row {
             id: atoms

@@ -11,6 +11,9 @@ import Quickshell.Io
 Item {
     id: mediaControl
     property bool opened: true
+    // In a drawer of the bar's strip (MediaPanel): the drawer is its
+    // surface, so it draws none of its own.
+    property bool flat: false
 
     width: 400
     height: 120
@@ -34,7 +37,7 @@ Item {
     Rectangle {
         anchors.fill: parent
         radius: Services.DesktopTheme.rad(20)
-        color: Colors.background
+        color: mediaControl.flat ? "transparent" : Colors.background
 
         ColumnLayout {
             anchors.fill: parent

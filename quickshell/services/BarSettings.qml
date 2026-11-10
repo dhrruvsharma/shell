@@ -6,9 +6,11 @@ import QtQuick
 import qs.colors
 
 // The bar's own settings (its chapter in the customizer's book, SUPER+B or
-// the gear on the bar): which of its widgets show, the colour, transparency
-// and outline of their containers, and how wide each is. Where the widgets
-// sit is BarLayout's; the pet's showing is the pet's own (Pet.shown).
+// the gear on the bar): which of its widgets show, its form (a pill for
+// each widget, or one strip the length of the bar), the colour,
+// transparency and outline of their containers, and how wide each is.
+// Where the widgets sit is BarLayout's; the pet's showing is the pet's own
+// (Pet.shown).
 //
 // Colours come from the wallpaper (a tone of matugen's scheme, "default"
 // being the bar's usual surfaces) or are picked by hand; the text follows
@@ -79,6 +81,30 @@ Singleton {
 
     readonly property int shownCount: root.widgets.filter(w => root.shown(w.id)).length
 
+    // ── Form ─────────────────────────────────────────────────────────────────
+    // "pills": each widget in a container of its own over the wallpaper, a
+    // group of them in a tray. "strip": the bar and the panels that hang
+    // from it one surface: a band of the containers' colour flush to its
+    // edge, the widgets laid flat along it with a mark between islands,
+    // and the panels drawers of it, joined to it through the desktop
+    // theme's fillets (services/StripShape; components/StripBand,
+    // StripDrawer, StripDivider).
+    readonly property var styles: [
+        { id: "pills", name: "Pills" },
+        { id: "strip", name: "One strip" }
+    ]
+    readonly property string style: adapter.style === "strip" ? "strip" : "pills"
+    readonly property bool strip: root.style === "strip"
+
+    function setStyle(s) {
+        if (root.styles.some(x => x.id === s) && adapter.style !== s)
+            adapter.style = s;
+    }
+
+    function toggleStyle() {
+        root.setStyle(root.strip ? "pills" : "strip");
+    }
+
     // ── Colours ──────────────────────────────────────────────────────────────
 
     // The wallpaper's tones for the containers: a fill and the text that
@@ -133,6 +159,22 @@ Singleton {
     readonly property color group: Colors.withAlpha(!root.customFill && root.tone.group ? root.tone.group : Qt.tint(root.fill, Colors.withAlpha(root.autoInk, 0.08)), root.fillOpacity)
     readonly property color capsule: Colors.withAlpha(!root.customFill && root.tone.capsule ? root.tone.capsule : root.fill, root.fillOpacity)
     readonly property color outlineColor: Colors.withAlpha(root.ink, 0.3)
+    // As a strip: the band (the containers' colour), and what a widget's
+    // own container is on it: nothing, though still the band's colour, so
+    // one lit up (the clock while the calendar is open) fades in cleanly.
+    readonly property color band: root.pill
+    readonly property color atom: root.strip ? Colors.withAlpha(root.fill, 0) : root.pill
+    // On the strip: under the pointer, a widget that does something is
+    // washed with its text's colour; a faint mark of it parts the islands.
+    readonly property color wash: Colors.withAlpha(root.ink, 0.1)
+    readonly property color divider: Colors.withAlpha(root.ink, 0.24)
+    // On the strip, a widget's glyph (its icon, before its value) is the
+    // desktop theme's accent, or the wallpaper's primary, whichever reads
+    // on it, else the text a little quieter; a widget lit (its panel open)
+    // is washed with it.
+    readonly property color glyph: root.contrast(DesktopTheme.accent, root.fill) >= 3 ? DesktopTheme.accent
+        : root.contrast(Colors.primary, root.fill) >= 3 ? Colors.primary : Qt.tint(root.fill, Colors.withAlpha(root.ink, 0.7))
+    readonly property color lit: Colors.withAlpha(root.glyph, 0.22)
     // An accent that still reads on the containers (the updates count), or
     // the text when the wallpaper's primary doesn't.
     readonly property color highlight: root.contrast(Colors.primary, root.fill) >= 2.6 ? Colors.primary : root.ink
@@ -239,9 +281,11 @@ Singleton {
         adapter.outline = on;
     }
 
-    // The bar's usual look (which widgets show is left as it is). The
-    // colours picked by hand are kept for the next visit to the picker.
+    // The bar's usual look: pills, in the default tone (which widgets show
+    // is left as it is). The colours picked by hand are kept for the next
+    // visit to the picker.
     function resetLook() {
+        adapter.style = "pills";
         adapter.colorMode = "wallpaper";
         adapter.tone = "default";
         adapter.textMode = "wallpaper";
@@ -250,7 +294,7 @@ Singleton {
         adapter.outline = false;
     }
 
-    readonly property bool lookIsDefault: adapter.colorMode === "wallpaper" && adapter.tone === "default"
+    readonly property bool lookIsDefault: !root.strip && adapter.colorMode === "wallpaper" && adapter.tone === "default"
         && adapter.textMode === "wallpaper" && adapter.textTone === "auto" && root.transparency === 0 && !adapter.outline
 
     // ── Widths ───────────────────────────────────────────────────────────────
@@ -352,6 +396,7 @@ Singleton {
         adapter: JsonAdapter {
             id: adapter
             property var hidden: []
+            property string style: "pills"
             property string colorMode: "wallpaper"
             property string tone: "default"
             property string customColor: ""

@@ -12,7 +12,16 @@ import qs.services as Services
 // (rather than going through to what's under it), and so does Esc. A
 // submenu opens in its place, with Back at its top; each level keeps an
 // opener of its own (pointing one opener at a submenu lets go of the menu
-// the submenu belongs to, entries and all).
+// the submenu belongs to, entries and all). Entries show their icon, a
+// check or a dot when they're ticked, an arrow when they open a submenu,
+// and are dimmed while the app has them disabled.
+//
+// With the bar as one strip (services/StripShape) it's a drawer of the
+// strip like the bar's panels: against it, of its colour, unrolling out of
+// it, joined to it through the theme's fillets with the strip's hairline
+// on round it (components/StripDrawer), in the strip's own text, accent
+// and wash; too near an end of the bar (the tray's usually at the end) it
+// goes into the corner there, joined to the screen's side as well.
 PanelWindow {
     id: root
 
@@ -25,6 +34,12 @@ PanelWindow {
     property bool hasCurrent: false
     property int animLength: 400
     property var animCurve: [0.05, 0, 0.133, 0.06, 0.166, 0.4, 0.208, 0.82, 0.25, 1, 1, 1]
+
+    // A drawer of the strip, and its colours there.
+    readonly property bool joined: Services.StripShape.active
+    readonly property color ink: root.joined ? Services.BarSettings.ink : Colors.on_surface
+    readonly property color quiet: root.joined ? Colors.withAlpha(Services.BarSettings.ink, 0.62) : Colors.on_surface_variant
+    readonly property color accent: root.joined ? Services.BarSettings.glyph : Colors.primary
 
     function open(handle, pos) {
         chain = [handle];
@@ -105,38 +120,66 @@ PanelWindow {
                 root.close();
         }
 
+        readonly property real menuWidth: 240
         readonly property real contentHeight: menuColumn.implicitHeight + 16
         readonly property string edge: Services.BarLayout.edge
         readonly property bool vertical: Services.BarLayout.vertical
         // How far it has unrolled out of the bar, 0 to 1.
         property real unroll: root.hasCurrent ? 1 : 0
 
+        // As a drawer: where it'd start along the bar, centred on the icon,
+        // and so whether it goes into a corner ("start", "end" or ""),
+        // keeping room past the menu there for the fillet into the
+        // screen's side.
+        readonly property real length: wrapper.vertical ? wrapper.contentHeight : wrapper.menuWidth
+        readonly property real centred: Math.round(root.menuPos - wrapper.length / 2)
+        readonly property real barLength: wrapper.vertical ? root.height : root.width
+        readonly property string corner: !root.joined ? ""
+            : wrapper.centred + wrapper.length > wrapper.barLength - Services.StripShape.cornerRoom ? "end"
+            : wrapper.centred < Services.StripShape.cornerRoom ? "start" : ""
+        readonly property real foot: wrapper.corner !== "" ? Services.StripShape.style.r : 0
+        readonly property real along: wrapper.corner === "start" ? 0 : wrapper.corner === "end" ? wrapper.barLength - wrapper.length : wrapper.centred
+
         // It comes out of the bar by the tray (the surface stops at the
         // bar's exclusive zone): down from a top bar, up from a bottom one,
         // sideways from a standing one, its corners square where it meets
-        // the bar.
-        x: !vertical ? Math.max(8, Math.min(root.width - 248, root.menuPos - 120))
+        // the bar (a hair clear of it), or as a drawer, against the strip.
+        x: root.joined ? (!vertical ? along : edge === "left" ? 0 : root.width - width)
+            : !vertical ? Math.max(8, Math.min(root.width - menuWidth - 8, root.menuPos - menuWidth / 2))
             : edge === "left" ? 2 : root.width - width - 2
-        y: vertical ? Math.max(8, Math.min(root.height - contentHeight - 8, root.menuPos - contentHeight / 2))
+        y: root.joined ? (vertical ? along : edge === "bottom" ? root.height - height : 0)
+            : vertical ? Math.max(8, Math.min(root.height - contentHeight - 8, root.menuPos - contentHeight / 2))
             : edge === "bottom" ? root.height - height - 2 : 2
-        width: vertical ? 240 * unroll : 240
-        height: vertical ? contentHeight : contentHeight * unroll
+        width: vertical ? (menuWidth + foot) * unroll : menuWidth
+        height: vertical ? contentHeight : (contentHeight + foot) * unroll
         visible: unroll > 0
         clip: true
+
+        // Out of the strip: the drawer it's on.
+        StripDrawer {
+            visible: root.joined
+            key: "tray"
+            inset: 0
+            atStart: wrapper.corner === "start"
+            atEnd: wrapper.corner === "end"
+            foot: wrapper.foot
+        }
 
         Rectangle {
             id: menuBg
 
-            // Sideways, the menu keeps its size and is wiped in from the bar.
+            // Sideways, the menu keeps its size and is wiped in from the
+            // bar; as a drawer it keeps it either way, against the strip.
             x: wrapper.edge === "right" ? wrapper.width - width : 0
-            width: wrapper.vertical ? 240 : wrapper.width
-            height: wrapper.vertical ? wrapper.contentHeight : wrapper.height
-            color: Colors.surface_container  // was: Colors.on_surface
+            y: root.joined && wrapper.edge === "bottom" ? wrapper.height - height : 0
+            width: wrapper.menuWidth
+            height: wrapper.vertical || root.joined ? wrapper.contentHeight : wrapper.height
+            color: root.joined ? "transparent" : Colors.surface_container
             clip: true
-            topLeftRadius: wrapper.edge === "top" || wrapper.edge === "left" ? 0 : 14
-            topRightRadius: wrapper.edge === "top" || wrapper.edge === "right" ? 0 : 14
-            bottomLeftRadius: wrapper.edge === "bottom" || wrapper.edge === "left" ? 0 : 14
-            bottomRightRadius: wrapper.edge === "bottom" || wrapper.edge === "right" ? 0 : 14
+            topLeftRadius: root.joined || wrapper.edge === "top" || wrapper.edge === "left" ? 0 : 14
+            topRightRadius: root.joined || wrapper.edge === "top" || wrapper.edge === "right" ? 0 : 14
+            bottomLeftRadius: root.joined || wrapper.edge === "bottom" || wrapper.edge === "left" ? 0 : 14
+            bottomRightRadius: root.joined || wrapper.edge === "bottom" || wrapper.edge === "right" ? 0 : 14
 
             Rectangle {
                 id: highlight
@@ -148,9 +191,9 @@ PanelWindow {
                 y: menuColumn.y + targetY
                 width: parent.width - 16
                 height: 36
-                radius: 8
-                color: Colors.secondary  // was: Colors.secondary
-                opacity: active ? 0.15 : 0
+                radius: root.joined ? Services.DesktopTheme.rad(8) : 8
+                color: root.joined ? Services.BarSettings.ink : Colors.secondary
+                opacity: active ? (root.joined ? 0.1 : 0.15) : 0
 
                 Behavior on y {
                     NumberAnimation {
@@ -201,13 +244,13 @@ PanelWindow {
                             text: ""
                             font.family: "Symbols Nerd Font"
                             font.pixelSize: 12
-                            color: Colors.primary
+                            color: root.accent
                         }
 
                         StyledText {
                             Layout.fillWidth: true
                             text: "Back"
-                            color: backMouse.containsMouse ? Colors.on_surface : Colors.on_surface_variant
+                            color: backMouse.containsMouse ? root.ink : root.quiet
                             font.pixelSize: 13
                             font.bold: true
                             verticalAlignment: Text.AlignVCenter
@@ -236,24 +279,31 @@ PanelWindow {
 
                         property bool isSeparator: modelData.isSeparator
                         property bool hasChildren: modelData.hasChildren
+                        readonly property bool usable: !isSeparator && modelData.enabled
+                        readonly property bool lit: usable && highlight.active && highlight.targetY === menuItem.y
+                        readonly property bool hasIcon: modelData.icon !== undefined && modelData.icon !== ""
+                        // Ticked: a check box's check, a radio button's dot.
+                        readonly property bool ticked: modelData.buttonType !== QsMenuButtonType.None && modelData.checkState === Qt.Checked
 
                         width: menuColumn.width
                         height: isSeparator ? 12 : 36
+                        opacity: isSeparator || modelData.enabled ? 1 : 0.45
 
                         Divider {
                             visible: isSeparator
                             anchors.centerIn: parent
                             width: parent.width - 16
-                            color: Colors.outline_variant  // was: colors.border
-                            opacity: 0.5
+                            color: root.joined && Services.StripShape.lined ? Services.StripShape.line
+                                : root.joined ? Colors.withAlpha(Services.BarSettings.ink, 0.14) : Colors.outline_variant
+                            opacity: root.joined ? 1 : 0.5
                         }
 
                         Rectangle {
-                            visible: !isSeparator && highlight.active && highlight.targetY === menuItem.y
+                            visible: menuItem.lit
                             width: 3
                             height: 16
                             radius: 2
-                            color: Colors.primary  // was: colors.accent
+                            color: root.accent
                             anchors.left: parent.left
                             anchors.leftMargin: 4
                             anchors.verticalCenter: parent.verticalCenter
@@ -277,40 +327,32 @@ PanelWindow {
                                     source: modelData.icon || ""
                                     sourceSize: Qt.size(32, 32)
                                     fillMode: Image.PreserveAspectFit
-                                    visible: modelData.icon !== undefined && modelData.icon !== ""
+                                    visible: menuItem.hasIcon
                                     layer.enabled: true
 
                                     layer.effect: ColorOverlay {
-                                        color: (highlight.active && highlight.targetY === menuItem.y)
-                                            ? Colors.primary           // was: colors.accent
-                                            : Colors.on_surface_variant // was: colors.muted
+                                        color: menuItem.lit ? root.accent : root.quiet
                                     }
 
                                 }
 
-                                StyledText {
+                                // No icon: a radio button's ring, or nothing.
+                                Rectangle {
                                     anchors.centerIn: parent
-                                    visible: !(modelData.icon !== undefined && modelData.icon !== "")
-                                    text: ""
-                                    font.family: "Symbols Nerd Font"
-                                    font.pixelSize: 6
-                                    color: (highlight.active && highlight.targetY === menuItem.y)
-                                        ? Colors.on_surface          // was: Colors.on_surface
-                                        : Colors.on_surface_variant  // was: colors.muted
+                                    visible: !menuItem.hasIcon && modelData.buttonType === QsMenuButtonType.RadioButton
+                                    width: 10
+                                    height: 10
+                                    radius: 5
+                                    color: menuItem.ticked ? root.accent : "transparent"
+                                    border.width: 1.5
+                                    border.color: menuItem.ticked ? root.accent : root.quiet
                                 }
 
                             }
 
                             StyledText {
                                 text: modelData.text || ""
-                                color: (highlight.active && highlight.targetY === menuItem.y)
-                                    ? Colors.on_surface  // was: colors.fg
-                                    : Qt.rgba(
-                                        Qt.color(Colors.on_surface).r,
-                                        Qt.color(Colors.on_surface).g,
-                                        Qt.color(Colors.on_surface).b,
-                                        0.8
-                                    )                        // was: Qt.rgba(colors.fg.r/g/b, 0.8)
+                                color: menuItem.lit ? root.ink : Colors.withAlpha(root.ink, 0.8)
                                 Layout.fillWidth: true
                                 elide: Text.ElideRight
                                 font.pixelSize: 13
@@ -319,12 +361,15 @@ PanelWindow {
                                 verticalAlignment: Text.AlignVCenter
                             }
 
+                            // A submenu's arrow, or a check box's check (a
+                            // radio button with an icon shows its dot here).
                             StyledText {
-                                visible: (modelData.checkable && modelData.checked) || menuItem.hasChildren
-                                text: menuItem.hasChildren ? "" : ""
+                                readonly property bool check: menuItem.ticked && (modelData.buttonType === QsMenuButtonType.CheckBox || menuItem.hasIcon)
+                                visible: menuItem.hasChildren || check
+                                text: menuItem.hasChildren ? "" : modelData.buttonType === QsMenuButtonType.CheckBox ? "" : ""
                                 font.family: "Symbols Nerd Font"
-                                color: Colors.primary  // was: colors.accent
-                                font.pixelSize: 12
+                                color: root.accent
+                                font.pixelSize: menuItem.hasChildren || modelData.buttonType === QsMenuButtonType.CheckBox ? 12 : 7
                             }
 
                         }
@@ -334,22 +379,23 @@ PanelWindow {
 
                             anchors.fill: parent
                             hoverEnabled: true
-                            cursorShape: isSeparator ? Qt.ArrowCursor : Qt.PointingHandCursor
+                            cursorShape: menuItem.usable ? Qt.PointingHandCursor : Qt.ArrowCursor
                             onEntered: {
-                                if (!menuItem.isSeparator) {
+                                if (menuItem.usable) {
                                     highlight.targetY = menuItem.y;
                                     highlight.active = true;
                                 } else {
+                                    highlight.active = false;
                                 }
                             }
                             onClicked: {
-                                if (!menuItem.isSeparator) {
-                                    if (modelData.hasChildren) {
-                                        root.enter(modelData);
-                                    } else {
-                                        modelData.triggered();
-                                        root.close();
-                                    }
+                                if (!menuItem.usable)
+                                    return;
+                                if (modelData.hasChildren) {
+                                    root.enter(modelData);
+                                } else {
+                                    modelData.triggered();
+                                    root.close();
                                 }
                             }
                         }

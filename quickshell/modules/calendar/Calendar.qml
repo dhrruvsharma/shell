@@ -12,6 +12,9 @@ Item {
     property date selectedDate: new Date()   // day whose notes are shown
     property bool notesOpen: false
     property bool newNoteRecurring: false    // "repeat yearly" toggle for the next note
+    // Out of the bar as one strip (CalendarWindow): the drawer behind it is
+    // its surface, so its cards lie flat on it, the notes under a rule.
+    property bool flat: false
 
     readonly property int dispY: currentDate.getFullYear()
     readonly property int dispM: currentDate.getMonth()
@@ -70,14 +73,18 @@ Item {
         PanelDecor {
             radius: calCard.radius
             title: "calendar"
+            visible: !root.flat && Services.DesktopTheme.enabled && Services.DesktopTheme.look.shape !== "soft"
         }
         width: root.width
         y: 0
         height: col.height + 32
         radius: Services.DesktopTheme.rad(26)
+        color: root.flat ? "transparent" : Colors.surface_container
+        border.width: root.flat || Services.DesktopTheme.borderless ? 0 : 1
 
         Rectangle {
             anchors.fill: parent
+            visible: !root.flat
             radius: parent.radius
             color: "transparent"
             border.width: 1
@@ -269,17 +276,31 @@ Item {
 
             PanelDecor {
                 radius: notesBg.radius
+                visible: !root.flat && Services.DesktopTheme.enabled && Services.DesktopTheme.look.shape !== "soft"
             }
             width: parent.width
             height: notesCol.implicitHeight + 32
             radius: Services.DesktopTheme.rad(26)
+            color: root.flat ? "transparent" : Colors.surface_container
+            border.width: root.flat || Services.DesktopTheme.borderless ? 0 : 1
 
             Rectangle {
                 anchors.fill: parent
+                visible: !root.flat
                 radius: parent.radius
                 color: "transparent"
                 border.width: 1
                 border.color: Qt.rgba(1, 1, 1, 0.04)
+            }
+
+            // Flat on the drawer: a rule parts the notes from the month.
+            Rectangle {
+                visible: root.flat
+                x: 16
+                y: -6
+                width: parent.width - 32
+                height: 1
+                color: Services.StripShape.lined ? Services.StripShape.line : Colors.withAlpha(Services.BarSettings.ink, 0.12)
             }
 
             ColumnLayout {

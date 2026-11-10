@@ -17,8 +17,8 @@ BarPill {
     interactive: true
     cursorShape: Qt.PointingHandCursor
 
-    color: pill.active ? Colors.primary_container : Services.BarSettings.pill
-    textColor: pill.active ? Colors.on_primary_container : Services.BarSettings.ink
+    color: !pill.active ? Services.BarSettings.atom : pill.strip ? Services.BarSettings.lit : Colors.primary_container
+    textColor: pill.active && !pill.strip ? Colors.on_primary_container : Services.BarSettings.ink
 
     Behavior on color { ColorAnimation { duration: 180; easing.type: Easing.OutCubic } }
     Behavior on textColor { ColorAnimation { duration: 180; easing.type: Easing.OutCubic } }

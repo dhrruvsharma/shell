@@ -22,7 +22,10 @@ import qs.services as Services
 // Its colours are the bar settings' (services/BarSettings): the wallpaper's
 // container surface by default, or a tone or colour picked there, faded by
 // the transparency set there, with an outline round it when that's on and
-// the theme draws none of its own.
+// the theme draws none of its own. On the bar as one strip it has no
+// container of its own (the strip, components/StripBand, is the container
+// and wears the theme's trim): it lies flat on it, washed with its text's
+// colour under the pointer when it does something.
 //
 // Its width is its text's, or the width set for its widget (`barId`) in
 // the bar settings; `maxWidth` (0 = unbounded) caps the first, for the
@@ -43,7 +46,7 @@ import qs.services as Services
 Rectangle {
     id: root
 
-    property alias text: label.text
+    property string text: ""
     property color textColor: Services.BarSettings.ink
     property int fontPixelSize: 17
     property int horizontalPadding: 16
@@ -65,6 +68,16 @@ Rectangle {
         const i = t.indexOf(" ");
         return i < 0 ? [t, ""] : [t.slice(0, i), t.slice(i + 1).trim()];
     }
+    // On the strip, a text that starts with a glyph (a Nerd Font icon) has
+    // it in the glyph colour (BarSettings.glyph), unless the widget colours
+    // its text itself.
+    readonly property bool _glyphFirst: /^(?:[\uE000-\uF8FF]|[\uD800-\uDBFF][\uDC00-\uDFFF])$/.test(root._parts[0])
+    readonly property bool glyphTinted: root.strip && root._glyphFirst && Qt.colorEqual(root.textColor, Services.BarSettings.ink)
+    readonly property bool tintGlyph: root.glyphTinted && !root.vertical
+    function _esc(s) {
+        return s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/ /g, "&nbsp;");
+    }
+    readonly property string _tinted: "<font color=\"" + Services.BarSettings.hex(Services.BarSettings.glyph) + "\">" + root._esc(root._parts[0]) + "</font>" + root._esc(root.text.slice(root._parts[0].length))
     property string vIcon: root._parts[0]
     property string vLabel: root._parts[1]
     property int vIconSize: 15
@@ -80,6 +93,8 @@ Rectangle {
     property bool interactive: root.command !== null || root.opens !== ""
     property alias cursorShape: mouse.cursorShape
     readonly property var look: Services.DesktopTheme.look
+    // On the bar as one strip: no container, mask or trim of its own.
+    readonly property bool strip: Services.BarSettings.strip
     readonly property bool hud: look.shape === "chamfer"
     readonly property bool neon: look.shape === "neon"
     readonly property bool deco: look.shape === "deco"
@@ -87,7 +102,7 @@ Rectangle {
     readonly property bool crenel: look.shape === "crenel"
     readonly property bool posture: look.shape === "posture"
     // Shapes whose outline is a mask and a frame drawn over it.
-    readonly property bool masked: hud || neon || deco || cusp || crenel || posture
+    readonly property bool masked: (hud || neon || deco || cusp || crenel || posture) && !root.strip
 
     signal clicked
 
@@ -96,8 +111,8 @@ Rectangle {
     topRightRadius: Services.DesktopTheme.corner(root.look, radius, 1)
     bottomRightRadius: Services.DesktopTheme.corner(root.look, radius, 2)
     bottomLeftRadius: Services.DesktopTheme.corner(root.look, radius, 3)
-    color: Services.BarSettings.pill
-    border.width: root.neon || root.deco || root.cusp || root.crenel || root.posture || root.look.shape === "print" ? 0 : root.look.border || (Services.BarSettings.outline ? 1 : 0)
+    color: Services.BarSettings.atom
+    border.width: root.strip || root.neon || root.deco || root.cusp || root.crenel || root.posture || root.look.shape === "print" ? 0 : root.look.border || (Services.BarSettings.outline ? 1 : 0)
     border.color: root.look.border ? Services.DesktopTheme.borderColor(root.look) : Services.BarSettings.outlineColor
     layer.enabled: root.masked
     layer.effect: MultiEffect {
@@ -141,11 +156,32 @@ Rectangle {
         }
     }
 
+    // On the strip, under the pointer: washed in its text's colour, if it
+    // does something.
+    Rectangle {
+        anchors.fill: parent
+        visible: root.strip && root.interactive && !root.preview
+        radius: root.radius
+        topLeftRadius: root.topLeftRadius
+        topRightRadius: root.topRightRadius
+        bottomRightRadius: root.bottomRightRadius
+        bottomLeftRadius: root.bottomLeftRadius
+        color: hover.hovered ? Services.BarSettings.wash : Colors.withAlpha(Services.BarSettings.wash, 0)
+
+        Behavior on color {
+            ColorAnimation {
+                duration: 140
+            }
+        }
+    }
+
     MarqueeText {
         id: label
         anchors.centerIn: parent
         width: Math.max(0, root.width - root.horizontalPadding)
         visible: !root.vertical
+        text: root.tintGlyph ? root._tinted : root.text
+        textFormat: root.tintGlyph ? Text.StyledText : Text.PlainText
         color: root.textColor
         font.pixelSize: root.fontPixelSize + root.look.sizeDelta
         font.family: root.look.font || defaultFont.font.family
@@ -181,7 +217,8 @@ Rectangle {
                 text: root.vertical ? root.vIcon : ""
             }
             horizontalAlignment: Text.AlignHCenter
-            color: root.textColor
+            // Its glyph's own colour on the strip, as lying.
+            color: root.glyphTinted && root.vIcon === root._parts[0] ? Services.BarSettings.glyph : root.textColor
             font.pixelSize: root.vIconSize + root.look.sizeDelta
             font.family: root.look.font || defaultFont.font.family
             font.weight: root.look.weight
@@ -224,6 +261,7 @@ Rectangle {
 
     Loader {
         anchors.fill: parent
+        active: !root.strip
         sourceComponent: ({
             chamfer: hudTrim,
             neon: neonTrim,

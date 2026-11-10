@@ -22,6 +22,13 @@ Item {
     property real topPadding: root.radius
     property real bottomPadding: root.radius
 
+    // A panel hanging from the bar names itself here (its key in
+    // services/StripShape's joints): while the bar is one strip it comes out
+    // of it as a drawer of the strip's own colour, joined to it through the
+    // theme's fillets (components/StripDrawer), instead of a bubble or a box.
+    property string fromBar: ""
+    readonly property bool joined: root.fromBar !== "" && Services.StripShape.active
+
     default property alias content: contentWrapper.data
 
     // Keeps the content inside the bubble while it grows/shrinks. This used to
@@ -53,8 +60,23 @@ Item {
     readonly property bool _insetTop: [2, 6, 3, 5].includes(root.alignment)
     readonly property bool _insetBottom: [2, 6, 1, 7].includes(root.alignment)
 
+    // Out of the strip: its body between the room kept at the ends along
+    // the bar (where the strip's fillets go), and, in a corner, the room
+    // below it for the fillet into the screen's side.
+    Loader {
+        anchors.fill: parent
+        active: root.joined
+        sourceComponent: StripDrawer {
+            key: root.fromBar
+            atEnd: root.alignment % 2 === 1
+            start: root.radius
+            stop: root.alignment % 2 === 1 ? 0 : root.radius
+            foot: root.alignment % 2 === 1 ? root.radius : 0
+        }
+    }
+
     Rectangle {
-        visible: root.themed
+        visible: root.themed && !root.joined
         x: root._insetLeft ? root.radius : 0
         y: root._insetTop ? root.radius : 0
         width: root.width - x - (root._insetRight ? root.radius : 0)
@@ -70,7 +92,7 @@ Item {
     Loader {
         anchors.fill: parent
         asynchronous: true
-        visible: !root.themed
+        visible: !root.themed && !root.joined
 
         sourceComponent: {
             const shapes = [attachedTop, attachedTopRight, attachedRight, attachedBottomRight, attachedBottom, attachedBottomLeft, attachedLeft, attachedTopLeft];

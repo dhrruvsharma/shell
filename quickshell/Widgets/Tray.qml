@@ -41,10 +41,13 @@ GridLayout {
             Layout.preferredWidth: visible ? trayRoot.iconSize + 10 : 0
             Layout.preferredHeight: visible ? trayRoot.iconSize + 10 : 0
 
-            radius: 6
-            color: itemMouseArea.containsMouse
-                ? Colors.primary_container
-                : "transparent"
+            // Lit while its menu is out, and under the pointer: on the bar
+            // as one strip in the strip's wash, as its widgets are.
+            readonly property bool menuOpen: contextMenu.hasCurrent && contextMenu.chain.length > 0 && contextMenu.chain[0] === modelData.menu
+            radius: Services.BarSettings.strip ? Services.DesktopTheme.rad(6) : 6
+            color: !Services.BarSettings.strip ? (itemMouseArea.containsMouse || menuOpen ? Colors.primary_container : "transparent")
+                : menuOpen ? Services.BarSettings.lit
+                : itemMouseArea.containsMouse ? Services.BarSettings.wash : "transparent"
 
             Image {
                 id: trayIcon
