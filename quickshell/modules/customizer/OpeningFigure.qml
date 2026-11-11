@@ -71,13 +71,20 @@ Item {
                 opacity: 0.8
             }
 
-            // The bar on its edge, with a few widgets on it.
+            // The bar on its edge, with a few widgets on it: floating, a
+            // pill clear of the edge and in from its sides.
             Rectangle {
                 id: bar
-                x: Services.BarLayout.atRight ? fig.sw - fig.barT : 0
-                y: Services.BarLayout.atBottom ? fig.sh - fig.barT : 0
-                width: Services.BarLayout.vertical ? fig.barT : fig.sw
-                height: Services.BarLayout.vertical ? fig.sh : fig.barT
+
+                readonly property bool floating: Services.BarSettings.floating
+                readonly property real lift: bar.floating ? 2 : 0
+                readonly property real side: bar.floating ? Math.max(3, Services.BarSettings.inset * fig.k) : 0
+
+                x: Services.BarLayout.vertical ? (Services.BarLayout.atRight ? fig.sw - fig.barT : bar.lift) : bar.side
+                y: Services.BarLayout.vertical ? bar.side : Services.BarLayout.atBottom ? fig.sh - fig.barT : bar.lift
+                width: Services.BarLayout.vertical ? fig.barT - bar.lift : fig.sw - 2 * bar.side
+                height: Services.BarLayout.vertical ? fig.sh - 2 * bar.side : fig.barT - bar.lift
+                radius: bar.floating ? Services.DesktopTheme.radius(Services.DesktopTheme.look, Math.min(width, height) / 2, Math.min(width, height)) : 0
                 color: Colors.withAlpha(Colors.background, 0.9)
                 border.width: 1
                 border.color: Colors.withAlpha(Colors.on_surface, 0.25)
@@ -89,14 +96,15 @@ Item {
                         required property int index
                         readonly property real at: [0.06, 0.13, 0.2, 0.36, 0.72, 0.8, 0.88][index]
                         readonly property bool lit: index === 3 && fig.pointing === "bar"
-                        // A pill, or as one strip a line of text on it.
-                        readonly property real across: Services.BarSettings.strip && !lit ? 3 : fig.barT - 4
-                        x: Services.BarLayout.vertical ? (fig.barT - across) / 2 : fig.sw * at
-                        y: Services.BarLayout.vertical ? fig.sh * at : (fig.barT - across) / 2
+                        // A pill, or as one surface a line of text on it.
+                        readonly property real thick: Services.BarLayout.vertical ? bar.width : bar.height
+                        readonly property real across: Services.BarSettings.flat && !lit ? 3 : thick - 4
+                        x: Services.BarLayout.vertical ? (thick - across) / 2 : bar.width * at
+                        y: Services.BarLayout.vertical ? bar.height * at : (thick - across) / 2
                         width: Services.BarLayout.vertical ? across : (index === 3 ? 30 : 18)
                         height: Services.BarLayout.vertical ? (index === 3 ? 30 : 18) : across
-                        radius: Services.BarSettings.strip && !lit ? across / 2 : 3
-                        color: lit ? BookStyle.accent : Services.BarSettings.strip ? Colors.withAlpha(Services.BarSettings.ink, 0.6) : Services.BarSettings.pill
+                        radius: Services.BarSettings.flat && !lit ? across / 2 : 3
+                        color: lit ? BookStyle.accent : Services.BarSettings.flat ? Colors.withAlpha(Services.BarSettings.ink, 0.6) : Services.BarSettings.pill
                     }
                 }
             }

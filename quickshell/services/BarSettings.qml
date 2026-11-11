@@ -7,8 +7,9 @@ import qs.colors
 
 // The bar's own settings (its chapter in the customizer's book, SUPER+B or
 // the gear on the bar): which of its widgets show, its form (a pill for
-// each widget, or one strip the length of the bar), the colour,
-// transparency and outline of their containers, and how wide each is.
+// each widget, one strip the length of the bar, or one pill floating clear
+// of the screen), the colour, transparency and outline of their
+// containers, and how wide each is.
 // Where the widgets sit is BarLayout's; the pet's showing is the pet's own
 // (Pet.shown).
 //
@@ -88,21 +89,44 @@ Singleton {
     // edge, the widgets laid flat along it with a mark between islands,
     // and the panels drawers of it, joined to it through the desktop
     // theme's fillets (services/StripShape; components/StripBand,
-    // StripDrawer, StripDivider).
+    // StripDrawer, StripDivider). "floating": that one surface as a pill of
+    // its own, clear of the screen's edge and standing in from its sides
+    // (`inset`), its corners the theme's; the panels are drawers of it
+    // still.
     readonly property var styles: [
         { id: "pills", name: "Pills" },
-        { id: "strip", name: "One strip" }
+        { id: "strip", name: "One strip" },
+        { id: "floating", name: "Floating" }
     ]
-    readonly property string style: adapter.style === "strip" ? "strip" : "pills"
+    readonly property string style: root.styles.some(s => s.id === adapter.style) ? adapter.style : "pills"
     readonly property bool strip: root.style === "strip"
+    readonly property bool floating: root.style === "floating"
+    // One surface for the whole bar, the strip or the floating pill: the
+    // widgets lie flat on it, with no containers of their own.
+    readonly property bool flat: root.strip || root.floating
 
     function setStyle(s) {
         if (root.styles.some(x => x.id === s) && adapter.style !== s)
             adapter.style = s;
     }
 
+    // The next form round: pills, one strip, floating.
     function toggleStyle() {
-        root.setStyle(root.strip ? "pills" : "strip");
+        const i = root.styles.findIndex(s => s.id === root.style);
+        root.setStyle(root.styles[(i + 1) % root.styles.length].id);
+    }
+
+    // Floating, how far the pill's ends stand in from the screen's sides
+    // (px). Hyprland's gaps_out, 20 as hypr/hyprland.lua has it, puts them
+    // in line with the windows'.
+    readonly property int insetMin: 4
+    readonly property int insetMax: 120
+    readonly property int inset: Math.max(root.insetMin, Math.min(root.insetMax, Math.round(adapter.floatInset)))
+
+    function setInset(px) {
+        const v = Math.max(root.insetMin, Math.min(root.insetMax, Math.round(px)));
+        if (adapter.floatInset !== v)
+            adapter.floatInset = v;
     }
 
     // ── Colours ──────────────────────────────────────────────────────────────
@@ -159,11 +183,12 @@ Singleton {
     readonly property color group: Colors.withAlpha(!root.customFill && root.tone.group ? root.tone.group : Qt.tint(root.fill, Colors.withAlpha(root.autoInk, 0.08)), root.fillOpacity)
     readonly property color capsule: Colors.withAlpha(!root.customFill && root.tone.capsule ? root.tone.capsule : root.fill, root.fillOpacity)
     readonly property color outlineColor: Colors.withAlpha(root.ink, 0.3)
-    // As a strip: the band (the containers' colour), and what a widget's
-    // own container is on it: nothing, though still the band's colour, so
-    // one lit up (the clock while the calendar is open) fades in cleanly.
+    // As one surface (the strip, or floating): the band (the containers'
+    // colour), and what a widget's own container is on it: nothing, though
+    // still the band's colour, so one lit up (the clock while the calendar
+    // is open) fades in cleanly.
     readonly property color band: root.pill
-    readonly property color atom: root.strip ? Colors.withAlpha(root.fill, 0) : root.pill
+    readonly property color atom: root.flat ? Colors.withAlpha(root.fill, 0) : root.pill
     // On the strip: under the pointer, a widget that does something is
     // washed with its text's colour; a faint mark of it parts the islands.
     readonly property color wash: Colors.withAlpha(root.ink, 0.1)
@@ -294,7 +319,7 @@ Singleton {
         adapter.outline = false;
     }
 
-    readonly property bool lookIsDefault: !root.strip && adapter.colorMode === "wallpaper" && adapter.tone === "default"
+    readonly property bool lookIsDefault: !root.flat && adapter.colorMode === "wallpaper" && adapter.tone === "default"
         && adapter.textMode === "wallpaper" && adapter.textTone === "auto" && root.transparency === 0 && !adapter.outline
 
     // ── Widths ───────────────────────────────────────────────────────────────
@@ -397,6 +422,7 @@ Singleton {
             id: adapter
             property var hidden: []
             property string style: "pills"
+            property int floatInset: 20
             property string colorMode: "wallpaper"
             property string tone: "default"
             property string customColor: ""

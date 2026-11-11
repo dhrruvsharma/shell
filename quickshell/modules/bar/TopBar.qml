@@ -26,11 +26,14 @@ import qs.components
 // the bar's length. Positions and lengths along the bar (x lying, y
 // standing) go through _along()/_pos()/_len().
 //
-// It has two forms (services/BarSettings.style): pills, each island its own
-// container over the wallpaper; or one strip, a band the length of the bar
+// It has three forms (services/BarSettings.style): pills, each island its
+// own container over the wallpaper; one strip, a band the length of the bar
 // (components/StripBand) with the islands laid flat along it, a mark
 // between each (components/StripDivider) and none round a group, and the
-// panels that hang from it drawers of it (components/StripDrawer).
+// panels that hang from it drawers of it (components/StripDrawer); or
+// floating, that band as a pill of its own, clear of the screen's edge and
+// standing in from its sides (services/StripShape), with everything on the
+// bar laid out inside it.
 Item {
     id: topBar
 
@@ -39,14 +42,25 @@ Item {
     focus: true
 
     readonly property bool vertical: Services.BarLayout.vertical
-    readonly property bool strip: Services.BarSettings.strip
+    // One surface under the whole bar, the strip or the floating pill: the
+    // islands lie flat on it.
+    readonly property bool flat: Services.BarSettings.flat
+    readonly property bool floating: Services.BarSettings.floating
+    // Floating, the pill's box inside the bar's: `lift` off the screen's
+    // edge and `side` in from the bar's ends (both 0 otherwise), so its
+    // middle across the bar lies `shift` from the bar's own, towards the
+    // inner edge.
+    readonly property real lift: Services.StripShape.lift
+    readonly property real side: Services.StripShape.side
+    readonly property real shift: (Services.BarLayout.atTop || Services.BarLayout.atLeft ? 1 : -1) * topBar.lift / 2
     // An island's thickness across the bar.
     readonly property real islandHeight: 34
     // The room between islands, and between the ends and the first ones:
-    // on the strip, with no containers to tell them apart, a little more
-    // between islands than inside one.
-    readonly property real gap: topBar.strip ? 14 : 8
-    readonly property real endMargin: topBar.strip ? 14 : 20
+    // on one surface, with no containers to tell them apart, a little more
+    // between islands than inside one; floating, the first ones clear of
+    // the pill's corners.
+    readonly property real gap: topBar.flat ? 14 : 8
+    readonly property real endMargin: topBar.floating ? Math.max(14, Services.StripShape.endR) : topBar.flat ? 14 : 20
 
     // A point's or an item's position along the bar, and an item's length.
     function _along(p) {
@@ -291,7 +305,7 @@ Item {
         readonly property bool grouped: island.atomIds.length > 1
         // On the strip a group has no tray to pad: its atoms just keep
         // together, with no mark between them.
-        readonly property real pad: island.grouped && !topBar.strip ? 5 : 0
+        readonly property real pad: island.grouped && !topBar.flat ? 5 : 0
         property alias atomRep: atomRep
 
         readonly property bool isMergeTarget: topBar.dragActive && topBar.dropKind === 1 && topBar.dropRegion === island.regionKey && topBar.dropIslandFirstId === island.firstId
@@ -320,10 +334,10 @@ Item {
         topRightRadius: Services.DesktopTheme.corner(island.look, radius, 1)
         bottomRightRadius: Services.DesktopTheme.corner(island.look, radius, 2)
         bottomLeftRadius: Services.DesktopTheme.corner(island.look, radius, 3)
-        color: island.grouped && !island.framed && !topBar.strip ? Services.BarSettings.group : "transparent"
+        color: island.grouped && !island.framed && !topBar.flat ? Services.BarSettings.group : "transparent"
         // The theme's hairline, or the outline the bar settings can put
         // round every container. On the strip, only a drop target's ring.
-        border.width: topBar.strip ? (island.isMergeTarget ? 2 : 0)
+        border.width: topBar.flat ? (island.isMergeTarget ? 2 : 0)
             : island.framed ? 0 : island.isMergeTarget ? 2 : island.grouped && island.look.shape !== "print" ? (island.look.border || (Services.BarSettings.outline ? 1 : 0)) : 0
         border.color: island.isMergeTarget ? Services.DesktopTheme.accent : island.look.border ? Services.DesktopTheme.borderColor(island.look) : Services.BarSettings.outlineColor
         opacity: island.beingDragged ? 0.4 : 1
@@ -335,7 +349,7 @@ Item {
         // strip wears the theme's look instead.
         Loader {
             anchors.fill: parent
-            active: !topBar.strip && (island.grouped || island.isMergeTarget)
+            active: !topBar.flat && (island.grouped || island.isMergeTarget)
             sourceComponent: ({
                 chamfer: hudChrome,
                 neon: neonChrome,
@@ -525,7 +539,7 @@ Item {
         // On the strip, the mark parting it from the island before it, in
         // the middle of the gap between them.
         StripDivider {
-            visible: topBar.strip && island.islandIndex > 0 && !island.isBeforeTarget
+            visible: topBar.flat && island.islandIndex > 0 && !island.isBeforeTarget
             vertical: topBar.vertical
             x: topBar.vertical ? island.width / 2 : -topBar.gap / 2
             y: topBar.vertical ? -topBar.gap / 2 : island.height / 2
@@ -605,11 +619,17 @@ Item {
     }
 
     // ---- the strip ----------------------------------------------------------
-    // As one strip, the band under everything on the bar.
+    // As one surface, the band under everything on the bar: the whole of
+    // the bar's strip or, floating, the pill's box inside it.
     Loader {
-        anchors.fill: parent
-        active: topBar.strip
-        sourceComponent: StripBand {}
+        x: topBar.vertical ? (Services.BarLayout.atLeft ? topBar.lift : 0) : topBar.side
+        y: topBar.vertical ? topBar.side : (Services.BarLayout.atTop ? topBar.lift : 0)
+        width: topBar.vertical ? topBar.width - topBar.lift : topBar.width - 2 * topBar.side
+        height: topBar.vertical ? topBar.height - 2 * topBar.side : topBar.height - topBar.lift
+        active: topBar.flat
+        sourceComponent: StripBand {
+            origin: topBar.side
+        }
     }
 
     // ---- bar content ------------------------------------------------------
@@ -627,7 +647,9 @@ Item {
             readonly property bool upward: topBar.vertical && Services.BarLayout.atLeft
 
             width: topBar.vertical ? content.height : content.width
-            height: topBar.vertical ? content.width : content.height
+            // (Its floor is the bar's inner edge but on a bottom bar, where
+            // it's the screen's: the floating pill's outer edge there.)
+            height: topBar.vertical ? content.width : content.height - (Services.BarLayout.atBottom ? topBar.lift : 0)
             transformOrigin: Item.TopLeft
             rotation: !topBar.vertical ? 0 : petTrack.upward ? -90 : 90
             x: topBar.vertical && !petTrack.upward ? content.width : 0
@@ -642,9 +664,10 @@ Item {
 
                 anchors.fill: parent
                 reversed: petTrack.upward
-                // On the strip there's no container to hide it as it passes
-                // behind an island: it's ghosted there instead, unless held.
-                opacity: topBar.strip && barPet.placed && !barPet.clear && !barPet.dragging && !barPet.falling ? 0.22 : 1
+                // On one surface there's no container to hide it as it
+                // passes behind an island: it's ghosted there instead,
+                // unless held.
+                opacity: topBar.flat && barPet.placed && !barPet.clear && !barPet.dragging && !barPet.falling ? 0.22 : 1
 
                 Behavior on opacity {
                     NumberAnimation {
@@ -675,8 +698,8 @@ Item {
         // for good.)
         Grid {
             id: leftRow
-            x: topBar.vertical ? (parent.width - width) / 2 : topBar.endMargin
-            y: topBar.vertical ? topBar.endMargin : (parent.height - height) / 2
+            x: topBar.vertical ? (parent.width - width) / 2 + topBar.shift : topBar.side + topBar.endMargin
+            y: topBar.vertical ? topBar.side + topBar.endMargin : (parent.height - height) / 2 + topBar.shift
             // One column standing, else one per item shown (see atomRow).
             columns: topBar.vertical ? 1 : Math.max(1, leftRepeater.count + (leftCaret.visible ? 1 : 0))
             spacing: topBar.gap
@@ -709,13 +732,15 @@ Item {
         MediaPill {
             id: mediaPill
             anchors.centerIn: parent
+            anchors.horizontalCenterOffset: topBar.vertical ? topBar.shift : 0
+            anchors.verticalCenterOffset: topBar.vertical ? 0 : topBar.shift
         }
 
         // The end region, up to the tray: to the right end, or the bottom.
         Grid {
             id: rightRow
-            x: topBar.vertical ? (parent.width - width) / 2 : parent.width - width - topBar.endMargin
-            y: topBar.vertical ? parent.height - height - topBar.endMargin : (parent.height - height) / 2
+            x: topBar.vertical ? (parent.width - width) / 2 + topBar.shift : parent.width - width - topBar.side - topBar.endMargin
+            y: topBar.vertical ? parent.height - height - topBar.side - topBar.endMargin : (parent.height - height) / 2 + topBar.shift
             columns: topBar.vertical ? 1 : Math.max(1, rightRepeater.count + (rightCaret.visible ? 1 : 0) + (tray.visible ? 1 : 0))
             spacing: topBar.gap
             horizontalItemAlignment: Grid.AlignHCenter
@@ -751,7 +776,7 @@ Item {
 
         // On the strip, the mark between the last island and the tray.
         StripDivider {
-            visible: topBar.strip && tray.visible && rightRepeater.count > 0 && !rightCaret.visible
+            visible: topBar.flat && tray.visible && rightRepeater.count > 0 && !rightCaret.visible
             vertical: topBar.vertical
             x: topBar.vertical ? rightRow.x + rightRow.width / 2 : rightRow.x + tray.x - topBar.gap / 2
             y: topBar.vertical ? rightRow.y + tray.y - topBar.gap / 2 : rightRow.y + rightRow.height / 2
@@ -760,16 +785,20 @@ Item {
 
     // ---- drag ghost overlay ----------------------------------------------
     // It follows the pointer along the bar and is kept inside the bar's
-    // strip across it: the bar is its own 42px surface.
+    // strip across it (the floating pill's box): the bar is its own 42px
+    // surface.
     Item {
         id: ghostLayer
 
+        // Where the strip starts across the bar, and its thickness.
+        readonly property real from: Services.BarLayout.atTop || Services.BarLayout.atLeft ? topBar.lift : 0
+        readonly property real across: (topBar.vertical ? topBar.width : topBar.height) - topBar.lift
         readonly property real ghostX: topBar.vertical
-            ? Math.max(0, Math.min(topBar.width - topBar.dragW, topBar.dragPos.x - topBar.dragW / 2))
+            ? Math.max(ghostLayer.from, Math.min(ghostLayer.from + ghostLayer.across - topBar.dragW, topBar.dragPos.x - topBar.dragW / 2))
             : topBar.dragPos.x - topBar.dragW / 2
         readonly property real ghostY: topBar.vertical
             ? topBar.dragPos.y - topBar.dragH / 2
-            : Math.max(0, Math.min(topBar.height - topBar.dragH, topBar.dragPos.y - topBar.dragH / 2))
+            : Math.max(ghostLayer.from, Math.min(ghostLayer.from + ghostLayer.across - topBar.dragH, topBar.dragPos.y - topBar.dragH / 2))
 
         anchors.fill: parent
         z: 1000
@@ -779,16 +808,16 @@ Item {
             // Placeholder until the grabbed image is ready; on the strip,
             // where the widgets have no container of their own, the band's
             // colour behind the ghost all along, ringed in the accent.
-            visible: topBar.dragActive && (topBar.strip || !topBar.dragGrab || ghost.status !== Image.Ready)
+            visible: topBar.dragActive && (topBar.flat || !topBar.dragGrab || ghost.status !== Image.Ready)
             x: ghostLayer.ghostX
             y: ghostLayer.ghostY
             width: topBar.dragW
             height: topBar.dragH
-            radius: topBar.strip ? Services.DesktopTheme.radius(Services.DesktopTheme.look, 14, Math.min(width, height)) : 14
-            color: topBar.strip ? Services.BarSettings.fill : Colors.surface_container
-            border.width: topBar.strip ? 1 : 0
+            radius: topBar.flat ? Services.DesktopTheme.radius(Services.DesktopTheme.look, 14, Math.min(width, height)) : 14
+            color: topBar.flat ? Services.BarSettings.fill : Colors.surface_container
+            border.width: topBar.flat ? 1 : 0
             border.color: Colors.withAlpha(Services.DesktopTheme.accent, 0.7)
-            opacity: topBar.strip ? 0.95 : 0.85
+            opacity: topBar.flat ? 0.95 : 0.85
         }
 
         Image {

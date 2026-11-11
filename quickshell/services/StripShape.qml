@@ -3,9 +3,9 @@ import QtQuick
 import Quickshell
 import qs.colors
 
-// The bar as one strip (BarSettings.strip) and the panels that come out of
-// it, as one surface: their shape, as the desktop theme has it, and where
-// the panels join the strip.
+// The bar as one surface (BarSettings.flat: one strip, or floating) and the
+// panels that come out of it: their shape, as the desktop theme has it, and
+// where the panels join the strip.
 //
 // Shape: the strip's ends turn down into the screen's sides, and each panel
 // leaves the strip's inner edge, through a fillet of the theme's kind: a
@@ -16,11 +16,17 @@ import qs.colors
 // Observatory's graduation, Devaloka's temple border, Abyss's light,
 // Wasteland's rivets, Siege's battlements, Sekiro's gauge tick.
 //
+// Floating (BarSettings.floating), the strip is a pill of its own: `lift`
+// clear of the screen's edge and `side` in from its sides, its four corners
+// the theme's (`ends`), the outline all the way round it. Its inner edge
+// stays where the strip's is, so the panels come out of it the same way.
+//
 // Joints: a panel hanging from the strip reports, while it's out, the
 // stretch its body takes along the strip (`from`, `to`: screen px along the
 // bar), how far it has come out past the strip's inner edge (`depth`), and
 // whether it lies against the bar's start or far end (`start`, `end`: in a
-// corner, joined to the screen's side there too). The strip
+// corner, joined to the screen's side there too; floating, flush with the
+// pill's end, which runs straight on down its side). The strip
 // (components/StripBand) draws the fillets either side of it and runs its
 // outline down them; the panel (components/StripDrawer) draws its body from
 // there, so the outline goes on round it unbroken, though the two are
@@ -33,8 +39,10 @@ Singleton {
     id: root
 
     readonly property var look: DesktopTheme.look
-    // Whether the bar is one strip on the screen now (not in minimal mode).
-    readonly property bool active: BarSettings.strip && BarLayout.shown
+    // Whether the bar is one surface on the screen now (not in minimal
+    // mode), and whether that surface is the floating pill.
+    readonly property bool active: BarSettings.flat && BarLayout.shown
+    readonly property bool floating: BarSettings.floating
 
     readonly property var styles: ({
             round: { fillet: "arc", r: 18, corner: "arc", c: 20, trim: "" },
@@ -60,6 +68,25 @@ Singleton {
     // How far below the strip's inner edge it draws (its fillets, and
     // Siege's battlements): the bar's surface is that much deeper.
     readonly property int overhang: root.active ? Math.max(root.style.r, root.style.trim === "merlons" ? 5 : 0) : 0
+
+    // Floating: how far the pill stands off the screen's edge and in from
+    // its sides (the bar's ends), and so how thick it is.
+    readonly property int lift: root.floating ? 6 : 0
+    readonly property int side: root.floating ? BarSettings.inset : 0
+    readonly property int thickness: BarLayout.size - root.lift
+    // The pill's corners, in the panels' kind (`style.corner`): rounded as
+    // the theme rounds what's on the bar (Wabi-sabi's each differently),
+    // or cut or stepped as it does a panel's. Clockwise from the corner at
+    // the bar's start on the screen's edge, as the band lies along the top.
+    readonly property var ends: {
+        if (!root.floating)
+            return [0, 0, 0, 0];
+        const half = root.thickness / 2;
+        const size = root.style.corner === "arc" ? DesktopTheme.radius(root.look, half, root.thickness)
+            : root.style.corner === "none" ? 0 : root.style.c;
+        return [0, 1, 2, 3].map(i => Math.max(0, Math.min(half, DesktopTheme.corner(root.look, size, i))));
+    }
+    readonly property real endR: Math.max(root.ends[0], root.ends[1], root.ends[2], root.ends[3])
 
     // The outline: the theme's hairline (HUD's faint one), else the bar's
     // outline when that's on, else none.
@@ -99,10 +126,14 @@ Singleton {
         return Math.max(0, Math.min(root.style.r, depth));
     }
 
-    // How near the bar's ends a panel may come out of the strip and keep a
-    // stretch of it either side of the fillets; nearer, it goes into the
-    // corner (CalendarWindow).
-    readonly property real cornerRoom: 2 * root.style.r + 24
+    // How near the screen's sides (the bar's ends) a panel may come out of
+    // the strip and keep a stretch of it either side of the fillets;
+    // nearer, it goes into the corner (CalendarWindow): against the
+    // screen's side or, floating, flush with the pill's end, `side` in.
+    readonly property real cornerRoom: root.floating ? root.side + root.endR + root.style.r + 24 : 2 * root.style.r + 24
+    // The room a panel in a corner keeps past its body for the fillet into
+    // the screen's side; none floating, where its far corners are its own.
+    readonly property real cornerFoot: root.floating ? 0 : root.style.r
 
     // ── Paths ────────────────────────────────────────────────────────────────
 

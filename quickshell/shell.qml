@@ -1400,7 +1400,9 @@ ShellRoot {
     }
 
     // The bar's chapter of the book (SUPER+B), and its settings for scripts:
-    // setStyle pills or strip (toggleStyle: the other one; style: which);
+    // setStyle pills, strip or floating (toggleStyle: the next one round;
+    // style: which); setInset how far, in px, the floating pill's ends
+    // stand in from the screen's sides;
     // toggleWidget takes one of cpu, memory, temp, battery, clock, network,
     // bluetooth, volume, updates, settings, media, tray, pet; setColor a
     // "#rrggbb" ("" for the wallpaper's); setTransparency 0 (solid) to 100;
@@ -1426,6 +1428,9 @@ ShellRoot {
         }
         function style(): string {
             return Services.BarSettings.style
+        }
+        function setInset(px: int): void {
+            Services.BarSettings.setInset(px)
         }
         function toggleWidget(id: string): void {
             Services.BarSettings.toggle(id)

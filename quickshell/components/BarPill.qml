@@ -22,10 +22,10 @@ import qs.services as Services
 // Its colours are the bar settings' (services/BarSettings): the wallpaper's
 // container surface by default, or a tone or colour picked there, faded by
 // the transparency set there, with an outline round it when that's on and
-// the theme draws none of its own. On the bar as one strip it has no
-// container of its own (the strip, components/StripBand, is the container
-// and wears the theme's trim): it lies flat on it, washed with its text's
-// colour under the pointer when it does something.
+// the theme draws none of its own. On the bar as one strip, or floating,
+// it has no container of its own (the strip, components/StripBand, is the
+// container and wears the theme's trim): it lies flat on it, washed with
+// its text's colour under the pointer when it does something.
 //
 // Its width is its text's, or the width set for its widget (`barId`) in
 // the bar settings; `maxWidth` (0 = unbounded) caps the first, for the
@@ -72,7 +72,7 @@ Rectangle {
     // it in the glyph colour (BarSettings.glyph), unless the widget colours
     // its text itself.
     readonly property bool _glyphFirst: /^(?:[\uE000-\uF8FF]|[\uD800-\uDBFF][\uDC00-\uDFFF])$/.test(root._parts[0])
-    readonly property bool glyphTinted: root.strip && root._glyphFirst && Qt.colorEqual(root.textColor, Services.BarSettings.ink)
+    readonly property bool glyphTinted: root.flat && root._glyphFirst && Qt.colorEqual(root.textColor, Services.BarSettings.ink)
     readonly property bool tintGlyph: root.glyphTinted && !root.vertical
     function _esc(s) {
         return s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/ /g, "&nbsp;");
@@ -93,8 +93,9 @@ Rectangle {
     property bool interactive: root.command !== null || root.opens !== ""
     property alias cursorShape: mouse.cursorShape
     readonly property var look: Services.DesktopTheme.look
-    // On the bar as one strip: no container, mask or trim of its own.
-    readonly property bool strip: Services.BarSettings.strip
+    // On the bar as one surface (one strip, or floating): no container,
+    // mask or trim of its own.
+    readonly property bool flat: Services.BarSettings.flat
     readonly property bool hud: look.shape === "chamfer"
     readonly property bool neon: look.shape === "neon"
     readonly property bool deco: look.shape === "deco"
@@ -102,7 +103,7 @@ Rectangle {
     readonly property bool crenel: look.shape === "crenel"
     readonly property bool posture: look.shape === "posture"
     // Shapes whose outline is a mask and a frame drawn over it.
-    readonly property bool masked: (hud || neon || deco || cusp || crenel || posture) && !root.strip
+    readonly property bool masked: (hud || neon || deco || cusp || crenel || posture) && !root.flat
 
     signal clicked
 
@@ -112,7 +113,7 @@ Rectangle {
     bottomRightRadius: Services.DesktopTheme.corner(root.look, radius, 2)
     bottomLeftRadius: Services.DesktopTheme.corner(root.look, radius, 3)
     color: Services.BarSettings.atom
-    border.width: root.strip || root.neon || root.deco || root.cusp || root.crenel || root.posture || root.look.shape === "print" ? 0 : root.look.border || (Services.BarSettings.outline ? 1 : 0)
+    border.width: root.flat || root.neon || root.deco || root.cusp || root.crenel || root.posture || root.look.shape === "print" ? 0 : root.look.border || (Services.BarSettings.outline ? 1 : 0)
     border.color: root.look.border ? Services.DesktopTheme.borderColor(root.look) : Services.BarSettings.outlineColor
     layer.enabled: root.masked
     layer.effect: MultiEffect {
@@ -160,7 +161,7 @@ Rectangle {
     // does something.
     Rectangle {
         anchors.fill: parent
-        visible: root.strip && root.interactive && !root.preview
+        visible: root.flat && root.interactive && !root.preview
         radius: root.radius
         topLeftRadius: root.topLeftRadius
         topRightRadius: root.topRightRadius
@@ -261,7 +262,7 @@ Rectangle {
 
     Loader {
         anchors.fill: parent
-        active: !root.strip
+        active: !root.flat
         sourceComponent: ({
             chamfer: hudTrim,
             neon: neonTrim,

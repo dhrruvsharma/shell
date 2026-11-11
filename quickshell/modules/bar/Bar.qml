@@ -26,7 +26,9 @@ import qs.services as Services
 // As one strip (services/StripShape) its surface reaches a little past the
 // strip (`overhang`), for the fillets that turn its ends down into the
 // screen's sides and its inner edge down into the panels coming out of it;
-// only the strip takes the mouse.
+// only the strip takes the mouse. Floating, the strip is a pill inside the
+// same surface, clear of the screen's edge and in from its sides (TopBar
+// lays it out); the room round it is still the bar's.
 Scope {
     id: root
 

@@ -16,12 +16,13 @@ import qs.services as Services
 // check or a dot when they're ticked, an arrow when they open a submenu,
 // and are dimmed while the app has them disabled.
 //
-// With the bar as one strip (services/StripShape) it's a drawer of the
-// strip like the bar's panels: against it, of its colour, unrolling out of
-// it, joined to it through the theme's fillets with the strip's hairline
-// on round it (components/StripDrawer), in the strip's own text, accent
-// and wash; too near an end of the bar (the tray's usually at the end) it
-// goes into the corner there, joined to the screen's side as well.
+// With the bar as one strip, or floating (services/StripShape), it's a
+// drawer of the strip like the bar's panels: against it, of its colour,
+// unrolling out of it, joined to it through the theme's fillets with the
+// strip's hairline on round it (components/StripDrawer), in the strip's own
+// text, accent and wash; too near an end of the bar (the tray's usually at
+// the end) it goes into the corner there, joined to the screen's side as
+// well, or flush with the floating pill's end.
 PanelWindow {
     id: root
 
@@ -130,15 +131,17 @@ PanelWindow {
         // As a drawer: where it'd start along the bar, centred on the icon,
         // and so whether it goes into a corner ("start", "end" or ""),
         // keeping room past the menu there for the fillet into the
-        // screen's side.
+        // screen's side, as far in from that side as the strip's end is.
         readonly property real length: wrapper.vertical ? wrapper.contentHeight : wrapper.menuWidth
         readonly property real centred: Math.round(root.menuPos - wrapper.length / 2)
         readonly property real barLength: wrapper.vertical ? root.height : root.width
         readonly property string corner: !root.joined ? ""
             : wrapper.centred + wrapper.length > wrapper.barLength - Services.StripShape.cornerRoom ? "end"
             : wrapper.centred < Services.StripShape.cornerRoom ? "start" : ""
-        readonly property real foot: wrapper.corner !== "" ? Services.StripShape.style.r : 0
-        readonly property real along: wrapper.corner === "start" ? 0 : wrapper.corner === "end" ? wrapper.barLength - wrapper.length : wrapper.centred
+        readonly property real foot: wrapper.corner !== "" ? Services.StripShape.cornerFoot : 0
+        readonly property real side: Services.StripShape.side
+        readonly property real along: wrapper.corner === "start" ? wrapper.side
+            : wrapper.corner === "end" ? wrapper.barLength - wrapper.length - wrapper.side : wrapper.centred
 
         // It comes out of the bar by the tray (the surface stops at the
         // bar's exclusive zone): down from a top bar, up from a bottom one,

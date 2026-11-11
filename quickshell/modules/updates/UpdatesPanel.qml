@@ -27,8 +27,10 @@ Popout {
 
     readonly property string edge: Services.BarLayout.edge
     readonly property bool lying: !Services.BarLayout.vertical
-    readonly property real fullWidth: 460
-    readonly property real fullHeight: 520
+    // (Out of the floating pill it's flush with the pill's end, which
+    // stands in from the screen's side: that much longer along the bar.)
+    readonly property real fullWidth: 460 + (root.joined && root.lying ? Services.StripShape.side : 0)
+    readonly property real fullHeight: 520 + (root.joined && !root.lying ? Services.StripShape.side : 0)
     property real unfold: opened ? 1 : 0
 
     Behavior on unfold {
@@ -38,11 +40,12 @@ Popout {
 
     // As a drawer: the strip's thickness on its side, the radius (the
     // room for the fillet into the screen's side) on the far one, the
-    // radius at its inner end along the bar and none at the bar's end.
+    // radius at its inner end along the bar and none at the bar's end
+    // (the floating pill's end, in from the screen's side).
     leftPadding: !root.joined ? radius : root.edge === "left" ? Services.BarLayout.size : radius
-    rightPadding: !root.joined ? radius : root.edge === "right" ? Services.BarLayout.size : root.lying ? 0 : radius
+    rightPadding: !root.joined ? radius : root.edge === "right" ? Services.BarLayout.size : root.lying ? Services.StripShape.side : radius
     topPadding: !root.joined ? radius : root.edge === "top" ? Services.BarLayout.size : radius
-    bottomPadding: !root.joined ? radius : root.edge === "bottom" ? Services.BarLayout.size : root.lying ? radius : 0
+    bottomPadding: !root.joined ? radius : root.edge === "bottom" ? Services.BarLayout.size : root.lying ? radius : Services.StripShape.side
 
     property bool opened: false
 

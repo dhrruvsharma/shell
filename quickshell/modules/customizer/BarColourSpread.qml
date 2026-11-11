@@ -3,10 +3,11 @@ import QtQuick
 import qs.colors
 import qs.services as Services
 
-// The bar, § 2: its form (a pill for each widget, or one strip the length
-// of the bar), the colour of its containers and of their text (a tone of
-// the wallpaper's scheme, or one picked by hand), their transparency and
-// an outline, with how well the text reads on them.
+// The bar, § 2: its form (a pill for each widget, one strip the length of
+// the bar, or one pill floating clear of the screen's edge and sides, and
+// then how far in from the sides), the colour of its containers and of
+// their text (a tone of the wallpaper's scheme, or one picked by hand),
+// their transparency and an outline, with how well the text reads on them.
 Spread {
     id: spread
 
@@ -22,6 +23,7 @@ Spread {
         section: "Colour and finish"
         figure: "Fig. 3."
         caption: spread.bs.strip ? "The bar as one strip, in the colours set opposite; below, the strip over a chequer, to show how clear it is."
+            : spread.bs.floating ? "The bar floating, in the colours set opposite; below, the pill over a chequer, to show how clear it is."
             : "The bar in the colours set opposite; below, its containers over a chequer, to show how clear they are."
 
         Item {
@@ -108,16 +110,45 @@ Spread {
         spacing: 20
 
         Entry {
+            id: form
+
+            // Hyprland's outer gap, where the windows' own sides stand.
+            readonly property var gap: Services.WindowLook.value("general.gaps_out")
+
             width: parent.width
             key: "form"
             label: "Its form"
             note: spread.bs.strip ? "One strip the length of the bar, flush to its edge, in the theme's trim; the widgets lie flat along it."
+                : spread.bs.floating ? "One pill, clear of the screen's edge; the rule sets how far in from the sides"
+                    + (typeof form.gap === "number" ? " (the tick: your windows)." : ".")
                 : "Each widget in a pill of its own, a group of them in a tray."
 
-            InkChoice {
-                options: spread.bs.styles.map(s => ({ id: s.id, label: s.name }))
-                current: spread.bs.style
-                onChosen: id => spread.bs.setStyle(id)
+            // (Close under one another: the choice keeps room of its own
+            // round its words.)
+            Column {
+                spacing: -2
+
+                InkChoice {
+                    anchors.right: parent.right
+                    options: spread.bs.styles.map(s => ({ id: s.id, label: s.name }))
+                    current: spread.bs.style
+                    onChosen: id => spread.bs.setStyle(id)
+                }
+
+                // Floating: how far the pill's ends stand in from the
+                // screen's sides, with a tick where the windows' do.
+                InkSlider {
+                    width: parent.width
+                    height: 32
+                    visible: spread.bs.floating
+                    from: spread.bs.insetMin
+                    to: spread.bs.insetMax
+                    stepSize: 2
+                    unit: "px"
+                    mark: typeof form.gap === "number" ? form.gap : NaN
+                    value: spread.bs.inset
+                    onMoved: v => spread.bs.setInset(v)
+                }
             }
         }
 
@@ -263,6 +294,7 @@ Spread {
             key: "outline"
             label: "An outline"
             note: spread.bs.strip ? "A hairline in the text's colour along the strip's inner edge (a theme with a border of its own keeps that)."
+                : spread.bs.floating ? "A hairline in the text's colour round the pill (a theme with a border of its own keeps that)."
                 : "A hairline in the text's colour round each container (a theme with a border of its own keeps that)."
 
             InkSwitch {

@@ -25,17 +25,17 @@ Item {
         width: detail.natural * detail.k
         height: 30 * detail.k
 
-        // As one strip the widgets have no container of their own: a
-        // stretch of the band behind it, as on the bar, fading out at its
-        // ends where the bar goes on.
+        // As one strip, or floating, the widgets have no container of
+        // their own: a stretch of the band behind it, as thick as on the
+        // bar, fading out at its ends where the bar goes on.
         Rectangle {
             readonly property real faceH: detail.widgetId === "media" ? 32 : 28
 
-            visible: Services.BarSettings.strip
+            visible: Services.BarSettings.flat
             x: -24 * detail.k
-            y: (faceH / 2 - Services.BarLayout.size / 2) * detail.k
+            y: (faceH / 2 - Services.StripShape.thickness / 2) * detail.k
             width: holder.width + 48 * detail.k
-            height: Services.BarLayout.size * detail.k
+            height: Services.StripShape.thickness * detail.k
             gradient: Gradient {
                 orientation: Gradient.Horizontal
                 GradientStop { position: 0; color: Colors.withAlpha(Services.BarSettings.band, 0) }
@@ -69,7 +69,7 @@ Item {
             scale: detail.k
             transformOrigin: Item.TopLeft
             radius: Services.DesktopTheme.radius(Services.DesktopTheme.look, 16, 32)
-            color: Services.BarSettings.strip ? "transparent" : Services.BarSettings.capsule
+            color: Services.BarSettings.flat ? "transparent" : Services.BarSettings.capsule
             clip: true
 
             MarqueeText {
@@ -156,8 +156,8 @@ Item {
     BookText {
         anchors.horizontalCenter: parent.horizontalCenter
         anchors.top: holder.bottom
-        // Clear of the band behind it, as one strip.
-        anchors.topMargin: Services.BarSettings.strip ? 26 : 16
+        // Clear of the band behind it, as one surface.
+        anchors.topMargin: Services.BarSettings.flat ? 26 : 16
         text: "Detail · " + (detail.entry ? detail.entry.name : "") + (detail.k > 1.05 ? ", drawn " + detail.k.toFixed(1) + " times its size" : "")
         font.italic: true
         font.pixelSize: 13

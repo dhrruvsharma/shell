@@ -17,6 +17,12 @@ import qs.services as Services
 // the straight stretches between run the theme's rules, graduation, temple
 // border, light or battlements, and Wasteland bolts its ends.
 //
+// Floating (services/BarSettings, style "floating") it's a pill of its own,
+// this item its box: its ends don't reach the screen's sides, its four
+// corners are the theme's (StripShape.ends) and the hairline goes all the
+// way round it. Panels still come out of its inner edge through fillets;
+// one against either end runs straight on down from the pill's end.
+//
 // It draws past its own edge by StripShape.overhang (the bar's surface is
 // that much deeper): the fillets hang below the inner edge. It's built
 // lying along the top of the screen and turned onto its edge (`edge`).
@@ -32,6 +38,8 @@ Item {
     property real origin: 0
     // Its ends turning down into the screen's sides.
     property bool ends: true
+    // A pill of its own (see above).
+    property bool floating: Services.StripShape.floating
 
     readonly property bool vertical: band.edge === "left" || band.edge === "right"
     readonly property var style: Services.StripShape.style
@@ -71,16 +79,36 @@ Item {
     readonly property bool endSpan: band.spans.some(s => s.end)
     readonly property real leftR: band.spans.length > 0 && band.spans[0].from - band.spans[0].r < band.endR ? 0 : band.endR
     readonly property real rightR: band.spans.some(s => s.end || s.to + s.r > band.l - band.endR) ? 0 : band.endR
+    // Floating: its corners, clockwise from the start of its outer edge
+    // (none it's too thin or short for), and whether a panel lies against
+    // either end.
+    readonly property var corners: Services.StripShape.ends.map(e => band.floating ? Math.max(0, Math.min(e, band.t / 2, band.l / 2)) : 0)
+    readonly property bool flushLeft: band.spans.length > 0 && band.spans[0].start
+    readonly property bool flushRight: band.endSpan
+    // Floating along the top of the screen, Siege's battlements stand on
+    // its outer edge, as on a wall, rather than hang from the inner one.
+    readonly property bool crowned: band.floating && band.edge === "top"
 
     // The band and its fillets, as one outline.
     readonly property string fillPath: {
         const S = Services.StripShape, k = band.style.fillet, l = band.l, t = band.t;
-        let s = "M -1 -1 L " + (l + 1) + " -1";
-        if (band.rightR > 0)
-            s += " L " + (l + 1) + " " + (t + band.rightR) + " L " + l + " " + (t + band.rightR)
-                + S.turn(k, { x: l, y: t + band.rightR }, { x: l, y: t }, { x: l - band.rightR, y: t });
-        else
-            s += " L " + (l + 1) + " " + t;
+        const ck = band.style.corner, c = band.corners;
+        let s;
+        if (band.floating) {
+            // Along the outer edge and down the far end.
+            s = "M " + c[0] + " 0 L " + (l - c[1]) + " 0" + S.turn(ck, { x: l - c[1], y: 0 }, { x: l, y: 0 }, { x: l, y: c[1] });
+            if (band.flushRight)
+                s += " L " + l + " " + t;
+            else
+                s += " L " + l + " " + (t - c[2]) + S.turn(ck, { x: l, y: t - c[2] }, { x: l, y: t }, { x: l - c[2], y: t });
+        } else {
+            s = "M -1 -1 L " + (l + 1) + " -1";
+            if (band.rightR > 0)
+                s += " L " + (l + 1) + " " + (t + band.rightR) + " L " + l + " " + (t + band.rightR)
+                    + S.turn(k, { x: l, y: t + band.rightR }, { x: l, y: t }, { x: l - band.rightR, y: t });
+            else
+                s += " L " + (l + 1) + " " + t;
+        }
         for (let i = band.spans.length - 1; i >= 0; i--) {
             const j = band.spans[i], r = j.r;
             if (!j.end)
@@ -88,6 +116,14 @@ Item {
             s += " L " + j.from + " " + t;
             if (!j.start)
                 s += " L " + j.from + " " + (t + r) + S.turn(k, { x: j.from, y: t + r }, { x: j.from, y: t }, { x: j.from - r, y: t });
+        }
+        if (band.floating) {
+            // Up the near end and round to where it began.
+            if (band.flushLeft)
+                s += " L 0 " + t;
+            else
+                s += " L " + c[3] + " " + t + S.turn(ck, { x: c[3], y: t }, { x: 0, y: t }, { x: 0, y: t - c[3] });
+            return s + " L 0 " + c[0] + S.turn(ck, { x: 0, y: c[0] }, { x: 0, y: 0 }, { x: c[0], y: 0 }) + " Z";
         }
         if (band.leftR > 0)
             s += " L " + band.leftR + " " + t + S.turn(k, { x: band.leftR, y: t }, { x: 0, y: t }, { x: 0, y: t + band.leftR })
@@ -100,23 +136,48 @@ Item {
     // Its inner edge between the fillets: [[from, to]], for the trim.
     readonly property var stretches: {
         const out = [];
-        let a = band.leftR;
+        let a = band.floating ? (band.flushLeft ? 0 : band.corners[3]) : band.leftR;
         for (const j of band.spans) {
             out.push([a, j.from - j.r]);
             a = j.to + j.r;
         }
         if (!band.endSpan)
-            out.push([a, band.l - band.rightR]);
+            out.push([a, band.l - (band.floating ? band.corners[2] : band.rightR)]);
         return out.filter(p => p[1] - p[0] > 1);
     }
 
     // The hairline: along the inner edge, down each fillet to where a
     // panel takes it on, and down the ends into the screen's sides.
+    // Floating, all the way round the pill instead (the filled side is to
+    // the left of the way a run goes: along the inner edge, up the far end,
+    // back along the outer edge and down the near end), broken only where
+    // a panel is out.
     readonly property string linePath: {
         if (!band.lined)
             return "";
         const S = Services.StripShape, k = band.style.fillet, l = band.l, t = band.t;
         const runs = [];
+        if (band.floating) {
+            const ck = band.style.corner, c = band.corners, n = band.spans.length;
+            // Where the line leaves the inner edge for a panel's side, and
+            // comes back to it past the panel (a square shoulder's line
+            // covers the corner, as below).
+            const leave = j => j.r >= 0.5 ? [{ x: j.from, y: t, kind: k, size: j.r }, { x: j.from, y: t + j.r }] : [{ x: j.from + 1, y: t }];
+            const rejoin = j => j.r >= 0.5 ? [{ x: j.to, y: t + j.r }, { x: j.to, y: t, kind: k, size: j.r }] : [{ x: j.to - 1, y: t }];
+            const outer = [{ x: l, y: 0, kind: ck, size: c[1] }, { x: 0, y: 0, kind: ck, size: c[0] }];
+            if (n === 0)
+                return S.trace([{ x: l / 2, y: t }, { x: l, y: t, kind: ck, size: c[2] }]
+                    .concat(outer, [{ x: 0, y: t, kind: ck, size: c[3] }, { x: l / 2, y: t }]), 0.5);
+            for (let i = 0; i < n - 1; i++)
+                runs.push(rejoin(band.spans[i]).concat(leave(band.spans[i + 1])));
+            // From the last panel round the pill to the first: a panel
+            // against an end takes the line on from the pill's end itself.
+            const first = band.spans[0], last = band.spans[n - 1];
+            const round = (last.end ? [{ x: l, y: t }] : rejoin(last).concat([{ x: l, y: t, kind: ck, size: c[2] }]))
+                .concat(outer, first.start ? [{ x: 0, y: t }] : [{ x: 0, y: t, kind: ck, size: c[3] }].concat(leave(first)));
+            runs.push(round);
+            return runs.map(r => S.trace(r, 0.5)).join(" ");
+        }
         let run = band.leftR > 0 ? [{ x: 0, y: t + band.leftR }, { x: 0, y: t, kind: k, size: band.leftR }] : [{ x: -1, y: t }];
         for (const j of band.spans) {
             // (A panel in the corner at the start takes the line on from
@@ -335,13 +396,15 @@ Item {
         }
     }
 
-    // Siege: battlements hanging from the inner edge along the stretches.
+    // Siege: battlements hanging from the inner edge along the stretches
+    // (the lower edge of a bar along the top; standing on the upper one of
+    // a bar along the bottom), or standing along the outer edge (`crowned`).
     Component {
         id: merlonsTrim
 
         Item {
             Repeater {
-                model: band.stretches
+                model: band.crowned ? [[band.corners[0], band.l - band.corners[1]]] : band.stretches
 
                 Item {
                     id: run
@@ -356,7 +419,7 @@ Item {
                         Rectangle {
                             required property int index
                             x: run.modelData[0] + (run.modelData[1] - run.modelData[0] - run.count * run.pitch) / 2 + index * run.pitch + 7
-                            y: band.t - 1
+                            y: band.crowned ? -4 : band.t - 1
                             width: 12
                             height: 5
                             color: band.fill

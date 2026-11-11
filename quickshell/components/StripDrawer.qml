@@ -21,6 +21,12 @@ import qs.services as Services
 // to the screen's side there by a fillet of its own in the `foot` it keeps
 // below its body; `atStart`, the same at the bar's start (the left end, or
 // the top). `origin` is where its window lies on the screen.
+//
+// Out of the floating pill (StripShape.floating) there's no screen's side
+// to join: at the bar's end it's flush with the pill's end instead (`stop`
+// in from its panel's, or `start` at the bar's start), its side running
+// straight on down from the pill's, and its far corners are its own there
+// too.
 Item {
     id: drawer
 
@@ -40,6 +46,13 @@ Item {
 
     readonly property bool vertical: drawer.edge === "left" || drawer.edge === "right"
     readonly property var style: Services.StripShape.style
+    // Against the bar's start or end, whether that's the screen's side
+    // (joined to it by a fillet) or the floating pill's end (flush with it).
+    readonly property bool floating: Services.StripShape.floating
+    readonly property bool sideStart: drawer.atStart && !drawer.floating
+    readonly property bool sideEnd: drawer.atEnd && !drawer.floating
+    readonly property bool flushStart: drawer.atStart && drawer.floating
+    readonly property bool flushEnd: drawer.atEnd && drawer.floating
 
     // Its place on the screen, along the bar: its parents' offsets added
     // up (bindings to each, so it follows the panel as it's moved).
@@ -58,15 +71,15 @@ Item {
     readonly property real d: drawer.vertical ? drawer.width : drawer.height
     // The body's ends along the bar, on whole pixels of the screen, as the
     // strip's fillets are.
-    readonly property real a: drawer.atStart ? 0 : Math.round(drawer.along + drawer.start) - drawer.along
-    readonly property real b: drawer.atEnd ? drawer.l : Math.round(drawer.along + drawer.l - drawer.stop) - drawer.along
+    readonly property real a: drawer.sideStart ? 0 : Math.round(drawer.along + drawer.start) - drawer.along
+    readonly property real b: drawer.sideEnd ? drawer.l : Math.round(drawer.along + drawer.l - drawer.stop) - drawer.along
     readonly property real reach: drawer.d - drawer.foot
     readonly property real depth: Math.max(0, drawer.reach - drawer.inset)
     // The strip's fillets at its top, its own corners, and (at the bar's
     // end) the fillet into the screen's side.
     readonly property real r: Services.StripShape.filletOf(drawer.depth)
     readonly property real c: Math.max(0, Math.min(drawer.style.c, (drawer.b - drawer.a) / 2, drawer.depth - drawer.r))
-    readonly property real r2: drawer.atEnd || drawer.atStart ? Math.max(0, Math.min(drawer.style.r, drawer.foot, (drawer.b - drawer.a) / 2)) : 0
+    readonly property real r2: drawer.sideEnd || drawer.sideStart ? Math.max(0, Math.min(drawer.style.r, drawer.foot, (drawer.b - drawer.a) / 2)) : 0
     readonly property bool out: drawer.depth > 0.5 && drawer.b - drawer.a > 1
 
     readonly property string fillPath: {
@@ -74,13 +87,13 @@ Item {
             return "";
         const S = Services.StripShape, ck = drawer.style.corner, t = drawer.inset, a = drawer.a, b = drawer.b, y = drawer.reach, c = drawer.c;
         let s = "M " + a + " " + t + " L " + b + " " + t;
-        if (drawer.atEnd) {
+        if (drawer.sideEnd) {
             const r2 = drawer.r2;
             s += " L " + b + " " + (y + r2) + S.turn(drawer.style.fillet, { x: b, y: y + r2 }, { x: b, y: y }, { x: b - r2, y: y });
         } else {
             s += " L " + b + " " + (y - c) + S.turn(ck, { x: b, y: y - c }, { x: b, y: y }, { x: b - c, y: y });
         }
-        if (drawer.atStart) {
+        if (drawer.sideStart) {
             const r2 = drawer.r2;
             s += " L " + (a + r2) + " " + y + S.turn(drawer.style.fillet, { x: a + r2, y: y }, { x: a, y: y }, { x: a, y: y + r2 });
         } else {
@@ -92,13 +105,15 @@ Item {
     readonly property string linePath: {
         if (!drawer.out || !Services.StripShape.lined)
             return "";
+        // It takes the strip's line on at the foot of each fillet, or,
+        // flush with the pill's end, at the pill's inner edge itself.
         const t = drawer.inset, a = drawer.a, b = drawer.b, y = drawer.reach, top = t + drawer.r;
-        const pts = drawer.atStart ? [{ x: a, y: y + drawer.r2 }, { x: a, y: y, kind: drawer.style.fillet, size: drawer.r2 }]
-            : [{ x: a, y: top }, { x: a, y: y, kind: drawer.style.corner, size: drawer.c }];
-        if (drawer.atEnd)
+        const pts = drawer.sideStart ? [{ x: a, y: y + drawer.r2 }, { x: a, y: y, kind: drawer.style.fillet, size: drawer.r2 }]
+            : [{ x: a, y: drawer.flushStart ? t : top }, { x: a, y: y, kind: drawer.style.corner, size: drawer.c }];
+        if (drawer.sideEnd)
             pts.push({ x: b, y: y, kind: drawer.style.fillet, size: drawer.r2 }, { x: b, y: y + drawer.r2 });
         else
-            pts.push({ x: b, y: y, kind: drawer.style.corner, size: drawer.c }, { x: b, y: top });
+            pts.push({ x: b, y: y, kind: drawer.style.corner, size: drawer.c }, { x: b, y: drawer.flushEnd ? t : top });
         return Services.StripShape.trace(pts, 0.5);
     }
 

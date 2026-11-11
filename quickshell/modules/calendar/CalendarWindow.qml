@@ -38,11 +38,12 @@ PanelWindow {
 
     // The card comes out of the clock pill, away from the bar's edge: down
     // from a top bar, up from a bottom one, sideways from a standing one.
-    // With the bar as one strip it's a drawer of the strip (`joined`):
-    // against it, of its colour, unfolding from it under the clock
-    // (components/StripDrawer); too near either end of the bar for the
-    // strip's fillets on both sides, it goes into the corner there
-    // (`corner`), joined to the screen's side as well.
+    // With the bar as one strip, or floating, it's a drawer of the strip
+    // (`joined`): against it, of its colour, unfolding from it under the
+    // clock (components/StripDrawer); too near either end of the bar for
+    // the strip's fillets on both sides, it goes into the corner there
+    // (`corner`), joined to the screen's side as well, or flush with the
+    // floating pill's end.
     readonly property string edge: Services.BarLayout.edge
     readonly property bool vertical: Services.BarLayout.vertical
     readonly property bool joined: Services.StripShape.active
@@ -55,13 +56,15 @@ PanelWindow {
     readonly property real screenH: screen ? screen.height : 1200
     // Where it would start along the bar, centred on the pill, and so
     // whether it goes into a corner ("start", "end" or ""); there it keeps
-    // room past its card for the fillet into the screen's side.
+    // room past its card for the fillet into the screen's side, and lies
+    // as far in from that side as the strip's end does (`side`).
     readonly property real cardLength: vertical ? cal.cardHeight : 360
     readonly property real centred: Math.round(centre - cardLength / 2)
     readonly property string corner: !joined ? ""
         : centred < Services.StripShape.cornerRoom ? "start"
         : centred + cardLength > (vertical ? screenH : screenW) - Services.StripShape.cornerRoom ? "end" : ""
-    readonly property real foot: corner !== "" ? Services.StripShape.style.r : 0
+    readonly property real foot: corner !== "" ? Services.StripShape.cornerFoot : 0
+    readonly property real side: Services.StripShape.side
 
     // Respects the bar's exclusive zone but reserves none of its own: beside
     // a standing bar it spans three edges, where Quickshell's automatic zone
@@ -79,7 +82,7 @@ PanelWindow {
     margins.bottom: edge === "bottom" ? gap : 0
     margins.left: edge === "left" ? gap : vertical ? 0 : cardLeft
     readonly property real cardLeft: !joined ? Math.max(8, Math.min(screenW - implicitWidth - 8, centred))
-        : corner === "start" ? 0 : corner === "end" ? screenW - implicitWidth : centred
+        : corner === "start" ? side : corner === "end" ? screenW - implicitWidth - side : centred
     margins.right: edge === "right" ? gap : 0
 
     // Fixed surface size — large enough for the calendar plus a fully expanded
@@ -92,7 +95,7 @@ PanelWindow {
     // Beside a standing bar: the card's top, centred on the pill and kept on
     // screen with its notes open.
     readonly property real cardY: !joined ? Math.max(8, Math.min(height - cal.height - 8, centred))
-        : corner === "start" ? 0 : corner === "end" ? height - cal.height : centred
+        : corner === "start" ? side : corner === "end" ? height - cal.height - side : centred
 
     // Only the visible calendar/notes content is interactive; everything else in
     // the (transparent) surface stays click-through.

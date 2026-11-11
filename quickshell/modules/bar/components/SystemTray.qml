@@ -11,14 +11,14 @@ import qs.services as Services
 // The tray at the bar's far end: a button that slides a card of tray icons
 // out beside it. On a standing bar (`vertical`) the two stack, the card
 // opening upwards. Coloured like the rest of the bar (services/BarSettings),
-// which can also hide it; on the bar as one strip both lie flat on it, the
-// button washed under the pointer like the widgets.
+// which can also hide it; on the bar as one strip, or floating, both lie
+// flat on it, the button washed under the pointer like the widgets.
 GridLayout {
     id: root
 
     property bool trayOpen: false
     property bool vertical: false
-    readonly property bool strip: Services.BarSettings.strip
+    readonly property bool flat: Services.BarSettings.flat
 
     visible: SystemTray.items.values.length > 0 && Services.BarSettings.shown("tray")
     flow: root.vertical ? GridLayout.TopToBottom : GridLayout.LeftToRight
@@ -29,7 +29,7 @@ GridLayout {
         clip: true
         radius: Math.min(width, height) / 2
         color: Services.BarSettings.atom
-        border.width: root.strip || Services.DesktopTheme.borderless ? 0 : 1
+        border.width: root.flat || Services.DesktopTheme.borderless ? 0 : 1
 
         // 26 thick across the bar; along it, as long as its icons when open.
         Layout.preferredWidth: root.vertical ? 26 : root.trayOpen ? (trayInner.implicitWidth + 16) : 0
@@ -89,9 +89,9 @@ GridLayout {
         Layout.preferredHeight: 26
         radius: height / 2
 
-        color: !root.strip ? Services.BarSettings.capsule
+        color: !root.flat ? Services.BarSettings.capsule
             : toggleArea.containsMouse ? Services.BarSettings.wash : Colors.withAlpha(Services.BarSettings.wash, 0)
-        border.width: root.strip || Services.DesktopTheme.borderless ? 0 : 1
+        border.width: root.flat || Services.DesktopTheme.borderless ? 0 : 1
 
         Icon {
             anchors.centerIn: parent

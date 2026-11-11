@@ -53,9 +53,10 @@ Item {
             readonly property bool crenel: look.shape === "crenel"
             readonly property bool posture: look.shape === "posture"
             readonly property bool framed: hud || neon || deco || cusp || crenel || posture
-            // On the bar as one strip it lies flat on the band, washed with
-            // its text's colour under the pointer, as the widgets are.
-            readonly property bool strip: BarSettings.strip
+            // On the bar as one strip, or floating, it lies flat on the
+            // band, washed with its text's colour under the pointer, as the
+            // widgets are.
+            readonly property bool flat: BarSettings.flat
             radius: DesktopTheme.radius(look, height / 2, height)
             topLeftRadius: DesktopTheme.corner(look, radius, 0)
             topRightRadius: DesktopTheme.corner(look, radius, 1)
@@ -63,12 +64,12 @@ Item {
             bottomLeftRadius: DesktopTheme.corner(look, radius, 3)
             // Its colours are the bar settings' (services/BarSettings), as
             // the widgets' are.
-            border.width: strip || framed || look.shape === "print" ? 0 : look.border || (BarSettings.outline ? 1 : 0)
+            border.width: flat || framed || look.shape === "print" ? 0 : look.border || (BarSettings.outline ? 1 : 0)
             border.color: look.border ? DesktopTheme.borderColor(look) : BarSettings.outlineColor
-            color: strip ? (mouseArea.containsMouse ? BarSettings.wash : Colors.withAlpha(BarSettings.wash, 0)) : framed ? "transparent" : BarSettings.capsule
+            color: flat ? (mouseArea.containsMouse ? BarSettings.wash : Colors.withAlpha(BarSettings.wash, 0)) : framed ? "transparent" : BarSettings.capsule
 
             Behavior on color {
-                enabled: pill.strip
+                enabled: pill.flat
                 ColorAnimation {
                     duration: 140
                 }
@@ -80,7 +81,7 @@ Item {
             // were half a dozen shapes re-traced as the title changed width.
             Loader {
                 anchors.fill: parent
-                active: !pill.strip
+                active: !pill.flat
                 sourceComponent: ({
                     chamfer: hudCapsule,
                     neon: neonCapsule,
@@ -263,7 +264,7 @@ Item {
                 // as the widgets have their glyphs.
                 StyledText {
                     id: note
-                    visible: pill.strip
+                    visible: pill.flat
                     text: Icons.music
                     color: BarSettings.glyph
                     font.pixelSize: 16

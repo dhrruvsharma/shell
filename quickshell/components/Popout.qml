@@ -23,9 +23,10 @@ Item {
     property real bottomPadding: root.radius
 
     // A panel hanging from the bar names itself here (its key in
-    // services/StripShape's joints): while the bar is one strip it comes out
-    // of it as a drawer of the strip's own colour, joined to it through the
-    // theme's fillets (components/StripDrawer), instead of a bubble or a box.
+    // services/StripShape's joints): while the bar is one strip, or
+    // floating, it comes out of it as a drawer of the strip's own colour,
+    // joined to it through the theme's fillets (components/StripDrawer),
+    // instead of a bubble or a box.
     property string fromBar: ""
     readonly property bool joined: root.fromBar !== "" && Services.StripShape.active
 
@@ -62,7 +63,8 @@ Item {
 
     // Out of the strip: its body between the room kept at the ends along
     // the bar (where the strip's fillets go), and, in a corner, the room
-    // below it for the fillet into the screen's side.
+    // below it for the fillet into the screen's side (out of the floating
+    // pill, as far in from the screen's side as the pill's end is).
     Loader {
         anchors.fill: parent
         active: root.joined
@@ -70,7 +72,7 @@ Item {
             key: root.fromBar
             atEnd: root.alignment % 2 === 1
             start: root.radius
-            stop: root.alignment % 2 === 1 ? 0 : root.radius
+            stop: root.alignment % 2 === 1 ? Services.StripShape.side : root.radius
             foot: root.alignment % 2 === 1 ? root.radius : 0
         }
     }
