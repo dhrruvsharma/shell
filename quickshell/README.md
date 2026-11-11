@@ -671,6 +671,8 @@ python -m venv ~/novel-env
 
 Watches Spotify over MPRIS. On a track change, runs the helper with `go run`; it asks Spotify for the track's time-synced lyrics the way the web player does (as [spotify-lyrics-api](https://github.com/akashrchandran/spotify-lyrics-api) does), so there's no server to keep running. It signs in with your Spotify web session's `sp_dc` cookie; the access token that buys lasts an hour and is cached in `~/.cache/quickshell/spotify-token.json`.
 
+When there's no cookie, Spotify refuses it, can't be reached or has no lyrics for the track, the helper falls back to [LRCLIB](https://lrclib.net) (free, no account), looking the track up by title, artist, album and length. Only synced lyrics are used; LRCLIB matches more than 3 seconds off the track's length are skipped as a different cut.
+
 **Setup:**
 
 1. Install Go (`./install.sh --extras` does too):
@@ -679,18 +681,19 @@ Watches Spotify over MPRIS. On a track change, runs the helper with `go run`; it
    ```
    The first fetch builds the helper, which takes a few seconds; later ones reuse the build.
 
-2. Log into [open.spotify.com](https://open.spotify.com) and copy the value of its `sp_dc` cookie (browser dev tools → Application/Storage → Cookies). Then, with Spotify playing, open the media panel and click the key next to the track's name (or the "add it" hint where the lyrics go), paste the cookie and press Enter. The panel asks Spotify whether it takes the cookie and says so; once it does, the lyrics show.
+2. *(Optional: without it, lyrics come from LRCLIB.)* Log into [open.spotify.com](https://open.spotify.com) and copy the value of its `sp_dc` cookie (browser dev tools → Application/Storage → Cookies). Then, with Spotify playing, open the media panel and click the key next to the track's name, paste the cookie and press Enter. The panel asks Spotify whether it takes the cookie and says so; once it does, the lyrics show.
 
    The cookie is saved in `~/.config/quickshell/lyrics.json`, which git ignores and only you can read. You can also edit that file by hand; the shell picks up changes by itself:
    ```json
    { "sp_dc": "AQ..." }
    ```
-   While there's no cookie, or Spotify refuses it, the media panel shows a hint instead of lyrics; `qs log` says why.
+   If Spotify refuses the cookie, the key turns red and LRCLIB stands in until you set a new one; `qs log` says why.
 
 To try the helper by hand:
 ```bash
 cd ~/.config/quickshell/scripts/spotify-lyrics
 SP_DC=$(jq -r .sp_dc ../../lyrics.json) go run . <track id>   # or -check, to test only the cookie
+go run . -title "Song" -artist "Artist" -album "Album" -duration 215 -- <track id>   # LRCLIB only (no SP_DC)
 ```
 
 ---

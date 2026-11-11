@@ -155,7 +155,9 @@ Item {
                             contentItem: Glyph {
                                 text: "key"
                                 font.pixelSize: 14
-                                color: Colors.on_surface_variant
+                                // A refused cookie: LRCLIB stands in until a new one
+                                color: Services.LyricsService.cookieStatus === "refused"
+                                    ? Colors.error : Colors.on_surface_variant
                             }
                         }
                     }
@@ -347,7 +349,7 @@ Item {
                     visible: !mediaControl.editingCookie
                 }
 
-                // Lyrics only once a Spotify cookie is set (see LyricsService)
+                // Lyrics from Spotify, or LRCLIB without a cookie (see LyricsService)
                 ColumnLayout {
                     anchors.fill: parent
                     anchors.margins: 12
@@ -385,31 +387,6 @@ Item {
                                 ColorAnimation { duration: 200 }
                             }
                         }
-                    }
-                }
-
-                // Without a cookie Spotify takes, the way to set one
-                StyledText {
-                    id: cookieHint
-                    readonly property bool refused: Services.LyricsService.cookieStatus === "refused"
-
-                    anchors.centerIn: parent
-                    width: parent.width - 24
-                    visible: !Services.LyricsService.available && !mediaControl.editingCookie
-                    text: refused ? "Spotify refused your cookie · set a new one"
-                        : "♪ Lyrics need your Spotify cookie · add it ♪"
-                    horizontalAlignment: Text.AlignHCenter
-                    wrapMode: Text.WordWrap
-                    font.pixelSize: 12
-                    color: refused ? Colors.error : Colors.on_surface_variant
-                    opacity: hintArea.containsMouse ? 1 : 0.75
-
-                    MouseArea {
-                        id: hintArea
-                        anchors.fill: parent
-                        hoverEnabled: true
-                        cursorShape: Qt.PointingHandCursor
-                        onClicked: mediaControl.editingCookie = true
                     }
                 }
 

@@ -6,39 +6,42 @@ import QtQuick
 import qs.services
 
 // Time-synced lyrics for what Spotify is playing. scripts/spotify-lyrics, a
-// small Go program, fetches them with the sp_dc cookie of your Spotify web
-// session, kept in lyrics.json next to shell.qml (git ignores it):
+// small Go program, fetches them from Spotify with the sp_dc cookie of your
+// Spotify web session, kept in lyrics.json next to shell.qml (git ignores it):
 //
 //     { "sp_dc": "AQ…" }
 //
-// The media panel sets it (the key by the track's name), or edit the file;
-// either way it applies without a restart. The program runs with `go run`,
-// which builds it the first time (a few seconds) and reuses that build after.
-// Until there's a cookie Spotify takes, `available` stays false and the media
-// panel shows no lyrics.
+// and from LRCLIB (lrclib.net) by the track's title, artist, album and length
+// when there's no cookie, Spotify refuses it or has no lyrics for the track.
+// The media panel sets the cookie (the key by the track's name), or edit the
+// file; either way it applies without a restart. The program runs with `go
+// run`, which builds it the first time (a few seconds) and reuses that build
+// after.
 Singleton {
     id: root
 
     readonly property string spDc: config.sp_dc.trim()
     // What Spotify made of the cookie: "" (not asked yet), "checking", "ok",
     // "refused", "unreachable" (couldn't ask it) or "nogo" (Go isn't
-    // installed). A refused cookie waits for a new one.
+    // installed). A refused cookie isn't tried again until it changes; the
+    // lyrics come from LRCLIB meanwhile.
     property string cookieStatus: ""
-    readonly property bool available: spDc !== "" && cookieStatus !== "refused"
+    // Lyrics no longer need the cookie, LRCLIB standing in without one
+    readonly property bool available: true
+    // Where the current lyrics came from: "spotify", "lrclib" or ""
+    property string source: ""
 
     property var lines: []
     property bool loaded: false
     property string status
     property string trackid
 
-    onSpDcChanged: cookieStatus = ""
-
-    onAvailableChanged: {
-        if (available) {
-            // Refetch the current track even if it didn't change meanwhile
-            trackid = ""
-            root.poll()
-        }
+    onSpDcChanged: {
+        cookieStatus = ""
+        // Refetch the current track even if it didn't change meanwhile, for
+        // Spotify's lyrics to replace LRCLIB's
+        trackid = ""
+        root.poll()
     }
 
     FileView {
@@ -85,6 +88,8 @@ Singleton {
         // The track and cookie this run is for, and whether it ran to an exit
         property string forId
         property string forCookie
+        // Whether this run asked Spotify (not with a refused cookie)
+        property bool usedCookie
         property bool ended
 
         workingDirectory: Quickshell.shellPath("scripts/spotify-lyrics")
@@ -204,18 +209,27 @@ Singleton {
     // Fetches the current track's lyrics, one run at a time: a run that ends
     // after the track or the cookie changed starts the next.
     function fetchLyrics() {
-        if (!root.available || !root.trackid || fetcher.running)
+        if (!root.trackid || fetcher.running)
             return
+        const sp = Media.spotifyPlayer
         fetcher.forId = root.trackid
         fetcher.forCookie = root.spDc
+        fetcher.usedCookie = root.spDc !== "" && root.cookieStatus !== "refused"
         fetcher.ended = false
+        // What LRCLIB finds the track by
+        const meta = sp ? [
+            "-title", sp.trackTitle || "",
+            "-artist", sp.trackArtist || "",
+            "-album", sp.trackAlbum || "",
+            "-duration", String(sp.lengthSupported && sp.length > 0 ? sp.length : 0)
+        ] : []
         // The cookie goes in the environment, which unlike the command line
         // isn't open to every process. It's passed here rather than bound on
         // the Process, which could still hold the old one when a new cookie
-        // sets off this fetch.
+        // sets off this fetch. Left out, only LRCLIB is asked.
         fetcher.exec({
-            command: ["go", "run", ".", root.trackid],
-            environment: { SP_DC: root.spDc }
+            command: ["go", "run", "."].concat(meta, ["--", root.trackid]),
+            environment: { SP_DC: fetcher.usedCookie ? root.spDc : "" }
         })
     }
 
@@ -229,22 +243,32 @@ Singleton {
 
         const res = root.answer(out, err) || { error: true, kind: "failed" }
 
+        // What Spotify made of the cookie, whoever had the lyrics
+        if (fetcher.usedCookie) {
+            if (res.source === "spotify") {
+                root.cookieStatus = "ok"
+            } else if (res.spotify && res.spotify.kind === "auth") {
+                console.warn("LyricsService:", res.spotify.message, "- using LRCLIB until the cookie changes")
+                root.cookieStatus = "refused"
+            } else if (res.spotify && res.spotify.kind === "failed") {
+                console.warn("LyricsService: Spotify:", res.spotify.message)
+            }
+        }
+
         retryTimer.stop()
         if (!res.error) {
             retryTimer.interval = 60000
-            root.cookieStatus = "ok"
+            root.source = res.source || ""
             root.lines = res.lines || []
             root.loaded = true
-            console.log("Lyrics loaded:", root.lines.length, "lines")
-        } else if (res.kind === "auth") {
-            console.warn("LyricsService:", res.message, "- no lyrics until the cookie changes")
-            root.cookieStatus = "refused"
+            console.log("Lyrics loaded from", root.source + ":", root.lines.length, "lines")
         } else {
             if (res.kind !== "notfound") {
                 if (res.message)
                     console.warn("LyricsService:", res.message)
                 retryTimer.restart()
             }
+            root.source = ""
             root.lines = []
             root.loaded = true
         }

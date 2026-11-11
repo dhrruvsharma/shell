@@ -119,11 +119,11 @@ Item {
             text: editor.edited ? (field.text.trim() ? "Enter to save it" : "Enter to remove it")
                 : editor.status === "checking" ? "Asking Spotify…"
                 : editor.status === "ok" ? "Spotify takes it: lyrics are on."
-                : editor.status === "refused" ? "Spotify refused it. Copy it again, whole, from a logged-in open.spotify.com."
+                : editor.status === "refused" ? "Spotify refused it (lyrics come from LRCLIB meanwhile). Copy it again, whole, from a logged-in open.spotify.com."
                 : editor.status === "unreachable" ? "Saved, but Spotify couldn't be reached to check it."
                 : editor.status === "nogo" ? "Saved, but the lyrics need Go to run: sudo pacman -S go"
                 : Services.LyricsService.spDc ? "Saved. Lyrics show while Spotify plays."
-                : "Log in at open.spotify.com, then copy the sp_dc cookie from the browser's dev tools (Application → Cookies)."
+                : "Optional: lyrics come from LRCLIB without it. For Spotify's, log in at open.spotify.com and copy the sp_dc cookie from the browser's dev tools (Application → Cookies)."
             color: editor.edited ? Colors.on_surface_variant
                 : editor.status === "refused" || editor.status === "nogo" ? Colors.error
                 : editor.status === "ok" ? Colors.primary

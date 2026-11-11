@@ -1,7 +1,12 @@
 // Command spotify-lyrics prints the time-synced lyrics of a Spotify track as
 // JSON, for services/LyricsService.qml:
 //
-//	SP_DC=<cookie> go run . <track id>
+//	SP_DC=<cookie> go run . [-title T -artist A -album B -duration S] <track id>
+//
+// It asks Spotify first, when there's a cookie; when Spotify has no lyrics,
+// refuses the cookie or can't be reached, it falls back to LRCLIB
+// (lrclib.net, free and keyless), which finds the track by the title, artist,
+// album and length (in seconds) given. Without a cookie it asks LRCLIB only.
 //
 // With -check in place of the track it only makes sure Spotify takes the
 // cookie, for the media panel to say so when it's set there.
@@ -14,15 +19,20 @@
 //
 // It prints one line, either
 //
-//	{"error": false, "syncType": "LINE_SYNCED", "lines": [{"startTimeMs": "1230", "words": "…", …}, …]}
+//	{"error": false, "source": "spotify", "syncType": "LINE_SYNCED", "lines": [{"startTimeMs": "1230", "words": "…", …}, …]}
 //
 // ({"error": false} for -check) or, exiting 1,
 //
 //	{"error": true, "kind": "…", "message": "…"}
 //
-// where kind is "auth" (no sp_dc, or Spotify refused it), "notfound" (Spotify
-// has no lyrics for the track) or "failed" (anything else, worth another try
-// later).
+// where kind is "auth" (no sp_dc, or Spotify refused it; -check only),
+// "notfound" (neither Spotify nor LRCLIB has synced lyrics for the track) or
+// "failed" (anything else, worth another try later). source is "spotify" or
+// "lrclib". Whenever Spotify was asked and failed, either answer also has
+//
+//	"spotify": {"kind": "…", "message": "…"}
+//
+// so the shell learns of a refused cookie even when LRCLIB stood in.
 package main
 
 import (
@@ -34,6 +44,7 @@ import (
 	"encoding/hex"
 	"encoding/json"
 	"errors"
+	"flag"
 	"fmt"
 	"net/http"
 	"os"
@@ -51,6 +62,10 @@ const (
 	// The web player's TOTP secrets, which Spotify rotates now and then. This
 	// list keeps up with them (spotify-lyrics-api reads it too).
 	secretsURL = "https://raw.githubusercontent.com/xyloflake/spot-secrets-go/refs/heads/main/secrets/secretDict.json"
+
+	lrclibURL = "https://lrclib.net/api/"
+	// LRCLIB asks clients to name themselves
+	lrclibAgent = "quickshell-lyrics"
 
 	userAgent = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36"
 )
@@ -85,23 +100,43 @@ type lyrics struct {
 	Lines    json.RawMessage `json:"lines"`
 }
 
+// track is what LRCLIB finds a track by
+type track struct {
+	title, artist, album string
+	duration             float64 // seconds, 0 if unknown
+}
+
 func main() {
-	if len(os.Args) != 2 {
-		fmt.Fprintln(os.Stderr, "usage: SP_DC=<cookie> spotify-lyrics <track id> | -check")
+	var tr track
+	flag.StringVar(&tr.title, "title", "", "the track's title, for LRCLIB")
+	flag.StringVar(&tr.artist, "artist", "", "the track's artist, for LRCLIB")
+	flag.StringVar(&tr.album, "album", "", "the track's album, for LRCLIB")
+	flag.Float64Var(&tr.duration, "duration", 0, "the track's length in seconds, for LRCLIB")
+	flag.Usage = func() {
+		fmt.Fprintln(os.Stderr, "usage: SP_DC=<cookie> spotify-lyrics [-title T -artist A -album B -duration S] <track id> | -check")
+	}
+	// -check isn't a flag (it predates them), so it's picked out first
+	if len(os.Args) == 2 && os.Args[1] == "-check" {
+		run(func(ctx context.Context, spDC string, answer map[string]any) error {
+			return check(ctx, spDC)
+		})
+	}
+	flag.Parse()
+	if flag.NArg() != 1 {
+		flag.Usage()
 		os.Exit(2)
 	}
+	run(func(ctx context.Context, spDC string, answer map[string]any) error {
+		return fetchAny(ctx, spDC, flag.Arg(0), tr, answer)
+	})
+}
+
+// run does the job, prints its answer and exits.
+func run(job func(ctx context.Context, spDC string, answer map[string]any) error) {
 	spDC := strings.TrimSpace(os.Getenv("SP_DC"))
 	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 	answer := map[string]any{"error": false}
-	var err error
-	if os.Args[1] == "-check" {
-		err = check(ctx, spDC)
-	} else {
-		var lyr *lyrics
-		if lyr, err = fetch(ctx, spDC, os.Args[1]); err == nil {
-			answer["syncType"], answer["lines"] = lyr.SyncType, lyr.Lines
-		}
-	}
+	err := job(ctx, spDC, answer)
 	cancel()
 
 	out := json.NewEncoder(os.Stdout)
@@ -111,10 +146,46 @@ func main() {
 		if errors.As(err, &fe) {
 			kind = fe.kind
 		}
-		out.Encode(map[string]any{"error": true, "kind": kind, "message": err.Error()})
+		answer["error"], answer["kind"], answer["message"] = true, kind, err.Error()
+		out.Encode(answer)
 		os.Exit(1)
 	}
 	out.Encode(answer)
+	os.Exit(0)
+}
+
+// fetchAny gets trackID's lyrics from Spotify when there's a cookie, else (or
+// when that fails) from LRCLIB, filling them into answer.
+func fetchAny(ctx context.Context, spDC, trackID string, tr track, answer map[string]any) error {
+	var spErr error
+	if spDC != "" {
+		lyr, err := fetch(ctx, spDC, trackID)
+		if err == nil {
+			answer["source"], answer["syncType"], answer["lines"] = "spotify", lyr.SyncType, lyr.Lines
+			return nil
+		}
+		spErr = err
+		answer["spotify"] = map[string]any{"kind": kindOf(err), "message": err.Error()}
+	}
+
+	lyr, err := fetchLRCLIB(ctx, tr)
+	if err == nil {
+		answer["source"], answer["syncType"], answer["lines"] = "lrclib", lyr.SyncType, lyr.Lines
+		return nil
+	}
+	// Worth another try later if either might do better then
+	if spErr != nil && kindOf(spErr) == kindFailed && kindOf(err) == kindNotFound {
+		return spErr
+	}
+	return err
+}
+
+func kindOf(err error) string {
+	var fe *fetchError
+	if errors.As(err, &fe) {
+		return fe.kind
+	}
+	return kindFailed
 }
 
 // check makes sure Spotify takes spDC: a token it bought before will do, else
@@ -333,10 +404,10 @@ func getJSON(ctx context.Context, url string, header http.Header, v any) error {
 	if err != nil {
 		return err
 	}
+	req.Header.Set("User-Agent", userAgent)
 	for k, vs := range header {
 		req.Header[k] = vs
 	}
-	req.Header.Set("User-Agent", userAgent)
 	resp, err := http.DefaultClient.Do(req)
 	if err != nil {
 		return err
