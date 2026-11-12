@@ -25,4 +25,9 @@ Scope {
         widgetId: "quote"
         widget: Component { QuoteWidget {} }
     }
+
+    WidgetWindow {
+        widgetId: "lyrics"
+        widget: Component { LyricsWidget {} }
+    }
 }

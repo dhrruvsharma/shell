@@ -7,6 +7,8 @@
 // refuses the cookie or can't be reached, it falls back to LRCLIB
 // (lrclib.net, free and keyless), which finds the track by the title, artist,
 // album and length (in seconds) given. Without a cookie it asks LRCLIB only.
+// Lyrics Spotify has without times ("syncType": "UNSYNCED", every line at 0)
+// only stand when LRCLIB has none that are synced.
 //
 // With -check in place of the track it only makes sure Spotify takes the
 // cookie, for the media panel to say so when it's set there.
@@ -28,11 +30,14 @@
 // where kind is "auth" (no sp_dc, or Spotify refused it; -check only),
 // "notfound" (neither Spotify nor LRCLIB has synced lyrics for the track) or
 // "failed" (anything else, worth another try later). source is "spotify" or
-// "lrclib". Whenever Spotify was asked and failed, either answer also has
+// "lrclib". Whenever Spotify was asked and its lyrics aren't the ones given,
+// either answer also has
 //
 //	"spotify": {"kind": "…", "message": "…"}
 //
-// so the shell learns of a refused cookie even when LRCLIB stood in.
+// so the shell learns of a refused cookie even when LRCLIB stood in. There
+// kind can also be "unsynced": Spotify took the cookie, but LRCLIB had the
+// lyrics synced and Spotify didn't.
 package main
 
 import (
@@ -100,6 +105,13 @@ type lyrics struct {
 	Lines    json.RawMessage `json:"lines"`
 }
 
+// The syncType of lyrics that aren't timed to the song, and what's said of
+// Spotify when its lyrics were passed over for being so
+const (
+	syncNone     = "UNSYNCED"
+	kindUnsynced = "unsynced"
+)
+
 // track is what LRCLIB finds a track by
 type track struct {
 	title, artist, album string
@@ -155,22 +167,36 @@ func run(job func(ctx context.Context, spDC string, answer map[string]any) error
 }
 
 // fetchAny gets trackID's lyrics from Spotify when there's a cookie, else (or
-// when that fails) from LRCLIB, filling them into answer.
+// when that fails, or its lyrics aren't synced) from LRCLIB, filling them
+// into answer.
 func fetchAny(ctx context.Context, spDC, trackID string, tr track, answer map[string]any) error {
 	var spErr error
+	var unsynced *lyrics
 	if spDC != "" {
 		lyr, err := fetch(ctx, spDC, trackID)
-		if err == nil {
+		switch {
+		case err == nil && lyr.SyncType != syncNone:
 			answer["source"], answer["syncType"], answer["lines"] = "spotify", lyr.SyncType, lyr.Lines
 			return nil
+		case err == nil:
+			// The words without their times: LRCLIB may have them timed
+			unsynced = lyr
+		default:
+			spErr = err
+			answer["spotify"] = map[string]any{"kind": kindOf(err), "message": err.Error()}
 		}
-		spErr = err
-		answer["spotify"] = map[string]any{"kind": kindOf(err), "message": err.Error()}
 	}
 
 	lyr, err := fetchLRCLIB(ctx, tr)
 	if err == nil {
 		answer["source"], answer["syncType"], answer["lines"] = "lrclib", lyr.SyncType, lyr.Lines
+		if unsynced != nil {
+			answer["spotify"] = map[string]any{"kind": kindUnsynced, "message": "Spotify's lyrics for this track aren't synced"}
+		}
+		return nil
+	}
+	if unsynced != nil {
+		answer["source"], answer["syncType"], answer["lines"] = "spotify", unsynced.SyncType, unsynced.Lines
 		return nil
 	}
 	// Worth another try later if either might do better then

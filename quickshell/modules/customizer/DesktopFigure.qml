@@ -18,7 +18,7 @@ Item {
     readonly property real sh: 1200
     readonly property real k: Math.min(fig.width / fig.sw, (fig.height - 30) / fig.sh)
     // Roughly how big each widget is on the screen.
-    readonly property var sizes: ({ clock: [380, 220], music: [380, 160], sysmon: [340, 250], quote: [400, 130] })
+    readonly property var sizes: ({ clock: [380, 220], music: [380, 160], sysmon: [340, 250], quote: [400, 130], lyrics: [660, 250] })
 
     Item {
         id: screen

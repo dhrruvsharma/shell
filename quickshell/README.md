@@ -668,10 +668,13 @@ python -m venv ~/novel-env
 
 - **Service:** `services/LyricsService.qml`
 - **Helper:** `scripts/spotify-lyrics/` (Go, standard library only)
+- **Shown in:** the media panel, and the *Lyrics* desktop widget (`modules/desktopwidgets/LyricsWidget.qml`)
 
 Watches Spotify over MPRIS. On a track change, runs the helper with `go run`; it asks Spotify for the track's time-synced lyrics the way the web player does (as [spotify-lyrics-api](https://github.com/akashrchandran/spotify-lyrics-api) does), so there's no server to keep running. It signs in with your Spotify web session's `sp_dc` cookie; the access token that buys lasts an hour and is cached in `~/.cache/quickshell/spotify-token.json`.
 
-When there's no cookie, Spotify refuses it, can't be reached or has no lyrics for the track, the helper falls back to [LRCLIB](https://lrclib.net) (free, no account), looking the track up by title, artist, album and length. Only synced lyrics are used; LRCLIB matches more than 3 seconds off the track's length are skipped as a different cut.
+When there's no cookie, Spotify refuses it, can't be reached, or has no lyrics for the track or only unsynced ones, the helper falls back to [LRCLIB](https://lrclib.net) (free, no account), looking the track up by title, artist, album and length. Only synced lyrics are taken from it; LRCLIB matches more than 3 seconds off the track's length are skipped as a different cut. Spotify's unsynced lyrics are kept only when LRCLIB has none.
+
+**On the desktop:** the *Lyrics* widget sets the line being sung between the one before and the one after, straight on the wallpaper: no frame, only the desktop theme's type. Drag it anywhere, like the other desktop widgets; its lines are set to the side of the screen it stands on (left, middle or right). With no synced lyrics to show (nothing playing, none for the song, still being fetched) it shows nothing and can't be grabbed, so place it while a song with lyrics plays, or on the miniature in the Themes panel's Widgets tab (**ALT + SHIFT + W**), where a sample stands in. Paused, the lines dim, and after half a minute they go. Switch it there, in chapter VI of the Customizer, or with `qs ipc call widgets enable lyrics` (`disable lyrics`).
 
 **Setup:**
 

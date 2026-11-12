@@ -21,6 +21,10 @@ import qs.services as Services
 // as if flying in from elsewhere). On press the small buffer briefly sits
 // at the screen's corner, so the widget is hidden until the surface covers
 // the screen.
+//
+// A widget with nothing to show for now (the lyrics, between songs) says so
+// with `idle`: its surface then takes no input, or thin air could be grabbed.
+// One that minds where on the screen it stands has a `place`, and is told.
 PanelWindow {
     id: win
 
@@ -45,6 +49,9 @@ PanelWindow {
     readonly property real restX: Math.round(Math.max(minX, Math.min(maxX, frac.x * Math.max(0, sw - bw))))
     readonly property real restY: Math.round(Math.max(minY, Math.min(maxY, frac.y * Math.max(0, sh - bh))))
     readonly property bool full: width >= sw - 1 && height >= sh - 1
+    readonly property bool idle: loader.item !== null && loader.item.idle === true
+    // Where the widget's middle is across the screen (0 left, 1 right), dragged or at rest
+    readonly property real place: ((held && full ? dragX : restX) + bw / 2) / sw
 
     screen: Quickshell.screens[0] ?? null
     // Mapped once the widget is built at its own size (the loader only runs
@@ -65,7 +72,7 @@ PanelWindow {
     implicitWidth: bw
     implicitHeight: bh
 
-    mask: Region { item: body }
+    mask: Region { item: win.idle && !win.held ? null : body }
 
     Item {
         id: body
@@ -110,6 +117,10 @@ PanelWindow {
             id: loader
             active: Services.DesktopWidgets.enabled(win.widgetId)
             sourceComponent: win.widget
+            onLoaded: {
+                if ("place" in item)
+                    item["place"] = Qt.binding(() => win.place);
+            }
         }
     }
 

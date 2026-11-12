@@ -1,6 +1,7 @@
 {
     "on": {
         "clock": true,
+        "lyrics": true,
         "music": true,
         "quote": true,
         "sysmon": true
@@ -9,6 +10,10 @@
         "clock": {
             "x": 0.025833918539325842,
             "y": 0.060256583694083696
+        },
+        "lyrics": {
+            "x": 0.5,
+            "y": 0.94
         },
         "music": {
             "x": 0.9419382295719845,

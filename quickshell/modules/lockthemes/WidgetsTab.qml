@@ -263,7 +263,7 @@ Item {
             StyledText {
                 width: parent.width
                 wrapMode: Text.WordWrap
-                text: "Each widget is its own small surface, so only it redraws: the clock once a minute, the music player once a second while something plays, the system monitor every two seconds, the visualizer only while audio plays. The visualizer's shape, colour and tilt are still set in its own editor (SUPER+T)."
+                text: "Each widget is its own small surface, so only it redraws: the clock once a minute, the music player once a second while something plays, the system monitor every two seconds, the lyrics once a line, the visualizer only while audio plays. The visualizer's shape, colour and tilt are still set in its own editor (SUPER+T)."
                 font.pixelSize: 12
                 lineHeight: 1.2
                 color: Colors.on_surface_variant

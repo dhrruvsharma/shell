@@ -12,7 +12,8 @@ import qs.services
 //     { "sp_dc": "AQ…" }
 //
 // and from LRCLIB (lrclib.net) by the track's title, artist, album and length
-// when there's no cookie, Spotify refuses it or has no lyrics for the track.
+// when there's no cookie, Spotify refuses it or has no lyrics for the track,
+// or none that are synced.
 // The media panel sets the cookie (the key by the track's name), or edit the
 // file; either way it applies without a restart. The program runs with `go
 // run`, which builds it the first time (a few seconds) and reuses that build
@@ -32,6 +33,9 @@ Singleton {
     property string source: ""
 
     property var lines: []
+    // Whether `lines` are timed to the song. Spotify also has lyrics that
+    // aren't, every line of them at 0.
+    property bool synced: false
     property bool loaded: false
     property string status
     property string trackid
@@ -69,6 +73,25 @@ Singleton {
         running: root.available
         repeat: true
         onTriggered: root.poll()
+    }
+
+    // A new track's lyrics are fetched as it starts, not at the next poll:
+    // a moment in, so skipping through tracks doesn't fetch for each
+    Timer {
+        id: trackTimer
+        interval: 400
+        onTriggered: root.poll()
+    }
+
+    Connections {
+        target: Media.spotifyPlayer
+
+        function onPostTrackChanged() {
+            trackTimer.restart()
+        }
+        function onPlaybackStateChanged() {
+            root.poll()
+        }
     }
 
     // A fetch that failed (offline, rate limited, …) is tried again in a
@@ -144,8 +167,10 @@ Singleton {
         const id = Media.spotifyTrackId()
         // Only fetch if track changed
         if (id && root.trackid !== id) {
+            // Reset while fetching, and first: `lines` are never taken for
+            // the new track's
+            root.loaded = false
             root.trackid = id
-            root.loaded = false // Reset while fetching
             root.fetchLyrics()
             console.log("Track ID:", id)
         }
@@ -243,9 +268,10 @@ Singleton {
 
         const res = root.answer(out, err) || { error: true, kind: "failed" }
 
-        // What Spotify made of the cookie, whoever had the lyrics
+        // What Spotify made of the cookie, whoever had the lyrics (LRCLIB,
+        // when Spotify's weren't synced)
         if (fetcher.usedCookie) {
-            if (res.source === "spotify") {
+            if (res.source === "spotify" || (res.spotify && res.spotify.kind === "unsynced")) {
                 root.cookieStatus = "ok"
             } else if (res.spotify && res.spotify.kind === "auth") {
                 console.warn("LyricsService:", res.spotify.message, "- using LRCLIB until the cookie changes")
@@ -258,8 +284,10 @@ Singleton {
         retryTimer.stop()
         if (!res.error) {
             retryTimer.interval = 60000
+            const lines = res.lines || []
             root.source = res.source || ""
-            root.lines = res.lines || []
+            root.synced = res.syncType !== "UNSYNCED" && lines.some(l => parseInt(l.startTimeMs) > 0)
+            root.lines = lines
             root.loaded = true
             console.log("Lyrics loaded from", root.source + ":", root.lines.length, "lines")
         } else {
@@ -269,6 +297,7 @@ Singleton {
                 retryTimer.restart()
             }
             root.source = ""
+            root.synced = false
             root.lines = []
             root.loaded = true
         }

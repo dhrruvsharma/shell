@@ -14,8 +14,8 @@ Item {
     property string themeId: Services.DesktopTheme.enabled ? Services.DesktopTheme.theme : ""
     property bool editable: false
 
-    readonly property var ids: ["clock", "music", "sysmon", "quote"]
-    readonly property var components: ({ clock: clockC, music: musicC, sysmon: sysmonC, quote: quoteC })
+    readonly property var ids: ["clock", "music", "sysmon", "quote", "lyrics"]
+    readonly property var components: ({ clock: clockC, music: musicC, sysmon: sysmonC, quote: quoteC, lyrics: lyricsC })
 
     width: Quickshell.screens[0]?.width ?? 1920
     height: Quickshell.screens[0]?.height ?? 1080
@@ -71,6 +71,11 @@ Item {
             Loader {
                 id: loader
                 sourceComponent: root.components[slot.modelData]
+                // (The lyrics set their lines to the side they stand on.)
+                onLoaded: {
+                    if ("place" in item)
+                        item["place"] = Qt.binding(() => (slot.x + slot.width / 2) / root.width);
+                }
             }
 
             Draggable {
@@ -136,5 +141,13 @@ Item {
     Component {
         id: quoteC
         QuoteWidget { themeId: root.themeId }
+    }
+
+    Component {
+        id: lyricsC
+        LyricsWidget {
+            themeId: root.themeId
+            preview: true
+        }
     }
 }

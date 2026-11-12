@@ -19,10 +19,11 @@ Singleton {
         { id: "music", name: "Music player", icon: "music_note", description: "Now playing, with controls", x: 0.97, y: 0.08 },
         { id: "sysmon", name: "System monitor", icon: "monitoring", description: "CPU, memory, temperature and disk", x: 0.97, y: 0.52 },
         { id: "quote", name: "Dad joke", icon: "sentiment_very_satisfied", description: "A fresh joke every ten minutes", x: 0.03, y: 0.98 },
+        { id: "lyrics", name: "Lyrics", icon: "lyrics", description: "The line being sung, in step with Spotify", x: 0.5, y: 0.94 },
         { id: "cava", name: "Visualizer", icon: "graphic_eq", description: "Cava spectrum of what's playing" }
     ]
 
-    readonly property var defaults: ({ clock: true, music: true, sysmon: true, quote: true })
+    readonly property var defaults: ({ clock: true, music: true, sysmon: true, quote: true, lyrics: true })
 
     function info(id) {
         return widgets.find(w => w.id === id);
