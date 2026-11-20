@@ -73,18 +73,16 @@ PowerScene {
         scale: (1.12 - 0.12 * scene.landed) * (1 - 0.94 * scene.away)
         rotation: -0.8 - 3 * (1 - scene.landed) + 900 * scene.away * scene.away
 
-        // Its hard shadow on the desk, as the clippings have.
-        Rectangle {
-            x: 10 * scene.sc
-            y: 10 * scene.sc
-            width: parent.width
-            height: parent.height
-            color: Colors.withAlpha("black", 0.5)
-        }
-
-        Rectangle {
+        // The sheet (Newsprint), folded across the middle as it came off
+        // the press, its shadow on the desk.
+        Newsprint {
+            id: pagePaper
             anchors.fill: parent
-            color: Press.paper
+            seed: 9.4
+            age: 0.3
+            foldY: 0.5
+            lift: 0.3
+            liftCorner: 2
         }
 
         // ── Head of the page ─────────────────────────────────────────────
@@ -377,6 +375,23 @@ PowerScene {
         }
     }
 
+    // The paper over the print, the ink soaked into it and the light across
+    // the fold, carried round with the page like the stories.
+    Item {
+        x: page.x
+        y: page.y
+        width: page.width
+        height: page.height
+        opacity: page.opacity
+        scale: page.scale
+        rotation: page.rotation
+
+        NewsprintInk {
+            anchors.fill: parent
+            sheet: pagePaper
+        }
+    }
+
     // ── -30- ─────────────────────────────────────────────────────────────
 
     Column {
@@ -414,17 +429,13 @@ PowerScene {
         scale: 0.06 + 0.94 * scene.extra
         rotation: -720 * (1 - scene.extra) * (1 - scene.extra) + 2
 
-        Rectangle {
-            x: 10 * scene.sc
-            y: 10 * scene.sc
-            width: parent.width
-            height: parent.height
-            color: Colors.withAlpha("black", 0.5)
-        }
-
-        Rectangle {
+        Newsprint {
+            id: extraSheet
             anchors.fill: parent
-            color: Press.paper
+            seed: 11.2
+            age: 0.15
+            lift: 0.35
+            liftCorner: 3
         }
 
         Column {
@@ -471,6 +482,11 @@ PowerScene {
                 font.italic: true
                 color: Press.inkSoft
             }
+        }
+
+        NewsprintInk {
+            anchors.fill: parent
+            sheet: extraSheet
         }
     }
 

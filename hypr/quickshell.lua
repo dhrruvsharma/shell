@@ -69,10 +69,11 @@ hl.animation({ leaf = "workspacesOut", enabled = true, speed = 4.5,  bezier = "b
 -- The desktop widgets, cava and the workspace disc grow to full screen
 -- while dragged and shrink back on release; animated, they slid in from
 -- the corner after every drop. The edge line's surface does the same each
--- time it opens out or is picked up.
+-- time it opens out or is picked up. The panorama's surface grows over
+-- the screen for a workspace switch and shrinks back to a pixel after.
 hl.layer_rule({
     name    = "quickshell-panels-no-anim",
-    match   = { namespace = "^quickshell:(panels|osd|widget|cava|workspacedisc|edgeline)$" },
+    match   = { namespace = "^quickshell:(panels|osd|widget|cava|workspacedisc|edgeline|panorama)$" },
     no_anim = true,
 })
 

@@ -1,0 +1,9 @@
+{
+    "curve": 1,
+    "depth": 0.6,
+    "duration": 650,
+    "gestures": true,
+    "switching": "hyprland",
+    "transitions": false,
+    "view": "panorama"
+}

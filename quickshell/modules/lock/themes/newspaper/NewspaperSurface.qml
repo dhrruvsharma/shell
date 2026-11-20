@@ -174,10 +174,18 @@ Item {
         color: Press.ink
     }
 
-    Rectangle {
+    // The page: a sheet of newsprint (Newsprint) the size of the screen,
+    // folded across the middle as it came off the press.
+    Newsprint {
+        id: pagePaper
         anchors.fill: parent
-        color: Press.paper
         opacity: paper.pageIn
+        seed: 5.1
+        age: 0.3
+        foldY: 0.5
+        wobble: 0
+        skew: 0
+        shadow: 0
 
         // A little shadow at the edges, as on a sheet held up.
         Rectangle {
@@ -930,6 +938,14 @@ Item {
         }
     }
 
+    // The paper over the print: the ink soaked into it, the light across
+    // the page and its fold.
+    NewsprintInk {
+        anchors.fill: parent
+        opacity: paper.pageIn
+        sheet: pagePaper
+    }
+
     Rectangle {
         anchors.fill: parent
         color: "black"
@@ -955,17 +971,13 @@ Item {
             rotation: (1 - paper.extra) * 720
             scale: 0.08 + 0.92 * paper.extra
 
-            Rectangle {
-                x: 10 * paper.sc
-                y: 10 * paper.sc
-                width: parent.width
-                height: parent.height
-                color: Press.alpha("black", 0.4)
-            }
-
-            Rectangle {
+            Newsprint {
+                id: extraPaper
                 anchors.fill: parent
-                color: Press.paper
+                seed: 6.8
+                age: 0.15
+                lift: 0.35
+                liftCorner: 3
             }
 
             Column {
@@ -1066,6 +1078,11 @@ Item {
                         font.weight: Font.Bold
                     }
                 }
+            }
+
+            NewsprintInk {
+                anchors.fill: parent
+                sheet: extraPaper
             }
         }
     }

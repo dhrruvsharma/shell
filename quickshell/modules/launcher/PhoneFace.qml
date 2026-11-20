@@ -1,14 +1,13 @@
 pragma ComponentBehavior: Bound
 import QtQuick
 import QtQuick.Shapes
-import qs.colors
 import qs.modules.lock.themes.newspaper
 
 // Broadsheet's wheel: the newsroom telephone's rotary dial, black bakelite
 // with the exchange letters and numbers showing through its finger holes,
 // turning with the apps; the chromed finger stop at three o'clock is the
-// pointer. What's beside it is set on a clipping: the chosen app's name the
-// headline, a kicker and a heavy rule over it, a hard shadow under.
+// pointer. What's beside it is set on a clipping of newsprint (Newsprint):
+// the chosen app's name the headline, a kicker and a heavy rule over it.
 Item {
     id: face
 
@@ -259,17 +258,11 @@ Item {
         opacity: face.dial.nameShown
         rotation: -0.6
 
-        Rectangle {
-            x: 7
-            y: 7
-            width: parent.width
-            height: parent.height
-            color: Colors.withAlpha("black", 0.5)
-        }
-
-        Rectangle {
+        Newsprint {
             anchors.fill: parent
-            color: Press.paper
+            seed: 2.6
+            lift: 0.4
+            liftCorner: 2
         }
 
         // The rule over the kicker.

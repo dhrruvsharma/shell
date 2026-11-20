@@ -2,6 +2,7 @@ pragma ComponentBehavior: Bound
 import QtQuick
 import qs.colors
 import qs.modules.desktopwidgets
+import qs.modules.lock.themes.newspaper
 
 // One toast: a NotificationCard on the desktop theme's own frame, the same
 // surface as the control centre (scrap plate, lancet window, newsprint…),
@@ -65,6 +66,9 @@ Item {
             themeId: ControlStyle.themeId
             title: ControlStyle.frame === "console" ? "notify" : ""
             seal: "信"
+            // Broadsheet: each its own clipping.
+            paperSeed: ((root.n?.notification?.id ?? 1) * 7.31) % 97 + 0.5
+            paperLift: 0.18 + 0.3 * paperDraw(2)
         }
 
         // Still: a quiet sheet.
@@ -98,6 +102,15 @@ Item {
             radius: 1
             color: ControlStyle.accent
             opacity: root.n?.held ? 0.3 : 0.7
+        }
+
+        // Broadsheet: the paper over the print.
+        Loader {
+            anchors.fill: parent
+            active: surface.sheet !== null
+            sourceComponent: NewsprintInk {
+                sheet: surface.sheet as Newsprint
+            }
         }
     }
 }

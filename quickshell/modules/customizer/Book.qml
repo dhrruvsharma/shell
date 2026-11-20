@@ -61,7 +61,8 @@ Item {
         notices: noticesC,
         pet: petC,
         edgeline: edgelineC,
-        edgeTabs: edgeTabsC
+        edgeTabs: edgeTabsC,
+        panorama: panoramaC
     })
 
     Component { id: contentsC; ContentsSpread {} }
@@ -80,6 +81,7 @@ Item {
     Component { id: petC; PetSpread {} }
     Component { id: edgelineC; EdgeLineSpread {} }
     Component { id: edgeTabsC; EdgeTabsSpread {} }
+    Component { id: panoramaC; PanoramaSpread {} }
 
     // Two slots: the open spread, and the one being turned to.
     property Loader front: slotA
@@ -485,7 +487,8 @@ Item {
 
             visible: !book.shut
             opacity: book.openness
-            y: 64 + tab.index * 90
+            // 90 apart, closer when more chapters wouldn't fit the page
+            y: 64 + tab.index * Math.min(90, (book.pageH - 64 - 84) / Math.max(1, BookContents.chapters.length - 1))
             x: tab.passed ? -book.board - tab.reach : book.pageW * 2 + book.board + tab.reach - width
             width: 76
             height: 78

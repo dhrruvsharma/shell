@@ -15,6 +15,7 @@ A feature-complete [Quickshell](https://quickshell.outfoxxed.me/) desktop shell 
 7. [Panels & Overlays](#panels--overlays)
    - [Launcher](#launcher)
    - [Window Switcher](#window-switcher)
+   - [Panorama](#panorama)
    - [Network Panel](#network-panel)
    - [Media Panel & CAVA](#media-panel--cava)
    - [Calendar](#calendar)
@@ -326,6 +327,20 @@ Opens with **SUPER+R**, by hovering the **left 2 px edge** of the screen (bottom
 `modules/switcher/WindowSwitcher.qml`
 
 Hyprland-aware window switcher with live thumbnails (`WindowThumbnail.qml`) and a search box.
+
+### Panorama
+
+`services/Panorama.qml`, `modules/panorama/`, `shaders/panorama.frag`
+
+Your workspaces as cards on a strip that bends round you. A workspace switch draws the screen back into its card, swings the strip round to the next one and settles on it; the bar stays where it is. The three-finger swipe carries the strip under your fingers. ALT + TAB shows the whole ring as the overview: arrows, the wheel or a drag turn it, Enter or a click goes there, Esc goes back, G switches to the grid (P in the grid comes back).
+
+- **How a switch is covered:** Hyprland switches the instant a key is pressed, so while switches use the panorama the shell takes over your workspace binds at runtime (it finds them with `scripts/keybinds.py`; nothing in `hypr/` is rewritten). Each becomes a Lua function that hands the switch to the shell, which pictures the screen, covers it with that picture, and only then lets Hyprland switch underneath. If the shell isn't running the keys switch by themselves, and they do anyway if it hasn't answered within half a second. Hyprland's own workspace animation is off meanwhile (the scratchpad keeps its own).
+- **Switching without it:** "Hyprland's slide" reloads the Hyprland config, which puts every bind, the swipe and the workspace animation back as your files have them. "None" keeps your binds and swipe as they are but turns Hyprland's workspace animation off, so switches cut straight across. The overview works either way.
+- **The pictures:** each workspace is pictured as you leave it, shortly after you reach it, and after its windows open, close or move. A workspace not seen since the shell started is put together from its windows over the wallpaper. Each picture is the screen's size, about 9 MB of GPU memory at 1920×1158; a workspace that goes away takes its picture with it. At rest the panorama is a one-pixel surface, and nothing animates.
+- **Settings:** in the Customizer, chapter X (The Panorama), or `~/.config/quickshell/panorama.json`: `switching` (`panorama`, `hyprland` or `off`; an older `transitions` true/false still reads as `panorama`/`hyprland`), `gestures`, `view` (`panorama` or `grid`), `duration` (ms), `curve` (0–1), `depth` (0.15–0.7).
+- **Debugging:** start the shell with `QS_PANORAMA_DEBUG=1` to log each step (`PANO …`); `qs ipc call panorama state` shows each screen's state and pictures.
+
+**IPC:** `qs ipc call panorama overview` (also `close`, `go <id>`, `turn <±n>`, `pick`, `switching panorama|hyprland|off`, `transitions on|off|toggle`, `view panorama|grid`, `state`)
 
 ### Network Panel
 
@@ -825,6 +840,7 @@ All panels are controlled through Quickshell's `IpcHandler` system. Use `qs ipc 
 | `screenshot` | `qs ipc call screenshot last` | The newest screenshot in the editor (`edit <file>` for any image) |
 | `screenRecord` | `qs ipc call screenRecord toggle` | Records the screen, with the system sound if it's on (`start`, `stop`, `sound <true\|false>`, `status`) |
 | `sharePicker` | `qs ipc call sharePicker open <socket>` | The screen-share picker, for `scripts/share-picker` (to try it: `scripts/share-picker --preview`) |
+| `panorama` | `qs ipc call panorama overview` | The panorama's overview (ALT + TAB opens it through `expose`); `close`, `go <id>`, `turn <±n>`, `pick`, `switching panorama\|hyprland\|off`, `transitions on\|off\|toggle`, `view panorama\|grid`, `state` |
 | `edgeLine` | `qs ipc call edgeLine toggle` | The edge line (SUPER + \`); `open`, `close`, `tab <n>`, `panel <id>`, `minimal`, `setMinimal <bool>`, `place <edge> <0-1>`, `enable`, `disable`, `reset` |
 
 ### Example Hyprland keybindings

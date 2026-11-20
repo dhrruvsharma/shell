@@ -5,6 +5,7 @@ import QtQuick.Shapes
 import qs.colors
 import qs.components
 import qs.modules.lock
+import qs.modules.lock.themes.newspaper
 import qs.modules.lock.themes.wasteland
 import qs.services as Services
 
@@ -46,8 +47,44 @@ Item {
     readonly property real headRoom: st.frame === "lancet" ? archRise * 0.62 : st.frame === "clipping" ? 8 : st.frame === "banner" ? 6 : 0
     readonly property real footRoom: st.frame === "banner" ? 24 : 0
 
-    implicitWidth: body.implicitWidth + st.pad * 2
-    implicitHeight: tabRoom + headRoom + body.implicitHeight + st.pad * 2 + footRoom + (hasTitle ? titleText.implicitHeight + frame.spacing : 0)
+    // Broadsheet's clippings: each its own sheet of newsprint (Newsprint),
+    // cut, curled and aged after its title, so it keeps its character from
+    // one session to the next; hosts can set any of it. A desktop widget
+    // (`desk`) is taped up, and keeps room round itself inside its bounds
+    // for what the paper draws past its edge (its shadow, a ragged cut, the
+    // tape), which the widget's small surface would cut off.
+    property bool desk: false
+    readonly property bool paper: st.frame === "clipping"
+    readonly property real room: desk && paper ? Press.bleed : 0
+    property real paperSeed: {
+        let h = 17;
+        for (let i = 0; i < title.length; i++)
+            h = (h * 31 + title.charCodeAt(i)) % 7919;
+        return h / 79.19;
+    }
+    property int paperTape: desk ? 1 + Math.floor(paperDraw(1) * 3.999) : 0
+    property real paperLift: desk ? 0.45 + 0.5 * paperDraw(2) : 0.3
+    // A corner the tape leaves free.
+    property int paperLiftCorner: paperTape === 3 ? (paperDraw(3) < 0.5 ? 1 : 2) : paperTape === 4 ? (paperDraw(3) < 0.5 ? 0 : 3) : (paperDraw(3) < 0.5 ? 2 : 3)
+    property real paperFoldX: -1
+    property real paperFoldY: -1
+    // Now and then torn out instead, down one side or along the foot.
+    property vector4d paperTorn: desk && paperDraw(4) > 0.55 ? (paperDraw(5) < 0.5 ? Qt.vector4d(0, 0, 1, 0) : Qt.vector4d(0, 0, 0, 1)) : Qt.vector4d(0, 0, 0, 0)
+    property real paperAge: 0.25 + 0.4 * paperDraw(6)
+    // Whether the paper's ink, light and tape (NewsprintInk) go over the
+    // body; a host that sets its print outside the frame puts its own over
+    // that, over `sheet`.
+    property bool inkOver: body.children.length > 0
+    readonly property Item sheet: paper ? frameLoader.item : null
+
+    // This sheet's k-th draw, 0..1.
+    function paperDraw(k) {
+        const x = Math.sin(paperSeed * 12.9898 + k * 78.233) * 43758.5453;
+        return x - Math.floor(x);
+    }
+
+    implicitWidth: body.implicitWidth + st.pad * 2 + room * 2
+    implicitHeight: tabRoom + headRoom + body.implicitHeight + st.pad * 2 + footRoom + (hasTitle ? titleText.implicitHeight + frame.spacing : 0) + room * 2
 
     // Legibility for frameless widgets straight on the wallpaper.
     layer.enabled: st.frame === "bare"
@@ -64,7 +101,9 @@ Item {
     // Only the theme's own frame is built: every frame at once, all but one
     // hidden, cost hundreds of items (and a shader or two) per widget.
     Loader {
+        id: frameLoader
         anchors.fill: parent
+        anchors.margins: frame.room
         sourceComponent: ({
             card: cardFrame,
             chamfer: chamferFrame,
@@ -357,27 +396,23 @@ Item {
     Component {
         id: clippingFrame
 
-        Item {
-            // Broadsheet: a clipping of newsprint casting a hard shadow, its title a
-            // kicker under a heavy rule.
-            Rectangle {
-                x: 5
-                y: 5
-                width: frame.width
-                height: frame.height
-                color: Colors.withAlpha("black", 0.42)
-            }
-
-            Rectangle {
-                anchors.fill: parent
-                color: "#ebe6d9"
-            }
+        // Broadsheet: a clipping of newsprint, its title a kicker under a
+        // heavy rule.
+        Newsprint {
+            seed: frame.paperSeed
+            age: frame.paperAge
+            tape: frame.paperTape
+            lift: frame.paperLift
+            liftCorner: frame.paperLiftCorner
+            foldX: frame.paperFoldX
+            foldY: frame.paperFoldY
+            torn: frame.paperTorn
 
             Rectangle {
                 visible: frame.hasTitle
                 x: frame.st.pad
                 y: frame.st.pad
-                width: frame.width - frame.st.pad * 2
+                width: parent.width - frame.st.pad * 2
                 height: 3
                 color: frame.ink
             }
@@ -727,8 +762,8 @@ Item {
 
     Text {
         id: titleText
-        x: frame.centredTitle ? Math.round((frame.width - implicitWidth) / 2) : frame.st.pad + (frame.st.frame === "neon" ? 4 : frame.st.frame === "instrument" ? 15 : 0)
-        y: frame.headRoom + frame.st.pad
+        x: frame.centredTitle ? Math.round((frame.width - implicitWidth) / 2) : frame.room + frame.st.pad + (frame.st.frame === "neon" ? 4 : frame.st.frame === "instrument" ? 15 : 0)
+        y: frame.room + frame.headRoom + frame.st.pad
         visible: frame.hasTitle
         rotation: frame.st.frame === "scrap" ? -1.5 : 0
         text: (frame.st.frame === "chamfer" ? "▸ " : "") + WidgetStyle.label(frame.title, frame.st)
@@ -742,8 +777,19 @@ Item {
 
     Column {
         id: body
-        x: frame.st.pad
-        y: frame.tabRoom + frame.headRoom + frame.st.pad + (frame.hasTitle ? titleText.implicitHeight + frame.spacing : 0)
+        x: frame.room + frame.st.pad
+        y: frame.room + frame.tabRoom + frame.headRoom + frame.st.pad + (frame.hasTitle ? titleText.implicitHeight + frame.spacing : 0)
         spacing: frame.spacing
+    }
+
+    // Broadsheet: the paper over the print, the ink soaked into it, the
+    // light across it and the tape.
+    Loader {
+        anchors.fill: parent
+        anchors.margins: frame.room
+        active: frame.sheet !== null && frame.inkOver
+        sourceComponent: NewsprintInk {
+            sheet: frame.sheet as Newsprint
+        }
     }
 }

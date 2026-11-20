@@ -18,6 +18,7 @@ WidgetFrame {
     }
 
     themeId: Services.DesktopTheme.enabled ? Services.DesktopTheme.theme : ""
+    desk: true
     title: WidgetStyle.word("music", themeId)
     seal: "琴"
 

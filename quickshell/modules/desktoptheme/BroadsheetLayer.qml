@@ -39,7 +39,7 @@ Item {
         fragmentShader: Qt.resolvedUrl("../../shaders/desktop_press.frag.qsb")
     }
 
-    // The byline, cut out of the paper, bottom right.
+    // The byline, cut out of the paper and taped up, bottom right.
     Item {
         anchors.right: parent.right
         anchors.bottom: parent.bottom
@@ -49,17 +49,14 @@ Item {
         height: byline.implicitHeight + 24
         opacity: LockTheme.seg(root.boot, 0.55, 1)
 
-        Rectangle {
-            x: 5
-            y: 5
-            width: parent.width
-            height: parent.height
-            color: Press.alpha("black", 0.45)
-        }
-
-        Rectangle {
+        Newsprint {
+            id: cutting
             anchors.fill: parent
-            color: Press.paper
+            seed: 7.7
+            age: 0.5
+            tape: 1
+            lift: 0.4
+            liftCorner: 2
         }
 
         Column {
@@ -107,6 +104,11 @@ Item {
                 font.italic: true
                 color: Press.inkSoft
             }
+        }
+
+        NewsprintInk {
+            anchors.fill: parent
+            sheet: cutting
         }
     }
 }

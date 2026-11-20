@@ -13,6 +13,7 @@ WidgetFrame {
     property var history: []
 
     themeId: Services.DesktopTheme.enabled ? Services.DesktopTheme.theme : ""
+    desk: true
     title: WidgetStyle.word("sysmon", themeId)
     seal: "气"
 

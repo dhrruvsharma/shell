@@ -6,6 +6,7 @@ import QtQuick.Shapes
 import QtQuick.Effects
 import qs.services as Svc
 import qs.colors
+import qs.components
 
 // Expose / workspace overview window. Slides up from the bottom on
 // `qs ipc call expose toggle`. Ported from Nebula's WorkspaceOverview.
@@ -136,8 +137,60 @@ PanelWindow {
                 sourceComponent: ExposeContent {
                     focus: true
                     Keys.onEscapePressed: Svc.ExposeState.open = false
+                    // P: the panorama instead (services/Panorama), from now on
+                    Keys.onPressed: ev => {
+                        if (ev.key === Qt.Key_P) {
+                            ev.accepted = true;
+                            root.toPanorama();
+                        }
+                    }
+                }
+            }
+
+            // The other way of seeing them.
+            Rectangle {
+                anchors.top: parent.top
+                anchors.right: parent.right
+                anchors.topMargin: 6
+                anchors.rightMargin: 14
+                visible: wrapper.height === 470
+                width: viewChip.implicitWidth + 22
+                height: 22
+                radius: Svc.DesktopTheme.rad(11)
+                color: viewArea.containsMouse ? Colors.withAlpha(Colors.primary, 0.18) : "transparent"
+                border.width: 1
+                border.color: Colors.withAlpha(Colors.outline, 0.6)
+
+                StyledText {
+                    id: viewChip
+                    anchors.centerIn: parent
+                    text: "panorama  ·  P"
+                    font.pixelSize: 11
+                    font.letterSpacing: 1
+                    color: Colors.withAlpha(Colors.on_surface, 0.8)
+                }
+
+                MouseArea {
+                    id: viewArea
+                    anchors.fill: parent
+                    hoverEnabled: true
+                    cursorShape: Qt.PointingHandCursor
+                    onClicked: root.toPanorama()
                 }
             }
         }
+    }
+
+    // Closes the grid and opens the panorama once it's away.
+    function toPanorama() {
+        Svc.Panorama.set("view", "panorama");
+        Svc.ExposeState.open = false;
+        panoramaLater.restart();
+    }
+
+    Timer {
+        id: panoramaLater
+        interval: 650
+        onTriggered: Svc.Panorama.openOverview()
     }
 }

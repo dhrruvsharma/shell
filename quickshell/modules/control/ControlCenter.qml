@@ -5,6 +5,7 @@ import Quickshell
 import qs.colors
 import qs.services as Services
 import qs.modules.desktopwidgets
+import qs.modules.lock.themes.newspaper
 
 // The control centre: a full-height panel on the left, made like the desktop
 // theme's widgets (ControlStyle): the theme's frame for its surface (scrap
@@ -186,6 +187,12 @@ Item {
             themeId: ControlStyle.themeId
             title: ControlStyle.frame === "console" ? "control" : ""
             seal: "控"
+            // Broadsheet: a column cut from the page, folded once across
+            // the middle, its foot curling up off the desk.
+            paperSeed: 3.3
+            paperFoldY: 0.47
+            paperLift: 0.32
+            paperLiftCorner: 2
         }
 
         // Still: a quiet sheet, no frame at all.
@@ -282,6 +289,16 @@ Item {
                         center: root
                     }
                 }
+            }
+        }
+
+        // Broadsheet: the paper over the print, the ink soaked into it and
+        // the light across the fold.
+        Loader {
+            anchors.fill: parent
+            active: surface.sheet !== null
+            sourceComponent: NewsprintInk {
+                sheet: surface.sheet as Newsprint
             }
         }
     }

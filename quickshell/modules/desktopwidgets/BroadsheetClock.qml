@@ -3,9 +3,11 @@ import QtQuick
 import qs.modules.desktoptheme
 import qs.modules.lock.themes.newspaper
 
-// Broadsheet clock face: the top of a front page, clipped out: volume,
-// number and edition over a heavy rule, the time set as the headline, the
-// dateline and the price under it, and how far through the year we are.
+// Broadsheet clock face: the top of a front page, clipped out and taped up
+// (Newsprint): volume, number and edition over a heavy rule, the time set
+// as the headline, the dateline and the price under it, and how far through
+// the year we are. The surface keeps room round the clipping for its
+// shadow and tape.
 Item {
     id: root
 
@@ -14,22 +16,25 @@ Item {
     readonly property int day: Clocks.dayOfYear(now)
     readonly property int daysLeft: Math.round((new Date(now.getFullYear() + 1, 0, 1) - new Date(now.getFullYear(), now.getMonth(), now.getDate())) / 86400000)
 
-    implicitWidth: page.width + 5
-    implicitHeight: page.height + 5
+    implicitWidth: page.width + 2 * Press.bleed
+    implicitHeight: page.height + 2 * Press.bleed
 
-    Rectangle {
-        x: 5
-        y: 5
-        width: page.width
-        height: page.height
-        color: Press.alpha("black", 0.42)
-    }
-
-    Rectangle {
+    Item {
         id: page
+        x: Press.bleed
+        y: Press.bleed
         width: col.implicitWidth + 36
         height: col.implicitHeight + 28
-        color: Press.paper
+
+        Newsprint {
+            id: cutting
+            anchors.fill: parent
+            seed: 4.2
+            age: 0.45
+            tape: 2
+            lift: 0.55
+            liftCorner: 3
+        }
 
         Column {
             id: col
@@ -136,6 +141,11 @@ Item {
                 font.italic: true
                 color: Press.inkSoft
             }
+        }
+
+        NewsprintInk {
+            anchors.fill: parent
+            sheet: cutting
         }
     }
 }

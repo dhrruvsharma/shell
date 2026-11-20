@@ -10,6 +10,7 @@ WidgetFrame {
     id: root
 
     themeId: Services.DesktopTheme.enabled ? Services.DesktopTheme.theme : ""
+    desk: true
     title: WidgetStyle.word("quote", themeId)
     seal: "言"
 

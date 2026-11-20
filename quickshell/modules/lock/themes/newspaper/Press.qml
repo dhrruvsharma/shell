@@ -19,6 +19,11 @@ Singleton {
 
     readonly property color paper: "#ebe6d9"
     readonly property color paperDeep: "#d8d0bd"
+    // What newsprint yellows to at its edges.
+    readonly property color paperAged: "#c9b285"
+    // How far a sheet of it (Newsprint) draws past its rect: its shadow, a
+    // ragged cut, tape over the edge.
+    readonly property real bleed: 16
     readonly property color ink: "#1b1a17"
     readonly property color inkSoft: "#57534a"
     readonly property color inkFaint: "#8d887b"

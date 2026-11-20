@@ -18,7 +18,8 @@ Singleton {
         { n: 6, id: "desktop", title: "The Desktop", icon: "wallpaper" },
         { n: 7, id: "notices", title: "Notices", icon: "notifications" },
         { n: 8, id: "pet", title: "The Companion", icon: "pets" },
-        { n: 9, id: "edgeline", title: "The Edge Line", icon: "horizontal_rule" }
+        { n: 9, id: "edgeline", title: "The Edge Line", icon: "horizontal_rule" },
+        { n: 10, id: "panorama", title: "The Panorama", icon: "view_carousel" }
     ]
 
     readonly property var spreads: [
@@ -37,7 +38,8 @@ Singleton {
         { id: "notices", chapter: 7, section: "Notices and the night" },
         { id: "pet", chapter: 8, section: "Your pet" },
         { id: "edgeline", chapter: 9, section: "Living on a border" },
-        { id: "edgeTabs", chapter: 9, section: "Its tabs" }
+        { id: "edgeTabs", chapter: 9, section: "Its tabs" },
+        { id: "panorama", chapter: 10, section: "Between workspaces" }
     ]
 
     function indexOf(id) {

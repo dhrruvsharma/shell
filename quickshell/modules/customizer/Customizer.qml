@@ -74,6 +74,8 @@ Item {
             bookItem.go(0);
         } else if (event.key >= Qt.Key_1 && event.key <= Qt.Key_9) {
             bookItem.go(BookContents.chapterStart(event.key - Qt.Key_0));
+        } else if (event.key === Qt.Key_0 && BookContents.chapterStart(10) >= 0) {
+            bookItem.go(BookContents.chapterStart(10));
         } else {
             return;
         }

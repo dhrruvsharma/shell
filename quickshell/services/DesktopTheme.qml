@@ -233,7 +233,7 @@ Singleton {
             icon: "newspaper",
             lockTheme: "newspaper",
             tone: "print",
-            description: "The morning paper: your wallpaper printed in halftone on newsprint, windows cut out like clippings with hard offset shadows, ruled small-caps tags on the bar, desktop widgets as clippings, and a front-page clock that knows which edition is on the street.",
+            description: "The morning paper: your wallpaper printed in halftone on newsprint, windows cut out like clippings with hard offset shadows, ruled small-caps tags on the bar, desktop widgets as clippings of newsprint, cut or torn out and taped up with the back page showing through, and a front-page clock that knows which edition is on the street.",
             hypr: { rounding: 0, range: 2, power: 1, sharp: true, offset: [7, 7], shadow: "000000a0", inactive: "00000070", border: { active: ["accent2"], inactive: "outline", inactiveAlpha: "aa" } },
             bar: { shape: "print", font: "Old Standard TT", weight: Font.Bold, sizeDelta: -2, letterSpacing: 0.6, caps: "small", border: 1, borderRole: "accent2", borderAlpha: 0.85 },
             effects: {

@@ -39,6 +39,7 @@ import qs.modules.customizer
 import qs.modules.screenshot
 import qs.modules.sharepicker
 import qs.modules.edgeline
+import qs.modules.panorama
 
 ShellRoot {
     id: root
@@ -49,6 +50,8 @@ ShellRoot {
         Services.DesktopTheme.manage = true
         Services.FirefoxTheme.manage = true
         Services.WindowLook.manage = true
+        // The panorama's runtime binds, swipe and animation (services/Panorama).
+        Services.Panorama.manage = true
         // A night light left on comes back with the shell.
         Services.NightLight.checkAvailable()
         // DNS set from the edge line is kept an eye on (a notification if
@@ -301,6 +304,12 @@ ShellRoot {
     }
     WorkspaceDiscWindow {}
     Expose {}
+    // The workspaces on a strip round you, between switches and in the
+    // overview (services/Panorama); built while either is wanted.
+    LazyLoader {
+        active: Services.Panorama.wanted
+        PanoramaLayer {}
+    }
     CavaWidget { id: cavaWidget }
     WindowSwitcher{}
     Visualizer {
@@ -449,6 +458,8 @@ ShellRoot {
             || (lockThemesLoader.item !== null && lockThemesLoader.item.visible)
             || keybindsLoader.active
             || customizerLoader.active
+        // Switches go plainly while a panel's up (it would be in the picture).
+        onNeededChanged: Services.Panorama.panelsUp = needed
         readonly property real screenW: screen ? screen.width : 1920
         readonly property real screenH: screen ? screen.height : 1200
 

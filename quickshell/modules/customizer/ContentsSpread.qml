@@ -154,7 +154,8 @@ Spread {
             anchors.top: headRule.bottom
             anchors.topMargin: 14
             width: parent.width
-            spacing: 3
+            // closer set past nine chapters, to clear the note at the foot
+            spacing: BookContents.chapters.length > 9 ? 2 : 3
 
             Repeater {
                 model: BookContents.chapters
@@ -192,7 +193,7 @@ Spread {
 
                     Item {
                         width: 1
-                        height: 4
+                        height: BookContents.chapters.length > 9 ? 0 : 4
                     }
                 }
             }
@@ -202,7 +203,7 @@ Spread {
             anchors.bottom: parent.bottom
             width: parent.width
             horizontalAlignment: Text.AlignHCenter
-            text: "Turn a page at its lower corner, or by the tabs on the book's edges. The ribbon brings you back here. ← → turn pages, 1–9 open a chapter, Esc closes."
+            text: "Turn a page at its lower corner, or by the tabs on the book's edges. The ribbon brings you back here. ← → turn pages, 1–9 and 0 open a chapter, Esc closes."
             wrapMode: Text.WordWrap
             font.italic: true
             font.pixelSize: BookStyle.bodySize - 2

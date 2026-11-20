@@ -374,7 +374,8 @@ Item {
                 continue
             const q = c.mapFromItem(grip, p.x, p.y)
             if (Math.hypot(q.x - c.width / 2, q.y - c.height / 2) <= c.width / 2) {
-                Hyprland.changeWorkspace(c.wsIndex)
+                // through the panorama when it plays (services/Panorama)
+                Panorama.switchTo(c.wsIndex)
                 return
             }
         }
